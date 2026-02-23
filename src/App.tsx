@@ -1,7 +1,7 @@
-import CreateService from './screens/CreateService'
+import EditService from './screens/EditService'
 
 function App() {
-  return <CreateService />
+  return <EditService />
 }
 
 export default App
