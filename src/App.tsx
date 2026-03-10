@@ -1,7 +1,8 @@
-import EditService from './screens/EditService'
+import CreateService from './screens/CreateService'
 
 function App() {
-  return <EditService />
+  // Create Service (PG flow) — switch to UserHome to see the home screen
+  return <CreateService />
 }
 
 export default App
