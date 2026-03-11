@@ -24,7 +24,7 @@ const SERVICE_TYPES: ServiceTypeOption[] = [
     id: 'postgresql',
     name: 'PostgreSQL®',
     description: 'PostgreSQL - High-performance relational database with advanced extensions',
-    iconColor: '#b8d4e8',
+    iconColor: '#c5dcf2',
     iconLetter: 'P',
   },
   {
@@ -45,7 +45,7 @@ const SERVICE_TYPES: ServiceTypeOption[] = [
     id: 'mysql',
     name: 'MySQL',
     description: 'MySQL - Popular general-purpose easy-to-use relational database',
-    iconColor: '#b0d0e8',
+    iconColor: '#fdd9a0',
     iconLetter: 'M',
   },
   {
@@ -179,8 +179,8 @@ function ServiceTypeSelectModal({
               <Box style={{ flex: 1, minWidth: 0 }}>
                 <Box style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
                   <Typography.DefaultStrong>{service.name}</Typography.DefaultStrong>
-                  {service.id === 'mysql' && (
-                    <StatusChip text="New flexible pricing" status="success" />
+                  {(service.id === 'mysql' || service.id === 'postgresql') && (
+                    <StatusChip text="ACU-mode" status="success" />
                   )}
                 </Box>
                 <Box style={{ color: '#787885', marginTop: 4 }}>
