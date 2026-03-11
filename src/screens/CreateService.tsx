@@ -744,9 +744,10 @@ function CreateService({ embedded = false, editMode = false, serviceTypeId, serv
     () => Math.ceil(pgDiskSizeGb * pgSelectedStorageSpec.pricePerGbMonth),
     [pgDiskSizeGb, pgSelectedStorageSpec],
   )
+  const pgNodeCount = HA_NODE_COUNT[pgHaOption]
   const pgEstimatedMonthly = useMemo(
-    () => pgSelectedCompute.pricePerMonth + pgStorageCost,
-    [pgSelectedCompute, pgStorageCost],
+    () => pgNodeCount * (pgSelectedCompute.pricePerMonth + pgStorageCost),
+    [pgNodeCount, pgSelectedCompute, pgStorageCost],
   )
 
   // ── Kafka path ──
@@ -843,45 +844,27 @@ function CreateService({ embedded = false, editMode = false, serviceTypeId, serv
 
             {/* Cloud */}
             <Section icon={cloudIcon} title="Cloud">
-              {/* Provider pills */}
-              <Box style={{ display: 'flex', gap: 12, flexWrap: 'wrap', marginBottom: 24 }}>
-                {PG_CLOUDS.map((c) => {
-                  const isActive = pgCloud === c.id
-                  return (
-                    <Box
-                      key={c.id}
-                      role="button"
-                      tabIndex={0}
-                      onClick={() => {
-                        setPgCloud(c.id)
-                        setPgRegionId(PG_REGIONS_BY_CLOUD[c.id][0].id)
-                      }}
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter' || e.key === ' ') {
-                          e.preventDefault()
-                          setPgCloud(c.id)
-                          setPgRegionId(PG_REGIONS_BY_CLOUD[c.id][0].id)
-                        }
-                      }}
-                      style={{
-                        display: 'inline-flex',
-                        alignItems: 'center',
-                        gap: 8,
-                        padding: '8px 16px',
-                        borderRadius: 50,
-                        border: `1px solid ${isActive ? '#3545be' : '#ededf0'}`,
-                        backgroundColor: isActive ? '#f3f6ff' : '#fff',
-                        cursor: 'pointer',
-                        outline: 'none',
-                      }}
-                    >
+              {/* Provider chips */}
+              <Box style={{ marginBottom: 24 }}>
+                <ChoiceChipGroup
+                  name="pgCloud"
+                  selectionMode="radio"
+                  value={pgCloud}
+                  onChange={(v) => {
+                    const id = v as PGCloudProvider
+                    setPgCloud(id)
+                    setPgRegionId(PG_REGIONS_BY_CLOUD[id][0].id)
+                  }}
+                >
+                  {PG_CLOUDS.map((c) => (
+                    <ChoiceChip key={c.id} value={c.id}>
+                      <Box component="span" style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
                         <CloudProviderIcon id={c.id} />
-                      <Box style={{ color: isActive ? '#292a31' : '#4a4b57', fontWeight: 600 }}>
-                        <Typography.Small>{c.label}</Typography.Small>
+                        {c.label}
                       </Box>
-                    </Box>
-                  )
-                })}
+                    </ChoiceChip>
+                  ))}
+                </ChoiceChipGroup>
               </Box>
 
               {/* Region dropdown */}
@@ -1233,7 +1216,7 @@ function CreateService({ embedded = false, editMode = false, serviceTypeId, serv
               top: 0,
               // In embedded (modal) mode subtract the modal chrome (header + footer ≈ 160px).
               // In standalone mode the sidebar fills the full viewport.
-              height: embedded ? 'calc(100vh - 160px)' : '100vh',
+              height: embedded ? 'calc(100vh - 360px)' : '100vh',
               overflow: 'hidden',
             }}
           >
@@ -1326,16 +1309,16 @@ function CreateService({ embedded = false, editMode = false, serviceTypeId, serv
 
                 <Box style={{ display: 'flex', justifyContent: 'space-between' }}>
                   <Box style={{ color: '#787885' }}>
-                    <Typography.Caption>Compute</Typography.Caption>
+                    <Typography.Caption>Compute · {pgNodeCount} {pgNodeCount === 1 ? 'node' : 'nodes'}</Typography.Caption>
                   </Box>
-                  <Typography.Caption>${pgSelectedCompute.pricePerMonth}</Typography.Caption>
+                  <Typography.Caption>${pgSelectedCompute.pricePerMonth * pgNodeCount}</Typography.Caption>
                 </Box>
 
                 <Box style={{ display: 'flex', justifyContent: 'space-between' }}>
                   <Box style={{ color: '#787885' }}>
-                    <Typography.Caption>Storage</Typography.Caption>
+                    <Typography.Caption>Storage · {pgNodeCount} {pgNodeCount === 1 ? 'node' : 'nodes'}</Typography.Caption>
                   </Box>
-                  <Typography.Caption>${pgStorageCost}</Typography.Caption>
+                  <Typography.Caption>${pgStorageCost * pgNodeCount}</Typography.Caption>
                 </Box>
 
                 <Box style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
