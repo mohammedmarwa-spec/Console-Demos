@@ -189,9 +189,9 @@ export default function CreateForkModal({
           <SummaryDivider />
 
           <SummarySection label="Name">
-            <Typography.Default style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-              {forkName || '—'}
-            </Typography.Default>
+            <Box style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+              <Typography.Default>{forkName || '—'}</Typography.Default>
+            </Box>
           </SummarySection>
 
           <SummaryDivider />

@@ -1,4 +1,4 @@
-import { Box, DropdownMenu, Icon, Typography } from '@aivenio/aquarium'
+import { Box, DropdownMenu, Icon } from '@aivenio/aquarium'
 import notificationsIcon from '@aivenio/aquarium/icons/notifications'
 import helpIcon from '@aivenio/aquarium/icons/help'
 import officeIcon from '@aivenio/aquarium/icons/office'
@@ -140,12 +140,12 @@ function OrgSelector({ orgName, orgSublabel }: OrgSelectorProps) {
             <Icon icon={officeIcon} style={{ width: 20, height: 20, color: '#4a4b57' }} />
           </Box>
           <Box style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 0 }}>
-            <Typography.DefaultStrong style={{ color: '#292a31', fontSize: 13, lineHeight: '16px' }}>
+            <Box component="span" style={{ color: '#292a31', fontSize: 13, lineHeight: '16px', fontWeight: 600 }}>
               {orgName}
-            </Typography.DefaultStrong>
-            <Typography.Caption style={{ color: '#4a4b57', fontSize: 11, lineHeight: '14px' }}>
+            </Box>
+            <Box component="span" style={{ color: '#4a4b57', fontSize: 11, lineHeight: '14px' }}>
               {orgSublabel}
-            </Typography.Caption>
+            </Box>
           </Box>
           <Icon icon={chevronDownIcon} style={{ width: 12, height: 12, color: '#4a4b57' }} />
         </Box>
@@ -154,23 +154,6 @@ function OrgSelector({ orgName, orgSublabel }: OrgSelectorProps) {
         <DropdownMenu.Item id="switch-org">Switch organization</DropdownMenu.Item>
       </DropdownMenu.Items>
     </DropdownMenu>
-  )
-}
-
-// ─── Vertical divider ─────────────────────────────────────────────────────────
-
-function VerticalDivider() {
-  return (
-    <Box
-      aria-hidden
-      style={{
-        width: 1,
-        height: 17,
-        backgroundColor: '#e5e7eb',
-        flexShrink: 0,
-        marginInline: 12,
-      }}
-    />
   )
 }
 
