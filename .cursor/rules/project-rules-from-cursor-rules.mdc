@@ -1,0 +1,16 @@
+---
+description: Treat all .md files in cursor/rules as project rules
+alwaysApply: true
+---
+
+# Project rules (cursor/rules)
+
+The folder **cursor/rules** contains project rules. **Treat every `.md` file in cursor/rules as a project rule.**
+
+When working in this project:
+
+1. **Include in context**: Always include `cursor/rules/*.md` as context. Consider the contents of every `.md` file in `cursor/rules/` as authoritative project guidelines.
+2. **Apply**: Follow the conventions, patterns, and instructions defined in those files.
+3. **When adding rules**: New project rules should be added as `.md` files in `cursor/rules/`.
+
+If the user or task relates to architecture, style, or process, read the relevant `.md` files from `cursor/rules/` and apply them.
