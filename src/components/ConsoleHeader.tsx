@@ -3,6 +3,7 @@ import notificationsIcon from '@aivenio/aquarium/icons/notifications'
 import helpIcon from '@aivenio/aquarium/icons/help'
 import officeIcon from '@aivenio/aquarium/icons/office'
 import chevronDownIcon from '@aivenio/aquarium/icons/chevronDown'
+import aivenConsoleLogo from '../assets/aiven-console-logo.svg'
 
 export type NavItem = 'home' | 'projects' | 'tools' | 'billing' | 'support' | 'admin'
 
@@ -23,50 +24,17 @@ function AivenConsoleLogo() {
   return (
     <Box
       style={{
-        display: 'flex',
-        alignItems: 'center',
-        gap: 8,
         flexShrink: 0,
         userSelect: 'none',
+        display: 'flex',
+        alignItems: 'center',
       }}
     >
-      {/* Gradient mark — matches Figma "Ellipse 1" (32×32, orange→pink gradient) */}
-      <Box
-        aria-hidden
-        style={{
-          width: 32,
-          height: 32,
-          borderRadius: '50%',
-          background: 'linear-gradient(135deg, #FF7700 0%, #FF3554 100%)',
-          flexShrink: 0,
-        }}
+      <img
+        src={aivenConsoleLogo}
+        alt="Aiven Console"
+        style={{ height: 32, width: 'auto', display: 'block' }}
       />
-      {/* Wordmark */}
-      <Box style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
-        <Box
-          component="span"
-          style={{
-            fontWeight: 700,
-            fontSize: 13,
-            letterSpacing: '0.07em',
-            color: '#191919',
-            lineHeight: '18px',
-          }}
-        >
-          AIVEN
-        </Box>
-        <Box
-          component="span"
-          style={{
-            fontSize: 7.5,
-            letterSpacing: '0.06em',
-            color: '#3a3a44',
-            lineHeight: '9px',
-          }}
-        >
-          CONSOLE
-        </Box>
-      </Box>
     </Box>
   )
 }

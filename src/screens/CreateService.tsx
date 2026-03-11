@@ -28,8 +28,18 @@ import tagIcon from '@aivenio/aquarium/icons/tag'
 import nodesIcon from '@aivenio/aquarium/icons/nodes'
 import proPlansIcon from '@aivenio/aquarium/icons/proPlans'
 import settingsIcon from '@aivenio/aquarium/icons/settings'
+import addIcon from '@aivenio/aquarium/icons/add'
 import type { ServiceTypeId } from './ServiceTypeSelectModal'
 import createKafkaScreenshot from '../assets/create-kafka-service.png'
+import cloudAwsVector from '../assets/cloud-aws-vector.svg'
+import cloudAwsSmile from '../assets/cloud-aws-smile.svg'
+import cloudGoogle from '../assets/cloud-google.svg'
+import cloudAzure1 from '../assets/cloud-azure-1.svg'
+import cloudAzure2 from '../assets/cloud-azure-2.svg'
+import cloudAzure3 from '../assets/cloud-azure-3.svg'
+import cloudAzure4 from '../assets/cloud-azure-4.svg'
+import cloudDigitalOcean from '../assets/cloud-digitalocean.svg'
+import cloudUpCloud from '../assets/cloud-upcloud.png'
 
 // ─── Shared types & data ─────────────────────────────────────────────────────
 
@@ -303,41 +313,31 @@ function CloudProviderIcon({ id }: { id: PGCloudProvider }) {
   switch (id) {
     case 'aws':
       return (
-        <svg width="28" height="17" viewBox="0 0 28 17" fill="none" aria-hidden="true" style={{ display: 'block' }}>
-          <text x="0" y="13" fontSize="13" fontWeight="800" fill="#FF9900" fontFamily="Arial, sans-serif" letterSpacing="-0.5">aws</text>
-        </svg>
+        <Box aria-hidden="true" style={{ position: 'relative', width: 20, height: 20, flexShrink: 0 }}>
+          <img alt="" style={{ position: 'absolute', top: '18.75%', left: '4.52%', right: '3.87%', bottom: '49.71%', width: '91.61%', height: '31.54%', objectFit: 'contain' }} src={cloudAwsVector} />
+          <img alt="" style={{ position: 'absolute', top: '56.35%', left: 0, right: 0, bottom: '21.17%', width: '100%', height: '22.48%', objectFit: 'contain' }} src={cloudAwsSmile} />
+        </Box>
       )
     case 'google':
       return (
-        <svg width="18" height="18" viewBox="0 0 18 18" aria-hidden="true" style={{ display: 'block' }}>
-          <path d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844a4.14 4.14 0 0 1-1.796 2.716v2.259h2.908c1.702-1.567 2.684-3.875 2.684-6.615z" fill="#4285F4"/>
-          <path d="M9 18c2.43 0 4.467-.806 5.956-2.18l-2.908-2.259c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332A8.997 8.997 0 0 0 9 18z" fill="#34A853"/>
-          <path d="M3.964 10.71A5.41 5.41 0 0 1 3.682 9c0-.593.102-1.17.282-1.71V4.958H.957A8.996 8.996 0 0 0 0 9c0 1.452.348 2.827.957 4.042l3.007-2.332z" fill="#FBBC05"/>
-          <path d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0A8.997 8.997 0 0 0 .957 4.958L3.964 7.29C4.672 5.163 6.656 3.58 9 3.58z" fill="#EA4335"/>
-        </svg>
+        <img alt="" width={20} height={20} style={{ display: 'block', objectFit: 'contain' }} src={cloudGoogle} />
       )
     case 'azure':
       return (
-        <svg width="18" height="18" viewBox="0 0 18 18" aria-hidden="true" style={{ display: 'block' }}>
-          <path d="M9.87 1.5L5.25 9.75 8.63 9.75 4.5 16.5H13.5L9.87 1.5Z" fill="#0078D4"/>
-          <path d="M4.5 16.5H0L4.5 9 4.5 16.5Z" fill="#0050A0" opacity="0.7"/>
-        </svg>
+        <Box aria-hidden="true" style={{ position: 'relative', width: 20, height: 20, flexShrink: 0 }}>
+          <img alt="" style={{ position: 'absolute', top: 0, left: 0, width: '47.5%', height: '47.5%', objectFit: 'fill' }} src={cloudAzure1} />
+          <img alt="" style={{ position: 'absolute', top: 0, right: 0, width: '47.5%', height: '47.5%', objectFit: 'fill' }} src={cloudAzure2} />
+          <img alt="" style={{ position: 'absolute', bottom: 0, left: 0, width: '47.5%', height: '47.5%', objectFit: 'fill' }} src={cloudAzure3} />
+          <img alt="" style={{ position: 'absolute', bottom: 0, right: 0, width: '47.5%', height: '47.5%', objectFit: 'fill' }} src={cloudAzure4} />
+        </Box>
       )
     case 'digitalocean':
       return (
-        <svg width="18" height="18" viewBox="0 0 18 18" aria-hidden="true" style={{ display: 'block' }}>
-          <circle cx="9" cy="9" r="9" fill="#0080FF"/>
-          <path d="M9 4.5C6.52 4.5 4.5 6.52 4.5 9s2.02 4.5 4.5 4.5v-2.25c-1.24 0-2.25-1.01-2.25-2.25S7.76 6.75 9 6.75V4.5z" fill="white"/>
-          <rect x="4.5" y="12.75" width="2.25" height="1.25" fill="white"/>
-          <rect x="4.5" y="15" width="1.25" height="1.25" fill="white"/>
-        </svg>
+        <img alt="" width={20} height={20} style={{ display: 'block', objectFit: 'contain' }} src={cloudDigitalOcean} />
       )
     case 'upcloud':
       return (
-        <svg width="18" height="18" viewBox="0 0 18 18" aria-hidden="true" style={{ display: 'block' }}>
-          <circle cx="9" cy="9" r="9" fill="#6046FF"/>
-          <path d="M9 4L5 9.5h3V14h2V9.5h3L9 4z" fill="white"/>
-        </svg>
+        <img alt="" width={20} height={20} style={{ display: 'block', objectFit: 'contain' }} src={cloudUpCloud} />
       )
     default:
       return null
@@ -374,16 +374,16 @@ function Section({
         display: 'grid',
         gridTemplateColumns: `${SECTION_ICON_WIDTH}px minmax(0, 1fr)`,
         gridTemplateRows: 'auto auto',
-        columnGap: 24,
+        columnGap: 16,
         marginBottom: 48,
         minWidth: 0,
         alignItems: 'start',
       }}
     >
-      <Box style={{ paddingTop: 2, display: 'flex', justifyContent: 'center' }}>
-        <Icon aria-hidden icon={icon} style={{ width: 20, height: 20, color: '#9ca3af' }} />
+      <Box style={{ width: 32, height: 32, display: 'flex', justifyContent: 'center', alignItems: 'center', flexShrink: 0 }}>
+        <Icon aria-hidden icon={icon} style={{ width: 20, height: 20, color: '#c4c4cf' }} />
       </Box>
-      <Box style={{ paddingTop: 2, minWidth: 0 }}>
+      <Box style={{ minWidth: 0, display: 'flex', alignItems: 'center' }}>
         <Box
           component="h3"
           className="typography-large text-intense"
@@ -407,7 +407,7 @@ function Section({
           style={{
             width: SECTION_LINE_WIDTH,
             minWidth: SECTION_LINE_WIDTH,
-            backgroundColor: '#d1d5db',
+            backgroundColor: '#ededf0',
             alignSelf: 'stretch',
             minHeight: 40,
           }}
@@ -460,7 +460,9 @@ function TierCard({
     >
       <Box style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 16 }}>
         <Box style={{ flex: 1 }}>
-          <Typography.DefaultStrong>{option.title}</Typography.DefaultStrong>
+          <Box component="span" className="text-intense" style={{ fontWeight: 700 }}>
+            <Typography.DefaultStrong>{option.title}</Typography.DefaultStrong>
+          </Box>
           <Box style={{ color: '#4a4b57', marginTop: 4 }}>
             <Typography.Small>{option.description}</Typography.Small>
           </Box>
@@ -529,7 +531,9 @@ function PGTierCard({
       {/* Header */}
       <Box style={{ display: 'flex', gap: 16, alignItems: 'flex-start', padding: '0 16px' }}>
         <Box style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 4 }}>
-          <Typography.DefaultStrong>{option.title}</Typography.DefaultStrong>
+          <Box component="span" className="text-intense" style={{ fontWeight: 700 }}>
+            <Typography.DefaultStrong>{option.title}</Typography.DefaultStrong>
+          </Box>
           <Typography.Caption>{option.description}</Typography.Caption>
         </Box>
         <RadioButton
@@ -618,6 +622,7 @@ export type CreatedServicePayload = {
   cpuCount: number
   ramCapacity: string
   storageCapacity: string
+  ha?: string
 }
 
 export type CreateServiceProps = {
@@ -664,6 +669,7 @@ function CreateService({ embedded = false, editMode = false, serviceTypeId, serv
   const [pgDiskSizeGb, setPgDiskSizeGb] = useState<number>(10)
   const [pgShowAllOptions, setPgShowAllOptions] = useState<boolean>(false)
   const [pgFlexibleEnabled, setPgFlexibleEnabled] = useState<boolean>(true)
+  const [pgHaOption, setPgHaOption] = useState<HaOption>('primary-standby')
 
   // ── MySQL / legacy computed ──
   const selectedPlan = useMemo(
@@ -781,10 +787,11 @@ function CreateService({ embedded = false, editMode = false, serviceTypeId, serv
         location: pgSelectedRegion?.location ?? pgRegionId,
         planName: `${pgSelectedCompute.label} ${pgSelectedCompute.ram}`,
         planDetails: `${pgSelectedCompute.vCPU} vCPU / ${pgSelectedCompute.ram} / ${pgDiskSizeGb} GB storage`,
-        nodeCount: 1,
+        nodeCount: HA_NODE_COUNT[pgHaOption],
         cpuCount: pgSelectedCompute.vCPU,
         ramCapacity: pgSelectedCompute.ram,
         storageCapacity: `${pgDiskSizeGb} GB`,
+        ha: HA_OPTIONS.find((o) => o.id === pgHaOption)?.label ?? pgHaOption,
       })
     }
 
@@ -792,13 +799,20 @@ function CreateService({ embedded = false, editMode = false, serviceTypeId, serv
 
     return (
       <Box style={{ minHeight: embedded ? undefined : '100vh', backgroundColor: embedded ? '#fff' : '#f9f9fb', width: '100%' }}>
+        {embedded && onClose && !editMode && (
+          <Box style={{ padding: `0 ${PADDING}px`, height: 24, display: 'flex', alignItems: 'center' }}>
+            <Button.Ghost dense type="button" onClick={onClose}>
+              ← Back
+            </Button.Ghost>
+          </Box>
+        )}
         <Box
           style={{
             maxWidth: embedded ? undefined : CONTAINER_MAX,
             margin: embedded ? 0 : '0 auto',
             padding: PADDING,
             display: 'flex',
-            gap: 24,
+            gap: 60,
             alignItems: 'flex-start',
             width: '100%',
             boxSizing: 'border-box',
@@ -806,13 +820,6 @@ function CreateService({ embedded = false, editMode = false, serviceTypeId, serv
         >
           {/* ── Left column ── */}
           <Box style={{ flex: 1, minWidth: 0, maxWidth: embedded ? undefined : LEFT_COL_MAX }}>
-            {embedded && onClose && !editMode && (
-              <Box style={{ marginBottom: 8 }}>
-                <Button.Ghost type="button" onClick={onClose}>
-                  ← Back
-                </Button.Ghost>
-              </Box>
-            )}
 
             {/* Service tier */}
             <Section icon={containerIcon} title="Service tier">
@@ -878,7 +885,7 @@ function CreateService({ embedded = false, editMode = false, serviceTypeId, serv
               </Box>
 
               {/* Region dropdown */}
-              <Box style={{ maxWidth: 530 }}>
+              <Box style={{ maxWidth: 700 }}>
                 <Select
                   labelText="Select region"
                   options={PG_REGIONS_BY_CLOUD[pgCloud].map((r) => `${r.flag} ${r.label}`)}
@@ -890,6 +897,53 @@ function CreateService({ embedded = false, editMode = false, serviceTypeId, serv
                     if (found) setPgRegionId(found.id)
                   }}
                 />
+              </Box>
+            </Section>
+
+            {/* High-availability */}
+            <Section icon={nodesIcon} title="High-availability">
+              <Box style={{ minWidth: 0 }}>
+                <Box style={{ color: '#4a4b57', marginBottom: 16 }}>
+                  <Typography.Small>
+                    Multi-node setups with primary/standby nodes across availability zones, offering automatic failover.{' '}
+                    <Link href="#">Learn more</Link>
+                  </Typography.Small>
+                </Box>
+                <ChoiceChipGroup
+                  name="pgHa"
+                  selectionMode="radio"
+                  value={pgHaOption}
+                  onChange={(v) => setPgHaOption(v as HaOption)}
+                >
+                  {HA_OPTIONS.map((opt) => (
+                    <ChoiceChip key={opt.id} value={opt.id}>
+                      <Box component="span" style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
+                        {opt.label}
+                        {opt.recommended && (
+                          <span
+                            style={{
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              backgroundColor: '#e8faea',
+                              color: '#006f00',
+                              fontFamily: '"Roboto Mono", monospace',
+                              fontWeight: 400,
+                              fontSize: 10,
+                              lineHeight: '16px',
+                              height: 16,
+                              padding: '0 4px',
+                              borderRadius: 16,
+                              whiteSpace: 'nowrap',
+                            }}
+                          >
+                            Recommended
+                          </span>
+                        )}
+                      </Box>
+                    </ChoiceChip>
+                  ))}
+                </ChoiceChipGroup>
               </Box>
             </Section>
 
@@ -976,6 +1030,7 @@ function CreateService({ embedded = false, editMode = false, serviceTypeId, serv
               {pgCurrentComputeOptions.length > 3 && (
                 <Box style={{ marginTop: 8 }}>
                   <Button.Ghost
+                    dense
                     type="button"
                     onClick={() => setPgShowAllOptions((v) => !v)}
                   >
@@ -990,8 +1045,8 @@ function CreateService({ embedded = false, editMode = false, serviceTypeId, serv
 
             {/* Storage */}
             <Section icon={serverHddIcon} title="Storage">
-              {/* Storage type tabs */}
-              <Box style={{ marginBottom: 12 }}>
+              {/* Storage type + description grouped with 12px gap */}
+              <Box style={{ display: 'flex', flexDirection: 'column', gap: 12, marginBottom: 16 }}>
                 <ChoiceChipGroup
                   name="pgStorageType"
                   selectionMode="radio"
@@ -1000,35 +1055,60 @@ function CreateService({ embedded = false, editMode = false, serviceTypeId, serv
                 >
                   {PG_STORAGE_SPECS.map((s) => (
                     <ChoiceChip key={s.id} value={s.id} disabled={s.disabled}>
-                      <Box component="span" style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                      <Box component="span" style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
                         {s.label}
-                        {s.optimal && <TagLabel variant="success" title="Optimal" />}
+                        {s.optimal && (
+                          <span
+                            style={{
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              backgroundColor: '#e8faea',
+                              color: '#006f00',
+                              fontFamily: '"Roboto Mono", monospace',
+                              fontWeight: 400,
+                              fontSize: 10,
+                              lineHeight: '16px',
+                              height: 16,
+                              padding: '0 4px',
+                              borderRadius: 16,
+                              whiteSpace: 'nowrap',
+                            }}
+                          >
+                            Best performance
+                          </span>
+                        )}
                       </Box>
                     </ChoiceChip>
                   ))}
                 </ChoiceChipGroup>
-              </Box>
 
-              <Box style={{ color: '#4a4b57', marginBottom: 16 }}>
-                <Typography.Small>{pgSelectedStorageSpec.description}</Typography.Small>
+                <Box style={{ color: '#4a4b57' }}>
+                  <Typography.Small>{pgSelectedStorageSpec.description}</Typography.Small>
+                </Box>
               </Box>
 
               {/* Disk size card */}
               <Box style={{ borderRadius: 8, overflow: 'hidden' }}>
+                {/* Blue-tinted header area */}
                 <Box
                   style={{
                     backgroundColor: '#f3f6ff',
                     padding: '12px 16px',
                     display: 'flex',
                     flexDirection: 'column',
-                    gap: 12,
+                    gap: 0,
                   }}
                 >
-                  <Box style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                  {/* "Disk size" label + info icon */}
+                  <Box style={{ display: 'flex', gap: 4, alignItems: 'center' }}>
                     <Typography.SmallStrong>Disk size</Typography.SmallStrong>
-                    <Box aria-hidden="true" style={{ color: '#787885', fontSize: 12 }}>ⓘ</Box>
+                    <Box aria-hidden="true" style={{ color: '#787885', width: 16, height: 16, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12 }}>ⓘ</Box>
                   </Box>
-                  <Box style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+
+                  {/* Slider row: slider | input + GB | price */}
+                  <Box style={{ display: 'flex', gap: 16, alignItems: 'center' }}>
+                    {/* Slider — fills available space */}
                     <Box style={{ flex: 1, position: 'relative', paddingBottom: 20 }}>
                       <input
                         type="range"
@@ -1036,31 +1116,22 @@ function CreateService({ embedded = false, editMode = false, serviceTypeId, serv
                         max={12000}
                         value={pgDiskSizeGb}
                         onChange={(e) => setPgDiskSizeGb(Number(e.target.value))}
-                        style={{ width: '100%' }}
+                        style={{
+                          width: '100%',
+                          accentColor: 'var(--aquarium-background-color-primary-default, #3545be)',
+                        }}
                         aria-label="Disk size in GB"
                       />
-                      <Box
-                        style={{
-                          position: 'absolute',
-                          bottom: 0,
-                          left: 0,
-                          color: '#787885',
-                        }}
-                      >
-                        <Typography.Caption>10</Typography.Caption>
+                      <Box style={{ position: 'absolute', bottom: 0, left: 0, color: '#787885' }}>
+                        <Typography.Small>10</Typography.Small>
                       </Box>
-                      <Box
-                        style={{
-                          position: 'absolute',
-                          bottom: 0,
-                          right: 0,
-                          color: '#787885',
-                        }}
-                      >
-                        <Typography.Caption>12000</Typography.Caption>
+                      <Box style={{ position: 'absolute', bottom: 0, right: 0, color: '#787885' }}>
+                        <Typography.Small>12000</Typography.Small>
                       </Box>
                     </Box>
-                    <Box style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
+
+                    {/* Numeric input + GB unit */}
+                    <Box style={{ display: 'flex', gap: 8, alignItems: 'center', flexShrink: 0 }}>
                       <Input
                         labelText=""
                         value={String(pgDiskSizeGb)}
@@ -1068,42 +1139,54 @@ function CreateService({ embedded = false, editMode = false, serviceTypeId, serv
                           const n = Number(e.target.value)
                           if (!Number.isNaN(n)) setPgDiskSizeGb(Math.min(12000, Math.max(10, n)))
                         }}
-                        style={{ width: 90 }}
+                        style={{ width: 80 }}
                       />
-                      <Typography.Small>GB</Typography.Small>
-                      <Typography.SmallStrong>${pgStorageCost}</Typography.SmallStrong>
+                      <Box style={{ color: '#4a4b57' }}>
+                        <Typography.Small>GB</Typography.Small>
+                      </Box>
+                    </Box>
+
+                    {/* Storage cost — fixed width, right-aligned */}
+                    <Box style={{ width: 120, flexShrink: 0, textAlign: 'right' }}>
+                      <Typography.DefaultStrong>${pgStorageCost}</Typography.DefaultStrong>
                     </Box>
                   </Box>
                 </Box>
 
-                {/* Throughput / IOPS info */}
+                {/* Throughput / IOPS panel */}
                 <Box
                   style={{
                     border: '1px solid #ededf0',
                     borderTop: 'none',
                     borderRadius: '0 0 8px 8px',
                     padding: '12px 16px',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    gap: 12,
                     color: '#4a4b57',
                   }}
                 >
-                  <Box style={{ display: 'flex', gap: 16 }}>
-                    <Box style={{ width: 100, flexShrink: 0 }}>
-                      <Typography.SmallStrong>Throughput</Typography.SmallStrong>
+                  <Box style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                    <Box style={{ display: 'flex', gap: 16, alignItems: 'flex-start' }}>
+                      <Box style={{ width: 100, flexShrink: 0 }}>
+                        <Typography.SmallStrong>Throughput</Typography.SmallStrong>
+                      </Box>
+                      <Box style={{ width: 140, flexShrink: 0 }}>
+                        <Typography.Small>Read: {pgSelectedStorageSpec.throughputRead}</Typography.Small>
+                      </Box>
+                      <Box style={{ width: 140, flexShrink: 0 }}>
+                        <Typography.Small>Write: {pgSelectedStorageSpec.throughputWrite}</Typography.Small>
+                      </Box>
                     </Box>
-                    <Typography.Small>Read: {pgSelectedStorageSpec.throughputRead}</Typography.Small>
-                    <Typography.Small>Write: {pgSelectedStorageSpec.throughputWrite}</Typography.Small>
-                  </Box>
-                  <Box style={{ display: 'flex', gap: 16 }}>
-                    <Box style={{ width: 100, flexShrink: 0 }}>
-                      <Typography.SmallStrong>IOPS</Typography.SmallStrong>
+                    <Box style={{ display: 'flex', gap: 16, alignItems: 'flex-start' }}>
+                      <Box style={{ width: 100, flexShrink: 0 }}>
+                        <Typography.SmallStrong>IOPS</Typography.SmallStrong>
+                      </Box>
+                      <Box style={{ width: 140, flexShrink: 0 }}>
+                        <Typography.Small>Read: {pgSelectedStorageSpec.iopsRead}</Typography.Small>
+                      </Box>
+                      <Box style={{ width: 140, flexShrink: 0 }}>
+                        <Typography.Small>Write: {pgSelectedStorageSpec.iopsWrite}</Typography.Small>
+                      </Box>
                     </Box>
-                    <Typography.Small>Read: {pgSelectedStorageSpec.iopsRead}</Typography.Small>
-                    <Typography.Small>Write: {pgSelectedStorageSpec.iopsWrite}</Typography.Small>
                   </Box>
-                  <Typography.Small>{pgSelectedStorageSpec.note}</Typography.Small>
                 </Box>
               </Box>
             </Section>
@@ -1111,30 +1194,27 @@ function CreateService({ embedded = false, editMode = false, serviceTypeId, serv
             {/* Service details */}
             <Section icon={tagIcon} title="Service details">
               <Box style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 24 }}>
-                <Box>
-                  <Input
-                    labelText="Service name*"
-                    value={serviceName}
-                    onChange={(e) => setServiceName(e.target.value)}
-                  />
-                  <Box style={{ color: '#787885', marginTop: 4 }}>
-                    <Typography.Caption>Cannot be changed afterwards</Typography.Caption>
-                  </Box>
-                </Box>
-                <Box>
-                  <Select
-                    labelText="Version*"
-                    options={[...PG_VERSIONS]}
-                    value={version}
-                    onChange={(val) => setVersion(String(val ?? ''))}
-                  />
-                  <Box style={{ color: '#9696a0', marginTop: 4 }}>
-                    <Typography.Caption>Default version is preselected</Typography.Caption>
-                  </Box>
-                </Box>
+                <Input
+                  labelText="Service name*"
+                  description="Cannot be changed afterwards"
+                  value={serviceName}
+                  onChange={(e) => setServiceName(e.target.value)}
+                />
+                <Select
+                  labelText="Version*"
+                  description="Default version is preselected"
+                  options={[...PG_VERSIONS]}
+                  value={version}
+                  onChange={(val) => setVersion(String(val ?? ''))}
+                />
               </Box>
-              <Box style={{ marginTop: 16 }}>
-                <Link href="#">⊕ Tag service</Link>
+              <Box>
+                <Button.Ghost dense type="button">
+                  <Box style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                    <InlineIcon icon={addIcon} />
+                    Tag service
+                  </Box>
+                </Button.Ghost>
               </Box>
             </Section>
           </Box>
@@ -1151,10 +1231,13 @@ function CreateService({ embedded = false, editMode = false, serviceTypeId, serv
               flexDirection: 'column',
               position: 'sticky',
               top: 0,
-              alignSelf: 'flex-start',
+              // In embedded (modal) mode subtract the modal chrome (header + footer ≈ 160px).
+              // In standalone mode the sidebar fills the full viewport.
+              height: embedded ? 'calc(100vh - 160px)' : '100vh',
+              overflow: 'hidden',
             }}
           >
-            <Box style={{ padding: 24, display: 'flex', flexDirection: 'column', gap: 16, flex: 1 }}>
+            <Box style={{ padding: 24, display: 'flex', flexDirection: 'column', gap: 16, flex: 1, overflowY: 'auto' }}>
               {/* Flexible pricing toggle banner */}
               <Box
                 style={{
@@ -1162,7 +1245,7 @@ function CreateService({ embedded = false, editMode = false, serviceTypeId, serv
                   borderRadius: 8,
                   padding: '0 16px',
                   display: 'flex',
-                  gap: 12,
+                  gap: 0,
                   alignItems: 'center',
                   minHeight: 64,
                   overflow: 'hidden',
@@ -1210,6 +1293,11 @@ function CreateService({ embedded = false, editMode = false, serviceTypeId, serv
               />
 
               <PGSummaryDetail
+                label="High-availability"
+                value={HA_OPTIONS.find((o) => o.id === pgHaOption)?.label ?? pgHaOption}
+              />
+
+              <PGSummaryDetail
                 label="Service tier"
                 value={PG_TIER_OPTIONS.find((t) => t.id === tier)?.title ?? tier}
               />
@@ -1221,8 +1309,12 @@ function CreateService({ embedded = false, editMode = false, serviceTypeId, serv
 
               <PGSummaryDetail label="Total storage" value={`${pgDiskSizeGb} GB`} />
 
-              {/* Pricing breakdown */}
-              <Box style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+              {/* Pricing breakdown — anchored to the bottom */}
+              <Box style={{ display: 'flex', flexDirection: 'column', gap: 4, marginTop: 'auto' }}>
+                <Box
+                  aria-hidden="true"
+                  style={{ borderTop: '1px solid #ededf0', marginBottom: 8 }}
+                />
                 <Box style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
                   <Box style={{ color: '#16171a' }}>
                     <Typography.SmallStrong>Est. monthly*</Typography.SmallStrong>
