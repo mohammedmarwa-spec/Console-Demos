@@ -13,6 +13,7 @@ import {
 } from '@aivenio/aquarium'
 import { ConsoleHeader } from '../components/ConsoleHeader'
 import { ProjectSidebar } from '../components/ProjectSidebar'
+import { getServiceIconUrl } from '../components/ServiceIcon'
 import type { ServiceTypeId } from './ServiceTypeSelectModal'
 
 const PROJECT_NAME = 'ux-tests'
@@ -71,11 +72,6 @@ export const INITIAL_SERVICES: ServiceRow[] = [
 ]
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
-
-function makeServiceIconUrl(letter: string, bgColor: string): string {
-  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="40" height="40"><rect width="40" height="40" rx="8" fill="${bgColor}"/><text x="20" y="20" font-size="16" font-weight="700" font-family="Source Code Pro" fill="rgba(0,0,0,0.55)" text-anchor="middle" dominant-baseline="central">${letter}</text></svg>`
-  return `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`
-}
 
 // ─── Sub-components ───────────────────────────────────────────────────────────
 
@@ -204,10 +200,7 @@ function ProjectServices({ services, onCreateServiceClick, onServiceClick, onDel
                           <StatusChip text={row.status ?? 'Running'} status="success" dense />
                         </Box>
                       ),
-                      image: makeServiceIconUrl(
-                        row.iconLetter ?? (row.serviceType?.startsWith('PostgreSQL') ? 'P' : 'M'),
-                        row.iconLetter === 'P' ? '#b8d4e8' : '#b0d0e8',
-                      ),
+                      image: getServiceIconUrl(row.serviceTypeId ?? null),
                       imageSize: 40,
                     }),
                   },

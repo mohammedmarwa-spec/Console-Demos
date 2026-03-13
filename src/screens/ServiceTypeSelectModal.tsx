@@ -1,4 +1,5 @@
 import { Box, Modal, StatusChip, Typography } from '@aivenio/aquarium'
+import { ServiceIcon } from '../components/ServiceIcon'
 
 export type ServiceTypeId =
   | 'postgresql'
@@ -15,74 +16,18 @@ type ServiceTypeOption = {
   id: ServiceTypeId
   name: string
   description: string
-  iconColor: string
-  iconLetter: string
 }
 
 const SERVICE_TYPES: ServiceTypeOption[] = [
-  {
-    id: 'postgresql',
-    name: 'PostgreSQL®',
-    description: 'PostgreSQL - High-performance relational database with advanced extensions',
-    iconColor: '#c5dcf2',
-    iconLetter: 'P',
-  },
-  {
-    id: 'kafka',
-    name: 'Apache Kafka®',
-    description: 'Kafka - Distributed event streaming platform for high-throughput data pipelines',
-    iconColor: '#f5c6e0',
-    iconLetter: 'K',
-  },
-  {
-    id: 'valkey',
-    name: 'Valkey',
-    description: 'Valkey - High-performance key/value datastore',
-    iconColor: '#b8c9dc',
-    iconLetter: 'V',
-  },
-  {
-    id: 'mysql',
-    name: 'MySQL',
-    description: 'MySQL - Popular general-purpose easy-to-use relational database',
-    iconColor: '#fdd9a0',
-    iconLetter: 'M',
-  },
-  {
-    id: 'opensearch',
-    name: 'OpenSearch®',
-    description: 'OpenSearch - Distributed real-time search and analytics',
-    iconColor: '#a8d0f0',
-    iconLetter: 'O',
-  },
-  {
-    id: 'clickhouse',
-    name: 'ClickHouse®',
-    description: 'ClickHouse - Fast resource-effective data warehouse for analytical workloads',
-    iconColor: '#faf0c8',
-    iconLetter: 'C',
-  },
-  {
-    id: 'dragonfly',
-    name: 'Dragonfly',
-    description: 'Dragonfly - Scalable in-memory data store for high-performance workloads',
-    iconColor: '#d4c4e8',
-    iconLetter: 'D',
-  },
-  {
-    id: 'metrics',
-    name: 'Aiven for Metrics',
-    description: 'Thanos Metrics - Scalable Prometheus query solution',
-    iconColor: '#c9b8e8',
-    iconLetter: 'T',
-  },
-  {
-    id: 'grafana',
-    name: 'Grafana®',
-    description: 'Grafana - Data visualization and analytics platform',
-    iconColor: '#fae0c8',
-    iconLetter: 'G',
-  },
+  { id: 'postgresql', name: 'PostgreSQL®',      description: 'PostgreSQL - High-performance relational database with advanced extensions' },
+  { id: 'kafka',      name: 'Apache Kafka®',    description: 'Kafka - Distributed event streaming platform for high-throughput data pipelines' },
+  { id: 'valkey',     name: 'Valkey',           description: 'Valkey - High-performance key/value datastore' },
+  { id: 'mysql',      name: 'MySQL',            description: 'MySQL - Popular general-purpose easy-to-use relational database' },
+  { id: 'opensearch', name: 'OpenSearch®',      description: 'OpenSearch - Distributed real-time search and analytics' },
+  { id: 'clickhouse', name: 'ClickHouse®',      description: 'ClickHouse - Fast resource-effective data warehouse for analytical workloads' },
+  { id: 'dragonfly',  name: 'Dragonfly',        description: 'Dragonfly - Scalable in-memory data store for high-performance workloads' },
+  { id: 'metrics',    name: 'Aiven for Metrics', description: 'Thanos Metrics - Scalable Prometheus query solution' },
+  { id: 'grafana',    name: 'Grafana®',         description: 'Grafana - Data visualization and analytics platform' },
 ]
 
 export function getServiceTypeDisplayName(id: ServiceTypeId): string {
@@ -98,30 +43,6 @@ type ServiceTypeSelectModalProps = {
   onSelectService: (serviceType: ServiceTypeId) => void
 }
 
-function ServiceIcon({ color, letter }: { color: string; letter: string }) {
-  return (
-    <Box
-      aria-hidden="true"
-      style={{
-        width: 48,
-        height: 48,
-        borderRadius: 10,
-        backgroundColor: color,
-        color: 'rgba(0,0,0,0.55)',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        fontSize: 18,
-        fontWeight: 700,
-        flexShrink: 0,
-      }}
-    >
-      {letter}
-    </Box>
-  )
-}
-
-ServiceIcon.displayName = 'ServiceIcon'
 
 function ServiceTypeSelectModal({
   open,
@@ -175,7 +96,7 @@ function ServiceTypeSelectModal({
                 e.currentTarget.style.boxShadow = 'none'
               }}
             >
-              <ServiceIcon color={service.iconColor} letter={service.iconLetter} />
+              <ServiceIcon serviceTypeId={service.id} size={48} alt="" />
               <Box style={{ flex: 1, minWidth: 0 }}>
                 <Box style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
                   <Typography.DefaultStrong>{service.name}</Typography.DefaultStrong>

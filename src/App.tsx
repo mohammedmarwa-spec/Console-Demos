@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Box, Modal, ToastProvider, Typography, useToast } from '@aivenio/aquarium'
 import tickIcon from '@aivenio/aquarium/icons/tick'
 import CreateService, { type CreatedServicePayload } from './screens/CreateService'
@@ -7,8 +7,112 @@ import CreateForkModal from './screens/CreateForkModal'
 import ProjectServices, { INITIAL_SERVICES, type ServiceRow } from './screens/ProjectServices'
 import ServiceOverview from './screens/ServiceOverview'
 import ServiceTypeSelectModal, { getServiceTypeDisplayName, type ServiceTypeId } from './screens/ServiceTypeSelectModal'
+import { ScenarioProvider, ScenarioPanel, ScenarioTrigger, ScenarioBadge, useScenario } from './scenarios'
 
 type View = 'project-services' | 'service-overview'
+
+// ─── Scenario service data ────────────────────────────────────────────────────
+// Define what each scenario's initial service list looks like.
+// Add new entries here when you add more scenarios.
+
+// prettier-ignore
+const MANY_SERVICES: ServiceRow[] = [
+  // ── 20 PostgreSQL services ──────────────────────────────────────────────────
+  { id: 'pg-prod-01',    serviceName: 'pg-prod-01',    serviceType: 'PostgreSQL', serviceTypeId: 'postgresql', status: 'Running',     nodes: 'Nodes 3', nodeCount: 3, planName: 'Business-4',   planDetails: '4 CPU / 16 GB RAM / 480 GB storage',  cloudRegion: 'AWS: eu-west-1',         location: 'Europe, Ireland',        created: '3 days ago',    iconLetter: 'P', cpuCount: 4, ramCapacity: '16 GB',  storageCapacity: '480 GB' },
+  { id: 'pg-prod-02',    serviceName: 'pg-prod-02',    serviceType: 'PostgreSQL', serviceTypeId: 'postgresql', status: 'Running',     nodes: 'Nodes 3', nodeCount: 3, planName: 'Business-4',   planDetails: '4 CPU / 16 GB RAM / 480 GB storage',  cloudRegion: 'AWS: eu-west-1',         location: 'Europe, Ireland',        created: '3 days ago',    iconLetter: 'P', cpuCount: 4, ramCapacity: '16 GB',  storageCapacity: '480 GB' },
+  { id: 'pg-staging-01', serviceName: 'pg-staging-01', serviceType: 'PostgreSQL', serviceTypeId: 'postgresql', status: 'Running',     nodes: 'Nodes 1', nodeCount: 1, planName: 'Startup-4',    planDetails: '2 CPU / 4 GB RAM / 80 GB storage',    cloudRegion: 'AWS: eu-west-1',         location: 'Europe, Ireland',        created: '1 week ago',    iconLetter: 'P', cpuCount: 2, ramCapacity: '4 GB',   storageCapacity: '80 GB'  },
+  { id: 'pg-staging-02', serviceName: 'pg-staging-02', serviceType: 'PostgreSQL', serviceTypeId: 'postgresql', status: 'Running',     nodes: 'Nodes 1', nodeCount: 1, planName: 'Startup-4',    planDetails: '2 CPU / 4 GB RAM / 80 GB storage',    cloudRegion: 'Google Cloud: us-east1', location: 'North America, S. Carolina', created: '5 days ago',  iconLetter: 'P', cpuCount: 2, ramCapacity: '4 GB',   storageCapacity: '80 GB'  },
+  { id: 'pg-analytics',  serviceName: 'pg-analytics',  serviceType: 'PostgreSQL', serviceTypeId: 'postgresql', status: 'Running',     nodes: 'Nodes 3', nodeCount: 3, planName: 'Premium-6',    planDetails: '6 CPU / 28 GB RAM / 700 GB storage',  cloudRegion: 'AWS: us-east-1',         location: 'North America, Virginia',  created: '2 weeks ago',   iconLetter: 'P', cpuCount: 6, ramCapacity: '28 GB',  storageCapacity: '700 GB' },
+  { id: 'pg-reporting',  serviceName: 'pg-reporting',  serviceType: 'PostgreSQL', serviceTypeId: 'postgresql', status: 'Running',     nodes: 'Nodes 2', nodeCount: 2, planName: 'Business-8',   planDetails: '8 CPU / 32 GB RAM / 600 GB storage',  cloudRegion: 'AWS: ap-southeast-1',    location: 'Asia, Singapore',          created: '10 days ago',   iconLetter: 'P', cpuCount: 8, ramCapacity: '32 GB',  storageCapacity: '600 GB' },
+  { id: 'pg-users',      serviceName: 'pg-users',      serviceType: 'PostgreSQL', serviceTypeId: 'postgresql', status: 'Running',     nodes: 'Nodes 3', nodeCount: 3, planName: 'Business-4',   planDetails: '4 CPU / 16 GB RAM / 480 GB storage',  cloudRegion: 'AWS: eu-central-1',      location: 'Europe, Frankfurt',        created: '20 days ago',   iconLetter: 'P', cpuCount: 4, ramCapacity: '16 GB',  storageCapacity: '480 GB' },
+  { id: 'pg-orders',     serviceName: 'pg-orders',     serviceType: 'PostgreSQL', serviceTypeId: 'postgresql', status: 'Running',     nodes: 'Nodes 3', nodeCount: 3, planName: 'Business-4',   planDetails: '4 CPU / 16 GB RAM / 480 GB storage',  cloudRegion: 'AWS: us-west-2',         location: 'North America, Oregon',    created: '1 month ago',   iconLetter: 'P', cpuCount: 4, ramCapacity: '16 GB',  storageCapacity: '480 GB' },
+  { id: 'pg-payments',   serviceName: 'pg-payments',   serviceType: 'PostgreSQL', serviceTypeId: 'postgresql', status: 'Running',     nodes: 'Nodes 3', nodeCount: 3, planName: 'Premium-6',    planDetails: '6 CPU / 28 GB RAM / 700 GB storage',  cloudRegion: 'AWS: eu-west-1',         location: 'Europe, Ireland',          created: '1 month ago',   iconLetter: 'P', cpuCount: 6, ramCapacity: '28 GB',  storageCapacity: '700 GB' },
+  { id: 'pg-inventory',  serviceName: 'pg-inventory',  serviceType: 'PostgreSQL', serviceTypeId: 'postgresql', status: 'Rebuilding',  nodes: 'Nodes 2', nodeCount: 2, planName: 'Business-4',   planDetails: '4 CPU / 16 GB RAM / 480 GB storage',  cloudRegion: 'Google Cloud: eu-west1', location: 'Europe, Belgium',          created: '2 months ago',  iconLetter: 'P', cpuCount: 4, ramCapacity: '16 GB',  storageCapacity: '480 GB' },
+  { id: 'pg-catalog',    serviceName: 'pg-catalog',    serviceType: 'PostgreSQL', serviceTypeId: 'postgresql', status: 'Running',     nodes: 'Nodes 1', nodeCount: 1, planName: 'Startup-4',    planDetails: '2 CPU / 4 GB RAM / 80 GB storage',    cloudRegion: 'AWS: ap-northeast-1',    location: 'Asia, Tokyo',              created: '2 months ago',  iconLetter: 'P', cpuCount: 2, ramCapacity: '4 GB',   storageCapacity: '80 GB'  },
+  { id: 'pg-search',     serviceName: 'pg-search',     serviceType: 'PostgreSQL', serviceTypeId: 'postgresql', status: 'Running',     nodes: 'Nodes 1', nodeCount: 1, planName: 'Hobbyist',     planDetails: '1 CPU / 2 GB RAM / 8 GB storage',     cloudRegion: 'AWS: eu-west-2',         location: 'Europe, London',           created: '3 months ago',  iconLetter: 'P', cpuCount: 1, ramCapacity: '2 GB',   storageCapacity: '8 GB'   },
+  { id: 'pg-audit',      serviceName: 'pg-audit',      serviceType: 'PostgreSQL', serviceTypeId: 'postgresql', status: 'Running',     nodes: 'Nodes 1', nodeCount: 1, planName: 'Startup-4',    planDetails: '2 CPU / 4 GB RAM / 80 GB storage',    cloudRegion: 'AWS: eu-west-1',         location: 'Europe, Ireland',          created: '3 months ago',  iconLetter: 'P', cpuCount: 2, ramCapacity: '4 GB',   storageCapacity: '80 GB'  },
+  { id: 'pg-sessions',   serviceName: 'pg-sessions',   serviceType: 'PostgreSQL', serviceTypeId: 'postgresql', status: 'Running',     nodes: 'Nodes 1', nodeCount: 1, planName: 'Developer',    planDetails: '1 CPU / 1 GB RAM / 8 GB storage',     cloudRegion: 'Google Cloud: us-central1', location: 'North America, Iowa',   created: '4 months ago',  iconLetter: 'P', cpuCount: 1, ramCapacity: '1 GB',   storageCapacity: '8 GB'   },
+  { id: 'pg-crm',        serviceName: 'pg-crm',        serviceType: 'PostgreSQL', serviceTypeId: 'postgresql', status: 'Running',     nodes: 'Nodes 3', nodeCount: 3, planName: 'Business-8',   planDetails: '8 CPU / 32 GB RAM / 600 GB storage',  cloudRegion: 'AWS: us-east-1',         location: 'North America, Virginia',  created: '4 months ago',  iconLetter: 'P', cpuCount: 8, ramCapacity: '32 GB',  storageCapacity: '600 GB' },
+  { id: 'pg-metrics',    serviceName: 'pg-metrics',    serviceType: 'PostgreSQL', serviceTypeId: 'postgresql', status: 'Running',     nodes: 'Nodes 2', nodeCount: 2, planName: 'Business-4',   planDetails: '4 CPU / 16 GB RAM / 480 GB storage',  cloudRegion: 'AWS: eu-north-1',        location: 'Europe, Stockholm',        created: '5 months ago',  iconLetter: 'P', cpuCount: 4, ramCapacity: '16 GB',  storageCapacity: '480 GB' },
+  { id: 'pg-billing',    serviceName: 'pg-billing',    serviceType: 'PostgreSQL', serviceTypeId: 'postgresql', status: 'PowerOff',    nodes: 'Nodes 1', nodeCount: 1, planName: 'Startup-4',    planDetails: '2 CPU / 4 GB RAM / 80 GB storage',    cloudRegion: 'AWS: eu-west-1',         location: 'Europe, Ireland',          created: '6 months ago',  iconLetter: 'P', cpuCount: 2, ramCapacity: '4 GB',   storageCapacity: '80 GB'  },
+  { id: 'pg-notifications', serviceName: 'pg-notifications', serviceType: 'PostgreSQL', serviceTypeId: 'postgresql', status: 'Running', nodes: 'Nodes 1', nodeCount: 1, planName: 'Hobbyist', planDetails: '1 CPU / 2 GB RAM / 8 GB storage',     cloudRegion: 'Google Cloud: asia-east1', location: 'Asia, Taiwan',           created: '6 months ago',  iconLetter: 'P', cpuCount: 1, ramCapacity: '2 GB',   storageCapacity: '8 GB'   },
+  { id: 'pg-archive',    serviceName: 'pg-archive',    serviceType: 'PostgreSQL', serviceTypeId: 'postgresql', status: 'Running',     nodes: 'Nodes 2', nodeCount: 2, planName: 'Business-4',   planDetails: '4 CPU / 16 GB RAM / 480 GB storage',  cloudRegion: 'Azure: eastus',          location: 'North America, Virginia',  created: '7 months ago',  iconLetter: 'P', cpuCount: 4, ramCapacity: '16 GB',  storageCapacity: '480 GB' },
+  { id: 'pg-dr-replica', serviceName: 'pg-dr-replica', serviceType: 'PostgreSQL', serviceTypeId: 'postgresql', status: 'Running',     nodes: 'Nodes 3', nodeCount: 3, planName: 'Business-4',   planDetails: '4 CPU / 16 GB RAM / 480 GB storage',  cloudRegion: 'AWS: ap-south-1',        location: 'Asia, Mumbai',             created: '8 months ago',  iconLetter: 'P', replicationRole: 'read_replica', sourceServiceId: 'pg-prod-01', cpuCount: 4, ramCapacity: '16 GB', storageCapacity: '480 GB' },
+
+  // ── 30 mixed services ───────────────────────────────────────────────────────
+  // Kafka
+  { id: 'kafka-events',     serviceName: 'kafka-events',     serviceType: 'Apache Kafka', serviceTypeId: 'kafka', status: 'Running',    nodes: 'Nodes 3', nodeCount: 3, planName: 'Business-4', planDetails: '4 CPU / 16 GB RAM', cloudRegion: 'Google Cloud: us-central1',  location: 'North America, Iowa',       created: '5 days ago',    iconLetter: 'K', pricingType: 'Classic',  cpuCount: 4, ramCapacity: '16 GB', storageCapacity: '600 GB' },
+  { id: 'kafka-telemetry',  serviceName: 'kafka-telemetry',  serviceType: 'Apache Kafka', serviceTypeId: 'kafka', status: 'Running',    nodes: 'Nodes 3', nodeCount: 3, planName: 'Business-4', planDetails: '4 CPU / 16 GB RAM', cloudRegion: 'AWS: eu-west-1',             location: 'Europe, Ireland',           created: '2 weeks ago',   iconLetter: 'K', pricingType: 'Inkless',  cpuCount: 4, ramCapacity: '16 GB', storageCapacity: '600 GB' },
+  { id: 'kafka-payments',   serviceName: 'kafka-payments',   serviceType: 'Apache Kafka', serviceTypeId: 'kafka', status: 'Running',    nodes: 'Nodes 6', nodeCount: 6, planName: 'Premium-6',  planDetails: '6 CPU / 28 GB RAM', cloudRegion: 'AWS: us-east-1',             location: 'North America, Virginia',   created: '1 month ago',   iconLetter: 'K', pricingType: 'Classic',  cpuCount: 6, ramCapacity: '28 GB', storageCapacity: '900 GB' },
+  { id: 'kafka-audit-log',  serviceName: 'kafka-audit-log',  serviceType: 'Apache Kafka', serviceTypeId: 'kafka', status: 'Rebuilding', nodes: 'Nodes 3', nodeCount: 3, planName: 'Business-4', planDetails: '4 CPU / 16 GB RAM', cloudRegion: 'AWS: eu-central-1',          location: 'Europe, Frankfurt',         created: '2 months ago',  iconLetter: 'K', pricingType: 'Inkless',  cpuCount: 4, ramCapacity: '16 GB', storageCapacity: '600 GB' },
+  { id: 'kafka-staging',    serviceName: 'kafka-staging',    serviceType: 'Apache Kafka', serviceTypeId: 'kafka', status: 'Running',    nodes: 'Nodes 1', nodeCount: 1, planName: 'Startup-2',  planDetails: '2 CPU / 4 GB RAM',  cloudRegion: 'Google Cloud: us-central1',  location: 'North America, Iowa',       created: '3 months ago',  iconLetter: 'K', pricingType: 'Classic',  cpuCount: 2, ramCapacity: '4 GB',  storageCapacity: '100 GB' },
+
+  // MySQL (the seed row + more)
+  ...INITIAL_SERVICES,
+  { id: 'mysql-reporting', serviceName: 'mysql-reporting', serviceType: 'MySQL', serviceTypeId: 'mysql', status: 'Running',  nodes: 'Nodes 2', nodeCount: 2, planName: 'Business-4',  planDetails: '4 CPU / 16 GB RAM / 300 GB storage', cloudRegion: 'AWS: ap-southeast-1', location: 'Asia, Singapore', created: '1 month ago',  iconLetter: 'M', pricingType: 'ACU', cpuCount: 4, ramCapacity: '16 GB', storageCapacity: '300 GB' },
+  { id: 'mysql-legacy',    serviceName: 'mysql-legacy',    serviceType: 'MySQL', serviceTypeId: 'mysql', status: 'Running',  nodes: 'Nodes 1', nodeCount: 1, planName: 'Hobbyist',    planDetails: '1 CPU / 2 GB RAM / 8 GB storage',    cloudRegion: 'AWS: eu-west-1',      location: 'Europe, Ireland',  created: '8 months ago', iconLetter: 'M', pricingType: 'ACU', cpuCount: 1, ramCapacity: '2 GB',  storageCapacity: '8 GB'   },
+
+  // Redis / Valkey
+  { id: 'redis-cache-eu',   serviceName: 'redis-cache-eu',   serviceType: 'Caching & ValkeyDB', serviceTypeId: 'redis', status: 'Running',    nodes: 'Nodes 1', nodeCount: 1, planName: 'Startup-4',  planDetails: '2 CPU / 4 GB RAM',   cloudRegion: 'AWS: eu-west-1',          location: 'Europe, Ireland',         created: '1 hour ago',   iconLetter: 'R' },
+  { id: 'redis-cache-us',   serviceName: 'redis-cache-us',   serviceType: 'Caching & ValkeyDB', serviceTypeId: 'redis', status: 'Running',    nodes: 'Nodes 1', nodeCount: 1, planName: 'Startup-4',  planDetails: '2 CPU / 4 GB RAM',   cloudRegion: 'AWS: us-east-1',          location: 'North America, Virginia', created: '2 hours ago',  iconLetter: 'R' },
+  { id: 'redis-sessions',   serviceName: 'redis-sessions',   serviceType: 'Caching & ValkeyDB', serviceTypeId: 'redis', status: 'Rebuilding', nodes: 'Nodes 1', nodeCount: 1, planName: 'Business-4', planDetails: '4 CPU / 16 GB RAM',  cloudRegion: 'Google Cloud: us-central1', location: 'North America, Iowa',     created: '4 days ago',   iconLetter: 'R' },
+  { id: 'valkey-prod',      serviceName: 'valkey-prod',      serviceType: 'Caching & ValkeyDB', serviceTypeId: 'redis', status: 'Running',    nodes: 'Nodes 2', nodeCount: 2, planName: 'Business-8', planDetails: '8 CPU / 32 GB RAM',  cloudRegion: 'AWS: ap-northeast-1',     location: 'Asia, Tokyo',             created: '3 months ago', iconLetter: 'R' },
+
+  // OpenSearch
+  { id: 'os-logs-prod',     serviceName: 'os-logs-prod',     serviceType: 'OpenSearch',         serviceTypeId: 'opensearch', status: 'Running',    nodes: 'Nodes 3', nodeCount: 3, planName: 'Business-4', planDetails: '4 CPU / 16 GB RAM / 480 GB storage', cloudRegion: 'AWS: eu-west-1',       location: 'Europe, Ireland',         created: '2 months ago', iconLetter: 'O' },
+  { id: 'os-search',        serviceName: 'os-search',        serviceType: 'OpenSearch',         serviceTypeId: 'opensearch', status: 'Running',    nodes: 'Nodes 2', nodeCount: 2, planName: 'Startup-4',  planDetails: '2 CPU / 8 GB RAM / 200 GB storage',  cloudRegion: 'AWS: us-east-1',       location: 'North America, Virginia', created: '3 months ago', iconLetter: 'O' },
+  { id: 'os-analytics',     serviceName: 'os-analytics',     serviceType: 'OpenSearch',         serviceTypeId: 'opensearch', status: 'PowerOff',   nodes: 'Nodes 1', nodeCount: 1, planName: 'Hobbyist',   planDetails: '1 CPU / 2 GB RAM / 8 GB storage',    cloudRegion: 'AWS: eu-west-1',       location: 'Europe, Ireland',         created: '5 months ago', iconLetter: 'O' },
+
+  // ClickHouse
+  { id: 'ch-events',        serviceName: 'ch-events',        serviceType: 'ClickHouse',         serviceTypeId: 'clickhouse', status: 'Running',    nodes: 'Nodes 3', nodeCount: 3, planName: 'Business-16', planDetails: '16 CPU / 64 GB RAM / 1.5 TB storage', cloudRegion: 'AWS: eu-west-1',      location: 'Europe, Ireland',          created: '1 month ago',  iconLetter: 'C' },
+  { id: 'ch-analytics',     serviceName: 'ch-analytics',     serviceType: 'ClickHouse',         serviceTypeId: 'clickhouse', status: 'Running',    nodes: 'Nodes 3', nodeCount: 3, planName: 'Business-8',  planDetails: '8 CPU / 32 GB RAM / 900 GB storage',  cloudRegion: 'Google Cloud: us-east1', location: 'North America, S. Carolina', created: '2 months ago', iconLetter: 'C' },
+
+  // Grafana
+  { id: 'grafana-dashboards', serviceName: 'grafana-dashboards', serviceType: 'Grafana',       serviceTypeId: 'grafana', status: 'Running',    nodes: 'Nodes 1', nodeCount: 1, planName: 'Startup-1',  planDetails: '1 CPU / 2 GB RAM',   cloudRegion: 'AWS: eu-west-1',          location: 'Europe, Ireland',         created: '1 month ago',  iconLetter: 'G' },
+  { id: 'grafana-staging',    serviceName: 'grafana-staging',    serviceType: 'Grafana',       serviceTypeId: 'grafana', status: 'Running',    nodes: 'Nodes 1', nodeCount: 1, planName: 'Hobbyist',   planDetails: '1 CPU / 512 MB RAM', cloudRegion: 'AWS: eu-west-1',          location: 'Europe, Ireland',         created: '2 months ago', iconLetter: 'G' },
+
+  // Dragonfly
+  { id: 'dragonfly-prod',   serviceName: 'dragonfly-prod',   serviceType: 'Dragonfly',          serviceTypeId: 'dragonfly', status: 'Running',   nodes: 'Nodes 1', nodeCount: 1, planName: 'Business-4', planDetails: '4 CPU / 16 GB RAM',  cloudRegion: 'AWS: eu-west-1',          location: 'Europe, Ireland',         created: '3 weeks ago',  iconLetter: 'D' },
+
+  // Kafka Connect
+  { id: 'kc-sink-s3',       serviceName: 'kc-sink-s3',       serviceType: 'Apache Kafka',       serviceTypeId: 'kafka', status: 'Running',    nodes: 'Nodes 1', nodeCount: 1, planName: 'Startup-2',  planDetails: '2 CPU / 4 GB RAM',   cloudRegion: 'AWS: us-east-1',          location: 'North America, Virginia', created: '2 weeks ago',  iconLetter: 'K' },
+  { id: 'kc-source-pg',     serviceName: 'kc-source-pg',     serviceType: 'Apache Kafka',       serviceTypeId: 'kafka', status: 'Running',    nodes: 'Nodes 1', nodeCount: 1, planName: 'Startup-2',  planDetails: '2 CPU / 4 GB RAM',   cloudRegion: 'AWS: eu-west-1',          location: 'Europe, Ireland',         created: '1 month ago',  iconLetter: 'K' },
+
+  // Flink
+  { id: 'flink-jobs',       serviceName: 'flink-jobs',       serviceType: 'Apache Flink',       serviceTypeId: 'flink', status: 'Running',    nodes: 'Nodes 2', nodeCount: 2, planName: 'Business-4', planDetails: '4 CPU / 16 GB RAM',  cloudRegion: 'AWS: eu-west-1',          location: 'Europe, Ireland',         created: '5 weeks ago',  iconLetter: 'F' },
+  { id: 'flink-staging',    serviceName: 'flink-staging',    serviceType: 'Apache Flink',       serviceTypeId: 'flink', status: 'PowerOff',   nodes: 'Nodes 1', nodeCount: 1, planName: 'Startup-2',  planDetails: '2 CPU / 4 GB RAM',   cloudRegion: 'Google Cloud: us-central1', location: 'North America, Iowa',   created: '2 months ago', iconLetter: 'F' },
+
+  // Theseus (M3)
+  { id: 'm3-metrics-prod',  serviceName: 'm3-metrics-prod',  serviceType: 'M3DB',               serviceTypeId: 'm3db',  status: 'Running',    nodes: 'Nodes 3', nodeCount: 3, planName: 'Business-4', planDetails: '4 CPU / 16 GB RAM / 300 GB storage', cloudRegion: 'AWS: us-east-1',          location: 'North America, Virginia', created: '4 months ago', iconLetter: 'M' },
+
+  // Additional mixed services (to reach 50 total) ────────────────────────────
+  { id: 'os-devlogs',       serviceName: 'os-devlogs',       serviceType: 'OpenSearch',         serviceTypeId: 'opensearch', status: 'Running',    nodes: 'Nodes 1', nodeCount: 1, planName: 'Hobbyist',   planDetails: '1 CPU / 2 GB RAM / 8 GB storage',   cloudRegion: 'AWS: eu-west-1',          location: 'Europe, Ireland',         created: '6 months ago', iconLetter: 'O' },
+  { id: 'ch-billing',       serviceName: 'ch-billing',       serviceType: 'ClickHouse',         serviceTypeId: 'clickhouse', status: 'Running',    nodes: 'Nodes 2', nodeCount: 2, planName: 'Business-8', planDetails: '8 CPU / 32 GB RAM / 900 GB storage', cloudRegion: 'AWS: us-east-1',          location: 'North America, Virginia', created: '3 months ago', iconLetter: 'C' },
+  { id: 'redis-rate-limit', serviceName: 'redis-rate-limit', serviceType: 'Caching & ValkeyDB', serviceTypeId: 'redis',      status: 'Running',    nodes: 'Nodes 1', nodeCount: 1, planName: 'Startup-4',  planDetails: '2 CPU / 4 GB RAM',                  cloudRegion: 'Azure: westeurope',       location: 'Europe, Netherlands',     created: '7 weeks ago',  iconLetter: 'R' },
+  { id: 'kafka-cdc',        serviceName: 'kafka-cdc',        serviceType: 'Apache Kafka',       serviceTypeId: 'kafka',      status: 'Running',    nodes: 'Nodes 3', nodeCount: 3, planName: 'Business-4', planDetails: '4 CPU / 16 GB RAM',                 cloudRegion: 'AWS: eu-west-1',          location: 'Europe, Ireland',         created: '6 weeks ago',  iconLetter: 'K', pricingType: 'Inkless' },
+  { id: 'flink-realtime',   serviceName: 'flink-realtime',   serviceType: 'Apache Flink',       serviceTypeId: 'flink',      status: 'Running',    nodes: 'Nodes 2', nodeCount: 2, planName: 'Business-4', planDetails: '4 CPU / 16 GB RAM',                 cloudRegion: 'Google Cloud: eu-west1',  location: 'Europe, Belgium',         created: '3 months ago', iconLetter: 'F' },
+]
+
+function shuffle<T>(arr: T[]): T[] {
+  const out = [...arr]
+  for (let i = out.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1))
+    ;[out[i], out[j]] = [out[j], out[i]]
+  }
+  return out
+}
+
+function getInitialServicesForScenario(scenarioId: string | null): ServiceRow[] {
+  switch (scenarioId) {
+    case 'empty-state':
+    case 'first-time-user':
+      return []
+    case 'many-services':
+      return shuffle(MANY_SERVICES)
+    default:
+      return INITIAL_SERVICES
+  }
+}
 
 const SUBTITLE = (
   <Box style={{ color: '#4a4b57' }}>
@@ -18,6 +122,7 @@ const SUBTITLE = (
 
 function AppContent() {
   const addToast = useToast()
+  const { activeScenarioId } = useScenario()
   const [view, setView] = useState<View>('project-services')
   const [serviceTypeModalOpen, setServiceTypeModalOpen] = useState(false)
   const [creationModalOpen, setCreationModalOpen] = useState(false)
@@ -27,7 +132,20 @@ function AppContent() {
   /** Service id for the overview page (which service we're viewing; used for delete). */
   const [overviewServiceId, setOverviewServiceId] = useState<string | null>(null)
   /** List of services shown on the Services page (newly created ones are appended). */
-  const [services, setServices] = useState<ServiceRow[]>(INITIAL_SERVICES)
+  const [services, setServices] = useState<ServiceRow[]>(() => getInitialServicesForScenario(activeScenarioId))
+
+  // When the active scenario changes, reset the page state to match the scenario.
+  const prevScenarioId = useRef(activeScenarioId)
+  useEffect(() => {
+    if (activeScenarioId === prevScenarioId.current) return
+    prevScenarioId.current = activeScenarioId
+    setServices(getInitialServicesForScenario(activeScenarioId))
+    setView('project-services')
+    setOverviewServiceId(null)
+    setOverviewServiceType(null)
+    setServiceTypeModalOpen(false)
+    setCreationModalOpen(false)
+  }, [activeScenarioId])
   /** Tracks how many Kafka services have been created, used to rotate pricingType. */
   const kafkaCreationCount = useRef(0)
   /** Holds the current submit function exposed by CreateService via submitRef. */
@@ -223,6 +341,11 @@ function AppContent() {
 
   return (
     <>
+      {/* ── Prototype scenario layer — not part of the product UI ── */}
+      <ScenarioTrigger />
+      <ScenarioPanel />
+      <ScenarioBadge />
+
       {view === 'service-overview' && (
         <ServiceOverview
           key={`overview:${overviewServiceId ?? ''}`}
@@ -351,9 +474,11 @@ AppContent.displayName = 'AppContent'
 
 function App() {
   return (
-    <ToastProvider>
-      <AppContent />
-    </ToastProvider>
+    <ScenarioProvider>
+      <ToastProvider>
+        <AppContent />
+      </ToastProvider>
+    </ScenarioProvider>
   )
 }
 

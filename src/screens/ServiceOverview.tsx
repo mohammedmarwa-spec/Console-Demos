@@ -17,13 +17,9 @@ import {
 import infoSignIcon from '@aivenio/aquarium/icons/infoSign'
 import { ConsoleHeader } from '../components/ConsoleHeader'
 import { ServiceSidebar } from '../components/ServiceSidebar'
+import { getServiceIconUrl } from '../components/ServiceIcon'
 import type { ServiceRow } from './ProjectServices'
 import type { ServiceTypeId } from './ServiceTypeSelectModal'
-
-function makeServiceIconUrl(letter: string, bgColor: string): string {
-  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="56" height="56"><rect width="56" height="56" rx="10" fill="${bgColor}"/><text x="28" y="28" font-size="22" font-weight="700" font-family="Source Code Pro" fill="rgba(0,0,0,0.55)" text-anchor="middle" dominant-baseline="central">${letter}</text></svg>`
-  return `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`
-}
 
 const PROJECT_NAME = 'UI-TESTS'
 const MYSQL_SERVICE_NAME = 'mysql-204e49c9'
@@ -65,8 +61,6 @@ function ServiceOverview({
   const replicas = services.filter((s) => s.sourceServiceId === (serviceIdProp ?? undefined) && s.replicationRole === 'read_replica')
   const serviceName = serviceIdProp ?? (isMySQL ? MYSQL_SERVICE_NAME : PG_SERVICE_NAME)
   const serviceVersion = isMySQL ? 'MySQL 8.0.45' : 'PostgreSQL 17'
-  const iconLetter = isMySQL ? 'M' : 'P'
-  const iconBg = isMySQL ? '#b0d0e8' : '#b8d4e8'
 
   // Relationship metadata
   const currentService = services.find((s) => s.id === serviceIdProp)
@@ -121,8 +115,8 @@ function ServiceOverview({
           <Box style={{ marginBottom: 32 }}>
             <PageHeader
               title={serviceName}
-              image={makeServiceIconUrl(iconLetter, iconBg)}
-              imageAlt={isMySQL ? 'MySQL' : 'PostgreSQL'}
+              image={getServiceIconUrl(serviceTypeId ?? null)}
+              imageAlt={serviceTypeId ?? 'service'}
               breadcrumbs={[
                 <Breadcrumbs.Crumb key="project">{PROJECT_NAME}</Breadcrumbs.Crumb>,
                 <Breadcrumbs.Crumb key="service">{serviceName}</Breadcrumbs.Crumb>,
@@ -326,24 +320,14 @@ function ServiceOverview({
                       }}
                     >
                       {/* Service type icon */}
-                      <Box
+                      <img
                         aria-hidden
-                        style={{
-                          width: 24,
-                          height: 24,
-                          borderRadius: '50%',
-                          backgroundColor: '#3545be',
-                          color: '#fff',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          fontSize: 11,
-                          fontWeight: 700,
-                          flexShrink: 0,
-                        }}
-                      >
-                        {replica.iconLetter ?? replica.serviceName.charAt(0).toUpperCase()}
-                      </Box>
+                        src={getServiceIconUrl(replica.serviceTypeId ?? null)}
+                        width={24}
+                        height={24}
+                        alt=""
+                        style={{ borderRadius: '50%', flexShrink: 0 }}
+                      />
                       {/* Replica name as a navigable link */}
                       <Box style={{ flex: 1, minWidth: 0 }}>
                         <Link
