@@ -6,11 +6,12 @@ import CreateReadReplicaModal from './screens/CreateReadReplicaModal'
 import CreateForkModal from './screens/CreateForkModal'
 import ProjectServices, { INITIAL_SERVICES, type ServiceRow } from './screens/ProjectServices'
 import ServiceOverview from './screens/ServiceOverview'
+import BillingInvoiceDetail from './screens/BillingInvoiceDetail'
 import ServiceTypeSelectModal, { getServiceTypeDisplayName, type ServiceTypeId } from './screens/ServiceTypeSelectModal'
 import { ScenarioProvider, ScenarioPanel, ScenarioTrigger, ScenarioBadge, useScenario } from './scenarios'
 import { MysqlAcuRolloutModal } from './screens/MysqlAcuRolloutModal'
 
-type View = 'project-services' | 'service-overview'
+type View = 'project-services' | 'service-overview' | 'billing-invoice'
 
 // ─── Scenario service data ────────────────────────────────────────────────────
 // Define what each scenario's initial service list looks like.
@@ -383,6 +384,10 @@ function AppContent() {
         }}
       />
 
+      {view === 'billing-invoice' && (
+        <BillingInvoiceDetail onBack={() => setView('project-services')} />
+      )}
+
       {view === 'service-overview' && (
         <ServiceOverview
           key={`overview:${overviewServiceId ?? ''}`}
@@ -394,6 +399,7 @@ function AppContent() {
           onChangePlan={handleChangePlan}
           onCreateReplica={() => setCreateReplicaModalOpen(true)}
           onCreateFork={() => setCreateForkModalOpen(true)}
+          onBillingClick={() => setView('billing-invoice')}
           onReplicaClick={(replicaId) => {
             const replica = services.find((s) => s.id === replicaId)
             if (replica) {
@@ -418,6 +424,7 @@ function AppContent() {
             }
           }}
           onDeleteService={handleDeleteServiceFromList}
+          onBillingClick={() => setView('billing-invoice')}
         />
       )}
 

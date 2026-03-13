@@ -45,6 +45,8 @@ export type ServiceOverviewProps = {
   onCreateFork?: () => void
   /** Called when user clicks "Change" in the Service plan usage section. */
   onChangePlan?: () => void
+  /** Called when the user navigates to Billing via header. */
+  onBillingClick?: () => void
 }
 
 function ServiceOverview({
@@ -57,6 +59,7 @@ function ServiceOverview({
   onReplicaClick,
   onCreateFork,
   onChangePlan,
+  onBillingClick,
 }: ServiceOverviewProps) {
   const isMySQL = serviceTypeId === 'mysql'
   const isPostgres = serviceTypeId === 'postgresql'
@@ -104,7 +107,7 @@ function ServiceOverview({
 
   return (
     <Box style={{ height: '100vh', backgroundColor: '#fff', display: 'flex', flexDirection: 'column' }}>
-      <ConsoleHeader activeNav="projects" />
+      <ConsoleHeader activeNav="projects" onBillingClick={onBillingClick} />
 
       <Box style={{ display: 'flex', flex: 1, minHeight: 0 }}>
         <ServiceSidebar

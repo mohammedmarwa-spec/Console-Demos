@@ -130,17 +130,19 @@ type ProjectServicesProps = {
   onServiceClick?: (serviceId: string) => void
   /** Called when the user chooses "Delete service" from a row's context menu. */
   onDeleteService?: (serviceId: string) => void
+  /** Called when the user navigates to Billing (sidebar or header). */
+  onBillingClick?: () => void
 }
 
-function ProjectServices({ services, onCreateServiceClick, onServiceClick, onDeleteService }: ProjectServicesProps) {
+function ProjectServices({ services, onCreateServiceClick, onServiceClick, onDeleteService, onBillingClick }: ProjectServicesProps) {
   const isEmpty = services.length === 0
 
   return (
     <Box style={{ minHeight: '100vh', backgroundColor: '#f9f9fb', display: 'flex', flexDirection: 'column' }}>
-      <ConsoleHeader activeNav="projects" />
+      <ConsoleHeader activeNav="projects" onBillingClick={onBillingClick} />
 
       <Box style={{ display: 'flex', flex: 1, minHeight: 0 }}>
-        <ProjectSidebar projectName={PROJECT_NAME} activeItem="services" />
+        <ProjectSidebar projectName={PROJECT_NAME} activeItem="services" onBillingClick={onBillingClick} />
 
         {/* Main content */}
         <Box style={{ flex: 1, minWidth: 0, padding: 24, overflow: 'auto', backgroundColor: '#fff' }}>

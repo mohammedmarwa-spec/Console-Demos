@@ -16,6 +16,10 @@ export type ConsoleHeaderProps = {
   orgSublabel?: string
   /** User initials shown in the avatar. */
   userInitials?: string
+  /** Called when the Billing nav item is clicked. */
+  onBillingClick?: () => void
+  /** Called when the Projects nav item is clicked. */
+  onProjectsClick?: () => void
 }
 
 // ─── Aiven Console Logo ───────────────────────────────────────────────────────
@@ -173,6 +177,8 @@ export function ConsoleHeader({
   orgName = 'BigCo Ltd.',
   orgSublabel = 'Engineering',
   userInitials = 'LI',
+  onBillingClick,
+  onProjectsClick,
 }: ConsoleHeaderProps) {
   return (
     <Box
@@ -209,12 +215,21 @@ export function ConsoleHeader({
         }}
       >
         {NAV_ITEMS.map((item) => (
-          <NavButton
+          <Box
             key={item.id}
-            label={item.label}
-            active={activeNav === item.id}
-            hasDropdown={item.hasDropdown}
-          />
+            component="span"
+            onClick={() => {
+              if (item.id === 'billing') onBillingClick?.()
+              if (item.id === 'projects') onProjectsClick?.()
+            }}
+            style={{ cursor: (item.id === 'billing' || item.id === 'projects') ? 'pointer' : undefined }}
+          >
+            <NavButton
+              label={item.label}
+              active={activeNav === item.id}
+              hasDropdown={item.hasDropdown}
+            />
+          </Box>
         ))}
       </Box>
 

@@ -26,9 +26,10 @@ const NAV_ITEMS: { label: string; icon: IconifyIcon; id: string }[] = [
 export type ProjectSidebarProps = {
   projectName: string
   activeItem?: string
+  onBillingClick?: () => void
 }
 
-export function ProjectSidebar({ projectName, activeItem = 'services' }: ProjectSidebarProps) {
+export function ProjectSidebar({ projectName, activeItem = 'services', onBillingClick }: ProjectSidebarProps) {
   return (
     <Box
       style={{
@@ -46,7 +47,18 @@ export function ProjectSidebar({ projectName, activeItem = 'services' }: Project
           <Navigation.Header.Subtitle>{projectName}</Navigation.Header.Subtitle>
         </Navigation.Header>
         {NAV_ITEMS.map(({ id, label, icon }) => (
-          <Navigation.Item key={id} icon={icon} active={id === activeItem} href="#">
+          <Navigation.Item
+            key={id}
+            icon={icon}
+            active={id === activeItem}
+            href="#"
+            onClick={(e) => {
+              if (id === 'billing') {
+                e.preventDefault()
+                onBillingClick?.()
+              }
+            }}
+          >
             {label}
           </Navigation.Item>
         ))}
