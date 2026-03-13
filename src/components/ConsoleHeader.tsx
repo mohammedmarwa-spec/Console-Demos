@@ -16,6 +16,8 @@ export type ConsoleHeaderProps = {
   orgSublabel?: string
   /** User initials shown in the avatar. */
   userInitials?: string
+  /** Called when the Home nav item is clicked. */
+  onHomeClick?: () => void
   /** Called when the Billing nav item is clicked. */
   onBillingClick?: () => void
   /** Called when the Projects nav item is clicked. */
@@ -177,6 +179,7 @@ export function ConsoleHeader({
   orgName = 'BigCo Ltd.',
   orgSublabel = 'Engineering',
   userInitials = 'LI',
+  onHomeClick,
   onBillingClick,
   onProjectsClick,
 }: ConsoleHeaderProps) {
@@ -219,10 +222,15 @@ export function ConsoleHeader({
             key={item.id}
             component="span"
             onClick={() => {
+              if (item.id === 'home') onHomeClick?.()
               if (item.id === 'billing') onBillingClick?.()
               if (item.id === 'projects') onProjectsClick?.()
             }}
-            style={{ cursor: (item.id === 'billing' || item.id === 'projects') ? 'pointer' : undefined }}
+            style={{
+              cursor: (item.id === 'home' || item.id === 'billing' || item.id === 'projects')
+                ? 'pointer'
+                : undefined,
+            }}
           >
             <NavButton
               label={item.label}

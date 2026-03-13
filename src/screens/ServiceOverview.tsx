@@ -47,6 +47,8 @@ export type ServiceOverviewProps = {
   onChangePlan?: () => void
   /** Called when the user navigates to Billing via header. */
   onBillingClick?: () => void
+  /** Called when the user navigates to the org home page. */
+  onOrgHomeClick?: () => void
 }
 
 function ServiceOverview({
@@ -60,6 +62,7 @@ function ServiceOverview({
   onCreateFork,
   onChangePlan,
   onBillingClick,
+  onOrgHomeClick,
 }: ServiceOverviewProps) {
   const isMySQL = serviceTypeId === 'mysql'
   const isPostgres = serviceTypeId === 'postgresql'
@@ -107,7 +110,7 @@ function ServiceOverview({
 
   return (
     <Box style={{ height: '100vh', backgroundColor: '#fff', display: 'flex', flexDirection: 'column' }}>
-      <ConsoleHeader activeNav="projects" onBillingClick={onBillingClick} />
+      <ConsoleHeader activeNav="projects" onHomeClick={onOrgHomeClick} onBillingClick={onBillingClick} onProjectsClick={onOrgHomeClick} />
 
       <Box style={{ display: 'flex', flex: 1, minHeight: 0 }}>
         <ServiceSidebar
@@ -126,7 +129,21 @@ function ServiceOverview({
               image={getServiceIconUrl(serviceTypeId ?? null)}
               imageAlt={serviceTypeId ?? 'service'}
               breadcrumbs={[
-                <Breadcrumbs.Crumb key="project">{PROJECT_NAME}</Breadcrumbs.Crumb>,
+                <Breadcrumbs.Crumb key="org">
+                  <Link href="#" onClick={(e) => { e.preventDefault(); onBackToProject?.() }}>
+                    My Organization
+                  </Link>
+                </Breadcrumbs.Crumb>,
+                <Breadcrumbs.Crumb key="projects">
+                  <Link href="#" onClick={(e) => { e.preventDefault(); onBackToProject?.() }}>
+                    Projects
+                  </Link>
+                </Breadcrumbs.Crumb>,
+                <Breadcrumbs.Crumb key="project">
+                  <Link href="#" onClick={(e) => { e.preventDefault(); onBackToProject?.() }}>
+                    {PROJECT_NAME}
+                  </Link>
+                </Breadcrumbs.Crumb>,
                 <Breadcrumbs.Crumb key="service">{serviceName}</Breadcrumbs.Crumb>,
                 <Breadcrumbs.Crumb key="overview">Overview</Breadcrumbs.Crumb>,
               ]}

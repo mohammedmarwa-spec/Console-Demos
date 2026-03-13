@@ -415,15 +415,27 @@ function InvoiceStatusRow() {
 
 export type BillingInvoiceDetailProps = {
   onBack?: () => void
+  onOrgHomeClick?: () => void
+  onBillingClick?: () => void
 }
 
-function BillingInvoiceDetail({ onBack }: BillingInvoiceDetailProps) {
+function BillingInvoiceDetail({ onBack, onOrgHomeClick, onBillingClick }: BillingInvoiceDetailProps) {
   return (
     <Box style={{ minHeight: '100vh', backgroundColor: '#f9f9fb', display: 'flex', flexDirection: 'column' }}>
-      <ConsoleHeader activeNav="billing" />
+      <ConsoleHeader
+        activeNav="billing"
+        onHomeClick={onOrgHomeClick}
+        onBillingClick={onBillingClick}
+        onProjectsClick={onOrgHomeClick}
+      />
 
       <Box style={{ display: 'flex', flex: 1, minHeight: 0 }}>
-        <BillingSidebar activeItem="invoices" />
+        <BillingSidebar
+          activeItem="invoices"
+          onItemClick={(id) => {
+            if (id === 'overview') onOrgHomeClick?.()
+          }}
+        />
 
         {/* Main content */}
         <Box style={{ flex: 1, minWidth: 0, padding: 24, overflow: 'auto', backgroundColor: '#fff' }}>
@@ -433,12 +445,12 @@ function BillingInvoiceDetail({ onBack }: BillingInvoiceDetailProps) {
               title="Invoice for 1 February - 1 March 2026"
               breadcrumbs={[
                 <Breadcrumbs.Crumb key="org">
-                  <Link href="#" onClick={(e) => { e.preventDefault(); onBack?.() }}>
+                  <Link href="#" onClick={(e) => { e.preventDefault(); onOrgHomeClick?.() }}>
                     My Organization
                   </Link>
                 </Breadcrumbs.Crumb>,
                 <Breadcrumbs.Crumb key="billing">
-                  <Link href="#" onClick={(e) => { e.preventDefault(); onBack?.() }}>
+                  <Link href="#" onClick={(e) => { e.preventDefault(); onBillingClick?.() }}>
                     Billing
                   </Link>
                 </Breadcrumbs.Crumb>,

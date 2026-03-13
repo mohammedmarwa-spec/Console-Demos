@@ -132,14 +132,16 @@ type ProjectServicesProps = {
   onDeleteService?: (serviceId: string) => void
   /** Called when the user navigates to Billing (sidebar or header). */
   onBillingClick?: () => void
+  /** Called when the user clicks the org root breadcrumb or Home nav. */
+  onOrgHomeClick?: () => void
 }
 
-function ProjectServices({ services, onCreateServiceClick, onServiceClick, onDeleteService, onBillingClick }: ProjectServicesProps) {
+function ProjectServices({ services, onCreateServiceClick, onServiceClick, onDeleteService, onBillingClick, onOrgHomeClick }: ProjectServicesProps) {
   const isEmpty = services.length === 0
 
   return (
     <Box style={{ minHeight: '100vh', backgroundColor: '#f9f9fb', display: 'flex', flexDirection: 'column' }}>
-      <ConsoleHeader activeNav="projects" onBillingClick={onBillingClick} />
+      <ConsoleHeader activeNav="projects" onHomeClick={onOrgHomeClick} onBillingClick={onBillingClick} onProjectsClick={onOrgHomeClick} />
 
       <Box style={{ display: 'flex', flex: 1, minHeight: 0 }}>
         <ProjectSidebar projectName={PROJECT_NAME} activeItem="services" onBillingClick={onBillingClick} />
@@ -151,7 +153,16 @@ function ProjectServices({ services, onCreateServiceClick, onServiceClick, onDel
             <PageHeader
               title="Services"
               breadcrumbs={[
-                <Breadcrumbs.Crumb key="aiven">Aiven</Breadcrumbs.Crumb>,
+                <Breadcrumbs.Crumb key="org">
+                  <Link href="#" onClick={(e) => { e.preventDefault(); onOrgHomeClick?.() }}>
+                    My Organization
+                  </Link>
+                </Breadcrumbs.Crumb>,
+                <Breadcrumbs.Crumb key="projects">
+                  <Link href="#" onClick={(e) => { e.preventDefault(); onOrgHomeClick?.() }}>
+                    Projects
+                  </Link>
+                </Breadcrumbs.Crumb>,
                 <Breadcrumbs.Crumb key="project">{PROJECT_NAME}</Breadcrumbs.Crumb>,
                 <Breadcrumbs.Crumb key="services">Services</Breadcrumbs.Crumb>,
               ]}
