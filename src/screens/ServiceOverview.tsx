@@ -21,7 +21,7 @@ import type { ServiceRow } from './ProjectServices'
 import type { ServiceTypeId } from './ServiceTypeSelectModal'
 
 function makeServiceIconUrl(letter: string, bgColor: string): string {
-  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="56" height="56"><rect width="56" height="56" rx="10" fill="${bgColor}"/><text x="28" y="28" font-size="22" font-weight="700" fill="rgba(0,0,0,0.55)" text-anchor="middle" dominant-baseline="central">${letter}</text></svg>`
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="56" height="56"><rect width="56" height="56" rx="10" fill="${bgColor}"/><text x="28" y="28" font-size="22" font-weight="700" font-family="Source Code Pro" fill="rgba(0,0,0,0.55)" text-anchor="middle" dominant-baseline="central">${letter}</text></svg>`
   return `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`
 }
 
@@ -46,6 +46,8 @@ export type ServiceOverviewProps = {
   onReplicaClick?: (replicaServiceId: string) => void
   /** Called when user clicks "Create fork" in the Backups overview section. */
   onCreateFork?: () => void
+  /** Called when user clicks "Change" in the Service plan usage section. */
+  onChangePlan?: () => void
 }
 
 function ServiceOverview({
@@ -57,6 +59,7 @@ function ServiceOverview({
   onCreateReplica,
   onReplicaClick,
   onCreateFork,
+  onChangePlan,
 }: ServiceOverviewProps) {
   const isMySQL = serviceTypeId === 'mysql'
   const replicas = services.filter((s) => s.sourceServiceId === (serviceIdProp ?? undefined) && s.replicationRole === 'read_replica')
@@ -82,6 +85,14 @@ function ServiceOverview({
   const ramUsedGB = (parseFloat(ramCapacity) * 0.37).toFixed(1)
   const storageUsedGB = (parseFloat(storageCapacity) * 0.13).toFixed(1)
 
+  // Free / Developer tiers show "Upgrade" instead of "Change" in the plan section.
+  const isSimpleTier = ['free', 'developer'].includes((currentService?.planName ?? '').toLowerCase())
+
+  // Caption shown beneath the "Service plan usage" section title.
+  const planUsageSubtitle = currentService?.planName
+    ? `${currentService.planName} · ${nodeCount} ${nodeCount === 1 ? 'node' : 'nodes'} · ${currentService.planDetails ?? `${ramCapacity} RAM · ${storageCapacity} storage`}`
+    : undefined
+
   // Scroll the content area to the top on every fresh mount (including service-to-service navigation).
   // useLayoutEffect fires synchronously before the browser paints, preventing any visible scroll flash.
   const contentRef = useRef<HTMLDivElement>(null)
@@ -90,6 +101,7 @@ function ServiceOverview({
     // Reset window scroll as well in case the outer layout overflows the viewport.
     try { window.scrollTo(0, 0) } catch { /* jsdom no-op */ }
   }, [])
+
 
   return (
     <Box style={{ height: '100vh', backgroundColor: '#fff', display: 'flex', flexDirection: 'column' }}>
@@ -224,7 +236,8 @@ function ServiceOverview({
               <Box style={{ flex: 1, minWidth: 0 }}>
                 <Section
                   title="Service plan usage"
-                  actions={{ text: 'Change', onClick: () => {} }}
+                  subtitle={planUsageSubtitle}
+                  actions={{ text: isSimpleTier ? 'Upgrade' : 'Change', onClick: () => onChangePlan?.() }}
                   menu={
                     <DropdownMenu.Items>
                       <DropdownMenu.Item id="change-plan">Change plan</DropdownMenu.Item>

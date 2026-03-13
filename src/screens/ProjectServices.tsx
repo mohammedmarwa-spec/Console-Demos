@@ -2,13 +2,13 @@ import {
   Box,
   Breadcrumbs,
   Button,
+  DataTable,
   DropdownMenu,
   InputBase,
   Link,
   PageHeader,
   StatusChip,
   Switch,
-  Table,
   Typography,
 } from '@aivenio/aquarium'
 import { ConsoleHeader } from '../components/ConsoleHeader'
@@ -48,7 +48,6 @@ export type ServiceRow = {
   storageCapacity?: string
 }
 
-
 export const INITIAL_SERVICES: ServiceRow[] = [
   {
     id: 'mysql-204e49c9',
@@ -70,6 +69,13 @@ export const INITIAL_SERVICES: ServiceRow[] = [
     storageCapacity: '8 GB',
   },
 ]
+
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+
+function makeServiceIconUrl(letter: string, bgColor: string): string {
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="40" height="40"><rect width="40" height="40" rx="8" fill="${bgColor}"/><text x="20" y="20" font-size="16" font-weight="700" font-family="Source Code Pro" fill="rgba(0,0,0,0.55)" text-anchor="middle" dominant-baseline="central">${letter}</text></svg>`
+  return `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`
+}
 
 // ─── Sub-components ───────────────────────────────────────────────────────────
 
@@ -160,14 +166,7 @@ function ProjectServices({ services, onCreateServiceClick, onServiceClick, onDel
           ) : (
             <>
               {/* Toolbar */}
-              <Box
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 16,
-                  marginBottom: 24,
-                }}
-              >
+              <Box style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 24 }}>
                 <Box style={{ flex: '1 1 auto', minWidth: 200, maxWidth: 400 }}>
                   <InputBase
                     placeholder="Search services by name, plan, cloud and tags..."
@@ -181,112 +180,109 @@ function ProjectServices({ services, onCreateServiceClick, onServiceClick, onDel
               </Box>
 
               {/* Services table */}
-              <Table ariaLabel="Services">
-                <Table.Head>
-                  <Table.Cell>Service</Table.Cell>
-                  <Table.Cell>Nodes</Table.Cell>
-                  <Table.Cell></Table.Cell>
-                  <Table.Cell>Plan</Table.Cell>
-                  <Table.Cell>Cloud</Table.Cell>
-                  <Table.Cell>Created</Table.Cell>
-                  <Table.Cell></Table.Cell>
-                </Table.Head>
-                <Table.Body>
-                  {services.map((row) => (
-                    <Table.Row key={row.id}>
-                      <Table.Cell>
-                        <Box style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                          <Box
-                            aria-hidden
-                            style={{
-                              width: 40,
-                              height: 40,
-                              borderRadius: 8,
-                              backgroundColor: row.iconLetter === 'P' ? '#b8d4e8' : '#b0d0e8',
-                              color: 'rgba(0,0,0,0.55)',
-                              display: 'flex',
-                              alignItems: 'center',
-                              justifyContent: 'center',
-                              fontSize: 14,
-                              fontWeight: 700,
-                            }}
-                          >
-                            {row.iconLetter ?? (row.serviceType?.startsWith('PostgreSQL') ? 'P' : 'M')}
-                          </Box>
-                          <Box>
-                            <Link
-                              href="#"
-                              onClick={(e) => {
-                                e.preventDefault()
-                                onServiceClick?.(row.id)
-                              }}
-                            >
-                              {row.serviceName}
-                            </Link>
-                            <Box style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 2 }}>
-                              <Box style={{ color: '#787885' }}>
-                                <Typography.Caption>{row.serviceType} • {row.status}</Typography.Caption>
-                              </Box>
-                              <Box aria-hidden style={{ width: 6, height: 6, borderRadius: '50%', backgroundColor: '#22c55e' }} />
-                            </Box>
-                          </Box>
-                        </Box>
-                      </Table.Cell>
-                      <Table.Cell>
-                        <Box style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                          <Typography.Default>{row.nodes}</Typography.Default>
-                          <Box aria-hidden style={{ width: 20, height: 20, borderRadius: '50%', backgroundColor: '#22c55e', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: 12 }}>✓</Box>
-                        </Box>
-                      </Table.Cell>
-                      <Table.Cell>
-                        {row.pricingType && (
-                          <StatusChip
-                            text={row.pricingType}
-                            status={row.pricingType === 'ACU' ? 'success' : 'neutral'}
-                          />
-                        )}
-                      </Table.Cell>
-                      <Table.Cell>
-                        <Box>
-                          <Typography.DefaultStrong>{row.planName}</Typography.DefaultStrong>
+              <DataTable
+                ariaLabel="Services"
+                rows={services}
+                columns={[
+                  {
+                    type: 'item',
+                    headerName: 'Service',
+                    item: (row) => ({
+                      title: (
+                        <Link
+                          href="#"
+                          onClick={(e) => { e.preventDefault(); onServiceClick?.(row.id) }}
+                        >
+                          {row.serviceName}
+                        </Link>
+                      ),
+                      caption: (
+                        <Box style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 2 }}>
                           <Box style={{ color: '#787885' }}>
-                            <Typography.Caption>{row.planDetails}</Typography.Caption>
+                            <Typography.Caption>{row.serviceType}</Typography.Caption>
                           </Box>
+                          <StatusChip text={row.status ?? 'Running'} status="success" dense />
                         </Box>
-                      </Table.Cell>
-                      <Table.Cell>
-                        <Box>
-                          <Typography.Default>{row.cloudRegion}</Typography.Default>
-                          <Box style={{ color: '#787885' }}>
-                            <Typography.Caption>{row.location}</Typography.Caption>
-                          </Box>
-                        </Box>
-                      </Table.Cell>
-                      <Table.Cell>
-                        <Typography.Caption>{row.created}</Typography.Caption>
-                      </Table.Cell>
-                      <Table.Cell>
-                        <DropdownMenu
-                          onAction={(key) => {
-                            if (key === 'open') onServiceClick?.(row.id)
-                            if (key === 'delete') onDeleteService?.(row.id)
+                      ),
+                      image: makeServiceIconUrl(
+                        row.iconLetter ?? (row.serviceType?.startsWith('PostgreSQL') ? 'P' : 'M'),
+                        row.iconLetter === 'P' ? '#b8d4e8' : '#b0d0e8',
+                      ),
+                      imageSize: 40,
+                    }),
+                  },
+                  {
+                    type: 'custom',
+                    headerName: 'Nodes',
+                    UNSAFE_render: (row) => (
+                      <Box style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                        <StatusChip text="Nodes" status="neutral" dense />
+                        <Box
+                          aria-label={`${row.nodeCount ?? 1} nodes`}
+                          style={{
+                            minWidth: 18,
+                            height: 18,
+                            borderRadius: 9,
+                            backgroundColor: '#22c55e',
+                            color: '#fff',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            fontSize: 11,
+                            fontWeight: 700,
+                            paddingInline: 4,
                           }}
                         >
-                          <DropdownMenu.Trigger>
-                            <Button.Ghost type="button" aria-label="Open service menu">
-                              ⋯
-                            </Button.Ghost>
-                          </DropdownMenu.Trigger>
-                          <DropdownMenu.Items>
-                            <DropdownMenu.Item id="open">Open service</DropdownMenu.Item>
-                            <DropdownMenu.Item id="delete">Delete service</DropdownMenu.Item>
-                          </DropdownMenu.Items>
-                        </DropdownMenu>
-                      </Table.Cell>
-                    </Table.Row>
-                  ))}
-                </Table.Body>
-              </Table>
+                          {row.nodeCount ?? 1}
+                        </Box>
+                      </Box>
+                    ),
+                  },
+                  {
+                    type: 'status',
+                    headerName: 'Pricing',
+                    headerInvisible: true,
+                    status: (row) =>
+                      row.pricingType
+                        ? { status: row.pricingType === 'ACU' ? ('success' as const) : ('neutral' as const), text: row.pricingType }
+                        : undefined,
+                  },
+                  {
+                    type: 'item',
+                    headerName: 'Plan',
+                    item: (row) => ({
+                      title: (
+                        <Box component="span" style={{ fontSize: 14, fontWeight: 600 }}>{row.planName}</Box>
+                      ),
+                      caption: row.planDetails,
+                    }),
+                  },
+                  {
+                    type: 'item',
+                    headerName: 'Cloud',
+                    item: (row) => ({
+                      title: row.cloudRegion,
+                      caption: row.location,
+                    }),
+                  },
+                  {
+                    type: 'text',
+                    headerName: 'Created',
+                    field: 'created',
+                  },
+                ]}
+                menu={() => (
+                  <DropdownMenu.Items>
+                    <DropdownMenu.Item id="open">Open service</DropdownMenu.Item>
+                    <DropdownMenu.Item id="delete">Delete service</DropdownMenu.Item>
+                  </DropdownMenu.Items>
+                )}
+                menuHeaderName="Actions"
+                onAction={(action, row) => {
+                  if (action === 'open') onServiceClick?.(row.id)
+                  if (action === 'delete') onDeleteService?.(row.id)
+                }}
+              />
             </>
           )}
         </Box>

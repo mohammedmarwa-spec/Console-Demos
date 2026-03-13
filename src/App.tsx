@@ -1,5 +1,6 @@
 import { useRef, useState } from 'react'
-import { Box, Modal, Typography } from '@aivenio/aquarium'
+import { Box, Modal, ToastProvider, Typography, useToast } from '@aivenio/aquarium'
+import tickIcon from '@aivenio/aquarium/icons/tick'
 import CreateService, { type CreatedServicePayload } from './screens/CreateService'
 import CreateReadReplicaModal from './screens/CreateReadReplicaModal'
 import CreateForkModal from './screens/CreateForkModal'
@@ -16,6 +17,7 @@ const SUBTITLE = (
 )
 
 function AppContent() {
+  const addToast = useToast()
   const [view, setView] = useState<View>('project-services')
   const [serviceTypeModalOpen, setServiceTypeModalOpen] = useState(false)
   const [creationModalOpen, setCreationModalOpen] = useState(false)
@@ -34,6 +36,10 @@ function AppContent() {
   const [createReplicaModalOpen, setCreateReplicaModalOpen] = useState(false)
   /** Controls visibility of the Create fork modal. */
   const [createForkModalOpen, setCreateForkModalOpen] = useState(false)
+  /** Controls visibility of the Edit / Change plan modal. */
+  const [editModalOpen, setEditModalOpen] = useState(false)
+  /** Holds the current submit function exposed by CreateService (edit mode). */
+  const editSubmitRef = useRef<(() => void) | undefined>(undefined)
 
   function openServiceTypeModal() {
     setServiceTypeModalOpen(true)
@@ -92,6 +98,45 @@ function AppContent() {
       setOverviewServiceType(selectedServiceType)
     }
     setView('service-overview')
+  }
+
+  function handleChangePlan() {
+    setEditModalOpen(true)
+  }
+
+  function handleEditSuccess(data?: CreatedServicePayload) {
+    setEditModalOpen(false)
+    if (!data || !overviewServiceId) return
+
+    const currentService = services.find((s) => s.id === overviewServiceId)
+    const wasSimpleTier = ['free', 'developer'].includes((currentService?.planName ?? '').toLowerCase())
+    const verb = wasSimpleTier ? 'upgraded' : 'changed'
+    const nodeText = `${data.nodeCount} ${data.nodeCount === 1 ? 'node' : 'nodes'}`
+    addToast({
+      message: `The service has been ${verb} to ${data.planName} · ${nodeText} · ${data.planDetails}`,
+      icon: tickIcon,
+      duration: 6000,
+      position: 'top-right',
+    })
+
+    setServices((prev) =>
+      prev.map((s) =>
+        s.id === overviewServiceId
+          ? {
+              ...s,
+              planName: data.planName,
+              planDetails: data.planDetails,
+              nodeCount: data.nodeCount,
+              nodes: `Nodes ${data.nodeCount}`,
+              cloudRegion: `${data.cloud}: ${data.region}`,
+              location: data.location,
+              cpuCount: data.cpuCount,
+              ramCapacity: data.ramCapacity,
+              storageCapacity: data.storageCapacity,
+            }
+          : s,
+      ),
+    )
   }
 
   /** Delete triggered from the service overview page (⋯ menu). */
@@ -171,6 +216,11 @@ function AppContent() {
     ? `Create ${getServiceTypeDisplayName(selectedServiceType)} service`
     : 'Create service'
 
+  const editOverviewService = services.find((s) => s.id === overviewServiceId)
+  const isSimpleTierEdit = ['free', 'developer'].includes((editOverviewService?.planName ?? '').toLowerCase())
+  const editVerb = isSimpleTierEdit ? 'Upgrade' : 'Change'
+  const editModalTitle = `${editVerb} ${overviewServiceType ? getServiceTypeDisplayName(overviewServiceType) : 'service'} plan`
+
   return (
     <>
       {view === 'service-overview' && (
@@ -181,6 +231,7 @@ function AppContent() {
           services={services}
           onBackToProject={() => setView('project-services')}
           onDeleteService={handleDeleteService}
+          onChangePlan={handleChangePlan}
           onCreateReplica={() => setCreateReplicaModalOpen(true)}
           onCreateFork={() => setCreateForkModalOpen(true)}
           onReplicaClick={(replicaId) => {
@@ -228,6 +279,37 @@ function AppContent() {
         onCreateReplica={handleCreateReplica}
       />
 
+      {/* Edit / Upgrade plan modal — opened from ServiceOverview "Change" / "Upgrade" button */}
+      <Modal
+        title={editModalTitle}
+        subtitle={SUBTITLE}
+        open={editModalOpen}
+        onClose={() => setEditModalOpen(false)}
+        size="full"
+        primaryAction={{
+          text: isSimpleTierEdit ? 'Upgrade plan' : 'Apply changes',
+          onClick: () => editSubmitRef.current?.(),
+        }}
+        secondaryActions={{
+          text: 'Cancel',
+          onClick: () => setEditModalOpen(false),
+        }}
+      >
+        {editModalOpen && overviewServiceId && (
+          <CreateService
+            key={`edit:${overviewServiceId}`}
+            embedded
+            editMode
+            serviceTypeId={overviewServiceType}
+            serviceDisplayName={overviewServiceType ? getServiceTypeDisplayName(overviewServiceType) : undefined}
+            initialValues={services.find((s) => s.id === overviewServiceId)}
+            onClose={() => setEditModalOpen(false)}
+            onCreateSuccess={handleEditSuccess}
+            submitRef={editSubmitRef}
+          />
+        )}
+      </Modal>
+
       {/* Same modal flow for all entry points: select type (full) then create (full) */}
       <ServiceTypeSelectModal
         open={serviceTypeModalOpen}
@@ -268,7 +350,11 @@ function AppContent() {
 AppContent.displayName = 'AppContent'
 
 function App() {
-  return <AppContent />
+  return (
+    <ToastProvider>
+      <AppContent />
+    </ToastProvider>
+  )
 }
 
 App.displayName = 'App'
