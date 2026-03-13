@@ -12,9 +12,12 @@ export type Scenario = {
 
 export const SCENARIOS: Scenario[] = [
   // Service Creation
-  { id: 'empty-state',      label: 'Empty state',      group: 'Service Creation', description: 'No services exist yet' },
-  { id: 'first-time-user',  label: 'First-time user',  group: 'Service Creation', description: 'Onboarding state, no services' },
-  { id: 'many-services',    label: 'Many services',    group: 'Service Creation', description: 'Pre-populated with multiple services' },
+  { id: 'empty-state',        label: 'Empty state',                        group: 'Service Creation',  description: 'No services exist yet' },
+  { id: 'first-time-user',    label: 'First-time user',                    group: 'Service Creation',  description: 'Onboarding state, no services' },
+  { id: 'many-services',      label: 'Many services',                      group: 'Service Creation',  description: 'Pre-populated with multiple services' },
+
+  // Pricing rollout
+  { id: 'mysql-acu-rollout',  label: 'Existing users – MySQL ACU rollout', group: 'Pricing rollout',   description: 'Services list + "Introducing new pricing" modal' },
 ]
 
 // ─── Derived helpers ──────────────────────────────────────────────────────────

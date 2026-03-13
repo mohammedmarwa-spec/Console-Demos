@@ -44,6 +44,15 @@ function IconSearch() {
   )
 }
 
+function IconCollapse() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <polyline points="9,3 5,7 9,11" />
+      <polyline points="12,3 8,7 12,11" />
+    </svg>
+  )
+}
+
 // ─── ScenarioItem ─────────────────────────────────────────────────────────────
 
 type ScenarioItemProps = {
@@ -148,7 +157,6 @@ export function ScenarioPanel() {
   // Focus the search input when panel opens
   useEffect(() => {
     if (isPanelOpen) {
-      // Small delay to allow the CSS transition to start
       const t = setTimeout(() => searchRef.current?.focus(), 80)
       return () => clearTimeout(t)
     }
@@ -166,7 +174,7 @@ export function ScenarioPanel() {
     return () => window.removeEventListener('keydown', onKeyDown)
   }, [isPanelOpen, closePanel])
 
-  // Click-outside to close (click on the invisible overlay)
+  // Click-outside closes the panel (badge serves as the collapsed state)
   const handleOverlayClick = useCallback(
     (e: React.MouseEvent) => {
       if (panelRef.current && !panelRef.current.contains(e.target as Node)) {
@@ -206,14 +214,23 @@ export function ScenarioPanel() {
             <span className="scenario-panel__title">Scenarios</span>
             <span className="scenario-panel__label">Prototype</span>
           </div>
-          <button
-            ref={closeButtonRef}
-            className="scenario-panel__close"
-            onClick={closePanel}
-            aria-label="Close scenario panel"
-          >
-            <IconClose />
-          </button>
+          <div className="scenario-panel__header-actions">
+            <button
+              className="scenario-panel__collapse-btn"
+              onClick={closePanel}
+              aria-label="Collapse scenario panel"
+            >
+              <IconCollapse />
+            </button>
+            <button
+              ref={closeButtonRef}
+              className="scenario-panel__close"
+              onClick={closePanel}
+              aria-label="Close scenario panel"
+            >
+              <IconClose />
+            </button>
+          </div>
         </div>
 
         {/* ── Search ── */}

@@ -8,6 +8,7 @@ import ProjectServices, { INITIAL_SERVICES, type ServiceRow } from './screens/Pr
 import ServiceOverview from './screens/ServiceOverview'
 import ServiceTypeSelectModal, { getServiceTypeDisplayName, type ServiceTypeId } from './screens/ServiceTypeSelectModal'
 import { ScenarioProvider, ScenarioPanel, ScenarioTrigger, ScenarioBadge, useScenario } from './scenarios'
+import { MysqlAcuRolloutModal } from './screens/MysqlAcuRolloutModal'
 
 type View = 'project-services' | 'service-overview'
 
@@ -93,6 +94,16 @@ const MANY_SERVICES: ServiceRow[] = [
   { id: 'flink-realtime',   serviceName: 'flink-realtime',   serviceType: 'Apache Flink',       serviceTypeId: 'flink',      status: 'Running',    nodes: 'Nodes 2', nodeCount: 2, planName: 'Business-4', planDetails: '4 CPU / 16 GB RAM',                 cloudRegion: 'Google Cloud: eu-west1',  location: 'Europe, Belgium',         created: '3 months ago', iconLetter: 'F' },
 ]
 
+// Services for the MySQL ACU rollout scenario — existing users, no pricingType chip
+const MYSQL_ACU_ROLLOUT_SERVICES: ServiceRow[] = [
+  { id: 'mysql-prod-01',    serviceName: 'mysql-prod-01',    serviceType: 'MySQL',      serviceTypeId: 'mysql',      status: 'Running', nodes: 'Nodes 1', nodeCount: 1, planName: 'Business-4',  planDetails: '4 CPU / 16 GB RAM / 300 GB storage',  cloudRegion: 'AWS: eu-west-1',            location: 'Europe, Ireland',         created: '2 months ago',  iconLetter: 'M', cpuCount: 4, ramCapacity: '16 GB', storageCapacity: '300 GB' },
+  { id: 'mysql-prod-02',    serviceName: 'mysql-prod-02',    serviceType: 'MySQL',      serviceTypeId: 'mysql',      status: 'Running', nodes: 'Nodes 1', nodeCount: 1, planName: 'Business-4',  planDetails: '4 CPU / 16 GB RAM / 300 GB storage',  cloudRegion: 'AWS: us-east-1',            location: 'North America, Virginia', created: '2 months ago',  iconLetter: 'M', cpuCount: 4, ramCapacity: '16 GB', storageCapacity: '300 GB' },
+  { id: 'mysql-staging',    serviceName: 'mysql-staging',    serviceType: 'MySQL',      serviceTypeId: 'mysql',      status: 'Running', nodes: 'Nodes 1', nodeCount: 1, planName: 'Startup-4',   planDetails: '2 CPU / 4 GB RAM / 80 GB storage',    cloudRegion: 'AWS: eu-west-1',            location: 'Europe, Ireland',         created: '3 months ago',  iconLetter: 'M', cpuCount: 2, ramCapacity: '4 GB',  storageCapacity: '80 GB'  },
+  { id: 'mysql-legacy-app', serviceName: 'mysql-legacy-app', serviceType: 'MySQL',      serviceTypeId: 'mysql',      status: 'Running', nodes: 'Nodes 1', nodeCount: 1, planName: 'Hobbyist',    planDetails: '1 CPU / 2 GB RAM / 8 GB storage',     cloudRegion: 'Google Cloud: us-central1', location: 'North America, Iowa',     created: '8 months ago',  iconLetter: 'M', cpuCount: 1, ramCapacity: '2 GB',  storageCapacity: '8 GB'   },
+  { id: 'pg-prod-01',       serviceName: 'pg-prod-01',       serviceType: 'PostgreSQL', serviceTypeId: 'postgresql', status: 'Running', nodes: 'Nodes 3', nodeCount: 3, planName: 'Business-4',  planDetails: '4 CPU / 16 GB RAM / 480 GB storage',  cloudRegion: 'AWS: eu-west-1',            location: 'Europe, Ireland',         created: '5 months ago',  iconLetter: 'P', cpuCount: 4, ramCapacity: '16 GB', storageCapacity: '480 GB' },
+  { id: 'redis-sessions',   serviceName: 'redis-sessions',   serviceType: 'Caching & ValkeyDB', serviceTypeId: 'redis', status: 'Running', nodes: 'Nodes 1', nodeCount: 1, planName: 'Startup-4', planDetails: '2 CPU / 4 GB RAM',                   cloudRegion: 'AWS: eu-west-1',            location: 'Europe, Ireland',         created: '4 months ago',  iconLetter: 'R' },
+]
+
 function shuffle<T>(arr: T[]): T[] {
   const out = [...arr]
   for (let i = out.length - 1; i > 0; i--) {
@@ -109,6 +120,8 @@ function getInitialServicesForScenario(scenarioId: string | null): ServiceRow[] 
       return []
     case 'many-services':
       return shuffle(MANY_SERVICES)
+    case 'mysql-acu-rollout':
+      return MYSQL_ACU_ROLLOUT_SERVICES
     default:
       return INITIAL_SERVICES
   }
@@ -134,6 +147,9 @@ function AppContent() {
   /** List of services shown on the Services page (newly created ones are appended). */
   const [services, setServices] = useState<ServiceRow[]>(() => getInitialServicesForScenario(activeScenarioId))
 
+  /** Controls the MySQL ACU rollout intro modal (shown automatically for that scenario). */
+  const [mysqlRolloutModalOpen, setMysqlRolloutModalOpen] = useState(activeScenarioId === 'mysql-acu-rollout')
+
   // When the active scenario changes, reset the page state to match the scenario.
   const prevScenarioId = useRef(activeScenarioId)
   useEffect(() => {
@@ -145,6 +161,8 @@ function AppContent() {
     setOverviewServiceType(null)
     setServiceTypeModalOpen(false)
     setCreationModalOpen(false)
+    // Auto-open the rollout modal when entering the MySQL ACU rollout scenario
+    setMysqlRolloutModalOpen(activeScenarioId === 'mysql-acu-rollout')
   }, [activeScenarioId])
   /** Tracks how many Kafka services have been created, used to rotate pricingType. */
   const kafkaCreationCount = useRef(0)
@@ -345,6 +363,17 @@ function AppContent() {
       <ScenarioTrigger />
       <ScenarioPanel />
       <ScenarioBadge />
+
+      {/* ── Scenario: MySQL ACU rollout — intro modal ── */}
+      <MysqlAcuRolloutModal
+        open={mysqlRolloutModalOpen}
+        onClose={() => setMysqlRolloutModalOpen(false)}
+        onCreateService={() => {
+          setMysqlRolloutModalOpen(false)
+          setSelectedServiceType('mysql')
+          setCreationModalOpen(true)
+        }}
+      />
 
       {view === 'service-overview' && (
         <ServiceOverview

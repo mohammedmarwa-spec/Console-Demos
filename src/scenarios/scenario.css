@@ -129,6 +129,38 @@
   border-radius: 4px;
 }
 
+.scenario-panel__header-actions {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.scenario-panel__collapse-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border: none;
+  background: transparent;
+  border-radius: 6px;
+  color: rgba(255, 255, 255, 0.35);
+  cursor: pointer;
+  transition: background 0.12s, color 0.12s;
+  padding: 0;
+  flex-shrink: 0;
+}
+
+.scenario-panel__collapse-btn:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: rgba(255, 255, 255, 0.75);
+}
+
+.scenario-panel__collapse-btn:focus-visible {
+  outline: 2px solid rgba(99, 102, 241, 0.65);
+  outline-offset: 2px;
+}
+
 .scenario-panel__close {
   display: flex;
   align-items: center;
