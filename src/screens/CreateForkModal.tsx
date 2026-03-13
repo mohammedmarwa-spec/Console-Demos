@@ -1,10 +1,15 @@
 import { useState } from 'react'
-import { Box, Button, Icon, Input, Modal, RadioButton, Select, TagLabel, Typography } from '@aivenio/aquarium'
-import type { IconifyIcon } from '@iconify/react'
+import { Box, Input, Modal, RadioButton, Select, Typography } from '@aivenio/aquarium'
 import databaseIcon from '@aivenio/aquarium/icons/database'
 import database02Icon from '@aivenio/aquarium/icons/database02'
 import type { ServiceRow } from './ProjectServices'
 import { getServiceTypeDisplayName } from './ServiceTypeSelectModal'
+import {
+  LAYOUT_GAP,
+  Section,
+  ServiceSummarySidebar,
+  SummaryDetail,
+} from './ServiceCreationShared'
 
 type BackupType = 'latest' | 'specific'
 type ConfigType = 'same-as-source' | 'different'
@@ -25,15 +30,17 @@ export function defaultForkName(serviceName: string): string {
 /** Format the current date as a human-readable backup timestamp, e.g. "Dec 2025 15:39:09 UTC" */
 function latestTransactionLabel(): string {
   const now = new Date()
-  return now.toLocaleString('en-GB', {
-    month: 'short',
-    year: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
-    second: '2-digit',
-    timeZone: 'UTC',
-    hour12: false,
-  }) + ' UTC'
+  return (
+    now.toLocaleString('en-GB', {
+      month: 'short',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+      timeZone: 'UTC',
+      hour12: false,
+    }) + ' UTC'
+  )
 }
 
 const PROJECT_NAME = 'ux-tests'
@@ -65,17 +72,28 @@ export default function CreateForkModal({
   }
 
   return (
-    <Modal title={`Create ${serviceDisplayName} fork`} open={open} onClose={onClose} size="full">
-      <Box style={{ display: 'flex', gap: 40, alignItems: 'flex-start' }}>
+    <Modal
+      title={`Create ${serviceDisplayName} fork`}
+      open={open}
+      onClose={onClose}
+      size="full"
+      primaryAction={{
+        text: 'Create fork',
+        onClick: handleSubmit,
+        disabled: !forkName.trim(),
+      }}
+      secondaryActions={{ text: 'Cancel', onClick: onClose }}
+    >
+      <Box style={{ display: 'flex', gap: LAYOUT_GAP, alignItems: 'flex-start' }}>
+
         {/* ── Main content ── */}
         <Box style={{ flex: 1, minWidth: 0 }}>
 
           {/* Section 1 — Source service */}
-          <ModalSection icon={databaseIcon} title="Source service">
-            {/* Source service info card */}
+          <Section icon={databaseIcon} title="Source service">
             <Box
               style={{
-                border: '1px solid #e5e7eb',
+                border: '1px solid #ededf0',
                 borderRadius: 8,
                 padding: 16,
                 display: 'flex',
@@ -94,7 +112,6 @@ export default function CreateForkModal({
               </Box>
             </Box>
 
-            {/* From backup radio group */}
             <Box style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
               <Box style={{ marginBottom: 8 }}>
                 <Typography.SmallStrong>From backup</Typography.SmallStrong>
@@ -117,11 +134,10 @@ export default function CreateForkModal({
                 Specific point in time
               </RadioButton>
             </Box>
-          </ModalSection>
+          </Section>
 
           {/* Section 2 — Fork configuration */}
-          <ModalSection icon={database02Icon} title="Fork configuration">
-            {/* Service name + project selector */}
+          <Section icon={database02Icon} title="Fork configuration">
             <Box style={{ display: 'flex', gap: 24, marginBottom: 16, flexWrap: 'wrap' }}>
               <Box style={{ flex: '1 1 200px', minWidth: 0 }}>
                 <Input
@@ -141,7 +157,6 @@ export default function CreateForkModal({
               </Box>
             </Box>
 
-            {/* Cloud / config radio buttons */}
             <Box style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
               <RadioButton
                 name="fork-config"
@@ -161,81 +176,48 @@ export default function CreateForkModal({
                 Different configuration
               </RadioButton>
             </Box>
-          </ModalSection>
+          </Section>
         </Box>
 
         {/* ── Service summary sidebar ── */}
-        <Box
-          style={{
-            width: 300,
-            flexShrink: 0,
-            border: '1px solid #e5e7eb',
-            borderRadius: 8,
-            backgroundColor: '#fff',
-            padding: 24,
-            display: 'flex',
-            flexDirection: 'column',
-            gap: 0,
-          }}
-        >
-          <Box style={{ marginBottom: 16 }}>
-            <Typography.SmallStrong>Service summary</Typography.SmallStrong>
-          </Box>
+        <ServiceSummarySidebar>
+          <Typography.DefaultStrong>Service summary</Typography.DefaultStrong>
 
-          <SummarySection label="Service">
-            <Typography.Default>{serviceDisplayName} 17</Typography.Default>
-          </SummarySection>
+          <SummaryDetail label="Service" value={`${serviceDisplayName} 17`} />
+          <SummaryDetail
+            label="Name"
+            value={
+              <Box style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                <Box style={{ color: '#16171a' }}>
+                  <Typography.Small>{forkName || '—'}</Typography.Small>
+                </Box>
+              </Box>
+            }
+          />
+          <SummaryDetail label="Service tier" value="Business" />
+          <SummaryDetail label="Cloud" value={sourceService.cloudRegion} />
+          <SummaryDetail label="Plan" value={sourceService.planName} />
 
-          <SummaryDivider />
-
-          <SummarySection label="Name">
-            <Box style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-              <Typography.Default>{forkName || '—'}</Typography.Default>
+          <Box style={{ display: 'flex', flexDirection: 'column', gap: 4, marginTop: 'auto' }}>
+            <Box aria-hidden="true" style={{ borderTop: '1px solid #ededf0', marginBottom: 8 }} />
+            <Box
+              style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                marginBottom: 4,
+              }}
+            >
+              <Box style={{ color: '#16171a' }}>
+                <Typography.SmallStrong>Est. monthly*</Typography.SmallStrong>
+              </Box>
+              <Typography.Heading>$75 USD</Typography.Heading>
             </Box>
-          </SummarySection>
-
-          <SummaryDivider />
-
-          <SummarySection label="Service tier">
-            <TagLabel variant="primary" title="Business" />
-          </SummarySection>
-
-          <SummaryDivider />
-
-          <SummarySection label="Cloud">
-            <Typography.Default>{sourceService.cloudRegion}</Typography.Default>
-          </SummarySection>
-
-          <SummaryDivider />
-
-          <SummarySection label="Plan">
-            <Typography.Default>{sourceService.planName}</Typography.Default>
-          </SummarySection>
-
-          <SummaryDivider />
-
-          {/* Estimated cost */}
-          <Box style={{ paddingBlock: 16, display: 'flex', flexDirection: 'column', gap: 4 }}>
-            <Box style={{ color: '#9696a0' }}>
-              <Typography.Caption>Estimated monthly cost*</Typography.Caption>
-            </Box>
-            <Box style={{ fontFamily: 'Poppins, sans-serif', fontWeight: 700, fontSize: 24, lineHeight: '36px', color: '#4a4b57' }}>
-              $75 USD
-            </Box>
-            <Box style={{ color: '#9696a0' }}>
+            <Box style={{ color: '#68696b' }}>
               <Typography.Caption>*Based on 730 hours of being powered on</Typography.Caption>
             </Box>
           </Box>
-
-          <Button.Primary
-            type="button"
-            style={{ width: '100%' }}
-            disabled={!forkName.trim()}
-            onClick={handleSubmit}
-          >
-            Create fork
-          </Button.Primary>
-        </Box>
+        </ServiceSummarySidebar>
       </Box>
     </Modal>
   )
@@ -243,65 +225,7 @@ export default function CreateForkModal({
 
 CreateForkModal.displayName = 'CreateForkModal'
 
-// ─── Local sub-components ────────────────────────────────────────────────────
-
-const SECTION_ICON_WIDTH = 32
-
-function ModalSection({
-  icon,
-  title,
-  children,
-}: {
-  icon: IconifyIcon
-  title: string
-  children: React.ReactNode
-}) {
-  return (
-    <Box
-      style={{
-        display: 'grid',
-        gridTemplateColumns: `${SECTION_ICON_WIDTH}px minmax(0, 1fr)`,
-        gridTemplateRows: 'auto auto',
-        gap: 0,
-        marginBottom: 32,
-        minWidth: 0,
-        alignItems: 'start',
-      }}
-    >
-      <Box style={{ paddingTop: 2 }}>
-        <Icon icon={icon} aria-hidden style={{ fontSize: 20, color: '#9ca3af' }} />
-      </Box>
-      <Box style={{ paddingTop: 2, minWidth: 0 }}>
-        <Box component="h3" className="typography-large text-intense" style={{ margin: 0 }}>
-          {title}
-        </Box>
-      </Box>
-      <Box
-        style={{
-          paddingTop: 16,
-          width: SECTION_ICON_WIDTH,
-          minWidth: SECTION_ICON_WIDTH,
-          display: 'flex',
-          justifyContent: 'center',
-          alignSelf: 'stretch',
-        }}
-      >
-        <Box
-          aria-hidden="true"
-          style={{
-            width: 1,
-            backgroundColor: '#d1d5db',
-            alignSelf: 'stretch',
-            minHeight: 40,
-          }}
-        />
-      </Box>
-      <Box style={{ paddingTop: 16, minWidth: 0 }}>
-        {children}
-      </Box>
-    </Box>
-  )
-}
+// ─── Local sub-components ─────────────────────────────────────────────────────
 
 function SourceDetail({ label, value }: { label: string; value: string }) {
   return (
@@ -312,19 +236,4 @@ function SourceDetail({ label, value }: { label: string; value: string }) {
       <Typography.DefaultStrong>{value}</Typography.DefaultStrong>
     </Box>
   )
-}
-
-function SummarySection({ label, children }: { label: string; children: React.ReactNode }) {
-  return (
-    <Box style={{ paddingBlock: 12, display: 'flex', flexDirection: 'column', gap: 8 }}>
-      <Box style={{ color: '#9696a0' }}>
-        <Typography.Caption>{label}</Typography.Caption>
-      </Box>
-      {children}
-    </Box>
-  )
-}
-
-function SummaryDivider() {
-  return <Box aria-hidden style={{ height: 1, backgroundColor: '#e5e7eb', flexShrink: 0 }} />
 }

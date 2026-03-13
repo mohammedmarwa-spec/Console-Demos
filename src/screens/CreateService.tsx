@@ -5,7 +5,6 @@ import {
   Button,
   ChoiceChip,
   ChoiceChipGroup,
-  Icon,
   InlineIcon,
   Input,
   Link,
@@ -14,6 +13,7 @@ import {
   Switch,
   Typography,
 } from '@aivenio/aquarium'
+import { LAYOUT_GAP, PADDING, SIDEBAR_WIDTH, Section, SummaryDetail } from './ServiceCreationShared'
 import chevronDownIcon from '@aivenio/aquarium/icons/chevronDown'
 import chevronUpIcon from '@aivenio/aquarium/icons/chevronUp'
 import containerIcon from '@aivenio/aquarium/icons/container'
@@ -470,72 +470,6 @@ function getServiceConfig(serviceTypeId: ServiceTypeId | null | undefined): Serv
 
 const CONTAINER_MAX = 1440
 const LEFT_COL_MAX = 984
-const SIDEBAR_WIDTH = 360
-const PADDING = 24
-
-// ─── Section sub-component ────────────────────────────────────────────────────
-
-const SECTION_ICON_WIDTH = 32
-const SECTION_LINE_WIDTH = 1
-
-function Section({
-  icon,
-  title,
-  children,
-}: {
-  icon: React.ComponentProps<typeof Icon>['icon']
-  title: string
-  children: React.ReactNode
-}) {
-  return (
-    <Box
-      style={{
-        display: 'grid',
-        gridTemplateColumns: `${SECTION_ICON_WIDTH}px minmax(0, 1fr)`,
-        gridTemplateRows: 'auto auto',
-        columnGap: 16,
-        marginBottom: 48,
-        minWidth: 0,
-        alignItems: 'start',
-      }}
-    >
-      <Box style={{ width: 32, height: 32, display: 'flex', justifyContent: 'center', alignItems: 'center', flexShrink: 0 }}>
-        <Icon aria-hidden icon={icon} style={{ width: 20, height: 20, color: '#c4c4cf' }} />
-      </Box>
-      <Box style={{ minWidth: 0, display: 'flex', alignItems: 'center' }}>
-        <Box component="h3" className="typography-large text-intense" style={{ margin: 0 }}>
-          {title}
-        </Box>
-      </Box>
-      <Box
-        style={{
-          paddingTop: 16,
-          width: SECTION_ICON_WIDTH,
-          minWidth: SECTION_ICON_WIDTH,
-          display: 'flex',
-          justifyContent: 'center',
-          alignSelf: 'stretch',
-        }}
-      >
-        <Box
-          aria-hidden="true"
-          style={{
-            width: SECTION_LINE_WIDTH,
-            minWidth: SECTION_LINE_WIDTH,
-            backgroundColor: '#ededf0',
-            alignSelf: 'stretch',
-            minHeight: 40,
-          }}
-        />
-      </Box>
-      <Box style={{ paddingTop: 16, minWidth: 0 }}>
-        {children}
-      </Box>
-    </Box>
-  )
-}
-
-Section.displayName = 'Section'
 
 // ─── TierCard ─────────────────────────────────────────────────────────────────
 
@@ -650,27 +584,6 @@ function CloudProviderIcon({ id }: { id: CloudProviderId }) {
 }
 
 CloudProviderIcon.displayName = 'CloudProviderIcon'
-
-// ─── SummaryDetail ────────────────────────────────────────────────────────────
-
-function SummaryDetail({ label, value }: { label: string; value: React.ReactNode }) {
-  return (
-    <Box style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-      <Box style={{ color: '#787885' }}>
-        <Typography.Caption>{label}</Typography.Caption>
-      </Box>
-      {typeof value === 'string' ? (
-        <Box style={{ color: '#16171a' }}>
-          <Typography.Small>{value}</Typography.Small>
-        </Box>
-      ) : (
-        value
-      )}
-    </Box>
-  )
-}
-
-SummaryDetail.displayName = 'SummaryDetail'
 
 // ─── Inline badge components ──────────────────────────────────────────────────
 
@@ -985,7 +898,7 @@ function CreateService({
           margin: embedded ? 0 : '0 auto',
           padding: PADDING,
           display: 'flex',
-          gap: 60,
+          gap: LAYOUT_GAP,
           alignItems: 'flex-start',
           width: '100%',
           boxSizing: 'border-box',
