@@ -14,6 +14,7 @@ import {
   Tooltip,
   Typography,
 } from '@aivenio/aquarium'
+import duplicateIcon from '@aivenio/aquarium/icons/duplicate'
 import infoSignIcon from '@aivenio/aquarium/icons/infoSign'
 import { ConsoleHeader } from '../components/ConsoleHeader'
 import { ServiceSidebar } from '../components/ServiceSidebar'
@@ -181,8 +182,55 @@ function ServiceOverview({
 
           {/* Sections */}
           <Box style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-            {/* Connection information + Service plan usage — side by side */}
-            <Box style={{ display: 'flex', gap: 16, alignItems: 'flex-start' }}>
+            {/* Service plan usage + Connection information — side by side */}
+            <Box style={{ display: 'flex', gap: 16, alignItems: 'stretch' }}>
+              <Box style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column' }}>
+                <div className="service-plan-fill">
+                <Section
+                  title="Service plan usage"
+                  subtitle={planUsageSubtitle}
+                  actions={{ text: isSimpleTier ? 'Upgrade' : 'Change', onClick: () => onChangePlan?.() }}
+                  menu={
+                    <DropdownMenu.Items>
+                      <DropdownMenu.Item id="change-plan">Change plan</DropdownMenu.Item>
+                    </DropdownMenu.Items>
+                  }
+                  onAction={() => {}}
+                >
+                  {isAcuPricing && (
+                    <Box style={{ marginBottom: 16 }}>
+                      <StatusChip text="ACU" status="success" />
+                    </Box>
+                  )}
+                  {hasAcuCapability && !isAcuPricing && (
+                    <Box style={{ marginBottom: 16 }}>
+                      <Alert type="success">
+                        <Box style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                          <Typography.Small>
+                            We introduce new flexible pricing, allowing to fine-tune amount of CPU/RAM and storage.{' '}
+                            <Link href="#">Learn more</Link>
+                          </Typography.Small>
+                          <Box>
+                            <Button.Ghost type="button" dense onClick={() => onChangePlan?.()}>Migrate to new pricing</Button.Ghost>
+                          </Box>
+                        </Box>
+                      </Alert>
+                    </Box>
+                  )}
+                  <Box style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
+                    <PlanUsageBar label="Memory use" value={`${ramUsedGB} of ${ramCapacity} (37%)`} percent={37} />
+                    <PlanUsageBar label="Storage used" value={`${storageUsedGB} of ${storageCapacity} (13%)`} percent={13} />
+                    <Box>
+                      <Box style={{ marginBottom: 8 }}>
+                        <Typography.Caption>CPU across all nodes</Typography.Caption>
+                      </Box>
+                      <CpuLineChart />
+                    </Box>
+                  </Box>
+                </Section>
+                </div>
+              </Box>
+
               <Box style={{ flex: 1, minWidth: 0 }}>
                 <Section title="Connection information">
                   {isMySQL ? (
@@ -196,7 +244,7 @@ function ServiceOverview({
                       <Tabs.Tab title="Connection string" value="uri" />
                     </Tabs>
                   )}
-                  <Box style={{ marginTop: 16, display: 'flex', flexDirection: 'column', gap: 12 }}>
+                  <Box style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
                     {(isMySQL
                       ? [
                           { label: 'Service URI', value: 'mysql://***@mysql-204e49c9-ux-tests.jaivencloud.com:12691/defaultdb?ssl-mode=REQUIRED' },
@@ -222,56 +270,13 @@ function ServiceOverview({
                       <Box key={row.label} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16, flexWrap: 'wrap' }}>
                         <Box>
                           <Box style={{ color: '#787885' }}><Typography.Caption>{row.label}</Typography.Caption></Box>
-                          <Typography.Default>{row.value}</Typography.Default>
+                          <Typography.Small>{row.value}</Typography.Small>
                         </Box>
-                        <Button.Ghost type="button" aria-label={`Copy ${row.label}`}>Copy</Button.Ghost>
+                        <Button.Ghost type="button" aria-label={`Copy ${row.label}`} dense>
+                          <Icon icon={duplicateIcon} />
+                        </Button.Ghost>
                       </Box>
                     ))}
-                  </Box>
-                </Section>
-              </Box>
-
-              <Box style={{ flex: 1, minWidth: 0 }}>
-                <Section
-                  title="Service plan usage"
-                  subtitle={planUsageSubtitle}
-                  actions={{ text: isSimpleTier ? 'Upgrade' : 'Change', onClick: () => onChangePlan?.() }}
-                  menu={
-                    <DropdownMenu.Items>
-                      <DropdownMenu.Item id="change-plan">Change plan</DropdownMenu.Item>
-                    </DropdownMenu.Items>
-                  }
-                  onAction={() => {}}
-                >
-                  {isAcuPricing && (
-                    <Box style={{ marginBottom: 16 }}>
-                      <StatusChip text="ACU" status="success" />
-                    </Box>
-                  )}
-                  {hasAcuCapability && !isAcuPricing && (
-                    <Box style={{ marginBottom: 16 }}>
-                      <Alert type="success">
-                        <Box style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                          <Typography.Default>
-                            We introduce new flexible pricing, allowing to fine-tune amount of CPU/RAM and storage.{' '}
-                            <Link href="#">Learn more</Link>
-                          </Typography.Default>
-                          <Box>
-                            <Button.Ghost type="button" onClick={() => onChangePlan?.()}>Migrate to new pricing</Button.Ghost>
-                          </Box>
-                        </Box>
-                      </Alert>
-                    </Box>
-                  )}
-                  <Box style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
-                    <PlanUsageBar label="Memory use" value={`${ramUsedGB} of ${ramCapacity} (37%)`} percent={37} />
-                    <PlanUsageBar label="Storage used" value={`${storageUsedGB} of ${storageCapacity} (13%)`} percent={13} />
-                    <Box>
-                      <Box style={{ marginBottom: 8 }}>
-                        <Typography.Caption>CPU across all nodes</Typography.Caption>
-                      </Box>
-                      <CpuLineChart />
-                    </Box>
                   </Box>
                 </Section>
               </Box>
@@ -444,9 +449,9 @@ function CpuLineChart() {
       aria-label="CPU usage chart"
     >
       {/* Y-axis labels */}
-      <text x={labelW - 4} y={4}            fontSize="10" fill="#787885" textAnchor="end" dominantBaseline="hanging">100%</text>
-      <text x={labelW - 4} y={plotH / 2}    fontSize="10" fill="#787885" textAnchor="end" dominantBaseline="middle">50%</text>
-      <text x={labelW - 4} y={plotH}        fontSize="10" fill="#787885" textAnchor="end" dominantBaseline="auto">0</text>
+      <text x={labelW - 4} y={4}            style={{ fontSize: 10 }} fill="#787885" textAnchor="end" dominantBaseline="hanging">100%</text>
+      <text x={labelW - 4} y={plotH / 2}    style={{ fontSize: 10 }} fill="#787885" textAnchor="end" dominantBaseline="middle">50%</text>
+      <text x={labelW - 4} y={plotH}        style={{ fontSize: 10 }} fill="#787885" textAnchor="end" dominantBaseline="auto">0</text>
 
       {/* Grid lines */}
       <line x1={labelW} y1={1}           x2={labelW + plotW} y2={1}           stroke="#D2D2D6" strokeWidth="1" strokeDasharray="3 3" />
@@ -469,7 +474,7 @@ function CpuLineChart() {
           key={label}
           x={labelW + i * xStep}
           y={plotH + bottomPad - 2}
-          fontSize="10"
+          style={{ fontSize: 10 }}
           fill="#787885"
           textAnchor="middle"
         >
