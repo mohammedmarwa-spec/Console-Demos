@@ -417,6 +417,24 @@ const SERVICE_CONFIGS: Record<ServiceTypeId, ServiceConfig> = {
     versions: ['Grafana 11.4', 'Grafana 10.4', 'Grafana 10.3'],
     plans: GRAFANA_PLANS,
   },
+
+  // Scenario-only service types — not selectable via the UI, configs are
+  // reasonable defaults so the app doesn't error if one is ever opened.
+  redis: {
+    ...BASE_CONFIG,
+    versions: ['Redis 7.2', 'Redis 7.0'],
+    plans: MEMORY_STORE_PLANS,
+  },
+  flink: {
+    ...BASE_CONFIG,
+    versions: ['Apache Flink 1.19', 'Apache Flink 1.18'],
+    plans: KAFKA_PLANS,
+  },
+  m3db: {
+    ...BASE_CONFIG,
+    versions: ['M3DB 1.5', 'M3DB 1.4'],
+    plans: METRICS_PLANS,
+  },
 }
 
 function getServiceConfig(serviceTypeId: ServiceTypeId | null | undefined): ServiceConfig {
