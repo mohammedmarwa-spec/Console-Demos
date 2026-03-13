@@ -158,11 +158,16 @@ function AppContent() {
     if (activeScenarioId === prevScenarioId.current) return
     prevScenarioId.current = activeScenarioId
     setServices(getInitialServicesForScenario(activeScenarioId))
-    setView('project-services')
     setOverviewServiceId(null)
     setOverviewServiceType(null)
     setServiceTypeModalOpen(false)
     setCreationModalOpen(false)
+    // Billing scenario → jump straight to the invoice page
+    if (activeScenarioId === 'invoice-mixed-services') {
+      setView('billing-invoice')
+    } else {
+      setView('project-services')
+    }
     // Auto-open the rollout modal when entering the MySQL ACU rollout scenario
     setMysqlRolloutModalOpen(activeScenarioId === 'mysql-acu-rollout')
   }, [activeScenarioId])
