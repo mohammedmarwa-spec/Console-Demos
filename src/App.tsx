@@ -205,6 +205,8 @@ function AppContent() {
       const KAFKA_PRICING_ROTATION = ['Inkless', 'Classic'] as const
       const pricingType = data.serviceTypeId === 'kafka'
         ? KAFKA_PRICING_ROTATION[kafkaCreationCount.current++ % KAFKA_PRICING_ROTATION.length]
+        : data.pricingModel === 'acu'
+        ? 'ACU'
         : undefined
       setServices((prev) => [
         ...prev,
@@ -269,6 +271,12 @@ function AppContent() {
               cpuCount: data.cpuCount,
               ramCapacity: data.ramCapacity,
               storageCapacity: data.storageCapacity,
+              // Reflect any pricing model toggle made during the edit.
+              // Only update when the form emits pricingModel (PG / MySQL with the toggle).
+              // For other service types the field is absent, so the existing chip is preserved.
+              ...(data.pricingModel != null
+                ? { pricingType: data.pricingModel === 'acu' ? 'ACU' : undefined }
+                : {}),
             }
           : s,
       ),

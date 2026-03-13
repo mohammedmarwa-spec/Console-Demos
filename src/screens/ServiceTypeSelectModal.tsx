@@ -37,6 +37,12 @@ export function getServiceTypeDisplayName(id: ServiceTypeId): string {
   return SERVICE_TYPES.find((s) => s.id === id)?.name ?? id
 }
 
+/**
+ * Service types that support ACU (flexible) pricing mode.
+ * Update this set when more services gain ACU support — no other changes needed.
+ */
+const ACU_CAPABLE_SERVICE_IDS = new Set<ServiceTypeId>(['postgresql', 'mysql'])
+
 const LEGAL_FOOTER =
   'Apache, Apache Kafka, Kafka, Apache Flink, Flink, Apache Cassandra, and Cassandra are either registered trademarks or trademarks of the Apache Software Foundation in the United States and/or other countries. ClickHouse, OpenSearch, AlloyDB Omni, PostgreSQL, MySQL, Grafana, Dragonfly, Valkey, Terraform, and Kubernetes are trademarks and property of their respective owners. All product and service names used in this website are for identification purposes only and do not imply endorsement.'
 
@@ -103,7 +109,7 @@ function ServiceTypeSelectModal({
               <Box style={{ flex: 1, minWidth: 0 }}>
                 <Box style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
                   <Typography.DefaultStrong>{service.name}</Typography.DefaultStrong>
-                  {(service.id === 'mysql' || service.id === 'postgresql') && (
+                  {ACU_CAPABLE_SERVICE_IDS.has(service.id) && (
                     <StatusChip text="ACU-mode" status="success" />
                   )}
                 </Box>

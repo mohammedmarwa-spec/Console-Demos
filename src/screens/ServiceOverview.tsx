@@ -58,12 +58,16 @@ function ServiceOverview({
   onChangePlan,
 }: ServiceOverviewProps) {
   const isMySQL = serviceTypeId === 'mysql'
+  const isPostgres = serviceTypeId === 'postgresql'
+  /** True for service types that support the ACU / legacy pricing toggle. */
+  const hasAcuCapability = isMySQL || isPostgres
   const replicas = services.filter((s) => s.sourceServiceId === (serviceIdProp ?? undefined) && s.replicationRole === 'read_replica')
   const serviceName = serviceIdProp ?? (isMySQL ? MYSQL_SERVICE_NAME : PG_SERVICE_NAME)
   const serviceVersion = isMySQL ? 'MySQL 8.0.45' : 'PostgreSQL 17'
 
   // Relationship metadata
   const currentService = services.find((s) => s.id === serviceIdProp)
+  const isAcuPricing = currentService?.pricingType === 'ACU'
   const isReplica = currentService?.replicationRole === 'read_replica'
   const isFork = currentService?.replicationRole === 'fork'
   const primaryService = (isReplica || isFork)
@@ -239,7 +243,12 @@ function ServiceOverview({
                   }
                   onAction={() => {}}
                 >
-                  {isMySQL && (
+                  {isAcuPricing && (
+                    <Box style={{ marginBottom: 16 }}>
+                      <StatusChip text="ACU" status="success" />
+                    </Box>
+                  )}
+                  {hasAcuCapability && !isAcuPricing && (
                     <Box style={{ marginBottom: 16 }}>
                       <Alert type="success">
                         <Box style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
@@ -248,7 +257,7 @@ function ServiceOverview({
                             <Link href="#">Learn more</Link>
                           </Typography.Default>
                           <Box>
-                            <Button.Ghost type="button">Migrate to new pricing</Button.Ghost>
+                            <Button.Ghost type="button" onClick={() => onChangePlan?.()}>Migrate to new pricing</Button.Ghost>
                           </Box>
                         </Box>
                       </Alert>

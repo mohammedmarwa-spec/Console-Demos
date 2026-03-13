@@ -126,6 +126,12 @@ type ServiceConfig = {
   haEnabled: boolean
   /** When defined, renders a "Plan" table instead of Compute + Storage sections. */
   plans?: Plan[]
+  /**
+   * When defined alongside haEnabled, enables a pricing model toggle between ACU (flexible)
+   * and legacy modes. These plans are shown when the user selects legacy pricing.
+   * Add to any service type to make the toggle available for that service.
+   */
+  legacyPlans?: Plan[]
   computeProfiles: ComputeProfile[]
   computeOptionsByProfile: Record<string, ComputeOption[]>
   storageSpecs: StorageSpec[]
@@ -319,6 +325,22 @@ const GRAFANA_PLANS: Plan[] = [
   { id: 'premium-8', label: 'Premium-8', nodes: 6, vCPU: 8, ram: '16 GB', storage: '100 GB', monthlyPrice: '~$450' },
 ]
 
+// ─── Legacy plan sets (for services that support the ACU ↔ legacy toggle) ────
+
+const LEGACY_PG_PLANS: Plan[] = [
+  { id: 'hobbyist', label: 'Hobbyist', nodes: 1, vCPU: 1, ram: '1 GB',  storage: '8 GB',   monthlyPrice: '~$25'  },
+  { id: 'startup',  label: 'Startup',  nodes: 1, vCPU: 2, ram: '4 GB',  storage: '80 GB',  monthlyPrice: '~$75'  },
+  { id: 'business', label: 'Business', nodes: 3, vCPU: 4, ram: '16 GB', storage: '480 GB', monthlyPrice: '~$350' },
+  { id: 'premium',  label: 'Premium',  nodes: 3, vCPU: 8, ram: '32 GB', storage: '700 GB', monthlyPrice: '~$700' },
+]
+
+const LEGACY_MYSQL_PLANS: Plan[] = [
+  { id: 'hobbyist', label: 'Hobbyist', nodes: 1, vCPU: 1, ram: '1 GB',  storage: '8 GB',   monthlyPrice: '~$20'  },
+  { id: 'startup',  label: 'Startup',  nodes: 1, vCPU: 2, ram: '4 GB',  storage: '50 GB',  monthlyPrice: '~$60'  },
+  { id: 'business', label: 'Business', nodes: 2, vCPU: 4, ram: '16 GB', storage: '300 GB', monthlyPrice: '~$280' },
+  { id: 'premium',  label: 'Premium',  nodes: 3, vCPU: 8, ram: '32 GB', storage: '600 GB', monthlyPrice: '~$600' },
+]
+
 // ─── Per-service configurations ───────────────────────────────────────────────
 
 const BASE_CONFIG = {
@@ -341,6 +363,7 @@ const SERVICE_CONFIGS: Record<ServiceTypeId, ServiceConfig> = {
     ...BASE_CONFIG,
     versions: ['PostgreSQL 17', 'PostgreSQL 16', 'PostgreSQL 15'],
     haEnabled: true,
+    legacyPlans: LEGACY_PG_PLANS,
   },
 
   mysql: {
@@ -350,6 +373,7 @@ const SERVICE_CONFIGS: Record<ServiceTypeId, ServiceConfig> = {
     defaultComputeProfile: 'balanced',
     diskSizeMax: 4000,
     defaultDiskSize: 50,
+    legacyPlans: LEGACY_MYSQL_PLANS,
   },
 
   kafka: {
@@ -695,6 +719,8 @@ function parseCloudRegion(cloudRegion: string | undefined): { cloudName: string;
 
 // ─── Props & payload types ────────────────────────────────────────────────────
 
+type PricingModel = 'acu' | 'legacy'
+
 export type CreatedServicePayload = {
   serviceName: string
   serviceTypeId: ServiceTypeId
@@ -710,6 +736,8 @@ export type CreatedServicePayload = {
   ramCapacity: string
   storageCapacity: string
   ha?: string
+  /** Only present for services that support the ACU ↔ legacy pricing toggle. */
+  pricingModel?: PricingModel
 }
 
 export type CreateServiceProps = {
@@ -791,10 +819,30 @@ function CreateService({
   )
   const [diskSizeGb, setDiskSizeGb] = useState<number>(config.defaultDiskSize)
   const [selectedPlanId, setSelectedPlanId] = useState<string>(() => config.plans?.[0]?.id ?? '')
-  const [flexibleEnabled, setFlexibleEnabled] = useState(true)
+  const [pricingModel, setPricingModel] = useState<PricingModel>(() => {
+    // Only PG / MySQL have the toggle (legacyPlans defined).
+    if (!config.legacyPlans) return 'acu'
+    // In edit mode, mirror the service's current pricing state:
+    //   pricingType 'ACU'  → ACU mode (toggle ON)
+    //   anything else      → legacy mode (toggle OFF), including pre-existing services
+    //                        that have never had an explicit pricingType set.
+    if (initialValues) return initialValues.pricingType === 'ACU' ? 'acu' : 'legacy'
+    // Creation mode: default to ACU (the new / recommended model).
+    return 'acu'
+  })
+  const [selectedLegacyPlanId, setSelectedLegacyPlanId] = useState<string>(() => {
+    const firstId = config.legacyPlans?.[0]?.id ?? ''
+    if (!config.legacyPlans || !initialValues?.planName) return firstId
+    // In edit mode, pre-select the plan whose label matches the service's current planName.
+    const match = config.legacyPlans.find(
+      (p) => p.label.toLowerCase() === (initialValues.planName ?? '').toLowerCase(),
+    )
+    return match?.id ?? firstId
+  })
   const [regionArea, setRegionArea] = useState<RegionArea>('europe')
 
   const isSimpleTier = tier === 'free' || tier === 'developer'
+  const isLegacyMode = config.legacyPlans != null && pricingModel === 'legacy'
 
   // ── Computed ──
   const currentComputeOptions = useMemo(
@@ -821,7 +869,17 @@ function CreateService({
     () => config.plans?.find((p) => p.id === selectedPlanId) ?? config.plans?.[0],
     [config, selectedPlanId],
   )
+  const selectedLegacyPlan = useMemo(
+    () => config.legacyPlans?.find((p) => p.id === selectedLegacyPlanId) ?? config.legacyPlans?.[0],
+    [config, selectedLegacyPlanId],
+  )
   const nodeCount = HA_NODE_COUNT[haOption]
+
+  // When isLegacyMode, redirect plan selection to the legacy plan set.
+  // Both setters have compatible signatures so the conditional assignment is safe.
+  const activePlans = isLegacyMode ? config.legacyPlans : config.plans
+  const activeSelectedPlanId = isLegacyMode ? selectedLegacyPlanId : selectedPlanId
+  const handleSelectPlan = isLegacyMode ? setSelectedLegacyPlanId : setSelectedPlanId
   const storageCost = useMemo(
     () => Math.ceil(diskSizeGb * (selectedStorageSpec?.pricePerGbMonth ?? 0)),
     [diskSizeGb, selectedStorageSpec],
@@ -851,6 +909,26 @@ function CreateService({
         planDetails: `${fp.cpu} vCPU / ${fp.ram} / ${fp.storage}`,
         nodeCount: 1, cpuCount: fp.cpu,
         ramCapacity: fp.ram, storageCapacity: fp.storage,
+      })
+      return
+    }
+
+    if (isLegacyMode) {
+      const plan = selectedLegacyPlan
+      if (!plan) { onCreateSuccess?.(); return }
+      onCreateSuccess?.({
+        serviceName, serviceTypeId, tier,
+        cloud: cloud.toUpperCase(),
+        region: regionId,
+        regionLabel: selectedRegion?.label ?? regionId,
+        location: selectedRegion?.location ?? regionId,
+        planName: plan.label,
+        planDetails: `${plan.vCPU} vCPU / ${plan.ram} / ${plan.storage}`,
+        nodeCount: plan.nodes,
+        cpuCount: plan.vCPU,
+        ramCapacity: plan.ram,
+        storageCapacity: plan.storage,
+        pricingModel: 'legacy',
       })
       return
     }
@@ -887,6 +965,7 @@ function CreateService({
       ramCapacity: selectedCompute?.ram ?? '',
       storageCapacity: `${diskSizeGb} GB`,
       ha: HA_OPTIONS.find((o) => o.id === haOption)?.label ?? haOption,
+      pricingModel: 'acu',
     })
   }
 
@@ -1034,8 +1113,8 @@ function CreateService({
                 )
               })()}
             </Section>
-          ) : config.plans ? (
-            /* ── Plan section (all services except postgresql / mysql) ── */
+          ) : activePlans ? (
+            /* ── Plan section (legacy plans for PG/MySQL, or fixed plans for other service types) ── */
             <Section icon={proPlansIcon} title="Plan">
               <Box style={{ border: '1px solid #ededf0', borderRadius: 8, overflow: 'hidden' }}>
                 {/* Header */}
@@ -1055,16 +1134,16 @@ function CreateService({
                   <Box style={{ flex: 1, textAlign: 'right' }}><Box style={{ color: '#787885' }}><Typography.Caption>Monthly price</Typography.Caption></Box></Box>
                 </Box>
                 {/* Plan rows */}
-                {config.plans.map((plan, idx) => {
-                  const isSelected = selectedPlanId === plan.id
+                {activePlans.map((plan, idx) => {
+                  const isSelected = activeSelectedPlanId === plan.id
                   return (
                     <Box
                       key={plan.id}
                       role="button"
                       tabIndex={0}
-                      onClick={() => setSelectedPlanId(plan.id)}
+                      onClick={() => handleSelectPlan(plan.id)}
                       onKeyDown={(e) => {
-                        if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setSelectedPlanId(plan.id) }
+                        if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); handleSelectPlan(plan.id) }
                       }}
                       style={{
                         display: 'flex', alignItems: 'center',
@@ -1075,7 +1154,7 @@ function CreateService({
                       }}
                     >
                       <Box style={{ width: 32, flexShrink: 0 }}>
-                        <RadioButton aria-label={`Plan ${plan.label}`} name="plan" value={plan.id} checked={isSelected} onChange={() => setSelectedPlanId(plan.id)} />
+                        <RadioButton aria-label={`Plan ${plan.label}`} name="plan" value={plan.id} checked={isSelected} onChange={() => handleSelectPlan(plan.id)} />
                       </Box>
                       <Box style={{ flex: 2 }}><Typography.DefaultStrong>{plan.label}</Typography.DefaultStrong></Box>
                       <Box style={{ flex: 1 }}><Typography.Default>{plan.nodes}</Typography.Default></Box>
@@ -1368,21 +1447,37 @@ function CreateService({
             ) : (
               /* ── Full summary for Professional ── */
               <>
-                <Box
-                  style={{
-                    backgroundColor: '#ebfbee', borderRadius: 8, padding: '0 16px',
-                    display: 'flex', gap: 0, alignItems: 'center', minHeight: 64,
-                    overflow: 'hidden', position: 'relative',
-                  }}
-                >
-                  <Switch checked={flexibleEnabled} onChange={() => setFlexibleEnabled((v) => !v)} />
-                  <Box style={{ minWidth: 0 }}>
-                    <Typography.SmallStrong>Flexible configuration & pricing</Typography.SmallStrong>
-                    <Box style={{ color: '#4a4b57', marginTop: 2 }}>
-                      <Typography.Caption>Fine-tune CPU, RAM and disk. <Link href="#">Details</Link></Typography.Caption>
+                {config.legacyPlans != null && (
+                  <Box
+                    style={{
+                      backgroundColor: '#ebfbee', borderRadius: 8, padding: '0 16px',
+                      display: 'flex', gap: 0, alignItems: 'center', minHeight: 64,
+                      overflow: 'hidden', position: 'relative',
+                    }}
+                  >
+                    <Switch
+                      checked={pricingModel === 'acu'}
+                      onChange={() => setPricingModel((m) => m === 'acu' ? 'legacy' : 'acu')}
+                    />
+                    <Box style={{ minWidth: 0 }}>
+                      {pricingModel === 'acu' ? (
+                        <>
+                          <Typography.SmallStrong>Flexible configuration & pricing</Typography.SmallStrong>
+                          <Box style={{ color: '#4a4b57', marginTop: 2 }}>
+                            <Typography.Caption>Fine-tune CPU, RAM and disk. <Link href="#">Details</Link></Typography.Caption>
+                          </Box>
+                        </>
+                      ) : (
+                        <>
+                          <Typography.SmallStrong>Legacy pricing plans</Typography.SmallStrong>
+                          <Box style={{ color: '#4a4b57', marginTop: 2 }}>
+                            <Typography.Caption>Node count included in plan</Typography.Caption>
+                          </Box>
+                        </>
+                      )}
                     </Box>
                   </Box>
-                </Box>
+                )}
 
                 <Typography.DefaultStrong>{version}</Typography.DefaultStrong>
 
@@ -1403,7 +1498,7 @@ function CreateService({
                   }
                 />
 
-                {config.haEnabled && (
+                {config.haEnabled && !isLegacyMode && (
                   <SummaryDetail
                     label="High-availability"
                     value={HA_OPTIONS.find((o) => o.id === haOption)?.label ?? haOption}
@@ -1415,10 +1510,15 @@ function CreateService({
                   value={config.tiers.find((t) => t.id === tier)?.title ?? tier}
                 />
 
-                {config.plans ? (
+                {(config.plans != null || isLegacyMode) ? (
                   <SummaryDetail
                     label="Plan"
-                    value={selectedPlan ? `${selectedPlan.label} · ${selectedPlan.nodes} ${selectedPlan.nodes === 1 ? 'node' : 'nodes'} · ${selectedPlan.vCPU} vCPU · ${selectedPlan.ram}` : '—'}
+                    value={(() => {
+                      const plan = isLegacyMode ? selectedLegacyPlan : selectedPlan
+                      return plan
+                        ? `${plan.label} · ${plan.nodes} ${plan.nodes === 1 ? 'node' : 'nodes'} · ${plan.vCPU} vCPU · ${plan.ram}`
+                        : '—'
+                    })()}
                   />
                 ) : (
                   <>
@@ -1437,13 +1537,15 @@ function CreateService({
                     <Box style={{ color: '#16171a' }}>
                       <Typography.SmallStrong>Est. monthly*</Typography.SmallStrong>
                     </Box>
-                    {config.plans ? (
-                      <Typography.Heading>{selectedPlan?.monthlyPrice ?? '—'} USD</Typography.Heading>
-                    ) : (
-                      <Typography.Heading>${estimatedMonthly.toFixed(2)} USD</Typography.Heading>
-                    )}
+                  {(config.plans != null || isLegacyMode) ? (
+                    <Typography.Heading>
+                      {(isLegacyMode ? selectedLegacyPlan : selectedPlan)?.monthlyPrice ?? '—'} USD
+                    </Typography.Heading>
+                  ) : (
+                    <Typography.Heading>${estimatedMonthly.toFixed(2)} USD</Typography.Heading>
+                  )}
                   </Box>
-                  {!config.plans && (
+                  {!config.plans && !isLegacyMode && (
                     <>
                       <Box style={{ display: 'flex', justifyContent: 'space-between' }}>
                         <Box style={{ color: '#787885' }}>
