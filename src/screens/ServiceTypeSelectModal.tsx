@@ -11,6 +11,9 @@ export type ServiceTypeId =
   | 'dragonfly'
   | 'metrics'
   | 'grafana'
+  | 'redis'
+  | 'flink'
+  | 'm3db'
 
 type ServiceTypeOption = {
   id: ServiceTypeId

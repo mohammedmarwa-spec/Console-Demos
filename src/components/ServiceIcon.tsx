@@ -100,6 +100,13 @@ const ICON_DATA_URIS: Record<ServiceTypeId, string> = {
   grafana: makeComposite(grafanaBgRaw, [
     { raw: grafanaLogoRaw, viewBox: '0 0 39.9406 39.1386', inset: { top: 10.5, right: 11.7, bottom: 19.61, left: 16.98 } },
   ]),
+
+  // Additional service types used in scenario data (reuse closest visual match)
+  redis: svgToDataUri(mysqlRaw),   // placeholder until a Redis icon is added
+  flink: svgToDataUri(kafkaRaw),   // placeholder — Flink is in the Kafka ecosystem
+  m3db: makeComposite(valkeyBgRaw, [
+    { raw: metricsSymbolRaw, viewBox: '0 0 32 30', inset: { top: 26.79, right: 21.43, bottom: 19.64, left: 21.43 } },
+  ]),
 }
 
 // ─── Public API ───────────────────────────────────────────────────────────────
