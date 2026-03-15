@@ -55,6 +55,10 @@ export type ServiceRow = {
   ramCapacity?: string
   /** Total storage capacity, e.g. "80 GB". Drives plan usage bars in ServiceOverview. */
   storageCapacity?: string
+  /** ACU service tier label, e.g. "Professional", "Business". */
+  serviceTier?: string
+  /** ACU compute type label, e.g. "Standard", "Memory-optimized". */
+  computeType?: string
 }
 
 export const INITIAL_SERVICES: ServiceRow[] = [
@@ -74,8 +78,10 @@ export const INITIAL_SERVICES: ServiceRow[] = [
     pricingType: 'ACU',
     nodeCount: 1,
     cpuCount: 1,
-    ramCapacity: '2 GB',
+    ramCapacity: '8 GB',
     storageCapacity: '8 GB',
+    serviceTier: 'Professional',
+    computeType: 'Standard',
   },
 ]
 
@@ -118,18 +124,45 @@ const PRICING_OPTIONS = [
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
-function getStatusChipStatus(status: string): 'success' | 'neutral' | 'warning' | 'info' {
-  switch (status) {
-    case 'Running': return 'success'
-    case 'Powered off': return 'neutral'
-    case 'Rebuilding': return 'warning'
-    case 'Rebalancing': return 'info'
-    default: return 'neutral'
-  }
+const STATUS_COLORS: Record<string, string> = {
+  'Running':     '#16a34a',
+  'Powered off': '#787885',
+  'Rebuilding':  '#2E90FA',
+  'Rebalancing': '#2E90FA',
+}
+
+function ServiceStatusBadge({ status }: { status: string }) {
+  const color = STATUS_COLORS[status] ?? '#787885'
+  return (
+    <Box style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}>
+      <Box
+        style={{
+          width: 6,
+          height: 6,
+          borderRadius: '50%',
+          backgroundColor: color,
+          flexShrink: 0,
+        }}
+      />
+      <span style={{ color, fontSize: 12, lineHeight: '16px' }}>{status}</span>
+    </Box>
+  )
 }
 
 function extractProvider(cloudRegion: string): string {
   return cloudRegion.split(':')[0].trim()
+}
+
+function getPlanCaption(row: ServiceRow): string {
+  if (row.pricingType === 'ACU' && row.computeType) {
+    const nodes = row.nodeCount ?? 1
+    const nodeText = `${nodes} ${nodes === 1 ? 'node' : 'nodes'}`
+    const parts: string[] = [row.computeType, nodeText]
+    if (row.cpuCount) parts.push(`${row.cpuCount} CPU`)
+    if (row.ramCapacity) parts.push(`${row.ramCapacity} RAM`)
+    return parts.join(' · ')
+  }
+  return row.planDetails
 }
 
 // ─── Sub-components ───────────────────────────────────────────────────────────
@@ -414,11 +447,7 @@ function ProjectServices({ services, onCreateServiceClick, onServiceClick, onDel
                           <Box style={{ color: '#787885' }}>
                             <Typography.Caption>{row.serviceType}</Typography.Caption>
                           </Box>
-                          <StatusChip
-                            text={row.status ?? 'Running'}
-                            status={getStatusChipStatus(row.status ?? 'Running')}
-                            dense
-                          />
+                          <ServiceStatusBadge status={row.status ?? 'Running'} />
                         </Box>
                       ),
                       image: getServiceIconUrl(row.serviceTypeId ?? null),
@@ -456,22 +485,31 @@ function ProjectServices({ services, onCreateServiceClick, onServiceClick, onDel
                     },
                   },
                   {
-                    type: 'status',
+                    type: 'custom',
                     headerName: 'Pricing',
                     headerInvisible: true,
-                    status: (row) =>
-                      row.pricingType
-                        ? { status: row.pricingType === 'ACU' ? ('success' as const) : ('neutral' as const), text: row.pricingType }
-                        : undefined,
+                    width: 60,
+                    UNSAFE_render: (row) =>
+                      row.pricingType ? (
+                        <Box style={{ display: 'flex', justifyContent: 'flex-end' }}>
+                          <StatusChip
+                            status={row.pricingType === 'ACU' ? 'success' : 'neutral'}
+                            text={row.pricingType}
+                            dense
+                          />
+                        </Box>
+                      ) : null,
                   },
                   {
                     type: 'item',
                     headerName: 'Plan',
                     item: (row) => ({
                       title: (
-                        <Box component="span" style={{ fontSize: 14, fontWeight: 600 }}>{row.planName}</Box>
+                        <Box component="span" style={{ fontSize: 14, fontWeight: 600 }}>
+                          {row.pricingType === 'ACU' && row.serviceTier ? row.serviceTier : row.planName}
+                        </Box>
                       ),
-                      caption: row.planDetails,
+                      caption: getPlanCaption(row),
                     }),
                   },
                   {
