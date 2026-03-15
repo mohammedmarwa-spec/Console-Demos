@@ -1,9 +1,15 @@
+import { useState, useMemo, useEffect, useRef } from 'react'
 import {
   Box,
   Breadcrumbs,
   Button,
+  Checkbox,
+  CheckboxGroup,
   DataTable,
+  Divider,
   DropdownMenu,
+  Filter,
+  InlineIcon,
   InputBase,
   Link,
   PageHeader,
@@ -11,6 +17,8 @@ import {
   Switch,
   Typography,
 } from '@aivenio/aquarium'
+import filterIcon from '@aivenio/aquarium/icons/filter'
+import infoSignIcon from '@aivenio/aquarium/icons/infoSign'
 import { ConsoleHeader } from '../components/ConsoleHeader'
 import { ProjectSidebar } from '../components/ProjectSidebar'
 import { getServiceIconUrl } from '../components/ServiceIcon'
@@ -71,7 +79,58 @@ export const INITIAL_SERVICES: ServiceRow[] = [
   },
 ]
 
+// ─── Filter options ────────────────────────────────────────────────────────────
+
+const SERVICE_OPTIONS = [
+  { value: 'PostgreSQL', label: 'PostgreSQL' },
+  { value: 'Apache Kafka', label: 'Apache Kafka' },
+  { value: 'OpenSearch', label: 'OpenSearch' },
+  { value: 'ClickHouse', label: 'ClickHouse' },
+  { value: 'Valkey', label: 'Valkey' },
+  { value: 'Dragonfly', label: 'Dragonfly' },
+  { value: 'Thanos Metrics', label: 'Thanos Metrics' },
+  { value: 'MySQL', label: 'MySQL' },
+  { value: 'Grafana', label: 'Grafana' },
+  { value: 'Apache Flink', label: 'Apache Flink' },
+  { value: 'Apache Kafka Connect', label: 'Apache Kafka Connect' },
+  { value: 'Apache Kafka MirrorMaker', label: 'Apache Kafka MirrorMaker' },
+]
+
+const STATUS_OPTIONS = [
+  { value: 'Running', label: 'Running' },
+  { value: 'Powered off', label: 'Powered off' },
+  { value: 'Rebuilding', label: 'Rebuilding' },
+  { value: 'Rebalancing', label: 'Rebalancing' },
+]
+
+const PROVIDER_OPTIONS = [
+  { value: 'Amazon Web Services', label: 'Amazon Web Services' },
+  { value: 'Google Cloud', label: 'Google Cloud' },
+  { value: 'Microsoft Azure', label: 'Microsoft Azure' },
+  { value: 'DigitalOcean', label: 'DigitalOcean' },
+  { value: 'UpCloud', label: 'UpCloud' },
+]
+
+const PRICING_OPTIONS = [
+  { value: 'ACU', label: 'ACU' },
+  { value: 'Fixed plan', label: 'Fixed plan' },
+]
+
 // ─── Helpers ──────────────────────────────────────────────────────────────────
+
+function getStatusChipStatus(status: string): 'success' | 'neutral' | 'warning' | 'info' {
+  switch (status) {
+    case 'Running': return 'success'
+    case 'Powered off': return 'neutral'
+    case 'Rebuilding': return 'warning'
+    case 'Rebalancing': return 'info'
+    default: return 'neutral'
+  }
+}
+
+function extractProvider(cloudRegion: string): string {
+  return cloudRegion.split(':')[0].trim()
+}
 
 // ─── Sub-components ───────────────────────────────────────────────────────────
 
@@ -137,6 +196,61 @@ type ProjectServicesProps = {
 }
 
 function ProjectServices({ services, onCreateServiceClick, onServiceClick, onDeleteService, onBillingClick, onOrgHomeClick }: ProjectServicesProps) {
+  const [filterOpen, setFilterOpen] = useState(false)
+  const [selectedServices, setSelectedServices] = useState<string[]>([])
+  const [selectedStatuses, setSelectedStatuses] = useState<string[]>([])
+  const [selectedProviders, setSelectedProviders] = useState<string[]>([])
+  const [selectedPricingModes, setSelectedPricingModes] = useState<string[]>([])
+  const filterWrapperRef = useRef<HTMLDivElement>(null)
+
+  // Close filter panel when clicking outside the wrapper
+  useEffect(() => {
+    if (!filterOpen) return
+    function handleMouseDown(e: MouseEvent) {
+      if (filterWrapperRef.current && !filterWrapperRef.current.contains(e.target as Node)) {
+        setFilterOpen(false)
+      }
+    }
+    document.addEventListener('mousedown', handleMouseDown)
+    return () => document.removeEventListener('mousedown', handleMouseDown)
+  }, [filterOpen])
+
+  const filteredServices = useMemo(() => {
+    return services.filter((row) => {
+      const matchesService = selectedServices.length === 0 || selectedServices.includes(row.serviceType)
+      const matchesStatus = selectedStatuses.length === 0 || selectedStatuses.includes(row.status)
+      const provider = extractProvider(row.cloudRegion)
+      const matchesProvider = selectedProviders.length === 0 || selectedProviders.includes(provider)
+      const matchesPricing =
+        selectedPricingModes.length === 0 ||
+        selectedPricingModes.some((mode) => {
+          if (mode === 'ACU') return row.pricingType === 'ACU'
+          if (mode === 'Fixed plan') return row.pricingType !== 'ACU'
+          return false
+        })
+      return matchesService && matchesStatus && matchesProvider && matchesPricing
+    })
+  }, [services, selectedServices, selectedStatuses, selectedProviders, selectedPricingModes])
+
+  const activeFilterCount =
+    selectedServices.length + selectedStatuses.length + selectedProviders.length + selectedPricingModes.length
+
+  const filterValueText = useMemo(() => {
+    if (activeFilterCount === 0) return undefined
+    const all = [...selectedServices, ...selectedStatuses, ...selectedProviders, ...selectedPricingModes]
+    const MAX = 3
+    const shown = all.slice(0, MAX)
+    const overflow = all.length - shown.length
+    return overflow > 0 ? `${shown.join(', ')} +${overflow} more` : shown.join(', ')
+  }, [activeFilterCount, selectedServices, selectedStatuses, selectedProviders, selectedPricingModes])
+
+  function handleClearFilters() {
+    setSelectedServices([])
+    setSelectedStatuses([])
+    setSelectedProviders([])
+    setSelectedPricingModes([])
+  }
+
   const isEmpty = services.length === 0
 
   return (
@@ -182,7 +296,97 @@ function ProjectServices({ services, onCreateServiceClick, onServiceClick, onDel
                     aria-label="Search services"
                   />
                 </Box>
-                <Button.Secondary type="button">Filter list</Button.Secondary>
+
+                {/* Filter trigger + dropdown panel */}
+                <div ref={filterWrapperRef} style={{ position: 'relative' }}>
+                  <Filter.Trigger
+                    labelText="Filter"
+                    icon={filterIcon}
+                    value={filterValueText}
+                    onClear={activeFilterCount > 0 ? handleClearFilters : undefined}
+                    onClick={() => setFilterOpen((prev) => !prev)}
+                  />
+
+                  {filterOpen && (
+                    <Box
+                      style={{
+                        position: 'absolute',
+                        top: 'calc(100% + 8px)',
+                        left: 0,
+                        zIndex: 200,
+                        backgroundColor: '#fff',
+                        border: '1px solid #e0e0e8',
+                        borderRadius: 8,
+                        boxShadow: '0 4px 24px rgba(0, 0, 0, 0.12)',
+                        padding: 24,
+                        minWidth: 720,
+                      }}
+                    >
+                      {/* Filter sections — horizontal layout matching the screenshot */}
+                      <Box style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1fr 1fr', gap: 32, marginBottom: 20 }}>
+                        <CheckboxGroup
+                          labelText="Services"
+                          cols="2"
+                          value={selectedServices}
+                          onChange={(val) => setSelectedServices(val ?? [])}
+                        >
+                          {SERVICE_OPTIONS.map((opt) => (
+                            <Checkbox key={opt.value} value={opt.value}>
+                              {opt.label}
+                            </Checkbox>
+                          ))}
+                        </CheckboxGroup>
+
+                        <CheckboxGroup
+                          labelText="Status"
+                          value={selectedStatuses}
+                          onChange={(val) => setSelectedStatuses(val ?? [])}
+                        >
+                          {STATUS_OPTIONS.map((opt) => (
+                            <Checkbox key={opt.value} value={opt.value}>
+                              {opt.label}
+                            </Checkbox>
+                          ))}
+                        </CheckboxGroup>
+
+                        <CheckboxGroup
+                          labelText="Providers"
+                          value={selectedProviders}
+                          onChange={(val) => setSelectedProviders(val ?? [])}
+                        >
+                          {PROVIDER_OPTIONS.map((opt) => (
+                            <Checkbox key={opt.value} value={opt.value}>
+                              {opt.label}
+                            </Checkbox>
+                          ))}
+                        </CheckboxGroup>
+
+                        <CheckboxGroup
+                          labelText="Pricing mode"
+                          value={selectedPricingModes}
+                          onChange={(val) => setSelectedPricingModes(val ?? [])}
+                        >
+                          {PRICING_OPTIONS.map((opt) => (
+                            <Checkbox key={opt.value} value={opt.value}>
+                              {opt.label}
+                            </Checkbox>
+                          ))}
+                        </CheckboxGroup>
+                      </Box>
+
+                      <Divider />
+
+                      <Box style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 16 }}>
+                        <InlineIcon icon={infoSignIcon} />
+                        <Typography.SmallStrong>
+                          Need more filter options?{' '}
+                          <Link href="#">Learn more</Link>
+                        </Typography.SmallStrong>
+                      </Box>
+                    </Box>
+                  )}
+                </div>
+
                 <Switch checked={false} onChange={() => {}}>
                   Show only services with alerts
                 </Switch>
@@ -191,7 +395,7 @@ function ProjectServices({ services, onCreateServiceClick, onServiceClick, onDel
               {/* Services table */}
               <DataTable
                 ariaLabel="Services"
-                rows={services}
+                rows={filteredServices}
                 columns={[
                   {
                     type: 'item',
@@ -210,7 +414,11 @@ function ProjectServices({ services, onCreateServiceClick, onServiceClick, onDel
                           <Box style={{ color: '#787885' }}>
                             <Typography.Caption>{row.serviceType}</Typography.Caption>
                           </Box>
-                          <StatusChip text={row.status ?? 'Running'} status="success" dense />
+                          <StatusChip
+                            text={row.status ?? 'Running'}
+                            status={getStatusChipStatus(row.status ?? 'Running')}
+                            dense
+                          />
                         </Box>
                       ),
                       image: getServiceIconUrl(row.serviceTypeId ?? null),
@@ -220,29 +428,32 @@ function ProjectServices({ services, onCreateServiceClick, onServiceClick, onDel
                   {
                     type: 'custom',
                     headerName: 'Nodes',
-                    UNSAFE_render: (row) => (
-                      <Box style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
-                        <StatusChip text="Nodes" status="neutral" dense />
-                        <Box
-                          aria-label={`${row.nodeCount ?? 1} nodes`}
-                          style={{
-                            minWidth: 18,
-                            height: 18,
-                            borderRadius: 9,
-                            backgroundColor: '#22c55e',
-                            color: '#fff',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            fontSize: 11,
-                            fontWeight: 700,
-                            paddingInline: 4,
-                          }}
-                        >
-                          {row.nodeCount ?? 1}
+                    UNSAFE_render: (row) => {
+                      const isPoweredOff = row.status === 'Powered off'
+                      return (
+                        <Box style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                          <StatusChip text="Nodes" status="neutral" dense />
+                          <Box
+                            aria-label={`${row.nodeCount ?? 1} nodes`}
+                            style={{
+                              minWidth: 18,
+                              height: 18,
+                              borderRadius: 9,
+                              backgroundColor: isPoweredOff ? '#787885' : '#22c55e',
+                              color: '#fff',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              fontSize: 11,
+                              fontWeight: 700,
+                              paddingInline: 4,
+                            }}
+                          >
+                            {row.nodeCount ?? 1}
+                          </Box>
                         </Box>
-                      </Box>
-                    ),
+                      )
+                    },
                   },
                   {
                     type: 'status',
