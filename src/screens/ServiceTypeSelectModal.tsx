@@ -110,7 +110,7 @@ function ServiceTypeSelectModal({
                 <Box style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
                   <Typography.DefaultStrong>{service.name}</Typography.DefaultStrong>
                   {ACU_CAPABLE_SERVICE_IDS.has(service.id) && (
-                    <StatusChip text="ACU-mode" status="success" />
+                    <StatusChip text="ACU-mode" status="neutral" />
                   )}
                 </Box>
                 <Box style={{ color: '#787885', marginTop: 4 }}>

@@ -295,7 +295,7 @@ function ServiceRow({ row, isLast }: { row: ServiceChargeRow; isLast: boolean })
         {row.pricing && (
           <StatusChip
             text={row.pricing}
-            status={row.pricing === 'ACU' ? 'success' : 'neutral'}
+            status="neutral"
             dense
           />
         )}

@@ -170,7 +170,7 @@ function ServiceOverview({
                     {currentService?.pricingType && (
                       <StatusChip
                         text={currentService.pricingType}
-                        status={currentService.pricingType === 'ACU' ? 'success' : 'neutral'}
+                        status="neutral"
                         dense
                       />
                     )}
@@ -238,7 +238,7 @@ function ServiceOverview({
                 >
                   {isAcuPricing && (
                     <Box style={{ marginBottom: 16 }}>
-                      <StatusChip text="ACU" status="success" />
+                      <StatusChip text="ACU" status="neutral" />
                     </Box>
                   )}
                   {hasAcuCapability && !isAcuPricing && (

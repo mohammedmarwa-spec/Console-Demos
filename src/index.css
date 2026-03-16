@@ -38,3 +38,10 @@ tr.plan-row-selected {
 .service-plan-fill > .Aquarium-Section {
   flex: 1;
 }
+
+/* Nodes chip: status-driven badge indicator color.
+   Badge uses bg-current (background-color: currentColor), so setting color
+   on .Aquarium-Badge directly recolors only the indicator, not the chip text. */
+.nodes-chip--running .Aquarium-Badge    { color: var(--aquarium-background-color-success-graphic) !important; }
+.nodes-chip--rebuilding .Aquarium-Badge { color: var(--aquarium-background-color-info-graphic) !important; }
+.nodes-chip--muted .Aquarium-Badge      { color: var(--aquarium-colors-grey-50) !important; }

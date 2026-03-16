@@ -505,29 +505,16 @@ function ProjectServices({ services, onCreateServiceClick, onServiceClick, onDel
                     type: 'custom',
                     headerName: 'Nodes',
                     UNSAFE_render: (row) => {
-                      const isPoweredOff = row.status === 'Powered off'
+                      const statusClass =
+                        row.status === 'Running'
+                          ? 'nodes-chip--running'
+                          : row.status === 'Rebuilding' || row.status === 'Rebalancing'
+                          ? 'nodes-chip--rebuilding'
+                          : 'nodes-chip--muted'
                       return (
-                        <Box style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
-                          <StatusChip text="Nodes" status="neutral" dense />
-                          <Box
-                            aria-label={`${row.nodeCount ?? 1} nodes`}
-                            style={{
-                              minWidth: 18,
-                              height: 18,
-                              borderRadius: 9,
-                              backgroundColor: isPoweredOff ? '#787885' : '#22c55e',
-                              color: '#fff',
-                              display: 'flex',
-                              alignItems: 'center',
-                              justifyContent: 'center',
-                              fontSize: 11,
-                              fontWeight: 700,
-                              paddingInline: 4,
-                            }}
-                          >
-                            {row.nodeCount ?? 1}
-                          </Box>
-                        </Box>
+                        <span className={`nodes-chip ${statusClass}`}>
+                          <StatusChip text="Nodes" status="neutral" dense badge={row.nodeCount ?? 1} />
+                        </span>
                       )
                     },
                   },
@@ -540,7 +527,7 @@ function ProjectServices({ services, onCreateServiceClick, onServiceClick, onDel
                       row.pricingType ? (
                         <Box style={{ display: 'flex', justifyContent: 'flex-end' }}>
                           <StatusChip
-                            status={row.pricingType === 'ACU' ? 'success' : 'neutral'}
+                            status="neutral"
                             text={row.pricingType}
                             dense
                           />
