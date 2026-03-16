@@ -1,4 +1,4 @@
-import { useLayoutEffect, useRef } from 'react'
+import { useLayoutEffect, useRef, useState } from 'react'
 import {
   Alert,
   Box,
@@ -20,6 +20,7 @@ import { ConsoleHeader } from '../components/ConsoleHeader'
 import { ServiceSidebar } from '../components/ServiceSidebar'
 import { getServiceIconUrl } from '../components/ServiceIcon'
 import type { ServiceRow } from './ProjectServices'
+import { ComparePricingModal } from './ComparePricingModal'
 import type { ServiceTypeId } from './ServiceTypeSelectModal'
 
 const PROJECT_NAME = 'UI-TESTS'
@@ -107,8 +108,10 @@ function ServiceOverview({
     try { window.scrollTo(0, 0) } catch { /* jsdom no-op */ }
   }, [])
 
+  const [comparePricingOpen, setComparePricingOpen] = useState(false)
 
   return (
+    <>
     <Box style={{ height: '100vh', backgroundColor: '#fff', display: 'flex', flexDirection: 'column' }}>
       <ConsoleHeader activeNav="projects" onHomeClick={onOrgHomeClick} onBillingClick={onBillingClick} onProjectsClick={onOrgHomeClick} />
 
@@ -231,7 +234,7 @@ function ServiceOverview({
                             <Link href="#">Learn more</Link>
                           </Typography.Small>
                           <Box>
-                            <Button.Ghost type="button" dense onClick={() => onChangePlan?.()}>Migrate to new pricing</Button.Ghost>
+                            <Button.Ghost type="button" dense onClick={() => setComparePricingOpen(true)}>Migrate to new pricing</Button.Ghost>
                           </Box>
                         </Box>
                       </Alert>
@@ -409,6 +412,14 @@ function ServiceOverview({
         </div>
       </Box>
     </Box>
+
+    <ComparePricingModal
+      open={comparePricingOpen}
+      onClose={() => setComparePricingOpen(false)}
+      onConfirm={() => { setComparePricingOpen(false); onChangePlan?.() }}
+      service={currentService}
+    />
+    </>
   )
 }
 
