@@ -25,7 +25,17 @@ type ServiceChargeRow = {
   serviceType: string
   /** ACU, Classic, or undefined for services with no pricing model chip */
   pricing?: 'ACU' | 'Classic'
+  /**
+   * For legacy / Classic services: the service tier name shown in the Plan column (e.g. "Startup-4").
+   * For ACU services: the legacy-equivalent tier name kept for reference; the Plan column shows
+   * `computeType` instead.
+   */
   plan: string
+  /**
+   * ACU-only. The compute type shown in the Plan column for ACU services
+   * (e.g. "Standard", "Memory-optimized", "CPU-optimized").
+   */
+  computeType?: string
   cloud: string
   period: string
   total: string
@@ -140,17 +150,17 @@ const MIXED_SERVICE_SUMMARIES: ServiceTypeSummary[] = [
 
 // prettier-ignore
 const MIXED_SERVICES_P1: ServiceChargeRow[] = [
-  // ACU services
-  { id: 'pg-34dc00e8-startup-4',      name: 'pg-34dc00e8: PostgreSQL Startup-4 do-syd',                  serviceType: 'PostgreSQL',         pricing: 'ACU',     plan: 'Startup-4',   cloud: 'do-syd',           period: '4 Feb 2026 10:37:58 UTC – 12 Feb 2026 21:30:47 UTC', total: '$20.91 USD' },
-  { id: 'pg-34dc00e8-developer-1',    name: 'pg-34dc00e8: PostgreSQL Developer-1 do-syd',                serviceType: 'PostgreSQL',         pricing: 'ACU',     plan: 'Developer-1', cloud: 'do-syd',           period: '12 Feb 2026 21:30:48 UTC – 28 Feb 2026 23:59:59 UTC', total: '$2.89 USD' },
-  { id: 'mysql-a1b2c3d4-business-4',  name: 'mysql-a1b2c3d4: MySQL Business-4 do-syd',                  serviceType: 'MySQL',              pricing: 'ACU',     plan: 'Business-4',  cloud: 'do-syd',           period: '1 Feb 2026 00:00:00 UTC – 28 Feb 2026 23:59:59 UTC',  total: '$12.40 USD' },
-  { id: 'pg-2d4b35ac-free',           name: 'pg-2d4b35ac: PostgreSQL Free-1-1gb upcloud-sg-sin',         serviceType: 'PostgreSQL',         pricing: 'ACU',     plan: 'Free-1-1gb',  cloud: 'upcloud-sg-sin',   period: '13 Feb 2026 9:25:22 UTC – 14 Feb 2026 9:39:24 UTC',   total: '$0.00 USD' },
-  { id: 'pg-9a8b7c6d-business-4',     name: 'pg-9a8b7c6d: PostgreSQL Business-4 aws-eu-west-1',         serviceType: 'PostgreSQL',         pricing: 'ACU',     plan: 'Business-4',  cloud: 'aws-eu-west-1',    period: '1 Feb 2026 00:00:00 UTC – 28 Feb 2026 23:59:59 UTC',  total: '$8.44 USD' },
-  { id: 'mysql-d4e5f6a7-startup-4',   name: 'mysql-d4e5f6a7: MySQL Startup-4 aws-eu-west-1',            serviceType: 'MySQL',              pricing: 'ACU',     plan: 'Startup-4',   cloud: 'aws-eu-west-1',    period: '1 Feb 2026 00:00:00 UTC – 28 Feb 2026 23:59:59 UTC',  total: '$4.80 USD' },
-  { id: 'pg-b1c2d3e4-hobbyist',       name: 'pg-b1c2d3e4: PostgreSQL Hobbyist do-syd',                  serviceType: 'PostgreSQL',         pricing: 'ACU',     plan: 'Hobbyist',    cloud: 'do-syd',           period: '4 Feb 2026 10:37:32 UTC – 4 Feb 2026 10:37:57 UTC',   total: '$0.02 USD' },
-  { id: 'mysql-e5f6a7b8-free',        name: 'mysql-e5f6a7b8: MySQL Free-1-1gb do-syd',                  serviceType: 'MySQL',              pricing: 'ACU',     plan: 'Free-1-1gb',  cloud: 'do-syd',           period: '3 Feb 2026 12:10:28 UTC – 3 Feb 2026 12:16:04 UTC',   total: '$0.00 USD' },
-  { id: 'pg-c5d6e7f8-developer-1',    name: 'pg-c5d6e7f8: PostgreSQL Developer-1 google-us-central1',   serviceType: 'PostgreSQL',         pricing: 'ACU',     plan: 'Developer-1', cloud: 'google-us-central1', period: '1 Feb 2026 00:00:00 UTC – 28 Feb 2026 23:59:59 UTC', total: '$1.20 USD' },
-  // Legacy / no-pricing services
+  // ACU services — Plan column shows computeType
+  { id: 'pg-34dc00e8-startup-4',      name: 'pg-34dc00e8: PostgreSQL Startup-4 do-syd',                  serviceType: 'PostgreSQL',         pricing: 'ACU',     plan: 'Startup-4',   computeType: 'Standard',          cloud: 'do-syd',           period: '4 Feb 2026 10:37:58 UTC – 12 Feb 2026 21:30:47 UTC', total: '$20.91 USD' },
+  { id: 'pg-34dc00e8-developer-1',    name: 'pg-34dc00e8: PostgreSQL Developer-1 do-syd',                serviceType: 'PostgreSQL',         pricing: 'ACU',     plan: 'Developer-1', computeType: 'Standard',          cloud: 'do-syd',           period: '12 Feb 2026 21:30:48 UTC – 28 Feb 2026 23:59:59 UTC', total: '$2.89 USD' },
+  { id: 'mysql-a1b2c3d4-business-4',  name: 'mysql-a1b2c3d4: MySQL Business-4 do-syd',                  serviceType: 'MySQL',              pricing: 'ACU',     plan: 'Business-4',  computeType: 'Memory-optimized',  cloud: 'do-syd',           period: '1 Feb 2026 00:00:00 UTC – 28 Feb 2026 23:59:59 UTC',  total: '$12.40 USD' },
+  { id: 'pg-2d4b35ac-free',           name: 'pg-2d4b35ac: PostgreSQL Free-1-1gb upcloud-sg-sin',         serviceType: 'PostgreSQL',         pricing: 'ACU',     plan: 'Free-1-1gb',  computeType: 'Standard',          cloud: 'upcloud-sg-sin',   period: '13 Feb 2026 9:25:22 UTC – 14 Feb 2026 9:39:24 UTC',   total: '$0.00 USD' },
+  { id: 'pg-9a8b7c6d-business-4',     name: 'pg-9a8b7c6d: PostgreSQL Business-4 aws-eu-west-1',         serviceType: 'PostgreSQL',         pricing: 'ACU',     plan: 'Business-4',  computeType: 'Memory-optimized',  cloud: 'aws-eu-west-1',    period: '1 Feb 2026 00:00:00 UTC – 28 Feb 2026 23:59:59 UTC',  total: '$8.44 USD' },
+  { id: 'mysql-d4e5f6a7-startup-4',   name: 'mysql-d4e5f6a7: MySQL Startup-4 aws-eu-west-1',            serviceType: 'MySQL',              pricing: 'ACU',     plan: 'Startup-4',   computeType: 'Standard',          cloud: 'aws-eu-west-1',    period: '1 Feb 2026 00:00:00 UTC – 28 Feb 2026 23:59:59 UTC',  total: '$4.80 USD' },
+  { id: 'pg-b1c2d3e4-hobbyist',       name: 'pg-b1c2d3e4: PostgreSQL Hobbyist do-syd',                  serviceType: 'PostgreSQL',         pricing: 'ACU',     plan: 'Hobbyist',    computeType: 'Standard',          cloud: 'do-syd',           period: '4 Feb 2026 10:37:32 UTC – 4 Feb 2026 10:37:57 UTC',   total: '$0.02 USD' },
+  { id: 'mysql-e5f6a7b8-free',        name: 'mysql-e5f6a7b8: MySQL Free-1-1gb do-syd',                  serviceType: 'MySQL',              pricing: 'ACU',     plan: 'Free-1-1gb',  computeType: 'Standard',          cloud: 'do-syd',           period: '3 Feb 2026 12:10:28 UTC – 3 Feb 2026 12:16:04 UTC',   total: '$0.00 USD' },
+  { id: 'pg-c5d6e7f8-developer-1',    name: 'pg-c5d6e7f8: PostgreSQL Developer-1 google-us-central1',   serviceType: 'PostgreSQL',         pricing: 'ACU',     plan: 'Developer-1', computeType: 'CPU-optimized',     cloud: 'google-us-central1', period: '1 Feb 2026 00:00:00 UTC – 28 Feb 2026 23:59:59 UTC', total: '$1.20 USD' },
+  // Legacy / no-pricing services — Plan column shows service tier name
   { id: 'kafka-events-p1',            name: 'kafka-1a2b3c4d: Apache Kafka Startup-2 do-syd',            serviceType: 'Apache Kafka',       pricing: 'Classic', plan: 'Startup-2',   cloud: 'do-syd',           period: '1 Feb 2026 00:00:00 UTC – 28 Feb 2026 23:59:59 UTC',  total: '$3.20 USD' },
   { id: 'redis-c3d4e5f6-startup-4',   name: 'redis-c3d4e5f6: Caching & ValkeyDB Startup-4 do-syd',     serviceType: 'Caching & ValkeyDB', plan: 'Startup-4',   cloud: 'do-syd',           period: '1 Feb 2026 00:00:00 UTC – 28 Feb 2026 23:59:59 UTC',  total: '$2.10 USD' },
   { id: 'kafka-telemetry-p1',         name: 'kafka-2b3c4d5e: Apache Kafka Business-4 aws-eu-west-1',   serviceType: 'Apache Kafka',       pricing: 'Classic', plan: 'Business-4',  cloud: 'aws-eu-west-1',    period: '1 Feb 2026 00:00:00 UTC – 28 Feb 2026 23:59:59 UTC',  total: '$0.00 USD' },
@@ -160,13 +170,13 @@ const MIXED_SERVICES_P1: ServiceChargeRow[] = [
 
 // prettier-ignore
 const MIXED_SERVICES_P2: ServiceChargeRow[] = [
-  // ACU services
-  { id: 'pg-d7e8f9a0-business-4',     name: 'pg-d7e8f9a0: PostgreSQL Business-4 azure-eastus',          serviceType: 'PostgreSQL',         pricing: 'ACU',     plan: 'Business-4',  cloud: 'azure-eastus',     period: '1 Feb 2026 00:00:00 UTC – 28 Feb 2026 23:59:59 UTC',  total: '$7.30 USD' },
-  { id: 'mysql-a0b1c2d3-business-4',  name: 'mysql-a0b1c2d3: MySQL Business-4 google-us-central1',      serviceType: 'MySQL',              pricing: 'ACU',     plan: 'Business-4',  cloud: 'google-us-central1', period: '1 Feb 2026 00:00:00 UTC – 28 Feb 2026 23:59:59 UTC', total: '$6.90 USD' },
-  { id: 'pg-c4d5e6f7-startup-4',      name: 'pg-c4d5e6f7: PostgreSQL Startup-4 azure-eastus',           serviceType: 'PostgreSQL',         pricing: 'ACU',     plan: 'Startup-4',   cloud: 'azure-eastus',     period: '1 Feb 2026 00:00:00 UTC – 28 Feb 2026 23:59:59 UTC',  total: '$2.10 USD' },
-  { id: 'mysql-f9e8d7c6-hobbyist',    name: 'mysql-f9e8d7c6: MySQL Hobbyist aws-eu-west-1',             serviceType: 'MySQL',              pricing: 'ACU',     plan: 'Hobbyist',    cloud: 'aws-eu-west-1',    period: '3 Feb 2026 08:12:00 UTC – 3 Feb 2026 09:45:00 UTC',   total: '$0.00 USD' },
-  { id: 'pg-f8a9b0c1-developer-1',    name: 'pg-f8a9b0c1: PostgreSQL Developer-1 google-us-central1',   serviceType: 'PostgreSQL',         pricing: 'ACU',     plan: 'Developer-1', cloud: 'google-us-central1', period: '1 Feb 2026 00:00:00 UTC – 28 Feb 2026 23:59:59 UTC', total: '$0.90 USD' },
-  // Legacy / no-pricing services
+  // ACU services — Plan column shows computeType
+  { id: 'pg-d7e8f9a0-business-4',     name: 'pg-d7e8f9a0: PostgreSQL Business-4 azure-eastus',          serviceType: 'PostgreSQL',         pricing: 'ACU',     plan: 'Business-4',  computeType: 'Memory-optimized',  cloud: 'azure-eastus',     period: '1 Feb 2026 00:00:00 UTC – 28 Feb 2026 23:59:59 UTC',  total: '$7.30 USD' },
+  { id: 'mysql-a0b1c2d3-business-4',  name: 'mysql-a0b1c2d3: MySQL Business-4 google-us-central1',      serviceType: 'MySQL',              pricing: 'ACU',     plan: 'Business-4',  computeType: 'Standard',          cloud: 'google-us-central1', period: '1 Feb 2026 00:00:00 UTC – 28 Feb 2026 23:59:59 UTC', total: '$6.90 USD' },
+  { id: 'pg-c4d5e6f7-startup-4',      name: 'pg-c4d5e6f7: PostgreSQL Startup-4 azure-eastus',           serviceType: 'PostgreSQL',         pricing: 'ACU',     plan: 'Startup-4',   computeType: 'Standard',          cloud: 'azure-eastus',     period: '1 Feb 2026 00:00:00 UTC – 28 Feb 2026 23:59:59 UTC',  total: '$2.10 USD' },
+  { id: 'mysql-f9e8d7c6-hobbyist',    name: 'mysql-f9e8d7c6: MySQL Hobbyist aws-eu-west-1',             serviceType: 'MySQL',              pricing: 'ACU',     plan: 'Hobbyist',    computeType: 'Standard',          cloud: 'aws-eu-west-1',    period: '3 Feb 2026 08:12:00 UTC – 3 Feb 2026 09:45:00 UTC',   total: '$0.00 USD' },
+  { id: 'pg-f8a9b0c1-developer-1',    name: 'pg-f8a9b0c1: PostgreSQL Developer-1 google-us-central1',   serviceType: 'PostgreSQL',         pricing: 'ACU',     plan: 'Developer-1', computeType: 'CPU-optimized',     cloud: 'google-us-central1', period: '1 Feb 2026 00:00:00 UTC – 28 Feb 2026 23:59:59 UTC', total: '$0.90 USD' },
+  // Legacy / no-pricing services — Plan column shows service tier name
   { id: 'kafka-5a4b3c2d-business-4',  name: 'kafka-5a4b3c2d: Apache Kafka Business-4 google-us-central1', serviceType: 'Apache Kafka',    pricing: 'Classic', plan: 'Business-4',  cloud: 'google-us-central1', period: '1 Feb 2026 00:00:00 UTC – 28 Feb 2026 23:59:59 UTC', total: '$6.20 USD' },
   { id: 'ch-analytics-p2',            name: 'ch-a1b2c3d4: ClickHouse Business-8 aws-eu-west-1',          serviceType: 'ClickHouse',         plan: 'Business-8',  cloud: 'aws-eu-west-1',    period: '1 Feb 2026 00:00:00 UTC – 28 Feb 2026 23:59:59 UTC',  total: '$15.60 USD' },
   { id: 'kafka-payments-p2',          name: 'kafka-c5d6e7f8: Apache Kafka Premium-6 aws-eu-west-1',      serviceType: 'Apache Kafka',       pricing: 'Classic', plan: 'Premium-6',   cloud: 'aws-eu-west-1',    period: '1 Feb 2026 00:00:00 UTC – 28 Feb 2026 23:59:59 UTC',  total: '$12.80 USD' },
@@ -301,7 +311,9 @@ function ServiceRow({ row, isLast }: { row: ServiceChargeRow; isLast: boolean })
         )}
       </Box>
       <Box style={{ color: '#4a4b57' }}>
-        <Typography.Small>{row.plan}</Typography.Small>
+        <Typography.Small>
+          {row.pricing === 'ACU' && row.computeType ? row.computeType : row.plan}
+        </Typography.Small>
       </Box>
       <Box style={{ color: '#4a4b57' }}>
         <Typography.Small>{row.cloud}</Typography.Small>

@@ -1,4 +1,5 @@
 import { Box, Modal, StatusChip, Typography } from '@aivenio/aquarium'
+import applicationsIcon from '@aivenio/aquarium/icons/applications'
 import { ServiceIcon } from '../components/ServiceIcon'
 
 export type ServiceTypeId =
@@ -110,7 +111,7 @@ function ServiceTypeSelectModal({
                 <Box style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
                   <Typography.DefaultStrong>{service.name}</Typography.DefaultStrong>
                   {ACU_CAPABLE_SERVICE_IDS.has(service.id) && (
-                    <StatusChip text="ACU-mode" status="neutral" />
+                    <StatusChip text="New pricing" status="success" icon={applicationsIcon} />
                   )}
                 </Box>
                 <Box style={{ color: '#787885', marginTop: 4 }}>

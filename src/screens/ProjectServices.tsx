@@ -159,7 +159,7 @@ function getPlanCaption(row: ServiceRow): string {
   if (row.pricingType === 'ACU' && row.computeType) {
     const nodes = row.nodeCount ?? 1
     const nodeText = `${nodes} ${nodes === 1 ? 'node' : 'nodes'}`
-    const parts: string[] = [row.computeType, nodeText]
+    const parts: string[] = [`${row.computeType} compute: ${nodeText}`]
     if (row.cpuCount) parts.push(`${row.cpuCount} CPU`)
     if (row.ramCapacity) parts.push(`${row.ramCapacity} RAM`)
     return parts.join(' · ')
