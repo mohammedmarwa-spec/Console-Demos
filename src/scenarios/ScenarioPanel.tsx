@@ -243,6 +243,12 @@ export function ScenarioPanel() {
             placeholder="Filter scenarios…"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Escape') {
+                e.preventDefault()
+                closePanel()
+              }
+            }}
             aria-label="Filter scenarios"
           />
         </div>

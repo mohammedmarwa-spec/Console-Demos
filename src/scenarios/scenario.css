@@ -56,6 +56,14 @@
   margin-left: 2px;
 }
 
+/* ─── Overlay (click-outside-to-close backdrop) ─────────────────────────── */
+
+.scenario-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 9998;
+}
+
 /* ─── Panel (fixed overlay, not part of page flow) ───────────────────────── */
 
 .scenario-panel {
