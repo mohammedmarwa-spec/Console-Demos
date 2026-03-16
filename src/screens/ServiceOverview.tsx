@@ -158,6 +158,13 @@ function ServiceOverview({
                     {isReplica && <StatusChip text="Read Replica" status="neutral" dense />}
                     {isFork && <StatusChip text="Fork" status="neutral" dense />}
                     <StatusChip text="Nodes" status="success" badge={nodeCount} dense />
+                    {currentService?.pricingType && (
+                      <StatusChip
+                        text={currentService.pricingType}
+                        status={currentService.pricingType === 'ACU' ? 'success' : 'neutral'}
+                        dense
+                      />
+                    )}
                   </Box>
                   {isReplica && primaryService && (
                     <Box component="span" style={{ color: '#787885' }}>
@@ -234,7 +241,7 @@ function ServiceOverview({
                             <Link href="#">Learn more</Link>
                           </Typography.Small>
                           <Box>
-                            <Button.Ghost type="button" dense onClick={() => setComparePricingOpen(true)}>Migrate to new pricing</Button.Ghost>
+                            <Button.Ghost type="button" dense onClick={() => setComparePricingOpen(true)}>Switch to new pricing</Button.Ghost>
                           </Box>
                         </Box>
                       </Alert>

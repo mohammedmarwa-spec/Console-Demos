@@ -6,6 +6,7 @@ import type { ServiceRow } from './ProjectServices'
 import { getServiceTypeDisplayName } from './ServiceTypeSelectModal'
 import {
   LAYOUT_GAP,
+  PricingBanner,
   Section,
   ServiceSummarySidebar,
   SummaryDetail,
@@ -19,8 +20,8 @@ export type CreateForkModalProps = {
   /** The source service to fork from. */
   sourceService: ServiceRow | null
   onClose: () => void
-  /** Called with the chosen fork name once the user submits. */
-  onCreateFork: (forkName: string) => void
+  /** Called with the chosen fork name and pricing mode once the user submits. */
+  onCreateFork: (forkName: string, useAcuPricing: boolean) => void
 }
 
 export function defaultForkName(serviceName: string): string {
@@ -57,6 +58,7 @@ export default function CreateForkModal({
   const [backupType, setBackupType] = useState<BackupType>('latest')
   const [configType, setConfigType] = useState<ConfigType>('same-as-source')
   const [targetProject] = useState(PROJECT_NAME)
+  const [useAcuPricing, setUseAcuPricing] = useState(sourceService?.pricingType === 'ACU')
 
   if (!open || !sourceService) return null
 
@@ -68,7 +70,7 @@ export default function CreateForkModal({
   function handleSubmit() {
     const name = forkName.trim()
     if (!name) return
-    onCreateFork(name)
+    onCreateFork(name, useAcuPricing)
   }
 
   return (
@@ -177,10 +179,16 @@ export default function CreateForkModal({
               </RadioButton>
             </Box>
           </Section>
+
         </Box>
 
         {/* ── Service summary sidebar ── */}
         <ServiceSummarySidebar>
+          <PricingBanner
+            title="Flexible configuration & pricing"
+            checked={useAcuPricing}
+            onChange={setUseAcuPricing}
+          />
           <Typography.DefaultStrong>Service summary</Typography.DefaultStrong>
 
           <SummaryDetail label="Service" value={`${serviceDisplayName} 17`} />

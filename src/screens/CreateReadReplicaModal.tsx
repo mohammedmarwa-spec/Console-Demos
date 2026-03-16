@@ -7,6 +7,7 @@ import type { ServiceRow } from './ProjectServices'
 import { getServiceTypeDisplayName } from './ServiceTypeSelectModal'
 import {
   LAYOUT_GAP,
+  PricingBanner,
   Section,
   ServiceSummarySidebar,
   SummaryDetail,
@@ -19,8 +20,8 @@ export type CreateReadReplicaModalProps = {
   /** The primary service this replica will be created for. */
   sourceService: ServiceRow | null
   onClose: () => void
-  /** Called with the chosen replica name once the user submits. */
-  onCreateReplica: (replicaName: string) => void
+  /** Called with the chosen replica name and pricing mode once the user submits. */
+  onCreateReplica: (replicaName: string, useAcuPricing: boolean) => void
 }
 
 function defaultReplicaName(serviceId: string): string {
@@ -37,6 +38,7 @@ export default function CreateReadReplicaModal({
   const [replicaName, setReplicaName] = useState(() =>
     sourceService ? defaultReplicaName(sourceService.id) : '',
   )
+  const [useAcuPricing, setUseAcuPricing] = useState(sourceService?.pricingType === 'ACU')
 
   if (!open || !sourceService) return null
 
@@ -48,7 +50,7 @@ export default function CreateReadReplicaModal({
   function handleSubmit() {
     const name = replicaName.trim()
     if (!name) return
-    onCreateReplica(name)
+    onCreateReplica(name, useAcuPricing)
   }
 
   return (
@@ -133,10 +135,16 @@ export default function CreateReadReplicaModal({
               />
             </Box>
           </Section>
+
         </Box>
 
         {/* ── Service summary sidebar ── */}
         <ServiceSummarySidebar>
+          <PricingBanner
+            title="Flexible configuration & pricing"
+            checked={useAcuPricing}
+            onChange={setUseAcuPricing}
+          />
           <Typography.DefaultStrong>Service summary</Typography.DefaultStrong>
 
           <SummaryDetail label="Service" value={`${serviceDisplayName} 17`} />

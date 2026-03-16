@@ -305,7 +305,7 @@ function AppContent() {
     setServices((prev) => prev.filter((s) => s.id !== serviceId))
   }
 
-  function handleCreateReplica(replicaName: string) {
+  function handleCreateReplica(replicaName: string, useAcuPricing: boolean) {
     if (!overviewServiceId || !overviewServiceType) return
     const displayName = getServiceTypeDisplayName(overviewServiceType)
     const iconLetter = overviewServiceType === 'mysql' ? 'M' : overviewServiceType === 'postgresql' ? 'P' : displayName.charAt(0)
@@ -327,6 +327,7 @@ function AppContent() {
         iconLetter,
         replicationRole: 'read_replica',
         sourceServiceId,
+        pricingType: useAcuPricing ? 'ACU' : undefined,
       },
     ])
     setCreateReplicaModalOpen(false)
@@ -334,7 +335,7 @@ function AppContent() {
     // (The user can click the replica link there to navigate to the replica's own overview.)
   }
 
-  function handleCreateFork(forkName: string) {
+  function handleCreateFork(forkName: string, useAcuPricing: boolean) {
     if (!overviewServiceId || !overviewServiceType) return
     const displayName = getServiceTypeDisplayName(overviewServiceType)
     const iconLetter = overviewServiceType === 'mysql' ? 'M' : overviewServiceType === 'postgresql' ? 'P' : displayName.charAt(0)
@@ -357,6 +358,7 @@ function AppContent() {
         iconLetter,
         replicationRole: 'fork',
         sourceServiceId,
+        pricingType: useAcuPricing ? 'ACU' : undefined,
       },
     ])
     setCreateForkModalOpen(false)

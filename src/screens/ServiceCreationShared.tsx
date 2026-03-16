@@ -2,7 +2,7 @@
  * Shared primitives for every "Create / Fork / Replica" service modal.
  * All layout constants follow the 8px base-unit grid.
  */
-import { Box, Icon, Typography } from '@aivenio/aquarium'
+import { Box, Icon, Link, Switch, Typography } from '@aivenio/aquarium'
 
 // ─── Layout constants ─────────────────────────────────────────────────────────
 
@@ -157,3 +157,46 @@ export function ServiceSummarySidebar({
 }
 
 ServiceSummarySidebar.displayName = 'ServiceSummarySidebar'
+
+// ─── PricingBanner ────────────────────────────────────────────────────────────
+// Toggle card shown in Fork / Read-replica modals to let users choose the
+// pricing mode for the new service being created.
+
+export function PricingBanner({
+  title,
+  checked,
+  onChange,
+}: {
+  title: string
+  checked: boolean
+  onChange: (checked: boolean) => void
+}) {
+  return (
+    <Box
+      style={{
+        backgroundColor: '#ebfbee',
+        borderRadius: 8,
+        padding: '0 16px',
+        display: 'flex',
+        gap: 0,
+        alignItems: 'center',
+        minHeight: 64,
+        overflow: 'hidden',
+        position: 'relative',
+      }}
+    >
+      <Switch checked={checked} onChange={() => onChange(!checked)} />
+      <Box style={{ minWidth: 0 }}>
+        <Typography.SmallStrong>{title}</Typography.SmallStrong>
+        <Box style={{ color: '#4a4b57', marginTop: 2 }}>
+          <Typography.Caption>
+            Fine-tune CPU, RAM and disk.{' '}
+            <Link href="#" onClick={(e) => e.preventDefault()}>Details</Link>
+          </Typography.Caption>
+        </Box>
+      </Box>
+    </Box>
+  )
+}
+
+PricingBanner.displayName = 'PricingBanner'
