@@ -433,28 +433,77 @@ function ProjectServices({ services, onCreateServiceClick, onServiceClick, onDel
                 rows={filteredServices}
                 columns={[
                   {
-                    type: 'item',
+                    type: 'custom',
                     headerName: 'Service',
-                    item: (row) => ({
-                      title: (
-                        <Link
-                          href="#"
-                          onClick={(e) => { e.preventDefault(); onServiceClick?.(row.id) }}
-                        >
-                          {row.serviceName}
-                        </Link>
-                      ),
-                      caption: (
-                        <Box style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 2 }}>
-                          <Box style={{ color: '#787885' }}>
-                            <Typography.Caption>{row.serviceType}</Typography.Caption>
+                    UNSAFE_render: (row) => {
+                      const isChild = row.replicationRole === 'read_replica' || row.replicationRole === 'fork'
+                      const sourceService = row.sourceServiceId
+                        ? services.find((s) => s.id === row.sourceServiceId)
+                        : undefined
+                      const iconUrl = getServiceIconUrl(row.serviceTypeId ?? null)
+
+                      return (
+                        <Box style={{ display: 'flex', alignItems: 'center' }}>
+                          {/* Dashed tree connector for replicas / forks */}
+                          {isChild && (
+                            <Box
+                              aria-hidden="true"
+                              style={{ width: 28, alignSelf: 'stretch', flexShrink: 0, position: 'relative', marginRight: 16 }}
+                            >
+                              <Box style={{
+                                position: 'absolute',
+                                left: 11,
+                                top: 0,
+                                bottom: '50%',
+                                borderLeft: '1.5px dashed #c0c0cc',
+                              }} />
+                              <Box style={{
+                                position: 'absolute',
+                                left: 11,
+                                top: '50%',
+                                width: 17,
+                                borderTop: '1.5px dashed #c0c0cc',
+                              }} />
+                            </Box>
+                          )}
+
+                          {/* Service icon */}
+                          <Box style={{ width: 40, height: 40, flexShrink: 0, marginRight: 12 }}>
+                            {iconUrl ? (
+                              <img src={iconUrl} alt="" style={{ width: 40, height: 40, objectFit: 'contain' }} />
+                            ) : (
+                              <Typography.SmallStrong>
+                                {row.iconLetter ?? row.serviceType.charAt(0)}
+                              </Typography.SmallStrong>
+                            )}
                           </Box>
-                          <ServiceStatusBadge status={row.status ?? 'Running'} />
+
+                          {/* Name + caption */}
+                          <Box>
+                            <Link
+                              href="#"
+                              onClick={(e) => { e.preventDefault(); onServiceClick?.(row.id) }}
+                            >
+                              {row.serviceName}
+                            </Link>
+                            <Box style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 2 }}>
+                              <Box style={{ color: '#787885' }}>
+                                <Typography.Caption>{row.serviceType}</Typography.Caption>
+                              </Box>
+                              <ServiceStatusBadge status={row.status ?? 'Running'} />
+                              {isChild && (
+                                <Box style={{ color: '#787885' }}>
+                                  <Typography.Caption>
+                                    <strong>{row.replicationRole === 'fork' ? 'Fork' : 'Replica'}</strong>
+                                    {sourceService ? ` from ${sourceService.serviceName}` : null}
+                                  </Typography.Caption>
+                                </Box>
+                              )}
+                            </Box>
+                          </Box>
                         </Box>
-                      ),
-                      image: getServiceIconUrl(row.serviceTypeId ?? null),
-                      imageSize: 40,
-                    }),
+                      )
+                    },
                   },
                   {
                     type: 'custom',
