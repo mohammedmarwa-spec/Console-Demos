@@ -235,6 +235,9 @@ function AppContent() {
           cpuCount: data.cpuCount,
           ramCapacity: data.ramCapacity,
           storageCapacity: data.storageCapacity,
+          serviceTier: data.serviceTier,
+          computeType: data.computeType,
+          monthlyPrice: data.monthlyPrice,
         },
       ])
       setOverviewServiceId(data.serviceName)
@@ -282,8 +285,13 @@ function AppContent() {
               // Only update when the form emits pricingModel (PG / MySQL with the toggle).
               // For other service types the field is absent, so the existing chip is preserved.
               ...(data.pricingModel != null
-                ? { pricingType: data.pricingModel === 'acu' ? 'ACU' : undefined }
+                ? {
+                    pricingType: data.pricingModel === 'acu' ? 'ACU' : undefined,
+                    serviceTier: data.pricingModel === 'acu' ? data.serviceTier : undefined,
+                    computeType: data.pricingModel === 'acu' ? data.computeType : undefined,
+                  }
                 : {}),
+              ...(data.monthlyPrice != null ? { monthlyPrice: data.monthlyPrice } : {}),
             }
           : s,
       ),

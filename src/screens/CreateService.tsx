@@ -651,6 +651,12 @@ export type CreatedServicePayload = {
   ha?: string
   /** Only present for services that support the ACU ↔ legacy pricing toggle. */
   pricingModel?: PricingModel
+  /** ACU tier label, e.g. "Professional". Only set when pricingModel === 'acu'. */
+  serviceTier?: string
+  /** ACU compute profile label, e.g. "Balanced". Only set when pricingModel === 'acu'. */
+  computeType?: string
+  /** Estimated monthly price string, e.g. "~$75", "$5", "Free". */
+  monthlyPrice?: string
 }
 
 export type CreateServiceProps = {
@@ -822,6 +828,7 @@ function CreateService({
         planDetails: `${fp.cpu} vCPU / ${fp.ram} / ${fp.storage}`,
         nodeCount: 1, cpuCount: fp.cpu,
         ramCapacity: fp.ram, storageCapacity: fp.storage,
+        monthlyPrice: fp.price,
       })
       return
     }
@@ -842,6 +849,7 @@ function CreateService({
         ramCapacity: plan.ram,
         storageCapacity: plan.storage,
         pricingModel: 'legacy',
+        monthlyPrice: plan.monthlyPrice,
       })
       return
     }
@@ -861,10 +869,12 @@ function CreateService({
         cpuCount: plan.vCPU,
         ramCapacity: plan.ram,
         storageCapacity: plan.storage,
+        monthlyPrice: plan.monthlyPrice,
       })
       return
     }
 
+    const ramLabel = (selectedCompute?.ram ?? '').replace(' RAM', '')
     onCreateSuccess?.({
       serviceName, serviceTypeId, tier,
       cloud: cloud.toUpperCase(),
@@ -872,13 +882,16 @@ function CreateService({
       regionLabel: selectedRegion?.label ?? regionId,
       location: selectedRegion?.location ?? regionId,
       planName: 'Professional',
-      planDetails: `${selectedCompute?.vCPU ?? 1} vCPU / ${selectedCompute?.ram ?? ''} / ${diskSizeGb} GB storage`,
+      planDetails: `${selectedCompute?.vCPU ?? 1} vCPU / ${ramLabel} / ${diskSizeGb} GB storage`,
       nodeCount,
       cpuCount: selectedCompute?.vCPU ?? 1,
-      ramCapacity: selectedCompute?.ram ?? '',
+      ramCapacity: ramLabel,
       storageCapacity: `${diskSizeGb} GB`,
       ha: HA_OPTIONS.find((o) => o.id === haOption)?.label ?? haOption,
       pricingModel: 'acu',
+      serviceTier: config.tiers.find((t) => t.id === tier)?.title ?? 'Professional',
+      computeType: selectedComputeProfileInfo?.label ?? computeProfile,
+      monthlyPrice: `~$${estimatedMonthly}`,
     })
   }
 

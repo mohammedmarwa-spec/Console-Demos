@@ -67,6 +67,29 @@ export default function CreateForkModal({
     ? sourceService.cloudRegion.split(':')[0].trim()
     : sourceService.cloudRegion
 
+  const isAcu = sourceService.pricingType === 'ACU'
+
+  // "Current plan" — service tier label for ACU, plan name for legacy
+  const planLabel = isAcu && sourceService.serviceTier
+    ? sourceService.serviceTier
+    : sourceService.planName
+
+  // "Resources" — computed from individual fields for ACU, planDetails for legacy
+  const resourcesLabel = (() => {
+    if (isAcu && sourceService.computeType) {
+      const nodes = sourceService.nodeCount ?? 1
+      const parts: string[] = [
+        sourceService.computeType,
+        `${nodes} ${nodes === 1 ? 'node' : 'nodes'}`,
+      ]
+      if (sourceService.cpuCount) parts.push(`${sourceService.cpuCount} CPU`)
+      if (sourceService.ramCapacity) parts.push(`${sourceService.ramCapacity} RAM`)
+      if (sourceService.storageCapacity) parts.push(`${sourceService.storageCapacity} storage`)
+      return parts.join(' · ')
+    }
+    return sourceService.planDetails
+  })()
+
   function handleSubmit() {
     const name = forkName.trim()
     if (!name) return
@@ -108,9 +131,9 @@ export default function CreateForkModal({
               <Box style={{ display: 'flex', gap: 32, flexWrap: 'wrap' }}>
                 <SourceDetail label="Region" value={sourceService.location} />
                 <SourceDetail label="Cloud provider" value={cloudLabel} />
-                <SourceDetail label="Current plan" value={sourceService.planName} />
-                <SourceDetail label="Resources" value={sourceService.planDetails} />
-                <SourceDetail label="Monthly price" value="~ $75" />
+                <SourceDetail label="Current plan" value={planLabel} />
+                <SourceDetail label="Resources" value={resourcesLabel} />
+                <SourceDetail label="Monthly price" value={sourceService.monthlyPrice ?? '—'} />
               </Box>
             </Box>
 
@@ -219,7 +242,7 @@ export default function CreateForkModal({
               <Box style={{ color: '#16171a' }}>
                 <Typography.SmallStrong>Est. monthly*</Typography.SmallStrong>
               </Box>
-              <Typography.Heading>$75 USD</Typography.Heading>
+              <Typography.Heading>{sourceService.monthlyPrice ?? '—'}</Typography.Heading>
             </Box>
             <Box style={{ color: '#68696b' }}>
               <Typography.Caption>*Based on 730 hours of being powered on</Typography.Caption>

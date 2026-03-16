@@ -89,7 +89,7 @@ export default function CreateReadReplicaModal({
                 <PrimaryDetail label="Cloud provider" value={cloudLabel} />
                 <PrimaryDetail label="Current plan" value={sourceService.planName} />
                 <PrimaryDetail label="Resources" value={sourceService.planDetails} />
-                <PrimaryDetail label="Monthly price" value="~ $75" />
+                <PrimaryDetail label="Monthly price" value={sourceService.monthlyPrice ?? '—'} />
               </Box>
             </Box>
           </Section>
@@ -166,7 +166,7 @@ export default function CreateReadReplicaModal({
               <Box style={{ color: '#16171a' }}>
                 <Typography.SmallStrong>Est. monthly*</Typography.SmallStrong>
               </Box>
-              <Typography.Heading>$75 USD</Typography.Heading>
+              <Typography.Heading>{sourceService.monthlyPrice ?? '—'}</Typography.Heading>
             </Box>
             <Box style={{ color: '#68696b' }}>
               <Typography.Caption>*Based on 730 hours of being powered on</Typography.Caption>

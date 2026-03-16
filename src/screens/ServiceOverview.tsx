@@ -95,8 +95,17 @@ function ServiceOverview({
   const isSimpleTier = ['free', 'developer'].includes((currentService?.planName ?? '').toLowerCase())
 
   // Caption shown beneath the "Service plan usage" section title.
-  const planUsageSubtitle = currentService?.planName
-    ? `${currentService.planName} · ${nodeCount} ${nodeCount === 1 ? 'node' : 'nodes'} · ${currentService.planDetails ?? `${ramCapacity} RAM · ${storageCapacity} storage`}`
+  // For ACU services: prefer serviceTier as the plan label and include computeType.
+  const planLabel = isAcuPricing && currentService?.serviceTier
+    ? currentService.serviceTier
+    : currentService?.planName
+  const planUsageSubtitle = planLabel
+    ? [
+        planLabel,
+        `${nodeCount} ${nodeCount === 1 ? 'node' : 'nodes'}`,
+        ...(isAcuPricing && currentService?.computeType ? [currentService.computeType] : []),
+        currentService?.planDetails ?? `${ramCapacity} RAM · ${storageCapacity} storage`,
+      ].join(' · ')
     : undefined
 
   // Scroll the content area to the top on every fresh mount (including service-to-service navigation).

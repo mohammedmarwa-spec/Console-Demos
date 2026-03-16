@@ -59,6 +59,8 @@ export type ServiceRow = {
   serviceTier?: string
   /** ACU compute type label, e.g. "Standard", "Memory-optimized". */
   computeType?: string
+  /** Estimated monthly price string, e.g. "~$75", "$5", "Free". */
+  monthlyPrice?: string
 }
 
 export const INITIAL_SERVICES: ServiceRow[] = [
