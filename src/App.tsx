@@ -106,6 +106,30 @@ const MYSQL_ACU_ROLLOUT_SERVICES: ServiceRow[] = [
   { id: 'redis-sessions',   serviceName: 'redis-sessions',   serviceType: 'Caching & ValkeyDB', serviceTypeId: 'redis', status: 'Running', nodes: 'Nodes 1', nodeCount: 1, planName: 'Startup-4', planDetails: '2 CPU / 4 GB RAM',                   cloudRegion: 'AWS: eu-west-1',            location: 'Europe, Ireland',         created: '4 months ago',  iconLetter: 'R' },
 ]
 
+// ─── Read-replica mixed-pricing fixtures ─────────────────────────────────────
+// One combined scenario exposing all four pricing combinations in a single list.
+// Each primary has a unique id; replicas reference their primary via sourceServiceId.
+
+// prettier-ignore
+const REPLICA_MIXED_SERVICES: ServiceRow[] = [
+  // ── 1. Both ACU ──────────────────────────────────────────────────────────────
+  { id: 'rp-p1',  serviceName: 'mysql-both-acu',          serviceType: 'MySQL', serviceTypeId: 'mysql', status: 'Running', nodes: 'Nodes 3', nodeCount: 3, planName: 'Business-4', planDetails: '4 CPU / 16 GB RAM / 300 GB storage', cloudRegion: 'AWS: eu-west-1',       location: 'Europe, Ireland',         created: '3 months ago', iconLetter: 'M', pricingType: 'ACU', cpuCount: 4, ramCapacity: '16 GB', storageCapacity: '300 GB', serviceTier: 'Business',      computeType: 'Standard' },
+  { id: 'rp-r1',  serviceName: 'mysql-both-acu-replica',  serviceType: 'MySQL', serviceTypeId: 'mysql', status: 'Running', nodes: 'Nodes 3', nodeCount: 3, planName: 'Business-4', planDetails: '4 CPU / 16 GB RAM / 300 GB storage', cloudRegion: 'AWS: us-east-1',       location: 'North America, Virginia', created: '2 months ago', iconLetter: 'M', pricingType: 'ACU', cpuCount: 4, ramCapacity: '16 GB', storageCapacity: '300 GB', serviceTier: 'Business',      computeType: 'Standard',  replicationRole: 'read_replica', sourceServiceId: 'rp-p1' },
+
+  // ── 2. Primary ACU, replica legacy ───────────────────────────────────────────
+  { id: 'rp-p2',  serviceName: 'mysql-acu-legacy-replica',       serviceType: 'MySQL', serviceTypeId: 'mysql', status: 'Running', nodes: 'Nodes 3', nodeCount: 3, planName: 'Business-4', planDetails: '4 CPU / 16 GB RAM / 300 GB storage', cloudRegion: 'AWS: eu-central-1',    location: 'Europe, Frankfurt',       created: '3 months ago', iconLetter: 'M', pricingType: 'ACU', cpuCount: 4, ramCapacity: '16 GB', storageCapacity: '300 GB', serviceTier: 'Business',      computeType: 'Standard' },
+  { id: 'rp-r2',  serviceName: 'mysql-acu-legacy-replica-r',     serviceType: 'MySQL', serviceTypeId: 'mysql', status: 'Running', nodes: 'Nodes 3', nodeCount: 3, planName: 'Business-4', planDetails: '4 CPU / 16 GB RAM / 300 GB storage', cloudRegion: 'AWS: ap-southeast-1',  location: 'Asia, Singapore',         created: '2 months ago', iconLetter: 'M',                    cpuCount: 4, ramCapacity: '16 GB', storageCapacity: '300 GB',                                                                       replicationRole: 'read_replica', sourceServiceId: 'rp-p2' },
+
+  // ── 3. Primary legacy, replica ACU ───────────────────────────────────────────
+  { id: 'rp-p3',  serviceName: 'mysql-legacy-acu-replica',       serviceType: 'MySQL', serviceTypeId: 'mysql', status: 'Running', nodes: 'Nodes 3', nodeCount: 3, planName: 'Business-4', planDetails: '4 CPU / 16 GB RAM / 300 GB storage', cloudRegion: 'AWS: us-west-2',       location: 'North America, Oregon',   created: '4 months ago', iconLetter: 'M',                    cpuCount: 4, ramCapacity: '16 GB', storageCapacity: '300 GB' },
+  { id: 'rp-r3',  serviceName: 'mysql-legacy-acu-replica-r',     serviceType: 'MySQL', serviceTypeId: 'mysql', status: 'Running', nodes: 'Nodes 3', nodeCount: 3, planName: 'Business-4', planDetails: '4 CPU / 16 GB RAM / 300 GB storage', cloudRegion: 'AWS: eu-west-1',       location: 'Europe, Ireland',         created: '3 months ago', iconLetter: 'M', pricingType: 'ACU', cpuCount: 4, ramCapacity: '16 GB', storageCapacity: '300 GB', serviceTier: 'Business',      computeType: 'Standard',  replicationRole: 'read_replica', sourceServiceId: 'rp-p3' },
+
+  // ── 4. Primary ACU, 2 replicas (1 ACU + 1 legacy) ────────────────────────────
+  { id: 'rp-p4',  serviceName: 'mysql-acu-mixed-replicas',       serviceType: 'MySQL', serviceTypeId: 'mysql', status: 'Running', nodes: 'Nodes 3', nodeCount: 3, planName: 'Business-4', planDetails: '4 CPU / 16 GB RAM / 300 GB storage', cloudRegion: 'AWS: eu-west-1',       location: 'Europe, Ireland',         created: '2 months ago', iconLetter: 'M', pricingType: 'ACU', cpuCount: 4, ramCapacity: '16 GB', storageCapacity: '300 GB', serviceTier: 'Business',      computeType: 'Standard' },
+  { id: 'rp-r4a', serviceName: 'mysql-acu-mixed-replicas-r-acu', serviceType: 'MySQL', serviceTypeId: 'mysql', status: 'Running', nodes: 'Nodes 1', nodeCount: 1, planName: 'Startup-4',  planDetails: '2 CPU / 4 GB RAM / 80 GB storage',   cloudRegion: 'AWS: ap-northeast-1',  location: 'Asia, Tokyo',             created: '1 month ago',  iconLetter: 'M', pricingType: 'ACU', cpuCount: 2, ramCapacity: '4 GB',  storageCapacity: '80 GB',  serviceTier: 'Professional', computeType: 'Standard',  replicationRole: 'read_replica', sourceServiceId: 'rp-p4' },
+  { id: 'rp-r4b', serviceName: 'mysql-acu-mixed-replicas-r-leg', serviceType: 'MySQL', serviceTypeId: 'mysql', status: 'Running', nodes: 'Nodes 3', nodeCount: 3, planName: 'Business-4', planDetails: '4 CPU / 16 GB RAM / 300 GB storage', cloudRegion: 'AWS: ap-southeast-1',  location: 'Asia, Singapore',         created: '1 month ago',  iconLetter: 'M',                    cpuCount: 4, ramCapacity: '16 GB', storageCapacity: '300 GB',                                                                       replicationRole: 'read_replica', sourceServiceId: 'rp-p4' },
+]
+
 function shuffle<T>(arr: T[]): T[] {
   const out = [...arr]
   for (let i = out.length - 1; i > 0; i--) {
@@ -124,6 +148,8 @@ function getInitialServicesForScenario(scenarioId: string | null): ServiceRow[] 
       return shuffle(MANY_SERVICES)
     case 'mysql-acu-rollout':
       return MYSQL_ACU_ROLLOUT_SERVICES
+    case 'replica-mixed-pricing':
+      return REPLICA_MIXED_SERVICES
     default:
       return INITIAL_SERVICES
   }
@@ -158,14 +184,16 @@ function AppContent() {
     if (activeScenarioId === prevScenarioId.current) return
     prevScenarioId.current = activeScenarioId
     setServices(getInitialServicesForScenario(activeScenarioId))
-    setOverviewServiceId(null)
-    setOverviewServiceType(null)
     setServiceTypeModalOpen(false)
     setCreationModalOpen(false)
     // Billing scenario → jump straight to the invoice page
     if (activeScenarioId === 'invoice-mixed-services') {
+      setOverviewServiceId(null)
+      setOverviewServiceType(null)
       setView('billing-invoice')
     } else {
+      setOverviewServiceId(null)
+      setOverviewServiceType(null)
       setView('project-services')
     }
     // Auto-open the rollout modal when entering the MySQL ACU rollout scenario

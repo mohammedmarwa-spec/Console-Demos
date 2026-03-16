@@ -437,9 +437,6 @@ function ProjectServices({ services, onCreateServiceClick, onServiceClick, onDel
                     headerName: 'Service',
                     UNSAFE_render: (row) => {
                       const isChild = row.replicationRole === 'read_replica' || row.replicationRole === 'fork'
-                      const sourceService = row.sourceServiceId
-                        ? services.find((s) => s.id === row.sourceServiceId)
-                        : undefined
                       const iconUrl = getServiceIconUrl(row.serviceTypeId ?? null)
 
                       return (
@@ -494,8 +491,7 @@ function ProjectServices({ services, onCreateServiceClick, onServiceClick, onDel
                               {isChild && (
                                 <Box style={{ color: '#787885' }}>
                                   <Typography.Caption>
-                                    <strong>{row.replicationRole === 'fork' ? 'Fork' : 'Replica'}</strong>
-                                    {sourceService ? ` from ${sourceService.serviceName}` : null}
+                                    <strong>{row.replicationRole === 'fork' ? 'Fork' : 'Read replica'}</strong>
                                   </Typography.Caption>
                                 </Box>
                               )}

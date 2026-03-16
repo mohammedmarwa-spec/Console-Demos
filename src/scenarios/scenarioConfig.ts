@@ -16,9 +16,10 @@ export const SCENARIOS: Scenario[] = [
   { id: 'first-time-user',         label: 'First-time user',                    group: 'Service Creation',   description: 'Onboarding state, no services' },
 
   // Existing customers
-  { id: 'many-services',           label: 'Project services: mixed pricing',    group: 'Existing customers', description: 'Pre-populated with multiple services' },
-  { id: 'mysql-acu-rollout',       label: 'Existing users – MySQL ACU rollout', group: 'Existing customers', description: 'Services list + "Introducing new pricing" modal' },
-  { id: 'invoice-mixed-services',  label: 'Mixed-service invoice',              group: 'Existing customers', description: 'Invoice with PG, MySQL, Kafka, OpenSearch across two projects (shuffled)' },
+  { id: 'many-services',                        label: 'Project services: mixed pricing',      group: 'Existing customers', description: 'Pre-populated with multiple services' },
+  { id: 'mysql-acu-rollout',                    label: 'Existing users – MySQL ACU rollout',   group: 'Existing customers', description: 'Services list + "Introducing new pricing" modal' },
+  { id: 'invoice-mixed-services',               label: 'Mixed-service invoice',                group: 'Existing customers', description: 'Invoice with PG, MySQL, Kafka, OpenSearch across two projects (shuffled)' },
+  { id: 'replica-mixed-pricing',                 label: 'Read replicas: mixed pricing',         group: 'Existing customers', description: '4 MySQL primaries covering all ACU/legacy replica combos' },
 ]
 
 // ─── Derived helpers ──────────────────────────────────────────────────────────
