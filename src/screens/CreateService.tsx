@@ -11,6 +11,7 @@ import {
   RadioButton,
   Select,
   Switch,
+  Tabs,
   Typography,
 } from '@aivenio/aquarium'
 import { LAYOUT_GAP, PADDING, SIDEBAR_WIDTH, Section, SummaryDetail } from './ServiceCreationShared'
@@ -23,6 +24,7 @@ import serverHddIcon from '@aivenio/aquarium/icons/serverHdd'
 import tagIcon from '@aivenio/aquarium/icons/tag'
 import nodesIcon from '@aivenio/aquarium/icons/nodes'
 import proPlansIcon from '@aivenio/aquarium/icons/proPlans'
+import listIcon from '@aivenio/aquarium/icons/list'
 import addIcon from '@aivenio/aquarium/icons/add'
 import type { ServiceTypeId } from './ServiceTypeSelectModal'
 import cloudAwsVector from '../assets/cloud-aws-vector.svg'
@@ -115,6 +117,15 @@ type Plan = {
   monthlyPrice: string
 }
 
+/** One tab in the legacy plan selector (Hobbyist / Startup / Business / Premium). */
+type LegacyPlanGroup = {
+  id: string
+  label: string
+  description: string
+  features: string[]
+  plans: Plan[]
+}
+
 type ServiceConfig = {
   versions: string[]
   tiers: TierOption[]
@@ -128,10 +139,9 @@ type ServiceConfig = {
   plans?: Plan[]
   /**
    * When defined alongside haEnabled, enables a pricing model toggle between ACU (flexible)
-   * and legacy modes. These plans are shown when the user selects legacy pricing.
-   * Add to any service type to make the toggle available for that service.
+   * and legacy modes. Groups are displayed as tabs when the user selects legacy pricing.
    */
-  legacyPlans?: Plan[]
+  legacyPlans?: LegacyPlanGroup[]
   computeProfiles: ComputeProfile[]
   computeOptionsByProfile: Record<string, ComputeOption[]>
   storageSpecs: StorageSpec[]
@@ -325,20 +335,115 @@ const GRAFANA_PLANS: Plan[] = [
   { id: 'premium-8', label: 'Premium-8', nodes: 6, vCPU: 8, ram: '16 GB', storage: '100 GB', monthlyPrice: '~$450' },
 ]
 
-// ─── Legacy plan sets (for services that support the ACU ↔ legacy toggle) ────
+// ─── Legacy plan groups (Hobbyist / Startup / Business / Premium tabs) ────────
+// nodes = VMs, vCPU = CPUs per VM, ram = RAM per VM in the legacy plan table.
 
-const LEGACY_PG_PLANS: Plan[] = [
-  { id: 'hobbyist', label: 'Hobbyist', nodes: 1, vCPU: 1, ram: '1 GB',  storage: '8 GB',   monthlyPrice: '~$25'  },
-  { id: 'startup',  label: 'Startup',  nodes: 1, vCPU: 2, ram: '4 GB',  storage: '80 GB',  monthlyPrice: '~$75'  },
-  { id: 'business', label: 'Business', nodes: 3, vCPU: 4, ram: '16 GB', storage: '480 GB', monthlyPrice: '~$350' },
-  { id: 'premium',  label: 'Premium',  nodes: 3, vCPU: 8, ram: '32 GB', storage: '700 GB', monthlyPrice: '~$700' },
+const LEGACY_PG_PLAN_GROUPS: LegacyPlanGroup[] = [
+  {
+    id: 'hobbyist', label: 'Hobbyist',
+    description: 'For small test environments',
+    features: ['1 dedicated VM (1 node)', 'Backups for disaster recovery'],
+    plans: [
+      { id: 'pg-hobbyist', label: 'Hobbyist', nodes: 1, vCPU: 1, ram: '2 GB', storage: '8 GB', monthlyPrice: '~$19' },
+    ],
+  },
+  {
+    id: 'startup', label: 'Startup',
+    description: 'For test environments with high performance needs',
+    features: ['1 dedicated VM (1 node)', 'Backup up to 2 days with point-in-time recovery', '99.99% uptime SLA'],
+    plans: [
+      { id: 'pg-startup-4',  label: 'Startup-4',  nodes: 1, vCPU: 1, ram: '4 GB',  storage: '80 GB',  monthlyPrice: '~$75'  },
+      { id: 'pg-startup-8',  label: 'Startup-8',  nodes: 1, vCPU: 2, ram: '8 GB',  storage: '175 GB', monthlyPrice: '~$150' },
+      { id: 'pg-startup-16', label: 'Startup-16', nodes: 1, vCPU: 4, ram: '16 GB', storage: '350 GB', monthlyPrice: '~$300' },
+      { id: 'pg-startup-32', label: 'Startup-32', nodes: 1, vCPU: 8, ram: '32 GB', storage: '700 GB', monthlyPrice: '~$600' },
+    ],
+  },
+  {
+    id: 'business', label: 'Business',
+    description: 'For business-critical production and larger test environments',
+    features: [
+      '2 dedicated VMs (2 nodes high availability pair)',
+      'Backup up to 14 days with point-in-time recovery',
+      'Automatic failover to a secondary node',
+      'Everything in Startup, plus read-only access to DB standby nodes',
+    ],
+    plans: [
+      { id: 'pg-business-4',  label: 'Business-4',  nodes: 2, vCPU: 1, ram: '4 GB',  storage: '80 GB',  monthlyPrice: '~$200'   },
+      { id: 'pg-business-8',  label: 'Business-8',  nodes: 2, vCPU: 2, ram: '8 GB',  storage: '175 GB', monthlyPrice: '~$400'   },
+      { id: 'pg-business-16', label: 'Business-16', nodes: 2, vCPU: 4, ram: '16 GB', storage: '350 GB', monthlyPrice: '~$800'   },
+      { id: 'pg-business-32', label: 'Business-32', nodes: 2, vCPU: 8, ram: '32 GB', storage: '700 GB', monthlyPrice: '~$1,600' },
+    ],
+  },
+  {
+    id: 'premium', label: 'Premium',
+    description: 'For enterprise-level production data loads',
+    features: [
+      '3 dedicated VMs (3 nodes high availability set)',
+      'Backup up to 30 days with point-in-time recovery',
+      'Automatic failover to a secondary node',
+      'Plus everything in Business',
+    ],
+    plans: [
+      { id: 'pg-premium-4',  label: 'Premium-4',  nodes: 3, vCPU: 1, ram: '4 GB',  storage: '80 GB',  monthlyPrice: '~$300'   },
+      { id: 'pg-premium-8',  label: 'Premium-8',  nodes: 3, vCPU: 2, ram: '8 GB',  storage: '175 GB', monthlyPrice: '~$600'   },
+      { id: 'pg-premium-16', label: 'Premium-16', nodes: 3, vCPU: 4, ram: '16 GB', storage: '350 GB', monthlyPrice: '~$1,200' },
+      { id: 'pg-premium-32', label: 'Premium-32', nodes: 3, vCPU: 8, ram: '32 GB', storage: '700 GB', monthlyPrice: '~$2,400' },
+    ],
+  },
 ]
 
-const LEGACY_MYSQL_PLANS: Plan[] = [
-  { id: 'hobbyist', label: 'Hobbyist', nodes: 1, vCPU: 1, ram: '1 GB',  storage: '8 GB',   monthlyPrice: '~$20'  },
-  { id: 'startup',  label: 'Startup',  nodes: 1, vCPU: 2, ram: '4 GB',  storage: '50 GB',  monthlyPrice: '~$60'  },
-  { id: 'business', label: 'Business', nodes: 2, vCPU: 4, ram: '16 GB', storage: '300 GB', monthlyPrice: '~$280' },
-  { id: 'premium',  label: 'Premium',  nodes: 3, vCPU: 8, ram: '32 GB', storage: '600 GB', monthlyPrice: '~$600' },
+const LEGACY_MYSQL_PLAN_GROUPS: LegacyPlanGroup[] = [
+  {
+    id: 'hobbyist', label: 'Hobbyist',
+    description: 'For small test environments',
+    features: ['1 dedicated VM (1 node)', 'Backups for disaster recovery'],
+    plans: [
+      { id: 'mysql-hobbyist', label: 'Hobbyist', nodes: 1, vCPU: 1, ram: '2 GB', storage: '8 GB', monthlyPrice: '~$16' },
+    ],
+  },
+  {
+    id: 'startup', label: 'Startup',
+    description: 'For test environments with high performance needs',
+    features: ['1 dedicated VM (1 node)', 'Backup up to 2 days with point-in-time recovery', '99.99% uptime SLA'],
+    plans: [
+      { id: 'mysql-startup-4',  label: 'Startup-4',  nodes: 1, vCPU: 1, ram: '4 GB',  storage: '50 GB',  monthlyPrice: '~$60'  },
+      { id: 'mysql-startup-8',  label: 'Startup-8',  nodes: 1, vCPU: 2, ram: '8 GB',  storage: '100 GB', monthlyPrice: '~$120' },
+      { id: 'mysql-startup-16', label: 'Startup-16', nodes: 1, vCPU: 4, ram: '16 GB', storage: '200 GB', monthlyPrice: '~$240' },
+      { id: 'mysql-startup-32', label: 'Startup-32', nodes: 1, vCPU: 8, ram: '32 GB', storage: '400 GB', monthlyPrice: '~$480' },
+    ],
+  },
+  {
+    id: 'business', label: 'Business',
+    description: 'For business-critical production and larger test environments',
+    features: [
+      '2 dedicated VMs (2 nodes high availability pair)',
+      'Backup up to 14 days with point-in-time recovery',
+      'Automatic failover to a secondary node',
+      'Everything in Startup, plus read-only access to DB standby nodes',
+    ],
+    plans: [
+      { id: 'mysql-business-4',  label: 'Business-4',  nodes: 2, vCPU: 1, ram: '4 GB',  storage: '50 GB',  monthlyPrice: '~$160'   },
+      { id: 'mysql-business-8',  label: 'Business-8',  nodes: 2, vCPU: 2, ram: '8 GB',  storage: '100 GB', monthlyPrice: '~$320'   },
+      { id: 'mysql-business-16', label: 'Business-16', nodes: 2, vCPU: 4, ram: '16 GB', storage: '200 GB', monthlyPrice: '~$640'   },
+      { id: 'mysql-business-32', label: 'Business-32', nodes: 2, vCPU: 8, ram: '32 GB', storage: '400 GB', monthlyPrice: '~$1,280' },
+    ],
+  },
+  {
+    id: 'premium', label: 'Premium',
+    description: 'For enterprise-level production data loads',
+    features: [
+      '3 dedicated VMs (3 nodes high availability set)',
+      'Backup up to 30 days with point-in-time recovery',
+      'Automatic failover to a secondary node',
+      'Plus everything in Business',
+    ],
+    plans: [
+      { id: 'mysql-premium-4',  label: 'Premium-4',  nodes: 3, vCPU: 1, ram: '4 GB',  storage: '50 GB',  monthlyPrice: '~$240'   },
+      { id: 'mysql-premium-8',  label: 'Premium-8',  nodes: 3, vCPU: 2, ram: '8 GB',  storage: '100 GB', monthlyPrice: '~$480'   },
+      { id: 'mysql-premium-16', label: 'Premium-16', nodes: 3, vCPU: 4, ram: '16 GB', storage: '200 GB', monthlyPrice: '~$960'   },
+      { id: 'mysql-premium-32', label: 'Premium-32', nodes: 3, vCPU: 8, ram: '32 GB', storage: '400 GB', monthlyPrice: '~$1,920' },
+    ],
+  },
 ]
 
 // ─── Per-service configurations ───────────────────────────────────────────────
@@ -363,7 +468,7 @@ const SERVICE_CONFIGS: Record<ServiceTypeId, ServiceConfig> = {
     ...BASE_CONFIG,
     versions: ['PostgreSQL 17', 'PostgreSQL 16', 'PostgreSQL 15'],
     haEnabled: true,
-    legacyPlans: LEGACY_PG_PLANS,
+    legacyPlans: LEGACY_PG_PLAN_GROUPS,
   },
 
   mysql: {
@@ -373,7 +478,7 @@ const SERVICE_CONFIGS: Record<ServiceTypeId, ServiceConfig> = {
     defaultComputeProfile: 'balanced',
     diskSizeMax: 4000,
     defaultDiskSize: 50,
-    legacyPlans: LEGACY_MYSQL_PLANS,
+    legacyPlans: LEGACY_MYSQL_PLAN_GROUPS,
   },
 
   kafka: {
@@ -749,15 +854,24 @@ function CreateService({
     // Creation mode: default to ACU (the new / recommended model).
     return 'acu'
   })
-  const [selectedLegacyPlanId, setSelectedLegacyPlanId] = useState<string>(() => {
-    const firstId = config.legacyPlans?.[0]?.id ?? ''
-    if (!config.legacyPlans || !initialValues?.planName) return firstId
-    // In edit mode, pre-select the plan whose label matches the service's current planName.
-    const match = config.legacyPlans.find(
-      (p) => p.label.toLowerCase() === (initialValues.planName ?? '').toLowerCase(),
-    )
-    return match?.id ?? firstId
+  const [selectedLegacyGroupId, setSelectedLegacyGroupId] = useState<string>(() => {
+    const firstGroupId = config.legacyPlans?.[0]?.id ?? ''
+    if (!config.legacyPlans || !initialValues?.planName) return firstGroupId
+    const lower = (initialValues.planName ?? '').toLowerCase()
+    const match = config.legacyPlans.find((g) => g.plans.some((p) => p.label.toLowerCase() === lower))
+    return match?.id ?? firstGroupId
   })
+  const [selectedLegacyPlanId, setSelectedLegacyPlanId] = useState<string>(() => {
+    const firstPlanId = config.legacyPlans?.[0]?.plans[0]?.id ?? ''
+    if (!config.legacyPlans || !initialValues?.planName) return firstPlanId
+    const lower = (initialValues.planName ?? '').toLowerCase()
+    for (const group of config.legacyPlans) {
+      const match = group.plans.find((p) => p.label.toLowerCase() === lower)
+      if (match) return match.id
+    }
+    return firstPlanId
+  })
+  const [showAllLegacyPlans, setShowAllLegacyPlans] = useState(false)
   const [regionArea, setRegionArea] = useState<RegionArea>('europe')
 
   const isSimpleTier = tier === 'free' || tier === 'developer'
@@ -788,17 +902,19 @@ function CreateService({
     () => config.plans?.find((p) => p.id === selectedPlanId) ?? config.plans?.[0],
     [config, selectedPlanId],
   )
+  const activeLegacyGroup = useMemo(
+    () => config.legacyPlans?.find((g) => g.id === selectedLegacyGroupId) ?? config.legacyPlans?.[0],
+    [config, selectedLegacyGroupId],
+  )
   const selectedLegacyPlan = useMemo(
-    () => config.legacyPlans?.find((p) => p.id === selectedLegacyPlanId) ?? config.legacyPlans?.[0],
-    [config, selectedLegacyPlanId],
+    () => activeLegacyGroup?.plans.find((p) => p.id === selectedLegacyPlanId) ?? activeLegacyGroup?.plans[0],
+    [activeLegacyGroup, selectedLegacyPlanId],
   )
   const nodeCount = HA_NODE_COUNT[haOption]
 
-  // When isLegacyMode, redirect plan selection to the legacy plan set.
-  // Both setters have compatible signatures so the conditional assignment is safe.
-  const activePlans = isLegacyMode ? config.legacyPlans : config.plans
-  const activeSelectedPlanId = isLegacyMode ? selectedLegacyPlanId : selectedPlanId
-  const handleSelectPlan = isLegacyMode ? setSelectedLegacyPlanId : setSelectedPlanId
+  const activePlans = config.plans
+  const activeSelectedPlanId = selectedPlanId
+  const handleSelectPlan = setSelectedPlanId
   const storageCost = useMemo(
     () => Math.ceil(diskSizeGb * (selectedStorageSpec?.pricePerGbMonth ?? 0)),
     [diskSizeGb, selectedStorageSpec],
@@ -1039,11 +1155,117 @@ function CreateService({
                 )
               })()}
             </Section>
+          ) : isLegacyMode ? (
+            /* ── Legacy plan groups: tabbed tier selector + description + plan table ── */
+            <Section icon={listIcon} title="Plan">
+              <Tabs
+                value={activeLegacyGroup?.id ?? config.legacyPlans![0].id}
+                onChange={(id) => {
+                  const group = config.legacyPlans!.find((g) => g.id === id)
+                  if (!group) return
+                  setSelectedLegacyGroupId(group.id)
+                  setSelectedLegacyPlanId(group.plans[0]?.id ?? '')
+                  setShowAllLegacyPlans(false)
+                }}
+              >
+                {config.legacyPlans!.map((group) => {
+                  const visPlans = showAllLegacyPlans ? group.plans : group.plans.slice(0, 3)
+                  return (
+                    <Tabs.Tab key={group.id} title={group.label} value={group.id}>
+                      {/* Tier description panel */}
+                      <Box
+                        style={{
+                          border: '1px solid #ededf0', borderRadius: 8, padding: '12px 16px',
+                          display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start',
+                          gap: 16, marginBottom: 16, fontSize: 14,
+                        }}
+                      >
+                        <Box>
+                          <Box style={{ marginBottom: 8, fontWeight: 600 }}>{group.description}</Box>
+                          <Box style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                            {group.features.map((feature) => (
+                              <Box key={feature} style={{ display: 'flex', alignItems: 'flex-start', gap: 8 }}>
+                                <Box style={{ color: '#00875a', flexShrink: 0, lineHeight: '20px' }}>✓</Box>
+                                <span>{feature}</span>
+                              </Box>
+                            ))}
+                          </Box>
+                        </Box>
+                        <Box style={{ flexShrink: 0 }}>
+                          <Link href="#">↗ Compare plans</Link>
+                        </Box>
+                      </Box>
+
+                      {/* Plans table */}
+                      <Box style={{ border: '1px solid #ededf0', borderRadius: 8, overflow: 'hidden' }}>
+                        <Box
+                          style={{
+                            display: 'flex', alignItems: 'center',
+                            padding: '8px 16px', borderBottom: '1px solid #ededf0',
+                            backgroundColor: '#f9f9fb',
+                          }}
+                        >
+                          <Box style={{ width: 32, flexShrink: 0 }} />
+                          <Box style={{ flex: 2 }}><Box style={{ color: '#787885' }}><Typography.Caption>Plan</Typography.Caption></Box></Box>
+                          <Box style={{ flex: 1 }}><Box style={{ color: '#787885' }}><Typography.Caption>VMs</Typography.Caption></Box></Box>
+                          <Box style={{ flex: 1 }}><Box style={{ color: '#787885' }}><Typography.Caption>CPUs per VM</Typography.Caption></Box></Box>
+                          <Box style={{ flex: 1 }}><Box style={{ color: '#787885' }}><Typography.Caption>RAM per VM</Typography.Caption></Box></Box>
+                          <Box style={{ flex: 2 }}><Box style={{ color: '#787885' }}><Typography.Caption>Storage</Typography.Caption></Box></Box>
+                          <Box style={{ flex: 1, textAlign: 'right' }}><Box style={{ color: '#787885' }}><Typography.Caption>Monthly price</Typography.Caption></Box></Box>
+                        </Box>
+                        {visPlans.map((plan, idx) => {
+                          const isSelected = selectedLegacyPlanId === plan.id
+                          return (
+                            <Box
+                              key={plan.id}
+                              role="button"
+                              tabIndex={0}
+                              onClick={() => setSelectedLegacyPlanId(plan.id)}
+                              onKeyDown={(e) => {
+                                if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setSelectedLegacyPlanId(plan.id) }
+                              }}
+                              style={{
+                                display: 'flex', alignItems: 'center',
+                                padding: '10px 16px',
+                                backgroundColor: isSelected ? '#f3f6ff' : '#fff',
+                                borderTop: idx === 0 ? 'none' : '1px solid #ededf0',
+                                cursor: 'pointer', outline: 'none',
+                              }}
+                            >
+                              <Box style={{ width: 32, flexShrink: 0 }}>
+                                <RadioButton aria-label={`Plan ${plan.label}`} name="legacy-plan" value={plan.id} checked={isSelected} onChange={() => setSelectedLegacyPlanId(plan.id)} />
+                              </Box>
+                              <Box style={{ flex: 2 }}><span style={{ fontSize: 14, fontWeight: 600 }}>{plan.label}</span></Box>
+                              <Box style={{ flex: 1 }}><span style={{ fontSize: 14 }}>{plan.nodes}</span></Box>
+                              <Box style={{ flex: 1 }}><span style={{ fontSize: 14 }}>{plan.vCPU}</span></Box>
+                              <Box style={{ flex: 1 }}><span style={{ fontSize: 14 }}>{plan.ram}</span></Box>
+                              <Box style={{ flex: 2 }}><span style={{ fontSize: 14 }}>{plan.storage}</span></Box>
+                              <Box style={{ flex: 1, textAlign: 'right' }}><span style={{ fontSize: 14, fontWeight: 600 }}>{plan.monthlyPrice}</span></Box>
+                            </Box>
+                          )
+                        })}
+                      </Box>
+
+                      {/* View all / View less */}
+                      {group.plans.length > 3 && (
+                        <Box style={{ marginTop: 8 }}>
+                          <Button.Ghost dense type="button" onClick={() => setShowAllLegacyPlans((v) => !v)}>
+                            <Box style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                              <InlineIcon icon={showAllLegacyPlans ? chevronUpIcon : chevronDownIcon} />
+                              {showAllLegacyPlans ? 'View less' : 'View all'}
+                            </Box>
+                          </Button.Ghost>
+                        </Box>
+                      )}
+                    </Tabs.Tab>
+                  )
+                })}
+              </Tabs>
+            </Section>
           ) : activePlans ? (
-            /* ── Plan section (legacy plans for PG/MySQL, or fixed plans for other service types) ── */
+            /* ── Flat plan table for non-legacy services (Kafka, Valkey, etc.) ── */
             <Section icon={proPlansIcon} title="Plan">
               <Box style={{ border: '1px solid #ededf0', borderRadius: 8, overflow: 'hidden' }}>
-                {/* Header */}
                 <Box
                   style={{
                     display: 'flex', alignItems: 'center',
@@ -1059,7 +1281,6 @@ function CreateService({
                   <Box style={{ flex: 2 }}><Box style={{ color: '#787885' }}><Typography.Caption>Storage</Typography.Caption></Box></Box>
                   <Box style={{ flex: 1, textAlign: 'right' }}><Box style={{ color: '#787885' }}><Typography.Caption>Monthly price</Typography.Caption></Box></Box>
                 </Box>
-                {/* Plan rows */}
                 {activePlans.map((plan, idx) => {
                   const isSelected = activeSelectedPlanId === plan.id
                   return (
@@ -1171,11 +1392,11 @@ function CreateService({
                           checked={isSelected}
                           onChange={() => setComputeId(opt.id)}
                         />
-                        <Box style={{ flex: 1, display: 'flex', gap: 32 }}>
-                          <Typography.Default>{opt.label}</Typography.Default>
-                          <Typography.Default>{opt.ram}</Typography.Default>
+                        <Box style={{ flex: 1, display: 'flex', gap: 32, fontSize: 14 }}>
+                          <span>{opt.label}</span>
+                          <span>{opt.ram}</span>
                         </Box>
-                        <Typography.DefaultStrong>${opt.pricePerMonth}</Typography.DefaultStrong>
+                        <span style={{ fontSize: 14, fontWeight: 600 }}>${opt.pricePerMonth}</span>
                       </Box>
                     )
                   })}

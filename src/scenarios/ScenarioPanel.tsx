@@ -203,9 +203,11 @@ export function ScenarioPanel() {
       <div
         ref={panelRef}
         className={`scenario-panel${isPanelOpen ? ' scenario-panel--open' : ''}`}
-        role="dialog"
-        aria-modal="true"
         aria-label="Scenario Control Panel"
+        // data-react-aria-top-layer exempts this devtool overlay from react-aria's
+        // modal focus containment and aria-hide-outside, so panel controls remain
+        // interactive when an Aquarium Modal is open on the page.
+        data-react-aria-top-layer="true"
       >
         {/* ── Header ── */}
         <div className="scenario-panel__header">
