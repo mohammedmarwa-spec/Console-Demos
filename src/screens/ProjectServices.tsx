@@ -436,13 +436,14 @@ function ProjectServices({ services, onCreateServiceClick, onServiceClick, onDel
                     type: 'custom',
                     headerName: 'Service',
                     UNSAFE_render: (row) => {
-                      const isChild = row.replicationRole === 'read_replica' || row.replicationRole === 'fork'
+                      const isReplica = row.replicationRole === 'read_replica'
+                      const isFork = row.replicationRole === 'fork'
                       const iconUrl = getServiceIconUrl(row.serviceTypeId ?? null)
 
                       return (
                         <Box style={{ display: 'flex', alignItems: 'center' }}>
-                          {/* Dashed tree connector for replicas / forks */}
-                          {isChild && (
+                          {/* Dashed tree connector — replicas only */}
+                          {isReplica && (
                             <Box
                               aria-hidden="true"
                               style={{ width: 28, alignSelf: 'stretch', flexShrink: 0, position: 'relative', marginRight: 16 }}
@@ -488,10 +489,10 @@ function ProjectServices({ services, onCreateServiceClick, onServiceClick, onDel
                                 <Typography.Caption>{row.serviceType}</Typography.Caption>
                               </Box>
                               <ServiceStatusBadge status={row.status ?? 'Running'} />
-                              {isChild && (
+                              {(isReplica || isFork) && (
                                 <Box style={{ color: '#787885' }}>
                                   <Typography.Caption>
-                                    <strong>{row.replicationRole === 'fork' ? 'Fork' : 'Read replica'}</strong>
+                                    <strong>{isFork ? 'Fork' : 'Read replica'}</strong>
                                   </Typography.Caption>
                                 </Box>
                               )}
