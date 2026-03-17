@@ -186,8 +186,8 @@ function AppContent() {
     setServices(getInitialServicesForScenario(activeScenarioId))
     setServiceTypeModalOpen(false)
     setCreationModalOpen(false)
-    // Billing scenario → jump straight to the invoice page
-    if (activeScenarioId === 'invoice-mixed-services') {
+    // Billing scenarios → jump straight to the invoice page
+    if (activeScenarioId === 'invoice-mixed-services' || activeScenarioId === 'invoice-plan-acumixed') {
       setOverviewServiceId(null)
       setOverviewServiceType(null)
       setView('billing-invoice')

@@ -19,6 +19,7 @@ export const SCENARIOS: Scenario[] = [
   { id: 'many-services',                        label: 'Project services: mixed pricing',      group: 'Existing customers', description: 'Pre-populated with multiple services' },
   { id: 'mysql-acu-rollout',                    label: 'Existing users – MySQL ACU rollout',   group: 'Existing customers', description: 'Services list + "Introducing new pricing" modal' },
   { id: 'invoice-mixed-services',               label: 'Mixed-service invoice',                group: 'Existing customers', description: 'Invoice with PG, MySQL, Kafka, OpenSearch across two projects (shuffled)' },
+  { id: 'invoice-plan-acumixed',                label: 'Invoice: ACU + Plan — $1,612.45',       group: 'Existing customers', description: 'Two projects with ACU and Plan (legacy) services, total $1,612.45' },
   { id: 'replica-mixed-pricing',                 label: 'Read replicas: mixed pricing',         group: 'Existing customers', description: '4 MySQL primaries covering all ACU/legacy replica combos' },
 ]
 
