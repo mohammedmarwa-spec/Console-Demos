@@ -11,6 +11,7 @@ import OrgHomePage from './screens/OrgHomePage'
 import ServiceTypeSelectModal, { getServiceTypeDisplayName, type ServiceTypeId } from './screens/ServiceTypeSelectModal'
 import { ScenarioProvider, ScenarioPanel, ScenarioTrigger, ScenarioBadge, useScenario } from './scenarios'
 import { MysqlAcuRolloutModal } from './screens/MysqlAcuRolloutModal'
+import { UpgradeServiceModal, UPGRADE_PLAN_SERVICE_DATA, type UpgradeTier } from './screens/UpgradeServiceModal'
 
 type View = 'org-home' | 'project-services' | 'service-overview' | 'billing-invoice'
 
@@ -104,6 +105,14 @@ const MYSQL_ACU_ROLLOUT_SERVICES: ServiceRow[] = [
   { id: 'mysql-legacy-app', serviceName: 'mysql-legacy-app', serviceType: 'MySQL',      serviceTypeId: 'mysql',      status: 'Running', nodes: 'Nodes 1', nodeCount: 1, planName: 'Hobbyist',    planDetails: '1 CPU / 2 GB RAM / 8 GB storage',     cloudRegion: 'Google Cloud: us-central1', location: 'North America, Iowa',     created: '8 months ago',  iconLetter: 'M', cpuCount: 1, ramCapacity: '2 GB',  storageCapacity: '8 GB'   },
   { id: 'pg-prod-01',       serviceName: 'pg-prod-01',       serviceType: 'PostgreSQL', serviceTypeId: 'postgresql', status: 'Running', nodes: 'Nodes 3', nodeCount: 3, planName: 'Business-4',  planDetails: '4 CPU / 16 GB RAM / 480 GB storage',  cloudRegion: 'AWS: eu-west-1',            location: 'Europe, Ireland',         created: '5 months ago',  iconLetter: 'P', cpuCount: 4, ramCapacity: '16 GB', storageCapacity: '480 GB' },
   { id: 'redis-sessions',   serviceName: 'redis-sessions',   serviceType: 'Caching & ValkeyDB', serviceTypeId: 'redis', status: 'Running', nodes: 'Nodes 1', nodeCount: 1, planName: 'Startup-4', planDetails: '2 CPU / 4 GB RAM',                   cloudRegion: 'AWS: eu-west-1',            location: 'Europe, Ireland',         created: '4 months ago',  iconLetter: 'R' },
+  { id: 'pg-dev-01',        serviceName: 'pg-dev-01',        serviceType: 'PostgreSQL',         serviceTypeId: 'postgresql', status: 'Running', nodes: 'Nodes 1', nodeCount: 1, planName: 'Developer',  planDetails: '1 CPU / 1 GB RAM / 8 GB storage',    cloudRegion: 'AWS: eu-west-1',            location: 'Europe, Ireland',         created: '1 week ago',    iconLetter: 'P', cpuCount: 1, ramCapacity: '1 GB',  storageCapacity: '8 GB'   },
+]
+
+// ─── Free & Developer quick-upgrade scenario ─────────────────────────────────
+// prettier-ignore
+const FREE_DEV_UPGRADE_SERVICES: ServiceRow[] = [
+  { id: 'pg-free-01', serviceName: 'pg-free-01', serviceType: 'PostgreSQL', serviceTypeId: 'postgresql', status: 'Running', nodes: 'Nodes 1', nodeCount: 1, planName: 'Free',      planDetails: '1 CPU / 1 GB RAM / 1 GB storage', cloudRegion: 'AWS: eu-west-1', location: 'Europe, Ireland', created: '2 days ago',  iconLetter: 'P', cpuCount: 1, ramCapacity: '1 GB', storageCapacity: '1 GB' },
+  { id: 'pg-dev-02',  serviceName: 'pg-dev-02',  serviceType: 'PostgreSQL', serviceTypeId: 'postgresql', status: 'Running', nodes: 'Nodes 1', nodeCount: 1, planName: 'Developer', planDetails: '1 CPU / 1 GB RAM / 8 GB storage', cloudRegion: 'AWS: eu-west-1', location: 'Europe, Ireland', created: '1 week ago', iconLetter: 'P', cpuCount: 1, ramCapacity: '1 GB', storageCapacity: '8 GB'  },
 ]
 
 // ─── Read-replica mixed-pricing fixtures ─────────────────────────────────────
@@ -150,6 +159,8 @@ function getInitialServicesForScenario(scenarioId: string | null): ServiceRow[] 
       return MYSQL_ACU_ROLLOUT_SERVICES
     case 'replica-mixed-pricing':
       return REPLICA_MIXED_SERVICES
+    case 'free-dev-upgrade':
+      return FREE_DEV_UPGRADE_SERVICES
     default:
       return INITIAL_SERVICES
   }
@@ -207,6 +218,8 @@ function AppContent() {
   const [createReplicaModalOpen, setCreateReplicaModalOpen] = useState(false)
   /** Controls visibility of the Create fork modal. */
   const [createForkModalOpen, setCreateForkModalOpen] = useState(false)
+  /** Controls visibility of the Upgrade service modal (Free / Dev tiers only). */
+  const [upgradeModalOpen, setUpgradeModalOpen] = useState(false)
   /** Controls visibility of the Edit / Change plan modal. */
   const [editModalOpen, setEditModalOpen] = useState(false)
   /** Holds the current submit function exposed by CreateService (edit mode). */
@@ -277,7 +290,13 @@ function AppContent() {
   }
 
   function handleChangePlan() {
-    setEditModalOpen(true)
+    const currentService = services.find((s) => s.id === overviewServiceId)
+    const isSimple = ['free', 'developer'].includes((currentService?.planName ?? '').toLowerCase())
+    if (isSimple) {
+      setUpgradeModalOpen(true)
+    } else {
+      setEditModalOpen(true)
+    }
   }
 
   function handleEditSuccess(data?: CreatedServicePayload) {
@@ -502,6 +521,45 @@ function AppContent() {
         sourceService={services.find((s) => s.id === overviewServiceId) ?? null}
         onClose={() => setCreateReplicaModalOpen(false)}
         onCreateReplica={handleCreateReplica}
+      />
+
+      {/* Upgrade service modal — opened from ServiceOverview "Upgrade" for Free / Dev tier services */}
+      <UpgradeServiceModal
+        open={upgradeModalOpen}
+        onClose={() => setUpgradeModalOpen(false)}
+        currentTier={((editOverviewService?.planName ?? '').toLowerCase() === 'free' ? 'free' : 'developer') as UpgradeTier}
+        onUpgrade={(planId) => {
+          setUpgradeModalOpen(false)
+          const planData = UPGRADE_PLAN_SERVICE_DATA[planId]
+          if (planData && overviewServiceId) {
+            setServices((prev) =>
+              prev.map((s) =>
+                s.id === overviewServiceId
+                  ? {
+                      ...s,
+                      planName: planData.planName,
+                      planDetails: planData.planDetails,
+                      nodeCount: planData.nodeCount,
+                      nodes: `Nodes ${planData.nodeCount}`,
+                      cpuCount: planData.cpuCount,
+                      ramCapacity: planData.ramCapacity,
+                      storageCapacity: planData.storageCapacity,
+                    }
+                  : s,
+              ),
+            )
+          }
+          addToast({
+            message: `Service upgraded to ${planData?.planName ?? planId} plan`,
+            icon: tickIcon,
+            duration: 4000,
+            position: 'top-right',
+          })
+        }}
+        onCustomize={() => {
+          setUpgradeModalOpen(false)
+          setEditModalOpen(true)
+        }}
       />
 
       {/* Edit / Upgrade plan modal — opened from ServiceOverview "Change" / "Upgrade" button */}

@@ -21,6 +21,9 @@ export const SCENARIOS: Scenario[] = [
   { id: 'invoice-mixed-services',               label: 'Mixed-service invoice',                group: 'Existing customers', description: 'Invoice with PG, MySQL, Kafka, OpenSearch across two projects (shuffled)' },
   { id: 'invoice-plan-acumixed',                label: 'Invoice: ACU + Plan — $1,612.45',       group: 'Existing customers', description: 'Two projects with ACU and Plan (legacy) services, total $1,612.45' },
   { id: 'replica-mixed-pricing',                 label: 'Read replicas: mixed pricing',         group: 'Existing customers', description: '4 MySQL primaries covering all ACU/legacy replica combos' },
+
+  // Pricing upgrade
+  { id: 'free-dev-upgrade', label: 'Free & Dev: Quick upgrade', group: 'Pricing upgrade', description: '1 Free + 1 Developer tier service to test the Quick upgrade flow' },
 ]
 
 // ─── Derived helpers ──────────────────────────────────────────────────────────
