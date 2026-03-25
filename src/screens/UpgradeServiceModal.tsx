@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Box, Card, Icon, Modal, Switch, Typography } from '@aivenio/aquarium'
+import { Box, Card, Icon, Modal, Switch, Typography, type IconProps } from '@aivenio/aquarium'
 import deliveryLocationIcon from '@aivenio/aquarium/icons/deliveryLocation'
 import awardIcon from '@aivenio/aquarium/icons/award'
 
@@ -54,7 +54,7 @@ type UpgradePlan = {
   id: string
   label: string
   badgeText?: string
-  badgeIcon?: unknown
+  badgeIcon?: IconProps['icon']
   name: string
   description: string
   features: string[]
@@ -181,8 +181,6 @@ export function UpgradeServiceModal({
     }
   }, [open, currentTier])
 
-  const selectedPlan = plans.find((p) => p.id === selectedPlanId) ?? plans[0]
-
   function handleToggleCustomize(checked: boolean) {
     setCustomize(checked)
     if (checked) onCustomize()
@@ -232,7 +230,7 @@ export function UpgradeServiceModal({
           {/* Two-line text */}
           <Box style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
             <Typography.SmallStrong>🇫🇮 Finland, Europe</Typography.SmallStrong>
-            <Typography.Caption style={{ color: '#787885' }}>
+            <Typography.Caption color="muted">
               Closest available region for lower latency
             </Typography.Caption>
           </Box>
@@ -263,7 +261,7 @@ export function UpgradeServiceModal({
               title={<Card.Title color="intense">{plan.name}</Card.Title>}
             >
               <Box style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                <Typography.Caption style={{ color: '#4a4b57' }}>
+                <Typography.Caption color="default">
                   {plan.description}
                 </Typography.Caption>
 
@@ -280,14 +278,16 @@ export function UpgradeServiceModal({
                       >
                         •
                       </span>
-                      <Typography.Caption style={{ color: '#4a4b57' }}>{feat}</Typography.Caption>
+                      <Typography.Caption color="default">{feat}</Typography.Caption>
                     </Box>
                   ))}
                 </Box>
 
-                <Typography.DefaultStrong color="intense" style={{ paddingTop: 8 }}>
-                  {plan.price}
-                </Typography.DefaultStrong>
+                <Box style={{ paddingTop: 8 }}>
+                  <Typography.DefaultStrong color="intense">
+                    {plan.price}
+                  </Typography.DefaultStrong>
+                </Box>
               </Box>
             </Card>
           ))}
