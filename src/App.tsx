@@ -222,6 +222,8 @@ function AppContent() {
   const [upgradeModalOpen, setUpgradeModalOpen] = useState(false)
   /** Controls visibility of the Edit / Change plan modal. */
   const [editModalOpen, setEditModalOpen] = useState(false)
+  /** Incremented when the edit modal is cancelled from the upgrade flow, to reset the customize toggle. */
+  const [upgradeCustomizeResetKey, setUpgradeCustomizeResetKey] = useState(0)
   /** Holds the current submit function exposed by CreateService (edit mode). */
   const editSubmitRef = useRef<(() => void) | undefined>(undefined)
 
@@ -557,9 +559,9 @@ function AppContent() {
           })
         }}
         onCustomize={() => {
-          setUpgradeModalOpen(false)
           setEditModalOpen(true)
         }}
+        customizeResetKey={upgradeCustomizeResetKey}
       />
 
       {/* Edit / Upgrade plan modal — opened from ServiceOverview "Change" / "Upgrade" button */}
@@ -567,7 +569,10 @@ function AppContent() {
         title={editModalTitle}
         subtitle={SUBTITLE}
         open={editModalOpen}
-        onClose={() => setEditModalOpen(false)}
+        onClose={() => {
+          setEditModalOpen(false)
+          if (upgradeModalOpen) setUpgradeCustomizeResetKey((k) => k + 1)
+        }}
         size="full"
         primaryAction={{
           text: isSimpleTierEdit ? 'Upgrade plan' : 'Apply changes',
@@ -575,7 +580,10 @@ function AppContent() {
         }}
         secondaryActions={{
           text: 'Cancel',
-          onClick: () => setEditModalOpen(false),
+          onClick: () => {
+            setEditModalOpen(false)
+            if (upgradeModalOpen) setUpgradeCustomizeResetKey((k) => k + 1)
+          },
         }}
       >
         {editModalOpen && overviewServiceId && (

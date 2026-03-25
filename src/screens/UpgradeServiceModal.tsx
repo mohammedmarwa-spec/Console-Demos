@@ -158,6 +158,11 @@ type UpgradeServiceModalProps = {
   onUpgrade: (planId: string) => void
   /** Called when "Customize configuration" toggle is turned on */
   onCustomize: () => void
+  /**
+   * Increment this counter to reset the customize toggle back to off
+   * (e.g. when the user cancels out of the full edit modal).
+   */
+  customizeResetKey?: number
 }
 
 export function UpgradeServiceModal({
@@ -166,6 +171,7 @@ export function UpgradeServiceModal({
   currentTier,
   onUpgrade,
   onCustomize,
+  customizeResetKey = 0,
 }: UpgradeServiceModalProps) {
   const plans = PLANS_BY_TIER[currentTier]
   const defaultPlanId = plans[0].id
@@ -180,6 +186,11 @@ export function UpgradeServiceModal({
       setCustomize(false)
     }
   }, [open, currentTier])
+
+  // Reset the customize toggle when the caller signals (e.g. user cancels the edit modal)
+  useEffect(() => {
+    if (customizeResetKey > 0) setCustomize(false)
+  }, [customizeResetKey])
 
   function handleToggleCustomize(checked: boolean) {
     setCustomize(checked)
