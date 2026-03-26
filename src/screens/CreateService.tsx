@@ -27,22 +27,18 @@ import proPlansIcon from '@aivenio/aquarium/icons/proPlans'
 import listIcon from '@aivenio/aquarium/icons/list'
 import addIcon from '@aivenio/aquarium/icons/add'
 import type { ServiceTypeId } from './ServiceTypeSelectModal'
-import cloudAwsVector from '../assets/cloud-aws-vector.svg'
-import cloudAwsSmile from '../assets/cloud-aws-smile.svg'
-import cloudGoogle from '../assets/cloud-google.svg'
-import cloudAzure1 from '../assets/cloud-azure-1.svg'
-import cloudAzure2 from '../assets/cloud-azure-2.svg'
-import cloudAzure3 from '../assets/cloud-azure-3.svg'
-import cloudAzure4 from '../assets/cloud-azure-4.svg'
-import cloudDigitalOcean from '../assets/cloud-digitalocean.svg'
-import cloudUpCloud from '../assets/cloud-upcloud.png'
+import { ServiceRegionPicker } from './ServiceRegionPicker'
+import type { CloudProvider, CloudProviderId, Region, RegionArea } from './serviceRegions'
+import {
+  CLOUD_PROVIDERS,
+  REGION_AREAS,
+  REGIONS_BY_CLOUD,
+} from './serviceRegions'
 
 // ─── Domain types ─────────────────────────────────────────────────────────────
 
 type ServiceTier = 'free' | 'developer' | 'professional'
 type HaOption = 'no-ha' | 'primary-standby' | 'primary-2-standby'
-type CloudProviderId = 'aws' | 'google' | 'azure' | 'digitalocean' | 'upcloud'
-type RegionArea = 'asia-pacific' | 'australia' | 'europe' | 'north-america'
 
 // ─── Shared constants ─────────────────────────────────────────────────────────
 
@@ -58,13 +54,6 @@ const HA_NODE_COUNT: Record<HaOption, number> = {
   'primary-2-standby': 3,
 }
 
-const REGION_AREAS: { id: RegionArea; label: string }[] = [
-  { id: 'asia-pacific', label: 'Asia Pacific' },
-  { id: 'australia', label: 'Australia' },
-  { id: 'europe', label: 'Europe' },
-  { id: 'north-america', label: 'North America' },
-]
-
 // ─── Service config types ─────────────────────────────────────────────────────
 
 type TierFeature = { text: string; icon: 'tick' | 'info' }
@@ -76,10 +65,6 @@ type TierOption = {
   features: TierFeature[]
   price: string
 }
-
-type CloudProvider = { id: CloudProviderId; label: string }
-
-type Region = { id: string; label: string; flag: string; location: string }
 
 type ComputeProfile = { id: string; label: string; description: string }
 
@@ -152,48 +137,6 @@ type ServiceConfig = {
 }
 
 // ─── Shared infrastructure data ───────────────────────────────────────────────
-
-const CLOUD_PROVIDERS: CloudProvider[] = [
-  { id: 'aws', label: 'AWS' },
-  { id: 'google', label: 'Google Cloud' },
-  { id: 'azure', label: 'Azure' },
-  { id: 'digitalocean', label: 'DigitalOcean' },
-  { id: 'upcloud', label: 'UpCloud' },
-]
-
-const REGIONS_BY_CLOUD: Record<CloudProviderId, Region[]> = {
-  aws: [
-    { id: 'eu-north-1',     label: 'europe-north-1, Finland',     flag: '🇫🇮', location: 'Europe, Finland' },
-    { id: 'us-east-1',      label: 'us-east-1, US East',           flag: '🇺🇸', location: 'North America, US East' },
-    { id: 'ap-southeast-1', label: 'ap-southeast-1, Singapore',    flag: '🇸🇬', location: 'Asia, Singapore' },
-    { id: 'eu-west-1',      label: 'eu-west-1, Ireland',           flag: '🇮🇪', location: 'Europe, Ireland' },
-    { id: 'us-west-2',      label: 'us-west-2, Oregon',            flag: '🇺🇸', location: 'North America, Oregon' },
-  ],
-  google: [
-    { id: 'europe-north1',   label: 'europe-north1, Finland',     flag: '🇫🇮', location: 'Europe, Finland' },
-    { id: 'us-central1',     label: 'us-central1, Iowa',          flag: '🇺🇸', location: 'North America, Iowa' },
-    { id: 'asia-southeast1', label: 'asia-southeast1, Singapore', flag: '🇸🇬', location: 'Asia, Singapore' },
-    { id: 'europe-west1',    label: 'europe-west1, Belgium',      flag: '🇧🇪', location: 'Europe, Belgium' },
-  ],
-  azure: [
-    { id: 'northeurope',   label: 'northeurope, Ireland',     flag: '🇮🇪', location: 'Europe, Ireland' },
-    { id: 'eastus',        label: 'eastus, Virginia',         flag: '🇺🇸', location: 'North America, Virginia' },
-    { id: 'westeurope',    label: 'westeurope, Netherlands',  flag: '🇳🇱', location: 'Europe, Netherlands' },
-    { id: 'southeastasia', label: 'southeastasia, Singapore', flag: '🇸🇬', location: 'Asia, Singapore' },
-  ],
-  digitalocean: [
-    { id: 'ams3', label: 'ams3, Amsterdam', flag: '🇳🇱', location: 'Europe, Amsterdam' },
-    { id: 'nyc1', label: 'nyc1, New York',  flag: '🇺🇸', location: 'North America, New York' },
-    { id: 'sgp1', label: 'sgp1, Singapore', flag: '🇸🇬', location: 'Asia, Singapore' },
-    { id: 'lon1', label: 'lon1, London',    flag: '🇬🇧', location: 'Europe, London' },
-  ],
-  upcloud: [
-    { id: 'fi-hel1', label: 'fi-hel1, Helsinki',  flag: '🇫🇮', location: 'Europe, Helsinki' },
-    { id: 'de-fra1', label: 'de-fra1, Frankfurt', flag: '🇩🇪', location: 'Europe, Frankfurt' },
-    { id: 'uk-lon1', label: 'uk-lon1, London',    flag: '🇬🇧', location: 'Europe, London' },
-    { id: 'sg-sin1', label: 'sg-sin1, Singapore', flag: '🇸🇬', location: 'Asia, Singapore' },
-  ],
-}
 
 const STANDARD_COMPUTE_PROFILES: ComputeProfile[] = [
   { id: 'economy',          label: 'Economy',          description: 'Cost-effective option for less resource-intensive deployments' },
@@ -657,39 +600,6 @@ function TierCard({
 
 TierCard.displayName = 'TierCard'
 
-// ─── CloudProviderIcon ────────────────────────────────────────────────────────
-
-function CloudProviderIcon({ id }: { id: CloudProviderId }) {
-  switch (id) {
-    case 'aws':
-      return (
-        <Box aria-hidden="true" style={{ position: 'relative', width: 20, height: 20, flexShrink: 0 }}>
-          <img alt="" style={{ position: 'absolute', top: '18.75%', left: '4.52%', right: '3.87%', bottom: '49.71%', width: '91.61%', height: '31.54%', objectFit: 'contain' }} src={cloudAwsVector} />
-          <img alt="" style={{ position: 'absolute', top: '56.35%', left: 0, right: 0, bottom: '21.17%', width: '100%', height: '22.48%', objectFit: 'contain' }} src={cloudAwsSmile} />
-        </Box>
-      )
-    case 'google':
-      return <img alt="" width={20} height={20} style={{ display: 'block', objectFit: 'contain' }} src={cloudGoogle} />
-    case 'azure':
-      return (
-        <Box aria-hidden="true" style={{ position: 'relative', width: 20, height: 20, flexShrink: 0 }}>
-          <img alt="" style={{ position: 'absolute', top: 0, left: 0, width: '47.5%', height: '47.5%', objectFit: 'fill' }} src={cloudAzure1} />
-          <img alt="" style={{ position: 'absolute', top: 0, right: 0, width: '47.5%', height: '47.5%', objectFit: 'fill' }} src={cloudAzure2} />
-          <img alt="" style={{ position: 'absolute', bottom: 0, left: 0, width: '47.5%', height: '47.5%', objectFit: 'fill' }} src={cloudAzure3} />
-          <img alt="" style={{ position: 'absolute', bottom: 0, right: 0, width: '47.5%', height: '47.5%', objectFit: 'fill' }} src={cloudAzure4} />
-        </Box>
-      )
-    case 'digitalocean':
-      return <img alt="" width={20} height={20} style={{ display: 'block', objectFit: 'contain' }} src={cloudDigitalOcean} />
-    case 'upcloud':
-      return <img alt="" width={20} height={20} style={{ display: 'block', objectFit: 'contain' }} src={cloudUpCloud} />
-    default:
-      return null
-  }
-}
-
-CloudProviderIcon.displayName = 'CloudProviderIcon'
-
 // ─── Inline badge components ──────────────────────────────────────────────────
 
 const CHIP_BADGE_STYLE: React.CSSProperties = {
@@ -1077,42 +987,16 @@ function CreateService({
                 </ChoiceChipGroup>
               </Box>
             ) : (
-              <>
-                <Box style={{ marginBottom: 24 }}>
-                  <ChoiceChipGroup
-                    name="cloud"
-                    selectionMode="radio"
-                    value={cloud}
-                    onChange={(v) => {
-                      const id = v as CloudProviderId
-                      setCloud(id)
-                      setRegionId(config.regionsByCloud[id]?.[0]?.id ?? '')
-                    }}
-                  >
-                    {config.cloudProviders.map((c) => (
-                      <ChoiceChip key={c.id} value={c.id}>
-                        <Box component="span" style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
-                          <CloudProviderIcon id={c.id} />
-                          {c.label}
-                        </Box>
-                      </ChoiceChip>
-                    ))}
-                  </ChoiceChipGroup>
-                </Box>
-                <Box style={{ maxWidth: 700 }}>
-                  <Select
-                    labelText="Select region"
-                    options={config.regionsByCloud[cloud]?.map((r) => `${r.flag} ${r.label}`) ?? []}
-                    value={selectedRegion ? `${selectedRegion.flag} ${selectedRegion.label}` : ''}
-                    onChange={(val) => {
-                      const found = config.regionsByCloud[cloud]?.find(
-                        (r) => `${r.flag} ${r.label}` === String(val ?? ''),
-                      )
-                      if (found) setRegionId(found.id)
-                    }}
-                  />
-                </Box>
-              </>
+              <ServiceRegionPicker
+                cloud={cloud}
+                onCloudChange={(id) => {
+                  setCloud(id)
+                  setRegionId(config.regionsByCloud[id]?.[0]?.id ?? '')
+                }}
+                regionId={regionId}
+                onRegionChange={setRegionId}
+                regionsByCloud={config.regionsByCloud}
+              />
             )}
           </Section>
 

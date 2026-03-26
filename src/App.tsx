@@ -12,6 +12,7 @@ import ServiceTypeSelectModal, { getServiceTypeDisplayName, type ServiceTypeId }
 import { ScenarioProvider, ScenarioPanel, ScenarioTrigger, ScenarioBadge, useScenario } from './scenarios'
 import { MysqlAcuRolloutModal } from './screens/MysqlAcuRolloutModal'
 import { UpgradeServiceModal, UPGRADE_PLAN_SERVICE_DATA, type UpgradeTier } from './screens/UpgradeServiceModal'
+import { UpgradeServiceModalV2 } from './screens/UpgradeServiceModalV2'
 
 type View = 'org-home' | 'project-services' | 'service-overview' | 'billing-invoice'
 
@@ -160,6 +161,7 @@ function getInitialServicesForScenario(scenarioId: string | null): ServiceRow[] 
     case 'replica-mixed-pricing':
       return REPLICA_MIXED_SERVICES
     case 'free-dev-upgrade':
+    case 'free-dev-upgrade-v2':
       return FREE_DEV_UPGRADE_SERVICES
     default:
       return INITIAL_SERVICES
@@ -224,6 +226,8 @@ function AppContent() {
   const [editModalOpen, setEditModalOpen] = useState(false)
   /** Incremented when the edit modal is cancelled from the upgrade flow, to reset the customize toggle. */
   const [upgradeCustomizeResetKey, setUpgradeCustomizeResetKey] = useState(0)
+  /** Controls visibility of the Upgrade V2 modal. */
+  const [upgradeV2ModalOpen, setUpgradeV2ModalOpen] = useState(false)
   /** Holds the current submit function exposed by CreateService (edit mode). */
   const editSubmitRef = useRef<(() => void) | undefined>(undefined)
 
@@ -295,7 +299,11 @@ function AppContent() {
     const currentService = services.find((s) => s.id === overviewServiceId)
     const isSimple = ['free', 'developer'].includes((currentService?.planName ?? '').toLowerCase())
     if (isSimple) {
-      setUpgradeModalOpen(true)
+      if (activeScenarioId === 'free-dev-upgrade-v2') {
+        setUpgradeV2ModalOpen(true)
+      } else {
+        setUpgradeModalOpen(true)
+      }
     } else {
       setEditModalOpen(true)
     }
@@ -532,6 +540,45 @@ function AppContent() {
         currentTier={((editOverviewService?.planName ?? '').toLowerCase() === 'free' ? 'free' : 'developer') as UpgradeTier}
         onUpgrade={(planId) => {
           setUpgradeModalOpen(false)
+          const planData = UPGRADE_PLAN_SERVICE_DATA[planId]
+          if (planData && overviewServiceId) {
+            setServices((prev) =>
+              prev.map((s) =>
+                s.id === overviewServiceId
+                  ? {
+                      ...s,
+                      planName: planData.planName,
+                      planDetails: planData.planDetails,
+                      nodeCount: planData.nodeCount,
+                      nodes: `Nodes ${planData.nodeCount}`,
+                      cpuCount: planData.cpuCount,
+                      ramCapacity: planData.ramCapacity,
+                      storageCapacity: planData.storageCapacity,
+                    }
+                  : s,
+              ),
+            )
+          }
+          addToast({
+            message: `Service upgraded to ${planData?.planName ?? planId} plan`,
+            icon: tickIcon,
+            duration: 4000,
+            position: 'top-right',
+          })
+        }}
+        onCustomize={() => {
+          setEditModalOpen(true)
+        }}
+        customizeResetKey={upgradeCustomizeResetKey}
+      />
+
+      {/* Upgrade V2 modal — triggered by free-dev-upgrade-v2 scenario */}
+      <UpgradeServiceModalV2
+        open={upgradeV2ModalOpen}
+        onClose={() => setUpgradeV2ModalOpen(false)}
+        currentTier={((editOverviewService?.planName ?? '').toLowerCase() === 'free' ? 'free' : 'developer') as UpgradeTier}
+        onUpgrade={(planId) => {
+          setUpgradeV2ModalOpen(false)
           const planData = UPGRADE_PLAN_SERVICE_DATA[planId]
           if (planData && overviewServiceId) {
             setServices((prev) =>

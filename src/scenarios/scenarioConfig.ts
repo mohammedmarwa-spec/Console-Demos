@@ -23,7 +23,8 @@ export const SCENARIOS: Scenario[] = [
   { id: 'replica-mixed-pricing',                 label: 'Read replicas: mixed pricing',         group: 'Existing customers', description: '4 MySQL primaries covering all ACU/legacy replica combos' },
 
   // Pricing upgrade
-  { id: 'free-dev-upgrade', label: 'Free & Dev: Quick upgrade', group: 'Pricing upgrade', description: '1 Free + 1 Developer tier service to test the Quick upgrade flow' },
+  { id: 'free-dev-upgrade',    label: 'Free & Dev: Quick upgrade',    group: 'Pricing upgrade', description: '1 Free + 1 Developer tier service to test the Quick upgrade flow' },
+  { id: 'free-dev-upgrade-v2', label: 'Free & Dev: Quick Upgrade V2', group: 'Pricing upgrade', description: 'Same services, V2 modal with tier headers and region selectors' },
 ]
 
 // ─── Derived helpers ──────────────────────────────────────────────────────────
