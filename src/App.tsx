@@ -140,6 +140,30 @@ const REPLICA_MIXED_SERVICES: ServiceRow[] = [
   { id: 'rp-r4b', serviceName: 'mysql-acu-mixed-replicas-r-leg', serviceType: 'MySQL', serviceTypeId: 'mysql', status: 'Running', nodes: 'Nodes 3', nodeCount: 3, planName: 'Business-4', planDetails: '4 CPU / 16 GB RAM / 300 GB storage', cloudRegion: 'AWS: ap-southeast-1',  location: 'Asia, Singapore',         created: '1 month ago',  iconLetter: 'M',                    cpuCount: 4, ramCapacity: '16 GB', storageCapacity: '300 GB',                                                                       replicationRole: 'read_replica', sourceServiceId: 'rp-p4' },
 ]
 
+/** PG service used by the Deeptrace Demo scenario (Logs view). */
+const DEEPTRACE_DEMO_PG_ID = 'pg-deeptrace-demo'
+
+const DEEPTRACE_DEMO_SERVICES: ServiceRow[] = [
+  {
+    id: DEEPTRACE_DEMO_PG_ID,
+    serviceName: DEEPTRACE_DEMO_PG_ID,
+    serviceType: 'PostgreSQL',
+    serviceTypeId: 'postgresql',
+    status: 'Running',
+    nodes: 'Nodes 3',
+    nodeCount: 3,
+    planName: 'Business-4',
+    planDetails: '4 CPU / 16 GB RAM / 480 GB storage',
+    cloudRegion: 'AWS: eu-west-1',
+    location: 'Europe, Ireland',
+    created: '3 days ago',
+    iconLetter: 'P',
+    cpuCount: 4,
+    ramCapacity: '16 GB',
+    storageCapacity: '480 GB',
+  },
+]
+
 function shuffle<T>(arr: T[]): T[] {
   const out = [...arr]
   for (let i = out.length - 1; i > 0; i--) {
@@ -163,9 +187,25 @@ function getInitialServicesForScenario(scenarioId: string | null): ServiceRow[] 
     case 'free-dev-upgrade':
     case 'free-dev-upgrade-v2':
       return FREE_DEV_UPGRADE_SERVICES
+    case 'deeptrace-demo':
+      return DEEPTRACE_DEMO_SERVICES
     default:
       return INITIAL_SERVICES
   }
+}
+
+function initialViewForScenario(scenarioId: string | null): View {
+  if (scenarioId === 'invoice-mixed-services' || scenarioId === 'invoice-plan-acumixed') return 'billing-invoice'
+  if (scenarioId === 'deeptrace-demo') return 'service-overview'
+  return 'project-services'
+}
+
+function initialOverviewServiceIdForScenario(scenarioId: string | null): string | null {
+  return scenarioId === 'deeptrace-demo' ? DEEPTRACE_DEMO_PG_ID : null
+}
+
+function initialOverviewServiceTypeForScenario(scenarioId: string | null): ServiceTypeId | null {
+  return scenarioId === 'deeptrace-demo' ? 'postgresql' : null
 }
 
 const SUBTITLE = (
@@ -177,14 +217,18 @@ const SUBTITLE = (
 function AppContent() {
   const addToast = useToast()
   const { activeScenarioId } = useScenario()
-  const [view, setView] = useState<View>('project-services')
+  const [view, setView] = useState<View>(() => initialViewForScenario(activeScenarioId))
   const [serviceTypeModalOpen, setServiceTypeModalOpen] = useState(false)
   const [creationModalOpen, setCreationModalOpen] = useState(false)
   const [selectedServiceType, setSelectedServiceType] = useState<ServiceTypeId | null>(null)
   /** Service type for the overview page (set when navigating from create success or clicking a service). */
-  const [overviewServiceType, setOverviewServiceType] = useState<ServiceTypeId | null>(null)
+  const [overviewServiceType, setOverviewServiceType] = useState<ServiceTypeId | null>(() =>
+    initialOverviewServiceTypeForScenario(activeScenarioId),
+  )
   /** Service id for the overview page (which service we're viewing; used for delete). */
-  const [overviewServiceId, setOverviewServiceId] = useState<string | null>(null)
+  const [overviewServiceId, setOverviewServiceId] = useState<string | null>(() =>
+    initialOverviewServiceIdForScenario(activeScenarioId),
+  )
   /** List of services shown on the Services page (newly created ones are appended). */
   const [services, setServices] = useState<ServiceRow[]>(() => getInitialServicesForScenario(activeScenarioId))
 
@@ -204,6 +248,10 @@ function AppContent() {
       setOverviewServiceId(null)
       setOverviewServiceType(null)
       setView('billing-invoice')
+    } else if (activeScenarioId === 'deeptrace-demo') {
+      setOverviewServiceId(DEEPTRACE_DEMO_PG_ID)
+      setOverviewServiceType('postgresql')
+      setView('service-overview')
     } else {
       setOverviewServiceId(null)
       setOverviewServiceType(null)
@@ -478,6 +526,7 @@ function AppContent() {
           key={`overview:${overviewServiceId ?? ''}`}
           serviceId={overviewServiceId}
           serviceTypeId={overviewServiceType}
+          initialSidebarItem={activeScenarioId === 'deeptrace-demo' ? 'logs' : undefined}
           services={services}
           onBackToProject={() => setView('project-services')}
           onDeleteService={handleDeleteService}

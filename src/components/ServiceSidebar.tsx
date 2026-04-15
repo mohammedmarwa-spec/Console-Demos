@@ -1,3 +1,4 @@
+import type { MouseEvent } from 'react'
 import { Box, Navigation } from '@aivenio/aquarium'
 import dashboardIcon from '@aivenio/aquarium/icons/dashboard'
 import integrationsIcon from '@aivenio/aquarium/icons/integrations'
@@ -31,6 +32,8 @@ export type ServiceSidebarProps = {
   serviceName: string
   activeItem?: string
   onBackToProject?: () => void
+  /** Called when the user selects a service sub-page (Overview, Logs, etc). */
+  onNavigate?: (id: string) => void
 }
 
 export function ServiceSidebar({
@@ -38,6 +41,7 @@ export function ServiceSidebar({
   serviceName,
   activeItem = 'overview',
   onBackToProject,
+  onNavigate,
 }: ServiceSidebarProps) {
   return (
     <Box
@@ -68,7 +72,16 @@ export function ServiceSidebar({
         )}
         <Navigation.Divider />
         {NAV_ITEMS.map(({ id, label, icon }) => (
-          <Navigation.Item key={id} icon={icon} active={id === activeItem} href="#">
+          <Navigation.Item
+            key={id}
+            icon={icon}
+            active={id === activeItem}
+            href="#"
+            onClick={(e: MouseEvent) => {
+              e.preventDefault()
+              onNavigate?.(id)
+            }}
+          >
             {label}
           </Navigation.Item>
         ))}

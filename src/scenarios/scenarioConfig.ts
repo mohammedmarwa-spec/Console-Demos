@@ -25,6 +25,9 @@ export const SCENARIOS: Scenario[] = [
   // Pricing upgrade
   { id: 'free-dev-upgrade',    label: 'Free & Dev: Quick upgrade',    group: 'Pricing upgrade', description: '1 Free + 1 Developer tier service to test the Quick upgrade flow' },
   { id: 'free-dev-upgrade-v2', label: 'Free & Dev: Quick Upgrade V2', group: 'Pricing upgrade', description: 'Same services, V2 modal with tier headers and region selectors' },
+
+  // Logs
+  { id: 'deeptrace-demo',      label: 'Deeptrace Demo',                 group: 'Logs',            description: 'PostgreSQL service, Logs view' },
 ]
 
 // ─── Derived helpers ──────────────────────────────────────────────────────────
