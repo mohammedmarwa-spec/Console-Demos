@@ -86,3 +86,8 @@ tr.logs-row-error td:first-child {
 .nodes-chip--running .Aquarium-Badge    { color: var(--aquarium-background-color-success-graphic) !important; }
 .nodes-chip--rebuilding .Aquarium-Badge { color: var(--aquarium-background-color-info-graphic) !important; }
 .nodes-chip--muted .Aquarium-Badge      { color: var(--aquarium-colors-grey-50) !important; }
+
+/* Aquarium PageHeader: remove extra bottom padding. */
+.Aquarium-PageHeader {
+  padding-bottom: 0 !important;
+}

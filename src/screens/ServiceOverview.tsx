@@ -26,8 +26,11 @@ import {
 import duplicateIcon from '@aivenio/aquarium/icons/duplicate'
 import filterIcon from '@aivenio/aquarium/icons/filter'
 import infoSignIcon from '@aivenio/aquarium/icons/infoSign'
+import cpuChipIcon from '@aivenio/aquarium/icons/cpuChip'
+import nodesIcon from '@aivenio/aquarium/icons/nodes'
 import pulseIcon from '@aivenio/aquarium/icons/pulse'
 import sendIcon from '@aivenio/aquarium/icons/send'
+import tickCircleIcon from '@aivenio/aquarium/icons/tickCircle'
 import { AuditLogsHistogram } from '../components/AuditLogsHistogram'
 import { ConsoleHeader } from '../components/ConsoleHeader'
 import { ServiceSidebar } from '../components/ServiceSidebar'
@@ -268,6 +271,56 @@ function DateRangeFilterTrigger() {
   )
 }
 
+type CompactServiceHeaderProps = {
+  serviceName: string
+  iconUrl: string
+  version: string
+  statusText: string
+  nodeCount: number
+  eolText: string
+}
+
+function CompactServiceHeader({
+  serviceName,
+  iconUrl,
+  version,
+  statusText,
+  nodeCount,
+  eolText,
+}: CompactServiceHeaderProps) {
+  return (
+    <Box
+      style={{
+        display: 'flex',
+        alignItems: 'center',
+        gap: 16,
+        paddingBottom: 12,
+        marginBottom: 12,
+        borderBottom: '1px solid #e7e8ed',
+      }}
+    >
+      <Box style={{ display: 'inline-flex', alignItems: 'center', gap: 12, minWidth: 0 }}>
+        <img
+          src={iconUrl}
+          alt={serviceName}
+          width={32}
+          height={32}
+          style={{ borderRadius: 999, display: 'block' }}
+        />
+        <Box style={{ fontWeight: 600 }}>
+          <Typography.Default>{serviceName}</Typography.Default>
+        </Box>
+        <Box style={{ display: 'inline-flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+          <StatusChip text={version} status="neutral" icon={cpuChipIcon} dense />
+          <StatusChip text={statusText} status="success" icon={tickCircleIcon} dense />
+          <StatusChip text="Nodes" status="neutral" icon={nodesIcon} badge={nodeCount} dense />
+          <StatusChip text={eolText} status="neutral" icon={infoSignIcon} dense />
+        </Box>
+      </Box>
+    </Box>
+  )
+}
+
 export type ServiceOverviewProps = {
   /** Current service id (e.g. from created service); used for display name when set. */
   serviceId?: string | null
@@ -316,6 +369,7 @@ function ServiceOverview({
   const replicas = services.filter((s) => s.sourceServiceId === (serviceIdProp ?? undefined) && s.replicationRole === 'read_replica')
   const serviceName = serviceIdProp ?? (isMySQL ? MYSQL_SERVICE_NAME : PG_SERVICE_NAME)
   const serviceVersion = isMySQL ? 'MySQL 8.0.45' : 'PostgreSQL 17'
+  const serviceEolText = isPostgres ? 'EOL: 8 November 2029' : 'EOL: 30 April 2032'
 
   // Relationship metadata
   const currentService = services.find((s) => s.id === serviceIdProp)
@@ -356,9 +410,10 @@ function ServiceOverview({
   const [sidebarItem, setSidebarItem] = useState(initialSidebarItem ?? 'overview')
   const latestLogMs = Date.parse(MOCK_LOG_ROWS[MOCK_LOG_ROWS.length - 1]?.time ?? new Date().toISOString())
   const defaultLogRange = createRelativeLogRange(new Date(latestLogMs), DEFAULT_HISTOGRAM_HOURS * 60)
-  const [dateRange, setDateRange] = useState<LogDateRange | null>(defaultLogRange)
+  const [dateRange, setDateRange] = useState<LogDateRange | null>(null)
   const [histogramWindowRange, setHistogramWindowRange] = useState<HistogramRange>(toHistogramRange(defaultLogRange))
   const [selectedHistogramRange, setSelectedHistogramRange] = useState<HistogramRange | null>(null)
+  const [isHistogramRefreshing, setIsHistogramRefreshing] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
   const [eventFilterOpen, setEventFilterOpen] = useState(false)
   const [severityFilterOpen, setSeverityFilterOpen] = useState(false)
@@ -368,15 +423,14 @@ function ServiceOverview({
   const [aiDraft, setAiDraft] = useState('')
   const [aiMessages, setAiMessages] = useState<AiMessage[]>(INITIAL_AI_MESSAGES)
   const aiResponseTimerRef = useRef<number | null>(null)
+  const histogramRefreshTimerRef = useRef<number | null>(null)
+  const hasMountedRef = useRef(false)
   const eventFilterRef = useRef<HTMLDivElement>(null)
   const severityFilterRef = useRef<HTMLDivElement>(null)
   const filteredLogRows = useMemo(() => {
-    let startMs = 0
-    let endMs = Number.MAX_SAFE_INTEGER
-    if (dateRange?.start && dateRange?.end) {
-      startMs = calendarDateTimeToUtcMs(dateRange.start)
-      endMs = calendarDateTimeToUtcMs(dateRange.end)
-    }
+    const activeRange = dateRange ?? defaultLogRange
+    const startMs = calendarDateTimeToUtcMs(activeRange.start)
+    const endMs = calendarDateTimeToUtcMs(activeRange.end)
     return MOCK_LOG_ROWS.filter((row) => {
       const ts = row.timestampMs
       if (ts < startMs || ts > endMs) return false
@@ -387,7 +441,7 @@ function ServiceOverview({
       }
       return true
     })
-  }, [dateRange, searchQuery, selectedEventTypes, selectedSeverities])
+  }, [dateRange, defaultLogRange, searchQuery, selectedEventTypes, selectedSeverities])
   const clampedHistogramRange = useMemo<HistogramRange>(() => {
     const alignedStartMs = Math.floor(histogramWindowRange.startMs / ONE_HOUR_MS) * ONE_HOUR_MS
     const alignedEndMs = Math.max(
@@ -459,7 +513,7 @@ function ServiceOverview({
   useEffect(() => {
     setSidebarItem(initialSidebarItem ?? 'overview')
     const resetRange = createRelativeLogRange(new Date(latestLogMs), DEFAULT_HISTOGRAM_HOURS * 60)
-    setDateRange(resetRange)
+    setDateRange(null)
     setHistogramWindowRange(toHistogramRange(resetRange))
     setSelectedHistogramRange(null)
     setSearchQuery('')
@@ -482,8 +536,27 @@ function ServiceOverview({
         window.clearTimeout(aiResponseTimerRef.current)
         aiResponseTimerRef.current = null
       }
+      if (histogramRefreshTimerRef.current) {
+        window.clearTimeout(histogramRefreshTimerRef.current)
+        histogramRefreshTimerRef.current = null
+      }
     }
   }, [])
+
+  useEffect(() => {
+    if (!hasMountedRef.current) {
+      hasMountedRef.current = true
+      return
+    }
+    setIsHistogramRefreshing(true)
+    if (histogramRefreshTimerRef.current) {
+      window.clearTimeout(histogramRefreshTimerRef.current)
+    }
+    histogramRefreshTimerRef.current = window.setTimeout(() => {
+      setIsHistogramRefreshing(false)
+      histogramRefreshTimerRef.current = null
+    }, 180)
+  }, [searchQuery])
 
   useEffect(() => {
     if (!eventFilterOpen && !severityFilterOpen) return
@@ -596,9 +669,17 @@ function ServiceOverview({
         <div ref={contentRef} style={{ flex: 1, minWidth: 0, minHeight: 0, padding: 24, overflow: 'auto', overflowAnchor: 'none', backgroundColor: '#fff' }}>
           {sidebarItem === 'logs' ? (
             <>
-              <Box style={{ marginBottom: 32 }}>
+              <Box style={{ marginBottom: 16 }}>
+                <CompactServiceHeader
+                  serviceName={serviceName}
+                  iconUrl={getServiceIconUrl(serviceTypeId ?? null)}
+                  version={serviceVersion}
+                  statusText="Running"
+                  nodeCount={nodeCount}
+                  eolText={serviceEolText}
+                />
                 <PageHeader
-                  title="Service logs"
+                  title=""
                   breadcrumbs={[
                     <Breadcrumbs.Crumb key="org">
                       <Link href="#" onClick={(e) => { e.preventDefault(); onBackToProject?.() }}>
@@ -618,11 +699,7 @@ function ServiceOverview({
                     <Breadcrumbs.Crumb key="service">{serviceName}</Breadcrumbs.Crumb>,
                     <Breadcrumbs.Crumb key="logs">Service logs</Breadcrumbs.Crumb>,
                   ]}
-                  subtitle={
-                    <Box component="span" style={{ display: 'inline-flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
-                      <StatusChip text="Live" status="success" dense badge />
-                    </Box>
-                  }
+                  primaryAction={{ text: 'Enable logs integration', onClick: () => {} }}
                   secondaryActions={{ text: 'AI assistant', onClick: () => setAiAssistantOpen(true) }}
                   menu={
                     <DropdownMenu.Items>
@@ -631,6 +708,10 @@ function ServiceOverview({
                   }
                   onAction={(key) => { if (key === 'delete') onDeleteService?.() }}
                 />
+                <Box style={{ display: 'inline-flex', alignItems: 'center', gap: 8, marginTop: 8 }}>
+                  <Typography.Heading>Service logs</Typography.Heading>
+                  <StatusChip text="Live" status="success" badge />
+                </Box>
               </Box>
 
               <Box style={{ marginTop: 0 }} role="region" aria-label="Service logs">
@@ -646,6 +727,7 @@ function ServiceOverview({
                     severityCountsByBucket={severityCountsByBucket}
                     range={histogramBucketsData.range}
                     selectedRange={selectedHistogramRange}
+                    isRefreshing={isHistogramRefreshing}
                     onRangeSelected={(range) => {
                       setSelectedHistogramRange(range)
                       setDateRange({
@@ -781,6 +863,14 @@ function ServiceOverview({
             <>
             {/* Page header */}
           <Box style={{ marginBottom: 32 }}>
+            <CompactServiceHeader
+              serviceName={serviceName}
+              iconUrl={getServiceIconUrl(serviceTypeId ?? null)}
+              version={serviceVersion}
+              statusText="Running"
+              nodeCount={nodeCount}
+              eolText={serviceEolText}
+            />
             <PageHeader
               title={serviceName}
               image={getServiceIconUrl(serviceTypeId ?? null)}

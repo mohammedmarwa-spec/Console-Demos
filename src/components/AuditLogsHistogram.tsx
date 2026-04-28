@@ -14,6 +14,7 @@ type AuditLogsHistogramProps = {
   severityCountsByBucket?: Record<number, { info: number; warning: number; error: number }>
   range: HistogramRange | null
   selectedRange?: HistogramRange | null
+  isRefreshing?: boolean
   onRangeSelected: (range: HistogramRange) => void
 }
 
@@ -37,6 +38,7 @@ export function AuditLogsHistogram({
   severityCountsByBucket,
   range,
   selectedRange,
+  isRefreshing = false,
   onRangeSelected,
 }: AuditLogsHistogramProps) {
   const hasSelection = Boolean(selectedRange)
@@ -111,7 +113,25 @@ export function AuditLogsHistogram({
       )}
 
       {status === 'ready' && buckets.length > 0 && (
-        <Box>
+        <Box style={{ position: 'relative' }}>
+          {isRefreshing && (
+            <Box
+              style={{
+                position: 'absolute',
+                top: 6,
+                right: 8,
+                zIndex: 10,
+                pointerEvents: 'none',
+                backgroundColor: 'rgba(255, 255, 255, 0.88)',
+                border: '1px solid #e7e8ed',
+                borderRadius: 999,
+                padding: '2px 8px',
+                color: '#787885',
+              }}
+            >
+              <Typography.Caption>Updating...</Typography.Caption>
+            </Box>
+          )}
           <BarChart data={chartData} height={130} palette="secondary" margin={{ top: 4, right: 0, left: 0, bottom: 0 }}>
             <Axis.XAxis.Time
               dataKey="time"
