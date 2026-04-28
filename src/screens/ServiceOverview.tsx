@@ -390,11 +390,13 @@ function ServiceOverview({
     return out
   }, [pastHourBucketsData.buckets])
   const visibleLogRows = useMemo(() => {
-    if (!selectedLogRange) return filteredLogRows
-    return filteredLogRows.filter((row) => {
-      const ts = row.timestampMs
-      return ts >= selectedLogRange.startMs && ts <= selectedLogRange.endMs
-    })
+    const inRangeRows = !selectedLogRange
+      ? filteredLogRows
+      : filteredLogRows.filter((row) => {
+          const ts = row.timestampMs
+          return ts >= selectedLogRange.startMs && ts <= selectedLogRange.endMs
+        })
+    return [...inRangeRows].sort((a, b) => b.timestampMs - a.timestampMs)
   }, [filteredLogRows, selectedLogRange])
 
   useEffect(() => {
@@ -433,7 +435,7 @@ function ServiceOverview({
   }, [serviceIdProp, sidebarItem])
 
   function scrollToLatestLog() {
-    logsEndRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' })
+    contentRef.current?.scrollTo({ top: 0, behavior: 'smooth' })
   }
 
   const sendAiMessage = () => {
@@ -470,8 +472,6 @@ function ServiceOverview({
               <Box style={{ marginBottom: 32 }}>
                 <PageHeader
                   title="Service logs"
-                  image={getServiceIconUrl(serviceTypeId ?? null)}
-                  imageAlt={serviceTypeId ?? 'service'}
                   breadcrumbs={[
                     <Breadcrumbs.Crumb key="org">
                       <Link href="#" onClick={(e) => { e.preventDefault(); onBackToProject?.() }}>
@@ -493,8 +493,6 @@ function ServiceOverview({
                   ]}
                   subtitle={
                     <Box component="span" style={{ display: 'inline-flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
-                      <StatusChip text="Running" status="success" dense />
-                      <StatusChip text="Nodes" status="neutral" dense badge={nodeCount} />
                       <StatusChip text="Live" status="success" dense badge />
                     </Box>
                   }

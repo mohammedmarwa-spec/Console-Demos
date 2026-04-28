@@ -73,10 +73,6 @@ export function AuditLogsHistogram({
         backgroundColor: '#fff',
       }}
     >
-      <Box style={{ marginBottom: 8 }}>
-        <Typography.SmallStrong>Logs distribution</Typography.SmallStrong>
-      </Box>
-
       {status === 'loading' && (
         <Box style={{ color: '#787885', padding: '10px 4px' }}>
           <Typography.Small>Loading histogram...</Typography.Small>
