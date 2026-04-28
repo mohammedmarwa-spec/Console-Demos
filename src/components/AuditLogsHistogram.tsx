@@ -132,7 +132,8 @@ export function AuditLogsHistogram({
               marginBottom: 8,
             }}
           >
-            <Box style={{ fontSize: 16, lineHeight: '24px', fontWeight: 500, color: '#242429' }}>
+            <Box style={{ display: 'inline-flex', alignItems: 'center', gap: 8, fontSize: 16, lineHeight: '24px', fontWeight: 500, color: '#242429' }}>
+              <Box className="logs-live-dot" style={{ width: 8, height: 8, borderRadius: '50%', backgroundColor: '#12B76A' }} />
               Live logs for past 24 hours
             </Box>
             <Box

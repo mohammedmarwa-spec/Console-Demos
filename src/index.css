@@ -91,3 +91,26 @@ tr.logs-row-error td:first-child {
 .Aquarium-PageHeader {
   padding-bottom: 0 !important;
 }
+
+/* Subtle pulse for live logs indicator dot. */
+.logs-live-dot {
+  animation: logsLiveDotPulse 1.8s ease-in-out infinite;
+}
+
+@keyframes logsLiveDotPulse {
+  0% {
+    transform: scale(1);
+    opacity: 0.92;
+    box-shadow: 0 0 0 0 rgba(18, 183, 106, 0.35);
+  }
+  50% {
+    transform: scale(1.08);
+    opacity: 1;
+    box-shadow: 0 0 0 4px rgba(18, 183, 106, 0.12);
+  }
+  100% {
+    transform: scale(1);
+    opacity: 0.92;
+    box-shadow: 0 0 0 0 rgba(18, 183, 106, 0);
+  }
+}

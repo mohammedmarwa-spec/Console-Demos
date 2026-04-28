@@ -705,7 +705,6 @@ function ServiceOverview({
                 />
                 <Box style={{ display: 'inline-flex', alignItems: 'center', gap: 8, marginTop: 8 }}>
                   <Typography.Heading>Service logs</Typography.Heading>
-                  <StatusChip text="Live" status="success" badge />
                 </Box>
               </Box>
 
