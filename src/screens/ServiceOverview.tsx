@@ -710,7 +710,7 @@ function ServiceOverview({
               </Box>
 
               <Box style={{ marginTop: 0 }} role="region" aria-label="Service logs">
-                <Box style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 12, marginBottom: 12 }}>
+                <Box style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 12, marginBottom: 20 }}>
                   <Box style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 12, flex: '1 1 auto', minWidth: 0 }}>
                     <Box style={{ flex: '1 1 340px', minWidth: 240, maxWidth: 480 }}>
                       <InputBase

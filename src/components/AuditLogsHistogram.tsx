@@ -4,6 +4,7 @@ import { Axis, BarChart, timeHour } from '@aivenio/aquarium/charts'
 import type { HistogramBucket, HistogramRange } from '../utils/auditHistogram'
 
 const ONE_HOUR_MS = 60 * 60 * 1000
+const GMT_PLUS_3_OFFSET_MS = 3 * ONE_HOUR_MS
 
 type HistogramStatus = 'loading' | 'ready' | 'error'
 
@@ -83,6 +84,14 @@ export function AuditLogsHistogram({
     const spanHours = Math.max(1, Math.ceil((range.endMs - range.startMs) / ONE_HOUR_MS))
     return Math.max(1, Math.ceil(spanHours / 12))
   }, [range])
+  const histogramMetaText = useMemo(() => {
+    if (!range) return ''
+    const firstBucket = buckets[0]
+    const bucketSizeMs = firstBucket ? Math.max(1, firstBucket.endMs - firstBucket.startMs) : ONE_HOUR_MS
+    const bucketHours = bucketSizeMs / ONE_HOUR_MS
+    const bucketSizeText = Number.isInteger(bucketHours) ? `${bucketHours} h` : `${bucketHours.toFixed(1)} h`
+    return `GMT+3 | Bucket size: ${bucketSizeText} | Last updated ${formatGmtPlus3TimeWithSeconds(range.endMs)}`
+  }, [buckets, range])
 
   return (
     <Box
@@ -114,6 +123,39 @@ export function AuditLogsHistogram({
 
       {status === 'ready' && buckets.length > 0 && (
         <Box style={{ position: 'relative' }}>
+          <Box
+            style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'flex-start',
+              gap: 12,
+              marginBottom: 8,
+            }}
+          >
+            <Box style={{ fontSize: 16, lineHeight: '24px', fontWeight: 500, color: '#242429' }}>
+              Live logs for past 24 hours
+            </Box>
+            <Box
+              style={{
+                color: '#787885',
+                fontSize: 14,
+                lineHeight: '20px',
+                display: 'inline-flex',
+                alignItems: 'center',
+                justifyContent: 'flex-end',
+                gap: 16,
+                flexWrap: 'wrap',
+                maxWidth: '78%',
+              }}
+            >
+              <Box>{histogramMetaText}</Box>
+              <Box style={{ display: 'inline-flex', alignItems: 'center', gap: 14 }}>
+                <LegendDot color="#d92d20" label="Error" />
+                <LegendDot color="#f79009" label="Warning" />
+                <LegendDot color="#3545BE" label="Info" />
+              </Box>
+            </Box>
+          </Box>
           {isRefreshing && (
             <Box
               style={{
@@ -205,10 +247,6 @@ export function AuditLogsHistogram({
               }}
             />
           </BarChart>
-          <Box style={{ display: 'flex', justifyContent: 'space-between', marginTop: 6, color: '#787885' }}>
-            <Typography.Caption>Older</Typography.Caption>
-            <Typography.Caption>Newer</Typography.Caption>
-          </Box>
         </Box>
       )}
     </Box>
@@ -222,6 +260,15 @@ function formatShortTime(ms: number): string {
     hour12: false,
     timeZone: 'UTC',
   })
+}
+
+function formatGmtPlus3TimeWithSeconds(ms: number): string {
+  const date = new Date(ms + GMT_PLUS_3_OFFSET_MS)
+  return `${pad2(date.getUTCHours())}:${pad2(date.getUTCMinutes())}:${pad2(date.getUTCSeconds())}`
+}
+
+function pad2(value: number): string {
+  return String(value).padStart(2, '0')
 }
 
 AuditLogsHistogram.displayName = 'AuditLogsHistogram'
@@ -274,6 +321,15 @@ function TooltipRow({ color, label, value }: { color: string; label: string; val
         <Typography.Small>{label}</Typography.Small>
       </Box>
       <Typography.Small>{value}</Typography.Small>
+    </Box>
+  )
+}
+
+function LegendDot({ color, label }: { color: string; label: string }) {
+  return (
+    <Box style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+      <Box style={{ width: 8, height: 8, borderRadius: '50%', backgroundColor: color }} />
+      <Box style={{ fontSize: 14, lineHeight: '20px' }}>{label}</Box>
     </Box>
   )
 }
