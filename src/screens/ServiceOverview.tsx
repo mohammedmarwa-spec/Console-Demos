@@ -694,7 +694,6 @@ function ServiceOverview({
                     <Breadcrumbs.Crumb key="service">{serviceName}</Breadcrumbs.Crumb>,
                     <Breadcrumbs.Crumb key="logs">Service logs</Breadcrumbs.Crumb>,
                   ]}
-                  primaryAction={{ text: 'Enable logs integration', onClick: () => {} }}
                   secondaryActions={{ text: 'AI assistant', onClick: () => setAiAssistantOpen(true) }}
                   menu={
                     <DropdownMenu.Items>
