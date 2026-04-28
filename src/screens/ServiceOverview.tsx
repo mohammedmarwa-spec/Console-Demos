@@ -28,7 +28,6 @@ import filterIcon from '@aivenio/aquarium/icons/filter'
 import infoSignIcon from '@aivenio/aquarium/icons/infoSign'
 import cpuChipIcon from '@aivenio/aquarium/icons/cpuChip'
 import nodesIcon from '@aivenio/aquarium/icons/nodes'
-import pulseIcon from '@aivenio/aquarium/icons/pulse'
 import sendIcon from '@aivenio/aquarium/icons/send'
 import tickCircleIcon from '@aivenio/aquarium/icons/tickCircle'
 import { AuditLogsHistogram } from '../components/AuditLogsHistogram'
@@ -211,6 +210,16 @@ function calendarDateTimeToUtcMs(cdt: CalendarDateTime): number {
 function createRelativeLogRange(anchor: Date, minutes: number): LogDateRange {
   const end = new Date(anchor)
   const start = new Date(anchor.getTime() - minutes * 60 * 1000)
+  return {
+    start: utcDateToCalendarDateTime(start),
+    end: utcDateToCalendarDateTime(end),
+  }
+}
+
+function createCenteredLogRange(centerMs: number, durationMs: number): LogDateRange {
+  const half = Math.floor(durationMs / 2)
+  const start = new Date(centerMs - half)
+  const end = new Date(centerMs + half)
   return {
     start: utcDateToCalendarDateTime(start),
     end: utcDateToCalendarDateTime(end),
@@ -647,6 +656,13 @@ function ServiceOverview({
     }, 900)
   }
 
+  const handleExploreLogWindow = (row: LogRow) => {
+    const centeredRange = createCenteredLogRange(row.timestampMs, 2 * 60 * 1000)
+    setDateRange(centeredRange)
+    setHistogramWindowRange(toHistogramRange(centeredRange))
+    setSelectedHistogramRange(null)
+  }
+
   return (
     <>
     <Box style={{ height: '100vh', backgroundColor: '#fff', display: 'flex', flexDirection: 'column' }}>
@@ -848,7 +864,11 @@ function ServiceOverview({
                 {visibleLogRows.length === 0 ? (
                   <Typography.Default>No log entries for this filter.</Typography.Default>
                 ) : (
-                  <LogsDataList rows={visibleLogRows} onExploreWithAi={handleExploreLogWithAi} />
+                  <LogsDataList
+                    rows={visibleLogRows}
+                    onExploreWithAi={handleExploreLogWithAi}
+                    onExploreWindow={handleExploreLogWindow}
+                  />
                 )}
               </Box>
             </>
@@ -1253,7 +1273,15 @@ ServiceOverview.displayName = 'ServiceOverview'
 
 export default ServiceOverview
 
-function LogsDataList({ rows, onExploreWithAi }: { rows: LogRow[]; onExploreWithAi: (row: LogRow) => void }) {
+function LogsDataList({
+  rows,
+  onExploreWithAi,
+  onExploreWindow,
+}: {
+  rows: LogRow[]
+  onExploreWithAi: (row: LogRow) => void
+  onExploreWindow: (row: LogRow) => void
+}) {
   if (rows.length === 0) return null
   const columns = [
     {
@@ -1338,7 +1366,9 @@ function LogsDataList({ rows, onExploreWithAi }: { rows: LogRow[]; onExploreWith
         sticky
         rows={rows}
         columns={columns}
-        rowDetails={(row) => <LogsRowDetails row={row} onExploreWithAi={onExploreWithAi} />}
+        rowDetails={(row) => (
+          <LogsRowDetails row={row} onExploreWithAi={onExploreWithAi} onExploreWindow={onExploreWindow} />
+        )}
       />
     </div>
   )
@@ -1346,7 +1376,15 @@ function LogsDataList({ rows, onExploreWithAi }: { rows: LogRow[]; onExploreWith
 
 LogsDataList.displayName = 'LogsDataList'
 
-function LogsRowDetails({ row, onExploreWithAi }: { row: LogRow; onExploreWithAi: (row: LogRow) => void }) {
+function LogsRowDetails({
+  row,
+  onExploreWithAi,
+  onExploreWindow,
+}: {
+  row: LogRow
+  onExploreWithAi: (row: LogRow) => void
+  onExploreWindow: (row: LogRow) => void
+}) {
   const [copied, setCopied] = useState(false)
   const copyToClipboard = (value: string) => {
     if (typeof navigator === 'undefined' || !navigator.clipboard?.writeText) return
@@ -1364,16 +1402,13 @@ function LogsRowDetails({ row, onExploreWithAi }: { row: LogRow; onExploreWithAi
     <Box style={{ padding: '8px 8px 12px' }}>
       <Box style={{ marginBottom: 12, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
         <Typography.SmallStrong>Log details</Typography.SmallStrong>
-        <Box style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
-          <Tooltip content="Explore with AI">
-            <Button.Icon
-              type="button"
-              dense
-              icon={pulseIcon}
-              aria-label="Explore with AI"
-              onClick={() => onExploreWithAi(row)}
-            />
-          </Tooltip>
+        <Box style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
+          <Button.Secondary type="button" dense onClick={() => onExploreWithAi(row)}>
+            Explain the log
+          </Button.Secondary>
+          <Button.Secondary type="button" dense onClick={() => onExploreWindow(row)}>
+            Show ±1 min context
+          </Button.Secondary>
           <Tooltip content={copied ? 'Copied' : 'Copy all log details'}>
             <Button.Icon
               type="button"

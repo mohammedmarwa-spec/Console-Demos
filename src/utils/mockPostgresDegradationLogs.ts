@@ -33,13 +33,13 @@ type EventTemplate = {
   metadata?: Record<string, unknown>
 }
 
-type BucketPlan = {
-  total: number
+type HourlySeverityWeights = {
   info: number
   warning: number
   error: number
 }
 
+const LOG_INTERVAL_MS = 5 * 1000
 const ONE_HOUR_MS = 60 * 60 * 1000
 const ONE_DAY_MS = 24 * ONE_HOUR_MS
 const DEFAULT_BUCKET_COUNT = 12
@@ -151,14 +151,23 @@ const ERROR_TEMPLATES: EventTemplate[] = [
  * - Hours 18-21: mostly recovered with residual warnings
  * - Hours 22-23: healthy closeout
  */
-function getHourlyPlan(hourIndex: number): BucketPlan {
-  if (hourIndex < 6) return { total: 3, info: 3, warning: 0, error: 0 }
-  if (hourIndex < 10) return { total: 5, info: 3, warning: 2, error: 0 }
-  if (hourIndex < 13) return { total: 8, info: 2, warning: 4, error: 2 }
-  if (hourIndex < 15) return { total: 10, info: 1, warning: 4, error: 5 }
-  if (hourIndex < 18) return { total: 7, info: 3, warning: 3, error: 1 }
-  if (hourIndex < 22) return { total: 4, info: 3, warning: 1, error: 0 }
-  return { total: 3, info: 3, warning: 0, error: 0 }
+function getHourlySeverityWeights(hourIndex: number): HourlySeverityWeights {
+  if (hourIndex < 6) return { info: 95, warning: 5, error: 0 }
+  if (hourIndex < 10) return { info: 72, warning: 24, error: 4 }
+  if (hourIndex < 13) return { info: 40, warning: 38, error: 22 }
+  if (hourIndex < 15) return { info: 22, warning: 33, error: 45 }
+  if (hourIndex < 18) return { info: 56, warning: 32, error: 12 }
+  if (hourIndex < 22) return { info: 80, warning: 17, error: 3 }
+  return { info: 94, warning: 6, error: 0 }
+}
+
+function pickSeverity(stepIndex: number, hourIndex: number): PostgresLogSeverity {
+  const weights = getHourlySeverityWeights(hourIndex)
+  const warningThreshold = weights.info + weights.warning
+  const score = (stepIndex * 17 + hourIndex * 29) % 100
+  if (score < weights.info) return 'info'
+  if (score < warningThreshold) return 'warning'
+  return 'error'
 }
 
 function alignToMinute(ms: number): number {
@@ -184,38 +193,28 @@ export function createMockPostgresDegradationLogs(now = new Date()): PostgresSer
   const startMs = endMs - ONE_DAY_MS
   const logs: PostgresServiceEventLog[] = []
 
-  for (let hourIndex = 0; hourIndex < 24; hourIndex++) {
-    const bucketStart = startMs + hourIndex * ONE_HOUR_MS
-    const plan = getHourlyPlan(hourIndex)
-
-    const severities: PostgresLogSeverity[] = [
-      ...Array.from({ length: plan.info }, () => 'info' as const),
-      ...Array.from({ length: plan.warning }, () => 'warning' as const),
-      ...Array.from({ length: plan.error }, () => 'error' as const),
-    ]
-
-    severities.forEach((severity, entryIndex) => {
-      const position = (entryIndex + 1) / (plan.total + 1)
-      const timestampMs = bucketStart + Math.floor(position * ONE_HOUR_MS)
-      const template = pickTemplate(severity, hourIndex, entryIndex)
-      const globalIndex = logs.length + 1
-      logs.push({
-        id: `checkout-pg-prod-log-${String(globalIndex).padStart(3, '0')}`,
-        timestamp: new Date(timestampMs).toISOString(),
-        service: 'checkout-pg-prod',
-        serviceType: 'postgresql',
-        severity,
-        eventType: template.eventType,
-        message: template.message,
-        component: template.component,
-        project: 'payments-prod',
-        region: 'aws-eu-west-1',
-        host: template.host,
-        metadata: {
-          hourIndex,
-          ...template.metadata,
-        },
-      })
+  for (let timestampMs = startMs, stepIndex = 0; timestampMs <= endMs; timestampMs += LOG_INTERVAL_MS, stepIndex++) {
+    const hourIndex = Math.floor((timestampMs - startMs) / ONE_HOUR_MS)
+    const severity = pickSeverity(stepIndex, hourIndex)
+    const template = pickTemplate(severity, hourIndex, stepIndex)
+    const globalIndex = logs.length + 1
+    logs.push({
+      id: `checkout-pg-prod-log-${String(globalIndex).padStart(5, '0')}`,
+      timestamp: new Date(timestampMs).toISOString(),
+      service: 'checkout-pg-prod',
+      serviceType: 'postgresql',
+      severity,
+      eventType: template.eventType,
+      message: template.message,
+      component: template.component,
+      project: 'payments-prod',
+      region: 'aws-eu-west-1',
+      host: template.host,
+      metadata: {
+        hourIndex,
+        sequenceInHour: Math.floor((timestampMs - startMs - hourIndex * ONE_HOUR_MS) / LOG_INTERVAL_MS),
+        ...template.metadata,
+      },
     })
   }
 
