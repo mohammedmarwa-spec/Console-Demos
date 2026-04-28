@@ -427,16 +427,11 @@ function ServiceOverview({
 
   // Scroll the content area to the top on mount and section switch.
   const contentRef = useRef<HTMLDivElement>(null)
-  const logsEndRef = useRef<HTMLDivElement>(null)
   useLayoutEffect(() => {
     if (contentRef.current) contentRef.current.scrollTop = 0
     // Reset window scroll as well in case the outer layout overflows the viewport.
     try { window.scrollTo(0, 0) } catch { /* jsdom no-op */ }
   }, [serviceIdProp, sidebarItem])
-
-  function scrollToLatestLog() {
-    contentRef.current?.scrollTo({ top: 0, behavior: 'smooth' })
-  }
 
   const sendAiMessage = () => {
     const prompt = aiDraft.trim()
@@ -564,11 +559,6 @@ function ServiceOverview({
                     )}
                   </div>
                 </Box>
-                <Box style={{ flexShrink: 0, marginLeft: 'auto' }}>
-                  <Button.Ghost type="button" dense onClick={scrollToLatestLog}>
-                    Go to most recent message
-                  </Button.Ghost>
-                </Box>
               </Box>
 
               <Box style={{ marginTop: 0 }} role="region" aria-label="Service logs">
@@ -600,7 +590,6 @@ function ServiceOverview({
                 ) : (
                   <LogsDataList rows={visibleLogRows} />
                 )}
-                <div ref={logsEndRef} style={{ height: 1, overflow: 'hidden' }} aria-hidden />
               </Box>
             </>
           ) : (
@@ -1070,6 +1059,11 @@ function LogsDataList({ rows }: { rows: LogRow[] }) {
 LogsDataList.displayName = 'LogsDataList'
 
 function LogsRowDetails({ row }: { row: LogRow }) {
+  const copyToClipboard = (value: string) => {
+    if (typeof navigator === 'undefined' || !navigator.clipboard?.writeText) return
+    void navigator.clipboard.writeText(value)
+  }
+
   return (
     <Box style={{ padding: '8px 8px 12px' }}>
       <Box style={{ marginBottom: 12 }}>
@@ -1077,13 +1071,20 @@ function LogsRowDetails({ row }: { row: LogRow }) {
       </Box>
       <Box style={{ display: 'grid', rowGap: 6, marginBottom: 16 }}>
         {row.metadata.map((item) => (
-          <Box key={item.label} style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+          <Box key={item.label} style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
             <Box style={{ minWidth: 120, color: '#787885' }}>
               <Typography.Small>{item.label}</Typography.Small>
             </Box>
-            <Box style={{ color: '#1a1b24' }}>
+            <Box style={{ color: '#1a1b24', flex: 1, minWidth: 0 }}>
               <Typography.Small>{item.value}</Typography.Small>
             </Box>
+            <Button.Icon
+              type="button"
+              dense
+              icon={duplicateIcon}
+              aria-label={`Copy ${item.label}`}
+              onClick={() => copyToClipboard(item.value)}
+            />
           </Box>
         ))}
       </Box>
