@@ -4,7 +4,6 @@ import { Axis, BarChart, timeHour } from '@aivenio/aquarium/charts'
 import type { HistogramBucket, HistogramRange } from '../utils/auditHistogram'
 
 const ONE_HOUR_MS = 60 * 60 * 1000
-const GMT_PLUS_3_OFFSET_MS = 3 * ONE_HOUR_MS
 
 type HistogramStatus = 'loading' | 'ready' | 'error'
 
@@ -84,14 +83,7 @@ export function AuditLogsHistogram({
     const spanHours = Math.max(1, Math.ceil((range.endMs - range.startMs) / ONE_HOUR_MS))
     return Math.max(1, Math.ceil(spanHours / 12))
   }, [range])
-  const histogramMetaText = useMemo(() => {
-    if (!range) return ''
-    const firstBucket = buckets[0]
-    const bucketSizeMs = firstBucket ? Math.max(1, firstBucket.endMs - firstBucket.startMs) : ONE_HOUR_MS
-    const bucketHours = bucketSizeMs / ONE_HOUR_MS
-    const bucketSizeText = Number.isInteger(bucketHours) ? `${bucketHours} h` : `${bucketHours.toFixed(1)} h`
-    return `GMT+3 | Bucket size: ${bucketSizeText} | Last updated ${formatGmtPlus3TimeWithSeconds(range.endMs)}`
-  }, [buckets, range])
+  const histogramMetaText = 'Last 24h · GMT+3 · Bucket size 1 h · Click a bar to inspect window'
 
   return (
     <Box
@@ -132,9 +124,14 @@ export function AuditLogsHistogram({
               marginBottom: 8,
             }}
           >
-            <Box style={{ display: 'inline-flex', alignItems: 'center', gap: 8, fontSize: 16, lineHeight: '24px', fontWeight: 500, color: '#242429' }}>
-              <Box className="logs-live-dot" style={{ width: 8, height: 8, borderRadius: '50%', backgroundColor: '#12B76A' }} />
-              Live logs for past 24 hours
+            <Box>
+              <Box style={{ display: 'inline-flex', alignItems: 'center', gap: 8, fontSize: 16, lineHeight: '24px', fontWeight: 500, color: '#242429' }}>
+                <Box className="logs-live-dot" style={{ width: 8, height: 8, borderRadius: '50%', backgroundColor: '#12B76A' }} />
+                Log volume timeline
+              </Box>
+              <Box style={{ color: '#787885', fontSize: 14, lineHeight: '20px', marginTop: 4 }}>
+                {histogramMetaText}
+              </Box>
             </Box>
             <Box
               style={{
@@ -144,12 +141,9 @@ export function AuditLogsHistogram({
                 display: 'inline-flex',
                 alignItems: 'center',
                 justifyContent: 'flex-end',
-                gap: 16,
-                flexWrap: 'wrap',
-                maxWidth: '78%',
+                maxWidth: '45%',
               }}
             >
-              <Box>{histogramMetaText}</Box>
               <Box style={{ display: 'inline-flex', alignItems: 'center', gap: 14 }}>
                 <LegendDot color="#d92d20" label="Error" />
                 <LegendDot color="#f79009" label="Warning" />
@@ -261,15 +255,6 @@ function formatShortTime(ms: number): string {
     hour12: false,
     timeZone: 'UTC',
   })
-}
-
-function formatGmtPlus3TimeWithSeconds(ms: number): string {
-  const date = new Date(ms + GMT_PLUS_3_OFFSET_MS)
-  return `${pad2(date.getUTCHours())}:${pad2(date.getUTCMinutes())}:${pad2(date.getUTCSeconds())}`
-}
-
-function pad2(value: number): string {
-  return String(value).padStart(2, '0')
 }
 
 AuditLogsHistogram.displayName = 'AuditLogsHistogram'
