@@ -1,7 +1,9 @@
 import { useMemo } from 'react'
 import { Box, Typography } from '@aivenio/aquarium'
-import { Axis, BarChart, timeMinute } from '@aivenio/aquarium/charts'
+import { Axis, BarChart, timeHour } from '@aivenio/aquarium/charts'
 import type { HistogramBucket, HistogramRange } from '../utils/auditHistogram'
+
+const ONE_HOUR_MS = 60 * 60 * 1000
 
 type HistogramStatus = 'loading' | 'ready' | 'error'
 
@@ -11,6 +13,7 @@ type AuditLogsHistogramProps = {
   buckets: HistogramBucket[]
   severityCountsByBucket?: Record<number, { info: number; warning: number; error: number }>
   range: HistogramRange | null
+  selectedRange?: HistogramRange | null
   onRangeSelected: (range: HistogramRange) => void
 }
 
@@ -33,35 +36,51 @@ export function AuditLogsHistogram({
   buckets,
   severityCountsByBucket,
   range,
+  selectedRange,
   onRangeSelected,
 }: AuditLogsHistogramProps) {
+  const hasSelection = Boolean(selectedRange)
   const chartData = useMemo(() => {
     return buckets.map((bucket) => {
+      const isSelected = isRangeSelected(selectedRange, bucket.startMs, bucket.endMs)
       const severity = severityCountsByBucket?.[bucket.index]
       if (!severity) {
+        const infoValue = bucket.count
         return {
           index: bucket.index,
           time: bucket.startMs,
           startMs: bucket.startMs,
           endMs: bucket.endMs,
-          info: bucket.count,
-          warning: 0,
-          error: 0,
-          total: bucket.count,
+          infoActive: !hasSelection || isSelected ? infoValue : 0,
+          infoInactive: hasSelection && !isSelected ? infoValue : 0,
+          warningActive: 0,
+          warningInactive: 0,
+          errorActive: 0,
+          errorInactive: 0,
+          total: infoValue,
         }
       }
+      const total = severity.info + severity.warning + severity.error
       return {
         index: bucket.index,
         time: bucket.startMs,
         startMs: bucket.startMs,
         endMs: bucket.endMs,
-        info: severity.info,
-        warning: severity.warning,
-        error: severity.error,
-        total: severity.info + severity.warning + severity.error,
+        infoActive: !hasSelection || isSelected ? severity.info : 0,
+        infoInactive: hasSelection && !isSelected ? severity.info : 0,
+        warningActive: !hasSelection || isSelected ? severity.warning : 0,
+        warningInactive: hasSelection && !isSelected ? severity.warning : 0,
+        errorActive: !hasSelection || isSelected ? severity.error : 0,
+        errorInactive: hasSelection && !isSelected ? severity.error : 0,
+        total,
       }
     })
-  }, [buckets, severityCountsByBucket])
+  }, [buckets, hasSelection, selectedRange, severityCountsByBucket])
+  const tickEveryHours = useMemo(() => {
+    if (!range) return 1
+    const spanHours = Math.max(1, Math.ceil((range.endMs - range.startMs) / ONE_HOUR_MS))
+    return Math.max(1, Math.ceil(spanHours / 12))
+  }, [range])
 
   return (
     <Box
@@ -97,22 +116,26 @@ export function AuditLogsHistogram({
             <Axis.XAxis.Time
               dataKey="time"
               utc
-              ticks={timeMinute.every(5)}
+              ticks={timeHour.every(tickEveryHours)}
               domain={range ? [new Date(range.startMs), new Date(range.endMs)] : undefined}
               tickLine={false}
               axisLine={false}
               tickFormatter={(value) => formatShortTime(Number(value))}
             />
             <Axis.YAxis hide />
-            <BarChart.Tooltip
-              formatter={(_value, name, item) => {
-                const payload = item?.payload as { startMs: number; endMs: number; total: number } | undefined
-                if (!payload) return ['0', String(name)]
-                return [String(payload.total), formatBucketLabel(payload.startMs, payload.endMs, payload.total)]
+            <BarChart.Tooltip content={<HistogramTooltipContent />} />
+            <BarChart.Bar
+              dataKey="infoInactive"
+              stackId="logs"
+              name="Neutral (inactive)"
+              fill="#b8bff2"
+              onClick={(entry) => {
+                const payload = entry?.payload as { startMs: number; endMs: number } | undefined
+                if (payload) onRangeSelected({ startMs: payload.startMs, endMs: payload.endMs })
               }}
             />
             <BarChart.Bar
-              dataKey="info"
+              dataKey="infoActive"
               stackId="logs"
               name="Neutral"
               fill="#3545BE"
@@ -122,7 +145,17 @@ export function AuditLogsHistogram({
               }}
             />
             <BarChart.Bar
-              dataKey="warning"
+              dataKey="warningInactive"
+              stackId="logs"
+              name="Warning (inactive)"
+              fill="#fbd79b"
+              onClick={(entry) => {
+                const payload = entry?.payload as { startMs: number; endMs: number } | undefined
+                if (payload) onRangeSelected({ startMs: payload.startMs, endMs: payload.endMs })
+              }}
+            />
+            <BarChart.Bar
+              dataKey="warningActive"
               stackId="logs"
               name="Warning"
               fill="#f79009"
@@ -132,7 +165,17 @@ export function AuditLogsHistogram({
               }}
             />
             <BarChart.Bar
-              dataKey="error"
+              dataKey="errorInactive"
+              stackId="logs"
+              name="Error (inactive)"
+              fill="#f7b7b0"
+              onClick={(entry) => {
+                const payload = entry?.payload as { startMs: number; endMs: number } | undefined
+                if (payload) onRangeSelected({ startMs: payload.startMs, endMs: payload.endMs })
+              }}
+            />
+            <BarChart.Bar
+              dataKey="errorActive"
               stackId="logs"
               name="Error"
               fill="#d92d20"
@@ -162,3 +205,64 @@ function formatShortTime(ms: number): string {
 }
 
 AuditLogsHistogram.displayName = 'AuditLogsHistogram'
+
+type TooltipSeries = {
+  payload?: {
+    startMs: number
+    endMs: number
+    total: number
+    infoActive?: number
+    infoInactive?: number
+    warningActive?: number
+    warningInactive?: number
+    errorActive?: number
+    errorInactive?: number
+  }
+}
+
+type TooltipContentProps = {
+  active?: boolean
+  payload?: TooltipSeries[]
+}
+
+function HistogramTooltipContent({ active, payload }: TooltipContentProps) {
+  if (!active || !payload || payload.length === 0) return null
+  const row = payload[0]?.payload
+  if (!row) return null
+  const info = (row.infoActive ?? 0) + (row.infoInactive ?? 0)
+  const warning = (row.warningActive ?? 0) + (row.warningInactive ?? 0)
+  const error = (row.errorActive ?? 0) + (row.errorInactive ?? 0)
+  return (
+    <Box style={{ backgroundColor: '#fff', border: '1px solid #d7d8df', borderRadius: 8, padding: 12, minWidth: 260 }}>
+      <Box style={{ marginBottom: 8, color: '#4a4b57' }}>
+        <Typography.Small>{formatBucketLabel(row.startMs, row.endMs, row.total)}</Typography.Small>
+      </Box>
+      <Box style={{ display: 'grid', gap: 6 }}>
+        <TooltipRow color="#3545BE" label="Info" value={info} />
+        <TooltipRow color="#f79009" label="Warning" value={warning} />
+        <TooltipRow color="#d92d20" label="Error" value={error} />
+      </Box>
+    </Box>
+  )
+}
+
+function TooltipRow({ color, label, value }: { color: string; label: string; value: number }) {
+  return (
+    <Box style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
+      <Box style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
+        <Box style={{ width: 10, height: 10, borderRadius: '50%', backgroundColor: color }} />
+        <Typography.Small>{label}</Typography.Small>
+      </Box>
+      <Typography.Small>{value}</Typography.Small>
+    </Box>
+  )
+}
+
+function isRangeSelected(
+  selectedRange: HistogramRange | null | undefined,
+  startMs: number,
+  endMs: number,
+): boolean {
+  if (!selectedRange) return false
+  return selectedRange.startMs === startMs && selectedRange.endMs === endMs
+}

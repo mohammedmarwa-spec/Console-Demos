@@ -14,6 +14,7 @@ import {
   DropdownMenu,
   Filter,
   Icon,
+  InputBase,
   Link,
   PageHeader,
   Section,
@@ -142,7 +143,9 @@ const INITIAL_AI_MESSAGES: AiMessage[] = [
 ]
 const LOG_MONO_FONT =
   'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, Liberation Mono, monospace'
-const PAST_HOUR_MS = 60 * 60 * 1000
+const ONE_HOUR_MS = 60 * 60 * 1000
+const DEFAULT_HISTOGRAM_HOURS = 24
+const MAX_HISTOGRAM_BARS = 72
 type LogDateRange = { start: CalendarDateTime; end: CalendarDateTime }
 const LOG_EVENT_TYPE_OPTIONS = [
   'service.health_check_passed',
@@ -159,6 +162,11 @@ const LOG_EVENT_TYPE_OPTIONS = [
   'service.recovery_started',
   'service.health_check_restored',
 ] as const
+const LOG_SEVERITY_OPTIONS: readonly LogSeverity[] = ['info', 'warning', 'error']
+
+function formatSeverityOption(severity: LogSeverity): string {
+  return severity.charAt(0).toUpperCase() + severity.slice(1)
+}
 
 function logMessageHighlightStyle(severity: LogSeverity): React.CSSProperties {
   if (severity === 'warning') {
@@ -206,11 +214,44 @@ function createRelativeLogRange(anchor: Date, minutes: number): LogDateRange {
   }
 }
 
+function getHourlyBucketCount(range: HistogramRange): number {
+  const spanMs = Math.max(ONE_HOUR_MS, range.endMs - range.startMs)
+  return Math.min(MAX_HISTOGRAM_BARS, Math.max(1, Math.round(spanMs / ONE_HOUR_MS)))
+}
+
+function toHistogramRange(range: LogDateRange): HistogramRange {
+  return {
+    startMs: calendarDateTimeToUtcMs(range.start),
+    endMs: calendarDateTimeToUtcMs(range.end),
+  }
+}
+
 function classifyLogEventType(row: LogRow): (typeof LOG_EVENT_TYPE_OPTIONS)[number] {
   if ((LOG_EVENT_TYPE_OPTIONS as readonly string[]).includes(row.eventType)) {
     return row.eventType as (typeof LOG_EVENT_TYPE_OPTIONS)[number]
   }
   return 'service.health_check_passed'
+}
+
+function matchesLogSearch(row: LogRow, query: string): boolean {
+  const normalized = query.trim().toLowerCase()
+  if (!normalized) return true
+  const haystack = [
+    row.displayTime,
+    row.source,
+    row.message,
+    row.eventType,
+    row.severity,
+    row.component,
+    row.service,
+    row.project,
+    row.region,
+    ...row.metadata.map((item) => `${item.label} ${item.value}`),
+    ...Object.entries(row.keyValues).map(([key, value]) => `${key} ${value}`),
+  ]
+    .join(' ')
+    .toLowerCase()
+  return haystack.includes(normalized)
 }
 
 function DateRangeFilterTrigger() {
@@ -220,7 +261,7 @@ function DateRangeFilterTrigger() {
 
   return (
     <Filter.Trigger
-      labelText="Date range"
+      labelText="Time range"
       icon={filterIcon}
       onClick={() => dateRangeState?.setOpen?.(true)}
     />
@@ -314,17 +355,21 @@ function ServiceOverview({
   const [comparePricingOpen, setComparePricingOpen] = useState(false)
   const [sidebarItem, setSidebarItem] = useState(initialSidebarItem ?? 'overview')
   const latestLogMs = Date.parse(MOCK_LOG_ROWS[MOCK_LOG_ROWS.length - 1]?.time ?? new Date().toISOString())
-  const [dateRange, setDateRange] = useState<LogDateRange | null>(
-    createRelativeLogRange(new Date(latestLogMs), 60),
-  )
+  const defaultLogRange = createRelativeLogRange(new Date(latestLogMs), DEFAULT_HISTOGRAM_HOURS * 60)
+  const [dateRange, setDateRange] = useState<LogDateRange | null>(defaultLogRange)
+  const [histogramWindowRange, setHistogramWindowRange] = useState<HistogramRange>(toHistogramRange(defaultLogRange))
+  const [selectedHistogramRange, setSelectedHistogramRange] = useState<HistogramRange | null>(null)
+  const [searchQuery, setSearchQuery] = useState('')
   const [eventFilterOpen, setEventFilterOpen] = useState(false)
+  const [severityFilterOpen, setSeverityFilterOpen] = useState(false)
   const [selectedEventTypes, setSelectedEventTypes] = useState<string[]>([])
-  const [selectedLogRange, setSelectedLogRange] = useState<HistogramRange | null>(null)
+  const [selectedSeverities, setSelectedSeverities] = useState<LogSeverity[]>([])
   const [aiAssistantOpen, setAiAssistantOpen] = useState(false)
   const [aiDraft, setAiDraft] = useState('')
   const [aiMessages, setAiMessages] = useState<AiMessage[]>(INITIAL_AI_MESSAGES)
   const aiResponseTimerRef = useRef<number | null>(null)
   const eventFilterRef = useRef<HTMLDivElement>(null)
+  const severityFilterRef = useRef<HTMLDivElement>(null)
   const filteredLogRows = useMemo(() => {
     let startMs = 0
     let endMs = Number.MAX_SAFE_INTEGER
@@ -335,33 +380,49 @@ function ServiceOverview({
     return MOCK_LOG_ROWS.filter((row) => {
       const ts = row.timestampMs
       if (ts < startMs || ts > endMs) return false
+      if (!matchesLogSearch(row, searchQuery)) return false
+      if (selectedSeverities.length > 0 && !selectedSeverities.includes(row.severity)) return false
       if (selectedEventTypes.length > 0 && !selectedEventTypes.includes(classifyLogEventType(row))) {
         return false
       }
       return true
     })
-  }, [dateRange, selectedEventTypes])
-  const pastHourHistogramRange = useMemo<HistogramRange>(() => {
-    return {
-      startMs: latestLogMs - PAST_HOUR_MS,
-      endMs: latestLogMs,
+  }, [dateRange, searchQuery, selectedEventTypes, selectedSeverities])
+  const clampedHistogramRange = useMemo<HistogramRange>(() => {
+    const alignedStartMs = Math.floor(histogramWindowRange.startMs / ONE_HOUR_MS) * ONE_HOUR_MS
+    const alignedEndMs = Math.max(
+      alignedStartMs + ONE_HOUR_MS,
+      Math.ceil(histogramWindowRange.endMs / ONE_HOUR_MS) * ONE_HOUR_MS,
+    )
+    const alignedRange = {
+      startMs: alignedStartMs,
+      endMs: alignedEndMs,
     }
-  }, [latestLogMs])
-  const pastHourLogRows = useMemo(() => {
+    const spanMs = alignedRange.endMs - alignedRange.startMs
+    const maxSpanMs = MAX_HISTOGRAM_BARS * ONE_HOUR_MS
+    if (spanMs <= maxSpanMs) return alignedRange
+    return {
+      startMs: alignedRange.endMs - maxSpanMs,
+      endMs: alignedRange.endMs,
+    }
+  }, [histogramWindowRange])
+  const histogramLogRows = useMemo(() => {
     return MOCK_LOG_ROWS.filter((row) => {
       const ts = row.timestampMs
-      return ts >= pastHourHistogramRange.startMs && ts <= pastHourHistogramRange.endMs
+      return ts >= clampedHistogramRange.startMs && ts <= clampedHistogramRange.endMs
     })
-  }, [pastHourHistogramRange])
-  const pastHourFilteredByEventTypeRows = useMemo(() => {
-    return pastHourLogRows.filter((row) => {
+  }, [clampedHistogramRange])
+  const histogramFilteredByEventTypeRows = useMemo(() => {
+    return histogramLogRows.filter((row) => {
+      if (!matchesLogSearch(row, searchQuery)) return false
+      if (selectedSeverities.length > 0 && !selectedSeverities.includes(row.severity)) return false
       if (selectedEventTypes.length === 0) return true
       return selectedEventTypes.includes(classifyLogEventType(row))
     })
-  }, [pastHourLogRows, selectedEventTypes])
-  const pastHourBucketsData = useMemo(() => {
+  }, [histogramLogRows, searchQuery, selectedEventTypes, selectedSeverities])
+  const histogramBucketsData = useMemo(() => {
     return buildLogHistogramBuckets(
-      pastHourFilteredByEventTypeRows.map((row) => ({
+      histogramFilteredByEventTypeRows.map((row) => ({
         id: row.id,
         timestamp: row.time,
         service: 'checkout-pg-prod',
@@ -373,15 +434,16 @@ function ServiceOverview({
         project: 'payments-prod',
         region: 'aws-eu-west-1',
       })),
-      pastHourHistogramRange,
+      clampedHistogramRange,
+      getHourlyBucketCount(clampedHistogramRange),
     )
-  }, [pastHourFilteredByEventTypeRows, pastHourHistogramRange])
+  }, [histogramFilteredByEventTypeRows, clampedHistogramRange])
   const severityCountsByBucket = useMemo<Record<number, { info: number; warning: number; error: number }>>(() => {
     const out: Record<number, { info: number; warning: number; error: number }> = {}
-    for (const bucket of pastHourBucketsData.buckets) {
+    for (const bucket of histogramBucketsData.buckets) {
       out[bucket.index] = { info: 0, warning: 0, error: 0 }
     }
-    for (const bucket of pastHourBucketsData.buckets) {
+    for (const bucket of histogramBucketsData.buckets) {
       out[bucket.index] = {
         info: bucket.info,
         warning: bucket.warning,
@@ -389,23 +451,22 @@ function ServiceOverview({
       }
     }
     return out
-  }, [pastHourBucketsData.buckets])
+  }, [histogramBucketsData.buckets])
   const visibleLogRows = useMemo(() => {
-    const inRangeRows = !selectedLogRange
-      ? filteredLogRows
-      : filteredLogRows.filter((row) => {
-          const ts = row.timestampMs
-          return ts >= selectedLogRange.startMs && ts <= selectedLogRange.endMs
-        })
-    return [...inRangeRows].sort((a, b) => b.timestampMs - a.timestampMs)
-  }, [filteredLogRows, selectedLogRange])
+    return [...filteredLogRows].sort((a, b) => b.timestampMs - a.timestampMs)
+  }, [filteredLogRows])
 
   useEffect(() => {
     setSidebarItem(initialSidebarItem ?? 'overview')
-    setDateRange(createRelativeLogRange(new Date(latestLogMs), 60))
+    const resetRange = createRelativeLogRange(new Date(latestLogMs), DEFAULT_HISTOGRAM_HOURS * 60)
+    setDateRange(resetRange)
+    setHistogramWindowRange(toHistogramRange(resetRange))
+    setSelectedHistogramRange(null)
+    setSearchQuery('')
     setSelectedEventTypes([])
+    setSelectedSeverities([])
     setEventFilterOpen(false)
-    setSelectedLogRange(null)
+    setSeverityFilterOpen(false)
     setAiAssistantOpen(false)
     setAiDraft('')
     setAiMessages(INITIAL_AI_MESSAGES)
@@ -425,19 +486,18 @@ function ServiceOverview({
   }, [])
 
   useEffect(() => {
-    if (!eventFilterOpen) return
+    if (!eventFilterOpen && !severityFilterOpen) return
     function handleMouseDown(event: MouseEvent) {
       if (eventFilterRef.current && !eventFilterRef.current.contains(event.target as Node)) {
         setEventFilterOpen(false)
       }
+      if (severityFilterRef.current && !severityFilterRef.current.contains(event.target as Node)) {
+        setSeverityFilterOpen(false)
+      }
     }
     document.addEventListener('mousedown', handleMouseDown)
     return () => document.removeEventListener('mousedown', handleMouseDown)
-  }, [eventFilterOpen])
-
-  useEffect(() => {
-    setSelectedLogRange(null)
-  }, [dateRange, selectedEventTypes])
+  }, [eventFilterOpen, severityFilterOpen])
 
   // Scroll the content area to the top on mount and section switch.
   const contentRef = useRef<HTMLDivElement>(null)
@@ -577,20 +637,35 @@ function ServiceOverview({
                 <Box style={{ marginBottom: 12 }}>
                   <AuditLogsHistogram
                     status="ready"
-                    buckets={pastHourBucketsData.buckets.map((bucket) => ({
+                    buckets={histogramBucketsData.buckets.map((bucket) => ({
                       index: bucket.index,
                       startMs: bucket.startMs,
                       endMs: bucket.endMs,
                       count: bucket.total,
                     }))}
                     severityCountsByBucket={severityCountsByBucket}
-                    range={pastHourBucketsData.range}
-                    onRangeSelected={(range) => setSelectedLogRange(range)}
+                    range={histogramBucketsData.range}
+                    selectedRange={selectedHistogramRange}
+                    onRangeSelected={(range) => {
+                      setSelectedHistogramRange(range)
+                      setDateRange({
+                        start: utcDateToCalendarDateTime(new Date(range.startMs)),
+                        end: utcDateToCalendarDateTime(new Date(range.endMs)),
+                      })
+                    }}
                   />
                 </Box>
 
                 <Box style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 12, marginBottom: 12 }}>
                   <Box style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 12, flex: '1 1 auto', minWidth: 0 }}>
+                    <Box style={{ flex: '1 1 340px', minWidth: 240, maxWidth: 480 }}>
+                      <InputBase
+                        placeholder="Search logs by message, event type, source, or metadata..."
+                        aria-label="Search service logs"
+                        value={searchQuery}
+                        onChange={(event) => setSearchQuery((event.target as HTMLInputElement).value)}
+                      />
+                    </Box>
                     <DateTimeRangePicker
                       aria-label="Date and time range"
                       granularity="minute"
@@ -598,9 +673,14 @@ function ServiceOverview({
                       reserveSpaceForError={false}
                       onChange={(value) => {
                         if (value?.start && value?.end) {
-                          setDateRange({ start: value.start as CalendarDateTime, end: value.end as CalendarDateTime })
+                          const nextRange = { start: value.start as CalendarDateTime, end: value.end as CalendarDateTime }
+                          setDateRange(nextRange)
+                          setHistogramWindowRange(toHistogramRange(nextRange))
+                          setSelectedHistogramRange(null)
                         } else {
                           setDateRange(null)
+                          setHistogramWindowRange(toHistogramRange(defaultLogRange))
+                          setSelectedHistogramRange(null)
                         }
                       }}
                       shouldCloseOnSelect={false}
@@ -646,16 +726,49 @@ function ServiceOverview({
                         </Box>
                       )}
                     </div>
+                    <div ref={severityFilterRef} style={{ position: 'relative' }}>
+                      <Filter.Trigger
+                        labelText="Severity"
+                        icon={filterIcon}
+                        value={
+                          selectedSeverities.length > 0
+                            ? selectedSeverities.map((severity) => formatSeverityOption(severity)).join(', ')
+                            : undefined
+                        }
+                        onClear={selectedSeverities.length > 0 ? () => setSelectedSeverities([]) : undefined}
+                        onClick={() => setSeverityFilterOpen((open) => !open)}
+                      />
+                      {severityFilterOpen && (
+                        <Box
+                          style={{
+                            position: 'absolute',
+                            top: 'calc(100% + 8px)',
+                            left: 0,
+                            zIndex: 200,
+                            backgroundColor: '#fff',
+                            border: '1px solid #e0e0e8',
+                            borderRadius: 8,
+                            boxShadow: '0 4px 24px rgba(0, 0, 0, 0.12)',
+                            padding: 16,
+                            minWidth: 220,
+                          }}
+                        >
+                          <CheckboxGroup
+                            labelText="Severity"
+                            value={selectedSeverities}
+                            onChange={(value) => setSelectedSeverities((value as LogSeverity[] | undefined) ?? [])}
+                          >
+                            {LOG_SEVERITY_OPTIONS.map((option) => (
+                              <Checkbox key={option} value={option}>
+                                {formatSeverityOption(option)}
+                              </Checkbox>
+                            ))}
+                          </CheckboxGroup>
+                        </Box>
+                      )}
+                    </div>
                   </Box>
                 </Box>
-
-                {selectedLogRange && (
-                  <Box style={{ marginBottom: 12 }}>
-                    <Button.Ghost type="button" dense onClick={() => setSelectedLogRange(null)}>
-                      Clear selected time range
-                    </Button.Ghost>
-                  </Box>
-                )}
 
                 {visibleLogRows.length === 0 ? (
                   <Typography.Default>No log entries for this filter.</Typography.Default>

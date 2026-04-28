@@ -40,9 +40,9 @@ type BucketPlan = {
   error: number
 }
 
-const FIVE_MINUTES_MS = 5 * 60 * 1000
 const ONE_HOUR_MS = 60 * 60 * 1000
-const BUCKET_COUNT = 12
+const ONE_DAY_MS = 24 * ONE_HOUR_MS
+const DEFAULT_BUCKET_COUNT = 12
 
 const INFO_TEMPLATES: EventTemplate[] = [
   {
@@ -143,27 +143,23 @@ const ERROR_TEMPLATES: EventTemplate[] = [
 ]
 
 /**
- * Narrative shape over the last hour (oldest -> newest):
- * - Buckets 0-2: healthy baseline
- * - Buckets 3-5: warning signals increase
- * - Buckets 6-8: clear degradation and peak failures
- * - Buckets 9-10: mitigation and partial recovery
- * - Bucket 11: mostly healthy with residual warnings
+ * Incident narrative shape over the last 24h (oldest -> newest):
+ * - Hours 0-5: healthy baseline
+ * - Hours 6-9: warning signals build up
+ * - Hours 10-14: service degradation and peak failures
+ * - Hours 15-17: mitigation in progress
+ * - Hours 18-21: mostly recovered with residual warnings
+ * - Hours 22-23: healthy closeout
  */
-const BUCKET_PLANS: BucketPlan[] = [
-  { total: 4, info: 4, warning: 0, error: 0 },
-  { total: 4, info: 4, warning: 0, error: 0 },
-  { total: 5, info: 5, warning: 0, error: 0 },
-  { total: 6, info: 4, warning: 2, error: 0 },
-  { total: 7, info: 4, warning: 3, error: 0 },
-  { total: 8, info: 4, warning: 3, error: 1 },
-  { total: 9, info: 3, warning: 4, error: 2 },
-  { total: 10, info: 2, warning: 4, error: 4 },
-  { total: 9, info: 2, warning: 3, error: 4 },
-  { total: 7, info: 3, warning: 3, error: 1 },
-  { total: 6, info: 4, warning: 2, error: 0 },
-  { total: 5, info: 4, warning: 1, error: 0 },
-]
+function getHourlyPlan(hourIndex: number): BucketPlan {
+  if (hourIndex < 6) return { total: 3, info: 3, warning: 0, error: 0 }
+  if (hourIndex < 10) return { total: 5, info: 3, warning: 2, error: 0 }
+  if (hourIndex < 13) return { total: 8, info: 2, warning: 4, error: 2 }
+  if (hourIndex < 15) return { total: 10, info: 1, warning: 4, error: 5 }
+  if (hourIndex < 18) return { total: 7, info: 3, warning: 3, error: 1 }
+  if (hourIndex < 22) return { total: 4, info: 3, warning: 1, error: 0 }
+  return { total: 3, info: 3, warning: 0, error: 0 }
+}
 
 function alignToMinute(ms: number): number {
   return Math.floor(ms / 60_000) * 60_000
@@ -185,12 +181,12 @@ function pickTemplate(
 
 export function createMockPostgresDegradationLogs(now = new Date()): PostgresServiceEventLog[] {
   const endMs = alignToMinute(now.getTime())
-  const startMs = endMs - ONE_HOUR_MS
+  const startMs = endMs - ONE_DAY_MS
   const logs: PostgresServiceEventLog[] = []
 
-  for (let bucketIndex = 0; bucketIndex < BUCKET_COUNT; bucketIndex++) {
-    const bucketStart = startMs + bucketIndex * FIVE_MINUTES_MS
-    const plan = BUCKET_PLANS[bucketIndex]
+  for (let hourIndex = 0; hourIndex < 24; hourIndex++) {
+    const bucketStart = startMs + hourIndex * ONE_HOUR_MS
+    const plan = getHourlyPlan(hourIndex)
 
     const severities: PostgresLogSeverity[] = [
       ...Array.from({ length: plan.info }, () => 'info' as const),
@@ -200,8 +196,8 @@ export function createMockPostgresDegradationLogs(now = new Date()): PostgresSer
 
     severities.forEach((severity, entryIndex) => {
       const position = (entryIndex + 1) / (plan.total + 1)
-      const timestampMs = bucketStart + Math.floor(position * FIVE_MINUTES_MS)
-      const template = pickTemplate(severity, bucketIndex, entryIndex)
+      const timestampMs = bucketStart + Math.floor(position * ONE_HOUR_MS)
+      const template = pickTemplate(severity, hourIndex, entryIndex)
       const globalIndex = logs.length + 1
       logs.push({
         id: `checkout-pg-prod-log-${String(globalIndex).padStart(3, '0')}`,
@@ -216,7 +212,7 @@ export function createMockPostgresDegradationLogs(now = new Date()): PostgresSer
         region: 'aws-eu-west-1',
         host: template.host,
         metadata: {
-          bucketIndex,
+          hourIndex,
           ...template.metadata,
         },
       })
@@ -239,10 +235,11 @@ export type SeverityBucket = {
 export function buildLogHistogramBuckets(
   logs: PostgresServiceEventLog[],
   range: HistogramRange,
+  bucketCount = DEFAULT_BUCKET_COUNT,
 ): { range: HistogramRange; buckets: SeverityBucket[] } {
   const { buckets, range: normalizedRange } = buildHistogramBuckets(
     logs.map((log) => ({ occurredAt: new Date(log.timestamp) })),
-    BUCKET_COUNT,
+    bucketCount,
     range,
   )
 
