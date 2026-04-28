@@ -1,4 +1,4 @@
-import { useMemo } from 'react'
+import { useMemo, useState } from 'react'
 import { Box, Typography } from '@aivenio/aquarium'
 import { Axis, BarChart, timeHour } from '@aivenio/aquarium/charts'
 import type { HistogramBucket, HistogramRange } from '../utils/auditHistogram'
@@ -41,10 +41,15 @@ export function AuditLogsHistogram({
   isRefreshing = false,
   onRangeSelected,
 }: AuditLogsHistogramProps) {
+  const [hoveredBucketIndex, setHoveredBucketIndex] = useState<number | null>(null)
   const hasSelection = Boolean(selectedRange)
+  const hasHover = hoveredBucketIndex !== null
   const chartData = useMemo(() => {
     return buckets.map((bucket) => {
       const isSelected = isRangeSelected(selectedRange, bucket.startMs, bucket.endMs)
+      const isHovered = hoveredBucketIndex === bucket.index
+      const isEmphasized = hasHover ? isHovered : !hasSelection || isSelected
+      const isDimmed = hasHover ? !isHovered : hasSelection && !isSelected
       const severity = severityCountsByBucket?.[bucket.index]
       if (!severity) {
         const infoValue = bucket.count
@@ -53,8 +58,8 @@ export function AuditLogsHistogram({
           time: bucket.startMs,
           startMs: bucket.startMs,
           endMs: bucket.endMs,
-          infoActive: !hasSelection || isSelected ? infoValue : 0,
-          infoInactive: hasSelection && !isSelected ? infoValue : 0,
+          infoActive: isEmphasized ? infoValue : 0,
+          infoInactive: isDimmed ? infoValue : 0,
           warningActive: 0,
           warningInactive: 0,
           errorActive: 0,
@@ -68,16 +73,16 @@ export function AuditLogsHistogram({
         time: bucket.startMs,
         startMs: bucket.startMs,
         endMs: bucket.endMs,
-        infoActive: !hasSelection || isSelected ? severity.info : 0,
-        infoInactive: hasSelection && !isSelected ? severity.info : 0,
-        warningActive: !hasSelection || isSelected ? severity.warning : 0,
-        warningInactive: hasSelection && !isSelected ? severity.warning : 0,
-        errorActive: !hasSelection || isSelected ? severity.error : 0,
-        errorInactive: hasSelection && !isSelected ? severity.error : 0,
+        infoActive: isEmphasized ? severity.info : 0,
+        infoInactive: isDimmed ? severity.info : 0,
+        warningActive: isEmphasized ? severity.warning : 0,
+        warningInactive: isDimmed ? severity.warning : 0,
+        errorActive: isEmphasized ? severity.error : 0,
+        errorInactive: isDimmed ? severity.error : 0,
         total,
       }
     })
-  }, [buckets, hasSelection, selectedRange, severityCountsByBucket])
+  }, [buckets, hasHover, hasSelection, hoveredBucketIndex, selectedRange, severityCountsByBucket])
   const tickEveryHours = useMemo(() => {
     if (!range) return 1
     const spanHours = Math.max(1, Math.ceil((range.endMs - range.startMs) / ONE_HOUR_MS))
@@ -169,7 +174,23 @@ export function AuditLogsHistogram({
               <Typography.Caption>Updating...</Typography.Caption>
             </Box>
           )}
-          <BarChart data={chartData} height={130} palette="secondary" margin={{ top: 4, right: 0, left: 0, bottom: 0 }}>
+          <BarChart
+            data={chartData}
+            height={130}
+            palette="secondary"
+            margin={{ top: 4, right: 0, left: 0, bottom: 0 }}
+            onMouseMove={(state: { activeTooltipIndex?: number | string | null } | undefined) => {
+              const rawIndex = state?.activeTooltipIndex
+              const nextIndex =
+                typeof rawIndex === 'number'
+                  ? rawIndex
+                  : typeof rawIndex === 'string' && rawIndex !== ''
+                    ? Number(rawIndex)
+                    : null
+              setHoveredBucketIndex(Number.isFinite(nextIndex) ? Number(nextIndex) : null)
+            }}
+            onMouseLeave={() => setHoveredBucketIndex(null)}
+          >
             <Axis.XAxis.Time
               dataKey="time"
               utc
@@ -180,12 +201,12 @@ export function AuditLogsHistogram({
               tickFormatter={(value) => formatShortTime(Number(value))}
             />
             <Axis.YAxis hide />
-            <BarChart.Tooltip content={<HistogramTooltipContent />} />
+            <BarChart.Tooltip content={<HistogramTooltipContent hoveredBucketIndex={hoveredBucketIndex} />} />
             <BarChart.Bar
               dataKey="infoInactive"
               stackId="logs"
               name="Neutral (inactive)"
-              fill="#b8bff2"
+              fill="rgba(53, 69, 190, 0.95)"
               onClick={(entry) => {
                 const payload = entry?.payload as { startMs: number; endMs: number } | undefined
                 if (payload) onRangeSelected({ startMs: payload.startMs, endMs: payload.endMs })
@@ -205,7 +226,7 @@ export function AuditLogsHistogram({
               dataKey="warningInactive"
               stackId="logs"
               name="Warning (inactive)"
-              fill="#fbd79b"
+              fill="rgba(247, 144, 9, 0.95)"
               onClick={(entry) => {
                 const payload = entry?.payload as { startMs: number; endMs: number } | undefined
                 if (payload) onRangeSelected({ startMs: payload.startMs, endMs: payload.endMs })
@@ -225,7 +246,7 @@ export function AuditLogsHistogram({
               dataKey="errorInactive"
               stackId="logs"
               name="Error (inactive)"
-              fill="#f7b7b0"
+              fill="rgba(217, 45, 32, 0.95)"
               onClick={(entry) => {
                 const payload = entry?.payload as { startMs: number; endMs: number } | undefined
                 if (payload) onRangeSelected({ startMs: payload.startMs, endMs: payload.endMs })
@@ -276,17 +297,18 @@ type TooltipSeries = {
 type TooltipContentProps = {
   active?: boolean
   payload?: TooltipSeries[]
+  hoveredBucketIndex: number | null
 }
 
-function HistogramTooltipContent({ active, payload }: TooltipContentProps) {
-  if (!active || !payload || payload.length === 0) return null
+function HistogramTooltipContent({ active, payload, hoveredBucketIndex }: TooltipContentProps) {
+  if (hoveredBucketIndex === null || !active || !payload || payload.length === 0) return null
   const row = payload[0]?.payload
   if (!row) return null
   const info = (row.infoActive ?? 0) + (row.infoInactive ?? 0)
   const warning = (row.warningActive ?? 0) + (row.warningInactive ?? 0)
   const error = (row.errorActive ?? 0) + (row.errorInactive ?? 0)
   return (
-    <Box style={{ backgroundColor: '#fff', border: '1px solid #d7d8df', borderRadius: 8, padding: 12, minWidth: 260 }}>
+    <Box style={{ backgroundColor: '#fff', border: '1px solid #d7d8df', borderRadius: 8, padding: 12, minWidth: 260, pointerEvents: 'none' }}>
       <Box style={{ marginBottom: 8, color: '#4a4b57' }}>
         <Typography.Small>{formatBucketLabel(row.startMs, row.endMs, row.total)}</Typography.Small>
       </Box>
