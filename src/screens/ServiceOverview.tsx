@@ -55,6 +55,7 @@ type LogRow = {
   timestampMs: number
   time: string
   displayTime: string
+  searchableText: string
   source: string
   message: string
   severity: LogSeverity
@@ -110,11 +111,28 @@ function mapServiceEventToLogRow(log: PostgresServiceEventLog): LogRow {
   for (const [key, value] of Object.entries(log.metadata ?? {})) {
     keyValues[key] = String(value)
   }
+  const displayTime = formatLogTimestamp(log.timestamp)
+  const searchableText = [
+    displayTime,
+    source,
+    log.message,
+    log.eventType,
+    log.severity,
+    log.component,
+    log.service,
+    log.project,
+    log.region,
+    ...metadata.map((item) => `${item.label} ${item.value}`),
+    ...Object.entries(keyValues).map(([key, value]) => `${key} ${value}`),
+  ]
+    .join(' ')
+    .toLowerCase()
   return {
     id: log.id,
     timestampMs: Date.parse(log.timestamp),
     time: log.timestamp,
-    displayTime: formatLogTimestamp(log.timestamp),
+    displayTime,
+    searchableText,
     source,
     message: log.message,
     severity: log.severity,
@@ -148,6 +166,7 @@ const LOG_MONO_FONT =
 const ONE_HOUR_MS = 60 * 60 * 1000
 const DEFAULT_HISTOGRAM_HOURS = 24
 const MAX_HISTOGRAM_BARS = 72
+const LOGS_PAGE_SIZE = 30
 type LogDateRange = { start: CalendarDateTime; end: CalendarDateTime }
 const LOG_EVENT_TYPE_OPTIONS = [
   'service.health_check_passed',
@@ -248,22 +267,7 @@ function classifyLogEventType(row: LogRow): (typeof LOG_EVENT_TYPE_OPTIONS)[numb
 function matchesLogSearch(row: LogRow, query: string): boolean {
   const normalized = query.trim().toLowerCase()
   if (!normalized) return true
-  const haystack = [
-    row.displayTime,
-    row.source,
-    row.message,
-    row.eventType,
-    row.severity,
-    row.component,
-    row.service,
-    row.project,
-    row.region,
-    ...row.metadata.map((item) => `${item.label} ${item.value}`),
-    ...Object.entries(row.keyValues).map(([key, value]) => `${key} ${value}`),
-  ]
-    .join(' ')
-    .toLowerCase()
-  return haystack.includes(normalized)
+  return row.searchableText.includes(normalized)
 }
 
 function DateRangeFilterTrigger() {
@@ -424,12 +428,14 @@ function ServiceOverview({
   const [severityFilterOpen, setSeverityFilterOpen] = useState(false)
   const [selectedEventTypes, setSelectedEventTypes] = useState<string[]>([])
   const [selectedSeverities, setSelectedSeverities] = useState<LogSeverity[]>([])
+  const [visibleLogsCount, setVisibleLogsCount] = useState(LOGS_PAGE_SIZE)
   const [aiAssistantOpen, setAiAssistantOpen] = useState(false)
   const [aiDraft, setAiDraft] = useState('')
   const [aiMessages, setAiMessages] = useState<AiMessage[]>(INITIAL_AI_MESSAGES)
   const aiResponseTimerRef = useRef<number | null>(null)
   const histogramRefreshTimerRef = useRef<number | null>(null)
   const hasMountedRef = useRef(false)
+  const loadMoreSentinelRef = useRef<HTMLDivElement>(null)
   const eventFilterRef = useRef<HTMLDivElement>(null)
   const severityFilterRef = useRef<HTMLDivElement>(null)
   const filteredLogRows = useMemo(() => {
@@ -511,9 +517,13 @@ function ServiceOverview({
     }
     return out
   }, [histogramBucketsData.buckets])
-  const visibleLogRows = useMemo(() => {
+  const sortedLogRows = useMemo(() => {
     return [...filteredLogRows].sort((a, b) => b.timestampMs - a.timestampMs)
   }, [filteredLogRows])
+  const visibleLogRows = useMemo(() => {
+    return sortedLogRows.slice(0, visibleLogsCount)
+  }, [sortedLogRows, visibleLogsCount])
+  const hasMoreLogRows = visibleLogRows.length < sortedLogRows.length
 
   useEffect(() => {
     setSidebarItem(initialSidebarItem ?? 'overview')
@@ -524,6 +534,7 @@ function ServiceOverview({
     setSearchQuery('')
     setSelectedEventTypes([])
     setSelectedSeverities([])
+    setVisibleLogsCount(LOGS_PAGE_SIZE)
     setEventFilterOpen(false)
     setSeverityFilterOpen(false)
     setAiAssistantOpen(false)
@@ -576,6 +587,24 @@ function ServiceOverview({
     document.addEventListener('mousedown', handleMouseDown)
     return () => document.removeEventListener('mousedown', handleMouseDown)
   }, [eventFilterOpen, severityFilterOpen])
+
+  useEffect(() => {
+    setVisibleLogsCount(LOGS_PAGE_SIZE)
+  }, [dateRange, searchQuery, selectedEventTypes, selectedSeverities])
+
+  useEffect(() => {
+    if (!hasMoreLogRows || !loadMoreSentinelRef.current || !contentRef.current) return
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const entry = entries[0]
+        if (!entry?.isIntersecting) return
+        setVisibleLogsCount((count) => Math.min(count + LOGS_PAGE_SIZE, sortedLogRows.length))
+      },
+      { root: contentRef.current, rootMargin: '120px 0px', threshold: 0.01 },
+    )
+    observer.observe(loadMoreSentinelRef.current)
+    return () => observer.disconnect()
+  }, [hasMoreLogRows, sortedLogRows.length])
 
   // Scroll the content area to the top on mount and section switch.
   const contentRef = useRef<HTMLDivElement>(null)
@@ -864,11 +893,14 @@ function ServiceOverview({
                 {visibleLogRows.length === 0 ? (
                   <Typography.Default>No log entries for this filter.</Typography.Default>
                 ) : (
-                  <LogsDataList
-                    rows={visibleLogRows}
-                    onExploreWithAi={handleExploreLogWithAi}
-                    onExploreWindow={handleExploreLogWindow}
-                  />
+                  <>
+                    <LogsDataList
+                      rows={visibleLogRows}
+                      onExploreWithAi={handleExploreLogWithAi}
+                      onExploreWindow={handleExploreLogWindow}
+                    />
+                    {hasMoreLogRows && <div ref={loadMoreSentinelRef} style={{ height: 1 }} aria-hidden="true" />}
+                  </>
                 )}
               </Box>
             </>

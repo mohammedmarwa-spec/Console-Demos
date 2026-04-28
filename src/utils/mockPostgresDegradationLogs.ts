@@ -39,10 +39,10 @@ type HourlySeverityWeights = {
   error: number
 }
 
-const LOG_INTERVAL_MS = 5 * 1000
 const ONE_HOUR_MS = 60 * 60 * 1000
 const ONE_DAY_MS = 24 * ONE_HOUR_MS
 const DEFAULT_BUCKET_COUNT = 12
+const BASE_INTERVAL_OPTIONS_MS = [20_000, 30_000, 40_000] as const
 
 const INFO_TEMPLATES: EventTemplate[] = [
   {
@@ -170,6 +170,18 @@ function pickSeverity(stepIndex: number, hourIndex: number): PostgresLogSeverity
   return 'error'
 }
 
+function hashToInt(seedA: number, seedB: number, seedC = 0): number {
+  const value = (seedA * 73_856_093) ^ (seedB * 19_349_663) ^ (seedC * 83_492_791)
+  return Math.abs(value)
+}
+
+function getRandomizedIntervalMs(hourIndex: number, sequenceInHour: number): number {
+  const baseIndex = hashToInt(hourIndex, sequenceInHour) % BASE_INTERVAL_OPTIONS_MS.length
+  const base = BASE_INTERVAL_OPTIONS_MS[baseIndex]
+  const jitterSeconds = (hashToInt(hourIndex, sequenceInHour, 11) % 7) - 3 // -3..+3s
+  return Math.max(15_000, base + jitterSeconds * 1_000)
+}
+
 function alignToMinute(ms: number): number {
   return Math.floor(ms / 60_000) * 60_000
 }
@@ -193,29 +205,38 @@ export function createMockPostgresDegradationLogs(now = new Date()): PostgresSer
   const startMs = endMs - ONE_DAY_MS
   const logs: PostgresServiceEventLog[] = []
 
-  for (let timestampMs = startMs, stepIndex = 0; timestampMs <= endMs; timestampMs += LOG_INTERVAL_MS, stepIndex++) {
-    const hourIndex = Math.floor((timestampMs - startMs) / ONE_HOUR_MS)
-    const severity = pickSeverity(stepIndex, hourIndex)
-    const template = pickTemplate(severity, hourIndex, stepIndex)
-    const globalIndex = logs.length + 1
-    logs.push({
-      id: `checkout-pg-prod-log-${String(globalIndex).padStart(5, '0')}`,
-      timestamp: new Date(timestampMs).toISOString(),
-      service: 'checkout-pg-prod',
-      serviceType: 'postgresql',
-      severity,
-      eventType: template.eventType,
-      message: template.message,
-      component: template.component,
-      project: 'payments-prod',
-      region: 'aws-eu-west-1',
-      host: template.host,
-      metadata: {
-        hourIndex,
-        sequenceInHour: Math.floor((timestampMs - startMs - hourIndex * ONE_HOUR_MS) / LOG_INTERVAL_MS),
-        ...template.metadata,
-      },
-    })
+  let stepIndex = 0
+  for (let hourIndex = 0; hourIndex < 24; hourIndex++) {
+    const hourStartMs = startMs + hourIndex * ONE_HOUR_MS
+    const hourEndMs = Math.min(hourStartMs + ONE_HOUR_MS, endMs)
+    let timestampMs = hourStartMs
+    let sequenceInHour = 0
+    while (timestampMs <= hourEndMs) {
+      const severity = pickSeverity(stepIndex, hourIndex)
+      const template = pickTemplate(severity, hourIndex, stepIndex)
+      const globalIndex = logs.length + 1
+      logs.push({
+        id: `checkout-pg-prod-log-${String(globalIndex).padStart(5, '0')}`,
+        timestamp: new Date(timestampMs).toISOString(),
+        service: 'checkout-pg-prod',
+        serviceType: 'postgresql',
+        severity,
+        eventType: template.eventType,
+        message: template.message,
+        component: template.component,
+        project: 'payments-prod',
+        region: 'aws-eu-west-1',
+        host: template.host,
+        metadata: {
+          hourIndex,
+          sequenceInHour,
+          ...template.metadata,
+        },
+      })
+      sequenceInHour += 1
+      stepIndex += 1
+      timestampMs += getRandomizedIntervalMs(hourIndex, sequenceInHour)
+    }
   }
 
   return logs
