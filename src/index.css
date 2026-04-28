@@ -49,9 +49,10 @@ tr.logs-row-error td:first-child {
   box-shadow: inset 3px 0 0 0 #dc2626;
 }
 
-/* Sticky logs header must stay above tinted body rows. */
+/* Sticky logs header must stay above body rows.
+   DataList is a CSS grid of divs (role=table/columnheader/cell), not <table>. */
 .service-logs-data-table table.Aquarium-DataTable thead th,
-.service-logs-data-list table thead th {
+.service-logs-data-list .Aquarium-DataList [role='columnheader'] {
   z-index: 30 !important;
   background-color: #f5f5f7 !important;
   background-clip: padding-box;
@@ -59,7 +60,7 @@ tr.logs-row-error td:first-child {
 }
 
 .service-logs-data-table table.Aquarium-DataTable tbody td,
-.service-logs-data-list table tbody td {
+.service-logs-data-list .Aquarium-DataList [role='cell'] {
   position: relative;
   z-index: 0;
 }

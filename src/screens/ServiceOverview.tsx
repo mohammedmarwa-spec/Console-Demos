@@ -168,6 +168,10 @@ const ONE_HOUR_MS = 60 * 60 * 1000
 const DEFAULT_HISTOGRAM_HOURS = 24
 const MAX_HISTOGRAM_BARS = 72
 const LOGS_PAGE_SIZE = 30
+/** Matches main content horizontal padding; top padding collapses while logs header is stuck. */
+const MAIN_CONTENT_SCROLL_PAD = 24
+/** Slack before restoring top padding when scrolling back (avoids padding ↔ measure oscillation). */
+const LOGS_STICKY_PAD_HYSTERESIS_PX = 40
 type LogDateRange = { start: CalendarDateTime; end: CalendarDateTime }
 const LOG_EVENT_TYPE_OPTIONS = [
   'service.health_check_passed',
@@ -430,6 +434,7 @@ function ServiceOverview({
   const [selectedEventTypes, setSelectedEventTypes] = useState<string[]>([])
   const [selectedSeverities, setSelectedSeverities] = useState<LogSeverity[]>([])
   const [visibleLogsCount, setVisibleLogsCount] = useState(LOGS_PAGE_SIZE)
+  const [logsTopPadCollapsed, setLogsTopPadCollapsed] = useState(false)
   const [aiAssistantOpen, setAiAssistantOpen] = useState(false)
   const [aiDraft, setAiDraft] = useState('')
   const [aiMessages, setAiMessages] = useState<AiMessage[]>(INITIAL_AI_MESSAGES)
@@ -439,6 +444,9 @@ function ServiceOverview({
   const loadMoreSentinelRef = useRef<HTMLDivElement>(null)
   const eventFilterRef = useRef<HTMLDivElement>(null)
   const severityFilterRef = useRef<HTMLDivElement>(null)
+  const contentRef = useRef<HTMLDivElement>(null)
+  /** Sits flush above the logs DataList; when it leaves the top of the scrollport, the table header is stuck. */
+  const logsStickySentinelRef = useRef<HTMLDivElement>(null)
   const filteredLogRows = useMemo(() => {
     const activeRange = dateRange ?? defaultLogRange
     const startMs = calendarDateTimeToUtcMs(activeRange.start)
@@ -608,12 +616,67 @@ function ServiceOverview({
   }, [hasMoreLogRows, sortedLogRows.length])
 
   // Scroll the content area to the top on mount and section switch.
-  const contentRef = useRef<HTMLDivElement>(null)
   useLayoutEffect(() => {
     if (contentRef.current) contentRef.current.scrollTop = 0
     // Reset window scroll as well in case the outer layout overflows the viewport.
     try { window.scrollTo(0, 0) } catch { /* jsdom no-op */ }
   }, [serviceIdProp, sidebarItem])
+
+  useEffect(() => {
+    if (sidebarItem !== 'logs') {
+      setLogsTopPadCollapsed(false)
+      return
+    }
+    const root = contentRef.current
+    const sentinel = logsStickySentinelRef.current
+    if (!root || !sentinel) {
+      setLogsTopPadCollapsed(false)
+      return
+    }
+    const update = () => {
+      const rootRect = root.getBoundingClientRect()
+      const sentRect = sentinel.getBoundingClientRect()
+      setLogsTopPadCollapsed((prev) => {
+        const padTop = prev ? 0 : MAIN_CONTENT_SCROLL_PAD
+        const contentTopY = rootRect.top + padTop
+        const slackPx = sentRect.bottom - contentTopY
+        if (!prev && slackPx < 0) return true
+        if (prev && slackPx > LOGS_STICKY_PAD_HYSTERESIS_PX) return false
+        return prev
+      })
+    }
+    root.addEventListener('scroll', update, { passive: true })
+    const ro = new ResizeObserver(update)
+    ro.observe(root)
+    update()
+    return () => {
+      root.removeEventListener('scroll', update)
+      ro.disconnect()
+      setLogsTopPadCollapsed(false)
+    }
+  }, [sidebarItem, visibleLogRows.length])
+
+  const prevLogsTopPadCollapsedRef = useRef<boolean | null>(null)
+  useLayoutEffect(() => {
+    const el = contentRef.current
+    if (!el || sidebarItem !== 'logs') {
+      prevLogsTopPadCollapsedRef.current = null
+      return
+    }
+    const prev = prevLogsTopPadCollapsedRef.current
+    if (prev === null) {
+      prevLogsTopPadCollapsedRef.current = logsTopPadCollapsed
+      return
+    }
+    if (prev === logsTopPadCollapsed) return
+    const pad = MAIN_CONTENT_SCROLL_PAD
+    if (!prev && logsTopPadCollapsed) {
+      el.scrollTop = Math.min(Math.max(0, el.scrollHeight - el.clientHeight), el.scrollTop + pad)
+    } else if (prev && !logsTopPadCollapsed) {
+      el.scrollTop = Math.max(0, el.scrollTop - pad)
+    }
+    prevLogsTopPadCollapsedRef.current = logsTopPadCollapsed
+  }, [logsTopPadCollapsed, sidebarItem])
 
   const sendAiMessage = () => {
     const prompt = aiDraft.trim()
@@ -708,7 +771,21 @@ function ServiceOverview({
         />
 
         {/* Main content */}
-        <div ref={contentRef} style={{ flex: 1, minWidth: 0, minHeight: 0, padding: 24, overflow: 'auto', overflowAnchor: 'none', backgroundColor: '#fff' }}>
+        <div
+          ref={contentRef}
+          style={{
+            flex: 1,
+            minWidth: 0,
+            minHeight: 0,
+            padding:
+              sidebarItem === 'logs' && logsTopPadCollapsed
+                ? `0 ${MAIN_CONTENT_SCROLL_PAD}px ${MAIN_CONTENT_SCROLL_PAD}px ${MAIN_CONTENT_SCROLL_PAD}px`
+                : MAIN_CONTENT_SCROLL_PAD,
+            overflow: 'auto',
+            overflowAnchor: 'none',
+            backgroundColor: '#fff',
+          }}
+        >
           {sidebarItem === 'logs' ? (
             <>
               <Box style={{ marginBottom: 16 }}>
@@ -895,6 +972,11 @@ function ServiceOverview({
                   <Typography.Default>No log entries for this filter.</Typography.Default>
                 ) : (
                   <>
+                    <div
+                      ref={logsStickySentinelRef}
+                      aria-hidden
+                      style={{ height: 1, overflow: 'hidden', pointerEvents: 'none' }}
+                    />
                     <LogsDataList
                       rows={visibleLogRows}
                       onExploreWithAi={handleExploreLogWithAi}

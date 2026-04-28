@@ -1,9 +1,10 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { Box, Typography } from '@aivenio/aquarium'
 import { Axis, BarChart, timeHour } from '@aivenio/aquarium/charts'
 import type { HistogramBucket, HistogramRange } from '../utils/auditHistogram'
 
 const ONE_HOUR_MS = 60 * 60 * 1000
+const HOVER_CLEAR_DELAY_MS = 90
 
 type HistogramStatus = 'loading' | 'ready' | 'error'
 
@@ -42,8 +43,32 @@ export function AuditLogsHistogram({
   onRangeSelected,
 }: AuditLogsHistogramProps) {
   const [hoveredBucketIndex, setHoveredBucketIndex] = useState<number | null>(null)
+  const hoverClearTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const hasSelection = Boolean(selectedRange)
   const hasHover = hoveredBucketIndex !== null
+
+  useEffect(() => {
+    return () => {
+      if (hoverClearTimeoutRef.current) {
+        clearTimeout(hoverClearTimeoutRef.current)
+      }
+    }
+  }, [])
+
+  const clearPendingHoverReset = () => {
+    if (hoverClearTimeoutRef.current) {
+      clearTimeout(hoverClearTimeoutRef.current)
+      hoverClearTimeoutRef.current = null
+    }
+  }
+
+  const scheduleHoverReset = () => {
+    clearPendingHoverReset()
+    hoverClearTimeoutRef.current = setTimeout(() => {
+      setHoveredBucketIndex(null)
+      hoverClearTimeoutRef.current = null
+    }, HOVER_CLEAR_DELAY_MS)
+  }
   const chartData = useMemo(() => {
     return buckets.map((bucket) => {
       const isSelected = isRangeSelected(selectedRange, bucket.startMs, bucket.endMs)
@@ -187,9 +212,15 @@ export function AuditLogsHistogram({
                   : typeof rawIndex === 'string' && rawIndex !== ''
                     ? Number(rawIndex)
                     : null
-              setHoveredBucketIndex(Number.isFinite(nextIndex) ? Number(nextIndex) : null)
+              const safeIndex = Number.isFinite(nextIndex) ? Number(nextIndex) : null
+              if (safeIndex === null) {
+                scheduleHoverReset()
+                return
+              }
+              clearPendingHoverReset()
+              setHoveredBucketIndex((previous) => (previous === safeIndex ? previous : safeIndex))
             }}
-            onMouseLeave={() => setHoveredBucketIndex(null)}
+            onMouseLeave={scheduleHoverReset}
           >
             <Axis.XAxis.Time
               dataKey="time"
@@ -207,6 +238,7 @@ export function AuditLogsHistogram({
               stackId="logs"
               name="Neutral (inactive)"
               fill="rgba(53, 69, 190, 0.95)"
+              isAnimationActive={false}
               onClick={(entry) => {
                 const payload = entry?.payload as { startMs: number; endMs: number } | undefined
                 if (payload) onRangeSelected({ startMs: payload.startMs, endMs: payload.endMs })
@@ -217,6 +249,7 @@ export function AuditLogsHistogram({
               stackId="logs"
               name="Neutral"
               fill="#3545BE"
+              isAnimationActive={false}
               onClick={(entry) => {
                 const payload = entry?.payload as { startMs: number; endMs: number } | undefined
                 if (payload) onRangeSelected({ startMs: payload.startMs, endMs: payload.endMs })
@@ -227,6 +260,7 @@ export function AuditLogsHistogram({
               stackId="logs"
               name="Warning (inactive)"
               fill="rgba(247, 144, 9, 0.95)"
+              isAnimationActive={false}
               onClick={(entry) => {
                 const payload = entry?.payload as { startMs: number; endMs: number } | undefined
                 if (payload) onRangeSelected({ startMs: payload.startMs, endMs: payload.endMs })
@@ -237,6 +271,7 @@ export function AuditLogsHistogram({
               stackId="logs"
               name="Warning"
               fill="#f79009"
+              isAnimationActive={false}
               onClick={(entry) => {
                 const payload = entry?.payload as { startMs: number; endMs: number } | undefined
                 if (payload) onRangeSelected({ startMs: payload.startMs, endMs: payload.endMs })
@@ -247,6 +282,7 @@ export function AuditLogsHistogram({
               stackId="logs"
               name="Error (inactive)"
               fill="rgba(217, 45, 32, 0.95)"
+              isAnimationActive={false}
               onClick={(entry) => {
                 const payload = entry?.payload as { startMs: number; endMs: number } | undefined
                 if (payload) onRangeSelected({ startMs: payload.startMs, endMs: payload.endMs })
@@ -257,6 +293,7 @@ export function AuditLogsHistogram({
               stackId="logs"
               name="Error"
               fill="#d92d20"
+              isAnimationActive={false}
               onClick={(entry) => {
                 const payload = entry?.payload as { startMs: number; endMs: number } | undefined
                 if (payload) onRangeSelected({ startMs: payload.startMs, endMs: payload.endMs })
