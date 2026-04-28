@@ -1,15 +1,18 @@
-import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
+import { useContext, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
+import { CalendarDateTime } from '@internationalized/date'
+import { DateRangePickerStateContext as AriaDateRangePickerStateContext } from 'react-aria-components'
 import {
   Alert,
-  Badge,
   Box,
   Breadcrumbs,
   Button,
-  ChoiceChip,
-  ChoiceChipGroup,
+  Checkbox,
+  CheckboxGroup,
   DataTable,
+  DateTimeRangePicker,
   Drawer,
   DropdownMenu,
+  Filter,
   Icon,
   Link,
   PageHeader,
@@ -21,12 +24,20 @@ import {
 } from '@aivenio/aquarium'
 import duplicateIcon from '@aivenio/aquarium/icons/duplicate'
 import chevronRight from '@aivenio/aquarium/icons/chevronRight'
+import filterIcon from '@aivenio/aquarium/icons/filter'
 import infoSignIcon from '@aivenio/aquarium/icons/infoSign'
 import pulseIcon from '@aivenio/aquarium/icons/pulse'
 import sendIcon from '@aivenio/aquarium/icons/send'
+import { AuditLogsHistogram } from '../components/AuditLogsHistogram'
 import { ConsoleHeader } from '../components/ConsoleHeader'
 import { ServiceSidebar } from '../components/ServiceSidebar'
 import { getServiceIconUrl } from '../components/ServiceIcon'
+import type { HistogramRange } from '../utils/auditHistogram'
+import {
+  buildLogHistogramBuckets,
+  createMockPostgresDegradationLogs,
+  type PostgresServiceEventLog,
+} from '../utils/mockPostgresDegradationLogs'
 import type { ServiceRow } from './ProjectServices'
 import { ComparePricingModal } from './ComparePricingModal'
 import type { ServiceTypeId } from './ServiceTypeSelectModal'
@@ -35,7 +46,7 @@ const PROJECT_NAME = 'UI-TESTS'
 const MYSQL_SERVICE_NAME = 'mysql-204e49c9'
 const PG_SERVICE_NAME = 'pg-2536119c'
 
-type LogSeverity = 'info' | 'warning' | 'important'
+type LogSeverity = 'info' | 'warning' | 'error'
 
 type LogRow = {
   id: string
@@ -43,6 +54,11 @@ type LogRow = {
   source: string
   message: string
   severity: LogSeverity
+  eventType: string
+  component: PostgresServiceEventLog['component']
+  service: string
+  project: string
+  region: string
 }
 
 type LogSegment =
@@ -57,45 +73,26 @@ type AiMessage = {
   text: string
 }
 
-/** Chronological mock log lines (~48h of history + live tail; oldest first). */
-const MOCK_LOG_ROWS: LogRow[] = [
-  { id: 'l1', time: '2026-04-13T18:02:04Z', source: 'pid=12001', message: '[postgresql-17] checkpoint starting: time', severity: 'info' },
-  { id: 'l2', time: '2026-04-13T18:02:41Z', source: 'pid=12001', message: '[postgresql-17] checkpoint complete: wrote 182 buffers (1.1%); 0 WAL file(s) added, 0 removed, 0 recycled', severity: 'info' },
-  { id: 'l3', time: '2026-04-13T21:15:09Z', source: 'pid=12044', message: '[postgresql-17] automatic vacuum of table "public.events": index scans not needed', severity: 'info' },
-  { id: 'l4', time: '2026-04-13T23:47:22Z', source: 'pid=12088', message: '[postgresql-17] connection received: host=10.0.4.12 port=44102', severity: 'info' },
-  { id: 'l5', time: '2026-04-13T23:47:23Z', source: 'pid=12088', message: '[postgresql-17] connection authenticated: user="batch" method=scram-sha-256', severity: 'info' },
-  { id: 'l6', time: '2026-04-14T02:30:00Z', source: 'pid=12120', message: '[postgresql-17] archived WAL file 0000000100000123000000A1', severity: 'info' },
-  { id: 'l7', time: '2026-04-14T08:11:33Z', source: 'pid=12155', message: '[postgresql-17] connection authorized: user=app_rw db=defaultdb application_name=orders-api', severity: 'info' },
-  { id: 'l8', time: '2026-04-14T10:44:18Z', source: 'pid=12190', message: '[postgresql-17] WARNING: long-running query (>120s) on public.order_items (pid=12190)', severity: 'warning' },
-  { id: 'l9', time: '2026-04-14T12:05:00Z', source: 'pid=12201', message: '[postgresql-17] base backup completed successfully (label=nightly_20260414)', severity: 'info' },
-  { id: 'l10', time: '2026-04-14T14:22:51Z', source: 'pid=12240', message: '[postgresql-17] disconnection: session=0:12:04.200 user=app_rw db=defaultdb host=10.0.4.18', severity: 'info' },
-  { id: 'l11', time: '2026-04-14T17:33:06Z', source: 'pid=12266', message: '[postgresql-17] connection authorized: user=analytics db=defaultdb application_name=metabase', severity: 'info' },
-  { id: 'l12', time: '2026-04-14T20:01:17Z', source: 'pid=12290', message: '[postgresql-17] checkpoint starting: time', severity: 'info' },
-  { id: 'l13', time: '2026-04-14T20:01:55Z', source: 'pid=12290', message: '[postgresql-17] checkpoint complete: wrote 640 buffers (3.9%); 1 WAL file(s) added', severity: 'info' },
-  { id: 'l14', time: '2026-04-14T22:18:40Z', source: 'pid=12310', message: '[postgresql-17] connection received: host=[local]', severity: 'info' },
-  { id: 'l15', time: '2026-04-15T06:40:12Z', source: 'pid=28001', message: '[postgresql-17] connection authorized: user=postgres db=_aiven app=management-agent', severity: 'info' },
-  { id: 'l16', time: '2026-04-15T07:55:03Z', source: 'pid=28102', message: '[postgresql-17] connection authenticated: user="app_rw" method=scram-sha-256', severity: 'info' },
-  { id: 'l17', time: '2026-04-15T09:24:11Z', source: 'pid=28380', message: '[postgresql-17] connection received: host=[local]', severity: 'info' },
-  { id: 'l18', time: '2026-04-15T09:24:11Z', source: 'pid=28380', message: '[postgresql-17] connection authenticated: user="postgres" method=trust (pg_hba.conf:2)', severity: 'info' },
-  { id: 'l19', time: '2026-04-15T09:24:11Z', source: 'pid=28380', message: '[postgresql-17] connection authorized: user=postgres db=_aiven app=management-agent', severity: 'info' },
-  { id: 'l20', time: '2026-04-15T09:24:11Z', source: 'pid=28380', message: '[postgresql-17] disconnection: session=0:00:00.010 user=postgres db=_aiven host=[local]', severity: 'info' },
-  { id: 'l21', time: '2026-04-15T09:24:13Z', source: 'pid=28387', message: '[postgresql-17] connection authenticated: user="avnadmin" method=trust (pg_hba.conf:3)', severity: 'info' },
-  { id: 'l22', time: '2026-04-15T09:24:13Z', source: 'pid=28387', message: '[postgresql-17] connection authorized: user=avnadmin db=defaultdb app=management-agent', severity: 'info' },
-  { id: 'l23', time: '2026-04-15T09:24:20Z', source: 'pid=28431', message: '[postgresql-17] connection authorized: user=postgres db=defaultdb app=management-agent', severity: 'info' },
-  { id: 'l24', time: '2026-04-15T09:24:21Z', source: 'pid=28437', message: '[postgresql-17] disconnection: session=0:00:00.015 user=postgres db=_aiven host=[local]', severity: 'info' },
-  { id: 'l25', time: '2026-04-15T09:24:22Z', source: 'pid=28444', message: '[postgresql-17] connection authorized: user=_avnadmin_monitor db=_aiven app=system-stats', severity: 'info' },
-  { id: 'l26', time: '2026-04-15T09:24:22Z', source: 'pid=28445', message: '[postgresql-17] connection authorized: user=_avnadmin_monitor db=defaultdb app=system-stats', severity: 'info' },
-  { id: 'l27', time: '2026-04-15T09:24:23Z', source: 'pid=28451', message: '[postgresql-17] disconnection: session=0:00:00.011 user=postgres db=_aiven host=[local]', severity: 'info' },
-  { id: 'l28', time: '2026-04-15T09:24:26Z', source: 'pid=28469', message: '[postgresql-17] connection authorized: user=postgres db=_aiven app=management-agent', severity: 'info' },
-  { id: 'l29', time: '2026-04-15T09:24:29Z', source: 'pid=28487', message: '[postgresql-17] disconnection: session=0:00:00.010 user=postgres db=_aiven host=[local]', severity: 'info' },
-  { id: 'l30', time: '2026-04-15T09:24:31Z', source: 'pid=28500', message: '[postgresql-17] connection authorized: user=postgres db=_aiven app=management-agent', severity: 'info' },
-  { id: 'l31', time: '2026-04-15T09:24:32Z', source: 'pid=28503', message: '[postgresql-17] WARNING: autovacuum worker took unusually long on public.sessions (45s)', severity: 'warning' },
-  { id: 'l32', time: '2026-04-15T09:24:33Z', source: 'pid=28506', message: '[postgresql-17] WARNING: max_connections nearing limit (91% used), consider connection pools', severity: 'warning' },
-  { id: 'l33', time: '2026-04-15T09:24:34Z', source: 'pid=28508', message: '[postgresql-17] ERROR: could not serialize access due to concurrent update', severity: 'important' },
-  { id: 'l34', time: '2026-04-15T09:24:35Z', source: 'pid=28510', message: '[postgresql-17] WARNING: statement timeout after 5000 ms (app=query-runner)', severity: 'warning' },
-  { id: 'l35', time: '2026-04-15T09:24:35Z', source: 'pid=28511', message: '[postgresql-17] connection authorized: user=app_rw db=defaultdb application_name=retry-worker', severity: 'info' },
-  { id: 'l36', time: '2026-04-15T09:24:36Z', source: 'pid=28512', message: '[postgresql-17] FATAL: remaining connection slots are reserved for non-replication superuser connections', severity: 'important' },
-]
+/** Legacy fixture retired in favor of incident-focused mock generator. */
+
+function mapServiceEventToLogRow(log: PostgresServiceEventLog): LogRow {
+  const source = [log.component, log.host].filter(Boolean).join(' | ')
+  return {
+    id: log.id,
+    time: log.timestamp,
+    source,
+    message: log.message,
+    severity: log.severity,
+    eventType: log.eventType,
+    component: log.component,
+    service: log.service,
+    project: log.project,
+    region: log.region,
+  }
+}
+
+/** Canonical mocked incident dataset for the log table and histogram. */
+const MOCK_LOG_ROWS: LogRow[] = createMockPostgresDegradationLogs().map(mapServiceEventToLogRow)
 
 function logDayKey(isoUtc: string): string {
   return isoUtc.slice(0, 10)
@@ -132,9 +129,6 @@ function buildLogSegmentsFromRows(rows: LogRow[]): LogSegment[] {
   return out
 }
 
-const LOG_SEGMENTS_ALL: LogSegment[] = buildLogSegmentsFromRows(MOCK_LOG_ROWS)
-const WARNING_LOG_COUNT = MOCK_LOG_ROWS.filter((row) => row.severity === 'warning').length
-const IMPORTANT_LOG_COUNT = MOCK_LOG_ROWS.filter((row) => row.severity === 'important').length
 const AI_SUGGESTIONS = [
   'Summarize unusual log entries',
   'Show potential causes for warnings',
@@ -149,24 +143,79 @@ const INITIAL_AI_MESSAGES: AiMessage[] = [
 ]
 const LOG_MONO_FONT =
   'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, Liberation Mono, monospace'
+const PAST_HOUR_MS = 60 * 60 * 1000
+type LogDateRange = { start: CalendarDateTime; end: CalendarDateTime }
+const LOG_EVENT_TYPE_OPTIONS = [
+  'service.health_check_passed',
+  'connection.accepted',
+  'connection.count_high',
+  'connection.pool_saturation',
+  'connection.timeout',
+  'connection.rejected',
+  'postgres.too_many_connections',
+  'query.slow',
+  'pgbouncer.client_login_failed',
+  'pgbouncer.pool_wait_timeout',
+  'service.degraded',
+  'service.recovery_started',
+  'service.health_check_restored',
+] as const
 
 function logMessageColor(severity: LogSeverity): string {
   if (severity === 'warning') return '#9a3412'
-  if (severity === 'important') return '#991b1b'
+  if (severity === 'error') return '#991b1b'
   return '#242429'
 }
 
 function logRowCellClass(severity: LogSeverity): string | undefined {
   if (severity === 'warning') return 'logs-row-warning'
-  if (severity === 'important') return 'logs-row-error'
+  if (severity === 'error') return 'logs-row-error'
   return undefined
 }
 
-function logSegmentsForFilter(filter: 'all' | 'warning' | 'important'): LogSegment[] {
-  if (filter === 'all') return LOG_SEGMENTS_ALL
-  const severity = filter === 'warning' ? 'warning' : 'important'
-  const rows = MOCK_LOG_ROWS.filter((row) => row.severity === severity)
-  return rows.length > 0 ? buildLogSegmentsFromRows(rows) : []
+function utcDateToCalendarDateTime(date: Date): CalendarDateTime {
+  return new CalendarDateTime(
+    date.getUTCFullYear(),
+    date.getUTCMonth() + 1,
+    date.getUTCDate(),
+    date.getUTCHours(),
+    date.getUTCMinutes(),
+    date.getUTCSeconds(),
+  )
+}
+
+function calendarDateTimeToUtcMs(cdt: CalendarDateTime): number {
+  return Date.UTC(cdt.year, cdt.month - 1, cdt.day, cdt.hour, cdt.minute, cdt.second)
+}
+
+function createRelativeLogRange(anchor: Date, minutes: number): LogDateRange {
+  const end = new Date(anchor)
+  const start = new Date(anchor.getTime() - minutes * 60 * 1000)
+  return {
+    start: utcDateToCalendarDateTime(start),
+    end: utcDateToCalendarDateTime(end),
+  }
+}
+
+function classifyLogEventType(row: LogRow): (typeof LOG_EVENT_TYPE_OPTIONS)[number] {
+  if ((LOG_EVENT_TYPE_OPTIONS as readonly string[]).includes(row.eventType)) {
+    return row.eventType as (typeof LOG_EVENT_TYPE_OPTIONS)[number]
+  }
+  return 'service.health_check_passed'
+}
+
+function DateRangeFilterTrigger() {
+  const dateRangeState = useContext(AriaDateRangePickerStateContext) as
+    | { setOpen?: (open: boolean) => void }
+    | null
+
+  return (
+    <Filter.Trigger
+      labelText="Date range"
+      icon={filterIcon}
+      onClick={() => dateRangeState?.setOpen?.(true)}
+    />
+  )
 }
 
 export type ServiceOverviewProps = {
@@ -255,19 +304,118 @@ function ServiceOverview({
 
   const [comparePricingOpen, setComparePricingOpen] = useState(false)
   const [sidebarItem, setSidebarItem] = useState(initialSidebarItem ?? 'overview')
-  const [logFilter, setLogFilter] = useState<'all' | 'warning' | 'important'>('all')
+  const latestLogMs = Date.parse(MOCK_LOG_ROWS[MOCK_LOG_ROWS.length - 1]?.time ?? new Date().toISOString())
+  const [dateRange, setDateRange] = useState<LogDateRange | null>(
+    createRelativeLogRange(new Date(latestLogMs), 60),
+  )
+  const [eventFilterOpen, setEventFilterOpen] = useState(false)
+  const [selectedEventTypes, setSelectedEventTypes] = useState<string[]>([])
+  const [selectedLogRange, setSelectedLogRange] = useState<HistogramRange | null>(null)
   const [aiAssistantOpen, setAiAssistantOpen] = useState(false)
   const [aiDraft, setAiDraft] = useState('')
   const [aiMessages, setAiMessages] = useState<AiMessage[]>(INITIAL_AI_MESSAGES)
-  const logSegments = useMemo(() => logSegmentsForFilter(logFilter), [logFilter])
+  const eventFilterRef = useRef<HTMLDivElement>(null)
+  const filteredLogRows = useMemo(() => {
+    let startMs = 0
+    let endMs = Number.MAX_SAFE_INTEGER
+    if (dateRange?.start && dateRange?.end) {
+      startMs = calendarDateTimeToUtcMs(dateRange.start)
+      endMs = calendarDateTimeToUtcMs(dateRange.end)
+    }
+    return MOCK_LOG_ROWS.filter((row) => {
+      const ts = Date.parse(row.time)
+      if (ts < startMs || ts > endMs) return false
+      if (selectedEventTypes.length > 0 && !selectedEventTypes.includes(classifyLogEventType(row))) {
+        return false
+      }
+      return true
+    })
+  }, [dateRange, selectedEventTypes])
+  const pastHourHistogramRange = useMemo<HistogramRange>(() => {
+    return {
+      startMs: latestLogMs - PAST_HOUR_MS,
+      endMs: latestLogMs,
+    }
+  }, [latestLogMs])
+  const pastHourLogRows = useMemo(() => {
+    return MOCK_LOG_ROWS.filter((row) => {
+      const ts = Date.parse(row.time)
+      return ts >= pastHourHistogramRange.startMs && ts <= pastHourHistogramRange.endMs
+    })
+  }, [pastHourHistogramRange])
+  const pastHourFilteredByEventTypeRows = useMemo(() => {
+    return pastHourLogRows.filter((row) => {
+      if (selectedEventTypes.length === 0) return true
+      return selectedEventTypes.includes(classifyLogEventType(row))
+    })
+  }, [pastHourLogRows, selectedEventTypes])
+  const pastHourBucketsData = useMemo(() => {
+    return buildLogHistogramBuckets(
+      pastHourFilteredByEventTypeRows.map((row) => ({
+        id: row.id,
+        timestamp: row.time,
+        service: 'checkout-pg-prod',
+        serviceType: 'postgresql',
+        severity: row.severity,
+        eventType: row.eventType,
+        message: row.message,
+        component: row.component,
+        project: 'payments-prod',
+        region: 'aws-eu-west-1',
+      })),
+      pastHourHistogramRange,
+    )
+  }, [pastHourFilteredByEventTypeRows, pastHourHistogramRange])
+  const severityCountsByBucket = useMemo<Record<number, { info: number; warning: number; error: number }>>(() => {
+    const out: Record<number, { info: number; warning: number; error: number }> = {}
+    for (const bucket of pastHourBucketsData.buckets) {
+      out[bucket.index] = { info: 0, warning: 0, error: 0 }
+    }
+    for (const bucket of pastHourBucketsData.buckets) {
+      out[bucket.index] = {
+        info: bucket.info,
+        warning: bucket.warning,
+        error: bucket.error,
+      }
+    }
+    return out
+  }, [pastHourBucketsData.buckets])
+  const visibleLogRows = useMemo(() => {
+    if (!selectedLogRange) return filteredLogRows
+    return filteredLogRows.filter((row) => {
+      const ts = Date.parse(row.time)
+      return ts >= selectedLogRange.startMs && ts <= selectedLogRange.endMs
+    })
+  }, [filteredLogRows, selectedLogRange])
+  const logSegments = useMemo(() => {
+    return visibleLogRows.length > 0 ? buildLogSegmentsFromRows(visibleLogRows) : []
+  }, [visibleLogRows])
 
   useEffect(() => {
     setSidebarItem(initialSidebarItem ?? 'overview')
-    setLogFilter('all')
+    setDateRange(createRelativeLogRange(new Date(latestLogMs), 60))
+    setSelectedEventTypes([])
+    setEventFilterOpen(false)
+    setSelectedLogRange(null)
     setAiAssistantOpen(false)
     setAiDraft('')
     setAiMessages(INITIAL_AI_MESSAGES)
-  }, [serviceIdProp, initialSidebarItem])
+  }, [serviceIdProp, initialSidebarItem, latestLogMs])
+
+  useEffect(() => {
+    if (!eventFilterOpen) return
+    function handleMouseDown(event: MouseEvent) {
+      if (eventFilterRef.current && !eventFilterRef.current.contains(event.target as Node)) {
+        setEventFilterOpen(false)
+      }
+    }
+    document.addEventListener('mousedown', handleMouseDown)
+    return () => document.removeEventListener('mousedown', handleMouseDown)
+  }, [eventFilterOpen])
+
+  useEffect(() => {
+    setSelectedLogRange(null)
+  }, [dateRange, selectedEventTypes])
 
   // Scroll the content area to the top on mount and section switch.
   const contentRef = useRef<HTMLDivElement>(null)
@@ -315,7 +463,7 @@ function ServiceOverview({
             <>
               <Box style={{ marginBottom: 32 }}>
                 <PageHeader
-                  title="Logs"
+                  title="Service logs"
                   image={getServiceIconUrl(serviceTypeId ?? null)}
                   imageAlt={serviceTypeId ?? 'service'}
                   breadcrumbs={[
@@ -335,7 +483,7 @@ function ServiceOverview({
                       </Link>
                     </Breadcrumbs.Crumb>,
                     <Breadcrumbs.Crumb key="service">{serviceName}</Breadcrumbs.Crumb>,
-                    <Breadcrumbs.Crumb key="logs">Logs</Breadcrumbs.Crumb>,
+                    <Breadcrumbs.Crumb key="logs">Service logs</Breadcrumbs.Crumb>,
                   ]}
                   subtitle={
                     <Box component="span" style={{ display: 'inline-flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
@@ -355,31 +503,62 @@ function ServiceOverview({
               </Box>
 
               <Box style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 12, marginBottom: 8 }}>
-                <Box style={{ flex: '1 1 auto', minWidth: 0 }}>
-                  <ChoiceChipGroup
-                    name="logFilter"
-                    selectionMode="radio"
-                    value={logFilter}
-                    onChange={(value) => setLogFilter(value as 'all' | 'warning' | 'important')}
+                <Box style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 12, flex: '1 1 auto', minWidth: 0 }}>
+                  <DateTimeRangePicker
+                    aria-label="Date and time range"
+                    granularity="minute"
+                    value={dateRange ?? undefined}
+                    reserveSpaceForError={false}
+                    onChange={(value) => {
+                      if (value?.start && value?.end) {
+                        setDateRange({ start: value.start as CalendarDateTime, end: value.end as CalendarDateTime })
+                      } else {
+                        setDateRange(null)
+                      }
+                    }}
+                    shouldCloseOnSelect={false}
                   >
-                    <ChoiceChip value="all" dense>All logs</ChoiceChip>
-                    <ChoiceChip value="warning" dense>
-                      <Box component="span" style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
-                        Warning
-                        <Box component="span" style={{ color: '#b45309' }}>
-                          <Badge value={WARNING_LOG_COUNT} dense />
-                        </Box>
+                    <DateRangeFilterTrigger />
+                    <DateTimeRangePicker.Calendar />
+                  </DateTimeRangePicker>
+
+                  <div ref={eventFilterRef} style={{ position: 'relative' }}>
+                    <Filter.Trigger
+                      labelText="Event type"
+                      icon={filterIcon}
+                      value={selectedEventTypes.length > 0 ? selectedEventTypes.join(', ') : undefined}
+                      onClear={selectedEventTypes.length > 0 ? () => setSelectedEventTypes([]) : undefined}
+                      onClick={() => setEventFilterOpen((open) => !open)}
+                    />
+                    {eventFilterOpen && (
+                      <Box
+                        style={{
+                          position: 'absolute',
+                          top: 'calc(100% + 8px)',
+                          left: 0,
+                          zIndex: 200,
+                          backgroundColor: '#fff',
+                          border: '1px solid #e0e0e8',
+                          borderRadius: 8,
+                          boxShadow: '0 4px 24px rgba(0, 0, 0, 0.12)',
+                          padding: 16,
+                          minWidth: 260,
+                        }}
+                      >
+                        <CheckboxGroup
+                          labelText="Event type"
+                          value={selectedEventTypes}
+                          onChange={(value) => setSelectedEventTypes(value ?? [])}
+                        >
+                          {LOG_EVENT_TYPE_OPTIONS.map((option) => (
+                            <Checkbox key={option} value={option}>
+                              {option}
+                            </Checkbox>
+                          ))}
+                        </CheckboxGroup>
                       </Box>
-                    </ChoiceChip>
-                    <ChoiceChip value="important" dense>
-                      <Box component="span" style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
-                        Important
-                        <Box component="span" style={{ color: '#b91c1c' }}>
-                          <Badge value={IMPORTANT_LOG_COUNT} dense />
-                        </Box>
-                      </Box>
-                    </ChoiceChip>
-                  </ChoiceChipGroup>
+                    )}
+                  </div>
                 </Box>
                 <Box style={{ flexShrink: 0, marginLeft: 'auto' }}>
                   <Button.Ghost type="button" dense onClick={scrollToLatestLog}>
@@ -389,6 +568,29 @@ function ServiceOverview({
               </Box>
 
               <Box style={{ marginTop: 0 }} role="region" aria-label="Service logs">
+                <Box style={{ marginBottom: 12 }}>
+                  <AuditLogsHistogram
+                    status="ready"
+                    buckets={pastHourBucketsData.buckets.map((bucket) => ({
+                      index: bucket.index,
+                      startMs: bucket.startMs,
+                      endMs: bucket.endMs,
+                      count: bucket.total,
+                    }))}
+                    severityCountsByBucket={severityCountsByBucket}
+                    range={pastHourBucketsData.range}
+                    onRangeSelected={(range) => setSelectedLogRange(range)}
+                  />
+                </Box>
+
+                {selectedLogRange && (
+                  <Box style={{ marginBottom: 12 }}>
+                    <Button.Ghost type="button" dense onClick={() => setSelectedLogRange(null)}>
+                      Clear selected time range
+                    </Button.Ghost>
+                  </Box>
+                )}
+
                 {logSegments.length === 0 ? (
                   <Typography.Default>No log entries for this filter.</Typography.Default>
                 ) : (
@@ -739,7 +941,7 @@ function ServiceOverview({
         </Box>
 
         <Box style={{ color: '#787885' }}>
-          <Typography.Caption>Aiven / dev-sandbox / {serviceName} / Logs</Typography.Caption>
+          <Typography.Caption>Aiven / dev-sandbox / {serviceName} / Service logs</Typography.Caption>
         </Box>
 
         <Box

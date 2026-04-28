@@ -17,7 +17,8 @@ const NAV_ITEMS: { label: string; icon: IconifyIcon; id: string }[] = [
   { id: 'applications', label: 'Applications', icon: applicationsIcon },
   { id: 'integration-endpoints', label: 'Integration endpoints', icon: integrationsIcon },
   { id: 'vpcs', label: 'VPCs', icon: cloudIcon },
-  { id: 'event-log', label: 'Event log', icon: listIcon },
+  { id: 'observability', label: 'Observability', icon: pulseIcon },
+  { id: 'audit-logs', label: 'Audit logs', icon: listIcon },
   { id: 'permissions', label: 'Permissions', icon: appUsersIcon },
   { id: 'billing', label: 'Billing', icon: bankAccountIcon },
   { id: 'project-ai-insights', label: 'Project AI insights', icon: pulseIcon },
@@ -27,9 +28,10 @@ export type ProjectSidebarProps = {
   projectName: string
   activeItem?: string
   onBillingClick?: () => void
+  onItemClick?: (itemId: string) => void
 }
 
-export function ProjectSidebar({ projectName, activeItem = 'services', onBillingClick }: ProjectSidebarProps) {
+export function ProjectSidebar({ projectName, activeItem = 'services', onBillingClick, onItemClick }: ProjectSidebarProps) {
   return (
     <Box
       style={{
@@ -53,10 +55,12 @@ export function ProjectSidebar({ projectName, activeItem = 'services', onBilling
             active={id === activeItem}
             href="#"
             onClick={(e) => {
+              e.preventDefault()
               if (id === 'billing') {
-                e.preventDefault()
                 onBillingClick?.()
+                return
               }
+              onItemClick?.(id)
             }}
           >
             {label}
