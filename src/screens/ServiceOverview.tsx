@@ -1271,12 +1271,44 @@ function LogsDataList({ rows, onExploreWithAi }: { rows: LogRow[]; onExploreWith
     },
     {
       type: 'custom' as const,
+      headerName: 'Severity',
+      width: 110,
+      UNSAFE_render: (row: LogRow) => (
+        <Box component="span" style={{ color: '#242429' }}>
+          <Box
+            component="span"
+            style={{
+              ...logMessageHighlightStyle(row.severity),
+              fontFamily: LOG_MONO_FONT,
+              fontSize: 12,
+              lineHeight: '16px',
+            }}
+          >
+            {formatSeverityOption(row.severity)}
+          </Box>
+        </Box>
+      ),
+    },
+    {
+      type: 'custom' as const,
       headerName: 'Source',
       width: 160,
       UNSAFE_render: (row: LogRow) => (
         <Box component="span" style={{ color: '#242429' }}>
           <Box component="span" style={{ fontFamily: LOG_MONO_FONT, fontSize: 12, lineHeight: '16px' }}>
             {row.source}
+          </Box>
+        </Box>
+      ),
+    },
+    {
+      type: 'custom' as const,
+      headerName: 'Event type',
+      width: 230,
+      UNSAFE_render: (row: LogRow) => (
+        <Box component="span" style={{ color: '#242429' }}>
+          <Box component="span" style={{ fontFamily: LOG_MONO_FONT, fontSize: 12, lineHeight: '16px' }}>
+            {row.eventType}
           </Box>
         </Box>
       ),
