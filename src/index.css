@@ -28,32 +28,38 @@ tr.plan-row-selected {
   background-color: #f3f6ff;
 }
 
-/* Service Overview — Logs: severity row tint + left accent (DataTable class applies per-cell). */
-td.logs-row-warning {
+/* Service Overview — Logs: severity row tint + left accent. */
+td.logs-row-warning,
+tr.logs-row-warning td {
   background-color: #fff7ed !important;
 }
 
-tr td.logs-row-warning:first-child {
+tr td.logs-row-warning:first-child,
+tr.logs-row-warning td:first-child {
   box-shadow: inset 3px 0 0 0 #f59e0b;
 }
 
-td.logs-row-error {
+td.logs-row-error,
+tr.logs-row-error td {
   background-color: #fef2f2 !important;
 }
 
-tr td.logs-row-error:first-child {
+tr td.logs-row-error:first-child,
+tr.logs-row-error td:first-child {
   box-shadow: inset 3px 0 0 0 #dc2626;
 }
 
 /* Sticky logs header must stay above tinted body rows. */
-.service-logs-data-table table.Aquarium-DataTable thead th {
+.service-logs-data-table table.Aquarium-DataTable thead th,
+.service-logs-data-list table thead th {
   z-index: 30 !important;
   background-color: #f5f5f7 !important;
   background-clip: padding-box;
   box-shadow: inset 0 -1px 0 0 #ededf0;
 }
 
-.service-logs-data-table table.Aquarium-DataTable tbody td {
+.service-logs-data-table table.Aquarium-DataTable tbody td,
+.service-logs-data-list table tbody td {
   position: relative;
   z-index: 0;
 }

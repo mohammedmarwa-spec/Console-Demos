@@ -8,7 +8,7 @@ import {
   Button,
   Checkbox,
   CheckboxGroup,
-  DataTable,
+  DataList,
   DateTimeRangePicker,
   Drawer,
   DropdownMenu,
@@ -50,7 +50,9 @@ type LogSeverity = 'info' | 'warning' | 'error'
 
 type LogRow = {
   id: string
+  timestampMs: number
   time: string
+  displayTime: string
   source: string
   message: string
   severity: LogSeverity
@@ -59,11 +61,9 @@ type LogRow = {
   service: string
   project: string
   region: string
+  metadata: { label: string; value: string }[]
+  keyValues: Record<string, string>
 }
-
-type LogSegment =
-  | { type: 'rows'; rows: LogRow[] }
-  | { type: 'divider'; id: string; label: string }
 
 type AiRole = 'assistant' | 'user'
 
@@ -75,11 +75,43 @@ type AiMessage = {
 
 /** Legacy fixture retired in favor of incident-focused mock generator. */
 
+function pad2(value: number): string {
+  return String(value).padStart(2, '0')
+}
+
+function pad3(value: number): string {
+  return String(value).padStart(3, '0')
+}
+
+function formatLogTimestamp(isoUtc: string): string {
+  const d = new Date(isoUtc)
+  return `${pad2(d.getUTCDate())}/${pad2(d.getUTCMonth() + 1)}/${String(d.getUTCFullYear()).slice(-2)} ${pad2(
+    d.getUTCHours(),
+  )}:${pad2(d.getUTCMinutes())}:${pad2(d.getUTCSeconds())}:${pad3(d.getUTCMilliseconds())}`
+}
+
 function mapServiceEventToLogRow(log: PostgresServiceEventLog): LogRow {
   const source = [log.component, log.host].filter(Boolean).join(' | ')
+  const metadata = [
+    { label: 'Severity', value: log.severity.toUpperCase() },
+    { label: 'Event type', value: log.eventType },
+    { label: 'Component', value: log.component },
+    ...(log.host ? [{ label: 'Host', value: log.host }] : []),
+  ]
+  const keyValues: Record<string, string> = {
+    service: log.service,
+    project: log.project,
+    region: log.region,
+    log_id: log.id,
+  }
+  for (const [key, value] of Object.entries(log.metadata ?? {})) {
+    keyValues[key] = String(value)
+  }
   return {
     id: log.id,
+    timestampMs: Date.parse(log.timestamp),
     time: log.timestamp,
+    displayTime: formatLogTimestamp(log.timestamp),
     source,
     message: log.message,
     severity: log.severity,
@@ -88,46 +120,13 @@ function mapServiceEventToLogRow(log: PostgresServiceEventLog): LogRow {
     service: log.service,
     project: log.project,
     region: log.region,
+    metadata,
+    keyValues,
   }
 }
 
 /** Canonical mocked incident dataset for the log table and histogram. */
 const MOCK_LOG_ROWS: LogRow[] = createMockPostgresDegradationLogs().map(mapServiceEventToLogRow)
-
-function logDayKey(isoUtc: string): string {
-  return isoUtc.slice(0, 10)
-}
-
-function logDayDividerLabel(dayKey: string): string {
-  const [y, m, d] = dayKey.split('-').map(Number)
-  const date = new Date(Date.UTC(y, m - 1, d))
-  return date.toLocaleDateString('en-US', {
-    weekday: 'short',
-    month: 'short',
-    day: 'numeric',
-    year: 'numeric',
-    timeZone: 'UTC',
-  })
-}
-
-/** Day groups + dividers. Only the first row block shows a table header (see `LogsDataTable`). */
-function buildLogSegmentsFromRows(rows: LogRow[]): LogSegment[] {
-  const out: LogSegment[] = []
-  let chunk: LogRow[] = []
-  let previousDay: string | null = null
-  for (const row of rows) {
-    const day = logDayKey(row.time)
-    if (previousDay !== null && day !== previousDay) {
-      if (chunk.length > 0) out.push({ type: 'rows', rows: chunk })
-      chunk = []
-      out.push({ type: 'divider', id: `log-day-${day}`, label: logDayDividerLabel(day) })
-    }
-    previousDay = day
-    chunk.push(row)
-  }
-  if (chunk.length > 0) out.push({ type: 'rows', rows: chunk })
-  return out
-}
 
 const AI_SUGGESTIONS = [
   'Summarize unusual log entries',
@@ -161,16 +160,26 @@ const LOG_EVENT_TYPE_OPTIONS = [
   'service.health_check_restored',
 ] as const
 
-function logMessageColor(severity: LogSeverity): string {
-  if (severity === 'warning') return '#9a3412'
-  if (severity === 'error') return '#991b1b'
-  return '#242429'
-}
-
-function logRowCellClass(severity: LogSeverity): string | undefined {
-  if (severity === 'warning') return 'logs-row-warning'
-  if (severity === 'error') return 'logs-row-error'
-  return undefined
+function logMessageHighlightStyle(severity: LogSeverity): React.CSSProperties {
+  if (severity === 'warning') {
+    return {
+      color: '#9a3412',
+      backgroundColor: '#fff7ed',
+      borderRadius: 6,
+      padding: '2px 6px',
+      fontWeight: 500,
+    }
+  }
+  if (severity === 'error') {
+    return {
+      color: '#991b1b',
+      backgroundColor: '#fef2f2',
+      borderRadius: 6,
+      padding: '2px 6px',
+      fontWeight: 500,
+    }
+  }
+  return { color: '#242429' }
 }
 
 function utcDateToCalendarDateTime(date: Date): CalendarDateTime {
@@ -323,7 +332,7 @@ function ServiceOverview({
       endMs = calendarDateTimeToUtcMs(dateRange.end)
     }
     return MOCK_LOG_ROWS.filter((row) => {
-      const ts = Date.parse(row.time)
+      const ts = row.timestampMs
       if (ts < startMs || ts > endMs) return false
       if (selectedEventTypes.length > 0 && !selectedEventTypes.includes(classifyLogEventType(row))) {
         return false
@@ -339,7 +348,7 @@ function ServiceOverview({
   }, [latestLogMs])
   const pastHourLogRows = useMemo(() => {
     return MOCK_LOG_ROWS.filter((row) => {
-      const ts = Date.parse(row.time)
+      const ts = row.timestampMs
       return ts >= pastHourHistogramRange.startMs && ts <= pastHourHistogramRange.endMs
     })
   }, [pastHourHistogramRange])
@@ -383,13 +392,10 @@ function ServiceOverview({
   const visibleLogRows = useMemo(() => {
     if (!selectedLogRange) return filteredLogRows
     return filteredLogRows.filter((row) => {
-      const ts = Date.parse(row.time)
+      const ts = row.timestampMs
       return ts >= selectedLogRange.startMs && ts <= selectedLogRange.endMs
     })
   }, [filteredLogRows, selectedLogRange])
-  const logSegments = useMemo(() => {
-    return visibleLogRows.length > 0 ? buildLogSegmentsFromRows(visibleLogRows) : []
-  }, [visibleLogRows])
 
   useEffect(() => {
     setSidebarItem(initialSidebarItem ?? 'overview')
@@ -591,24 +597,10 @@ function ServiceOverview({
                   </Box>
                 )}
 
-                {logSegments.length === 0 ? (
+                {visibleLogRows.length === 0 ? (
                   <Typography.Default>No log entries for this filter.</Typography.Default>
                 ) : (
-                  (() => {
-                    let pastFirstRowBlock = false
-                    return logSegments.map((segment) => {
-                      if (segment.type === 'divider') {
-                        return <LogsTimeDivider key={segment.id} label={segment.label} />
-                      }
-                      const showColumnHeader = !pastFirstRowBlock
-                      pastFirstRowBlock = true
-                      return (
-                        <Box key={segment.rows.map((row) => row.id).join('-')} style={{ marginBottom: 8 }}>
-                          <LogsDataTable rows={segment.rows} showColumnHeader={showColumnHeader} />
-                        </Box>
-                      )
-                    })
-                  })()
+                  <LogsDataList rows={visibleLogRows} />
                 )}
                 <div ref={logsEndRef} style={{ height: 1, overflow: 'hidden' }} aria-hidden />
               </Box>
@@ -1018,39 +1010,18 @@ ServiceOverview.displayName = 'ServiceOverview'
 
 export default ServiceOverview
 
-function LogsTimeDivider({ label }: { label: string }) {
-  return (
-    <Box style={{ display: 'flex', alignItems: 'center', gap: 16, margin: '12px 0', width: '100%' }}>
-      <Box style={{ flex: 1, height: 1, backgroundColor: '#ededf0' }} />
-      <Box
-        style={{
-          padding: '4px 12px',
-          borderRadius: 999,
-          backgroundColor: '#ededf0',
-          flexShrink: 0,
-        }}
-      >
-        <Typography.Caption>{label}</Typography.Caption>
-      </Box>
-      <Box style={{ flex: 1, height: 1, backgroundColor: '#ededf0' }} />
-    </Box>
-  )
-}
-
-LogsTimeDivider.displayName = 'LogsTimeDivider'
-
-function LogsDataTable({ rows, showColumnHeader = true }: { rows: LogRow[]; showColumnHeader?: boolean }) {
+function LogsDataList({ rows }: { rows: LogRow[] }) {
   if (rows.length === 0) return null
-  const hideHeader = !showColumnHeader
   const columns = [
     {
       type: 'custom' as const,
       headerName: 'Time',
       width: 220,
-      ...(hideHeader ? { headerInvisible: true as const } : {}),
       UNSAFE_render: (row: LogRow) => (
-        <Box component="span" style={{ fontFamily: LOG_MONO_FONT, color: logMessageColor(row.severity) }}>
-          <Typography.Small>{row.time}</Typography.Small>
+        <Box component="span" style={{ color: '#242429' }}>
+          <Box component="span" style={{ fontFamily: LOG_MONO_FONT, fontSize: 12, lineHeight: '16px' }}>
+            {row.displayTime}
+          </Box>
         </Box>
       ),
     },
@@ -1058,43 +1029,93 @@ function LogsDataTable({ rows, showColumnHeader = true }: { rows: LogRow[]; show
       type: 'custom' as const,
       headerName: 'Source',
       width: 160,
-      ...(hideHeader ? { headerInvisible: true as const } : {}),
       UNSAFE_render: (row: LogRow) => (
-        <Box component="span" style={{ fontFamily: LOG_MONO_FONT, color: logMessageColor(row.severity) }}>
-          <Typography.Small>{row.source}</Typography.Small>
+        <Box component="span" style={{ color: '#242429' }}>
+          <Box component="span" style={{ fontFamily: LOG_MONO_FONT, fontSize: 12, lineHeight: '16px' }}>
+            {row.source}
+          </Box>
         </Box>
       ),
     },
     {
       type: 'custom' as const,
       headerName: 'Message',
-      ...(hideHeader ? { headerInvisible: true as const } : {}),
       UNSAFE_render: (row: LogRow) => (
-        <Box component="span" style={{ fontFamily: LOG_MONO_FONT, color: logMessageColor(row.severity) }}>
-          <Typography.Small>{row.message}</Typography.Small>
+        <Box component="span">
+          <Box
+            component="span"
+            style={{
+              ...logMessageHighlightStyle(row.severity),
+              fontFamily: LOG_MONO_FONT,
+              fontSize: 12,
+              lineHeight: '16px',
+            }}
+          >
+            {row.message}
+          </Box>
         </Box>
       ),
     },
   ]
   return (
-    <div
-      className={
-        showColumnHeader ? 'service-logs-data-table' : 'service-logs-data-table service-logs-data-table--continuation'
-      }
-    >
-      <DataTable
-        ariaLabel="Service logs"
-        layout="fixed"
-        sticky={showColumnHeader}
+    <div className="service-logs-data-list">
+      <DataList
+        sticky
         rows={rows}
-        rowClassName={(row) => logRowCellClass(row.severity)}
         columns={columns}
+        rowDetails={(row) => <LogsRowDetails row={row} />}
       />
     </div>
   )
 }
 
-LogsDataTable.displayName = 'LogsDataTable'
+LogsDataList.displayName = 'LogsDataList'
+
+function LogsRowDetails({ row }: { row: LogRow }) {
+  return (
+    <Box style={{ padding: '8px 8px 12px' }}>
+      <Box style={{ marginBottom: 12 }}>
+        <Typography.SmallStrong>Metadata</Typography.SmallStrong>
+      </Box>
+      <Box style={{ display: 'grid', rowGap: 6, marginBottom: 16 }}>
+        {row.metadata.map((item) => (
+          <Box key={item.label} style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+            <Box style={{ minWidth: 120, color: '#787885' }}>
+              <Typography.Small>{item.label}</Typography.Small>
+            </Box>
+            <Box style={{ color: '#1a1b24' }}>
+              <Typography.Small>{item.value}</Typography.Small>
+            </Box>
+          </Box>
+        ))}
+      </Box>
+
+      <Box style={{ marginBottom: 8 }}>
+        <Typography.SmallStrong>Key/value pairs</Typography.SmallStrong>
+      </Box>
+      <Box
+        style={{
+          display: 'grid',
+          gridTemplateColumns: 'minmax(130px, 220px) 1fr',
+          gap: '8px 24px',
+        }}
+      >
+        {Object.entries(row.keyValues).map(([key, value]) => (
+          <Box key={key} style={{ display: 'contents' }}>
+            <Box style={{ color: '#787885' }}>
+              <Typography.Small>{key}</Typography.Small>
+            </Box>
+            <Box style={{ color: '#1a1b24', wordBreak: 'break-all' }}>
+              <Typography.Small>{value}</Typography.Small>
+            </Box>
+          </Box>
+        ))}
+      </Box>
+    </Box>
+  )
+}
+
+LogsRowDetails.displayName = 'LogsRowDetails'
 
 function Row({ label, value }: { label: string; value: string }) {
   return (
