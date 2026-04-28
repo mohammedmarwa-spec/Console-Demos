@@ -28,6 +28,7 @@ import filterIcon from '@aivenio/aquarium/icons/filter'
 import infoSignIcon from '@aivenio/aquarium/icons/infoSign'
 import cpuChipIcon from '@aivenio/aquarium/icons/cpuChip'
 import nodesIcon from '@aivenio/aquarium/icons/nodes'
+import proPlansIcon from '@aivenio/aquarium/icons/proPlans'
 import sendIcon from '@aivenio/aquarium/icons/send'
 import tickCircleIcon from '@aivenio/aquarium/icons/tickCircle'
 import { AuditLogsHistogram } from '../components/AuditLogsHistogram'
@@ -1431,11 +1432,11 @@ function LogsRowDetails({
   const allLogDetails = logDetailRows.map((item) => `${item.label}: ${item.value}`).join('\n')
 
   return (
-    <Box style={{ padding: '8px 8px 12px' }}>
+    <Box style={{ padding: 24 }}>
       <Box style={{ marginBottom: 12, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
         <Typography.SmallStrong>Log details</Typography.SmallStrong>
         <Box style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
-          <Button.Secondary type="button" dense onClick={() => onExploreWithAi(row)}>
+          <Button.Secondary type="button" dense icon={proPlansIcon} onClick={() => onExploreWithAi(row)}>
             Explain the log
           </Button.Secondary>
           <Button.Secondary type="button" dense onClick={() => onExploreWindow(row)}>
