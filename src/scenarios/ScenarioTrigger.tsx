@@ -1,4 +1,5 @@
 import { useScenario } from './ScenarioContext'
+import { getScenarioById } from './scenarioConfig'
 import './scenario.css'
 
 function IconSliders() {
@@ -16,17 +17,23 @@ function IconSliders() {
 
 /** Small floating button in the top-right corner that opens the scenario panel. */
 export function ScenarioTrigger() {
-  const { togglePanel } = useScenario()
+  const { activeScenarioId, togglePanel } = useScenario()
+  const scenario = activeScenarioId ? getScenarioById(activeScenarioId) : null
+  const previewLabel = scenario?.label ?? 'Scenarios'
+  const ariaLabel = scenario
+    ? `Open scenario panel (Shift+S). Active scenario: ${scenario.label}`
+    : 'Open scenario panel (Shift+S)'
 
   return (
     <button
       className="scenario-trigger"
       onClick={togglePanel}
-      aria-label="Open scenario panel (Shift+S)"
-      title="Open scenario panel (Shift+S)"
+      aria-label={ariaLabel}
+      title={ariaLabel}
     >
       <IconSliders />
-      Scenarios
+      {activeScenarioId && <span className="scenario-trigger__dot" aria-hidden="true" />}
+      <span className="scenario-trigger__label">{previewLabel}</span>
       <span className="scenario-trigger__kbd">⇧S</span>
     </button>
   )

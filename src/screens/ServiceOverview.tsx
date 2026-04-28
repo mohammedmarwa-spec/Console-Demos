@@ -23,7 +23,6 @@ import {
   Typography,
 } from '@aivenio/aquarium'
 import duplicateIcon from '@aivenio/aquarium/icons/duplicate'
-import chevronRight from '@aivenio/aquarium/icons/chevronRight'
 import filterIcon from '@aivenio/aquarium/icons/filter'
 import infoSignIcon from '@aivenio/aquarium/icons/infoSign'
 import pulseIcon from '@aivenio/aquarium/icons/pulse'
@@ -71,6 +70,7 @@ type AiMessage = {
   id: string
   role: AiRole
   text: string
+  loading?: boolean
 }
 
 /** Legacy fixture retired in favor of incident-focused mock generator. */
@@ -323,6 +323,7 @@ function ServiceOverview({
   const [aiAssistantOpen, setAiAssistantOpen] = useState(false)
   const [aiDraft, setAiDraft] = useState('')
   const [aiMessages, setAiMessages] = useState<AiMessage[]>(INITIAL_AI_MESSAGES)
+  const aiResponseTimerRef = useRef<number | null>(null)
   const eventFilterRef = useRef<HTMLDivElement>(null)
   const filteredLogRows = useMemo(() => {
     let startMs = 0
@@ -408,7 +409,20 @@ function ServiceOverview({
     setAiAssistantOpen(false)
     setAiDraft('')
     setAiMessages(INITIAL_AI_MESSAGES)
+    if (aiResponseTimerRef.current) {
+      window.clearTimeout(aiResponseTimerRef.current)
+      aiResponseTimerRef.current = null
+    }
   }, [serviceIdProp, initialSidebarItem, latestLogMs])
+
+  useEffect(() => {
+    return () => {
+      if (aiResponseTimerRef.current) {
+        window.clearTimeout(aiResponseTimerRef.current)
+        aiResponseTimerRef.current = null
+      }
+    }
+  }, [])
 
   useEffect(() => {
     if (!eventFilterOpen) return
@@ -444,6 +458,64 @@ function ServiceOverview({
     }
     setAiMessages((prev) => [...prev, userMessage, assistantMessage])
     setAiDraft('')
+  }
+
+  const handleExploreLogWithAi = (row: LogRow) => {
+    const loadingId = `a-loading-${Date.now()}-${row.id}`
+    const metadataPreview = row.metadata.map((item) => `- **${item.label}**: ${item.value}`).join('\n')
+    const analysisMarkdown = [
+      `### Log analysis`,
+      ``,
+      `#### Summary`,
+      `- **Time**: ${row.displayTime}`,
+      `- **Severity**: ${row.severity.toUpperCase()}`,
+      `- **Event type**: ${row.eventType}`,
+      `- **Source**: ${row.source}`,
+      ``,
+      `#### Message`,
+      `> ${row.message}`,
+      ``,
+      `#### Context`,
+      metadataPreview || '- No additional metadata available',
+      ``,
+      `#### Suggested next checks`,
+      `1. Review previous and next entries from the same source for repeat failures.`,
+      `2. Validate connection pool saturation and timeout trend around this timestamp.`,
+      `3. Compare this event with deployment or traffic spikes in the same period.`,
+    ].join('\n')
+
+    setAiMessages((prev) => [
+      ...prev,
+      {
+        id: `u-log-${Date.now()}-${row.id}`,
+        role: 'user',
+        text: `Explore this log entry with AI: ${row.displayTime} · ${row.eventType}`,
+      },
+      {
+        id: loadingId,
+        role: 'assistant',
+        text: 'Analyzing selected log entry...',
+        loading: true,
+      },
+    ])
+    setAiAssistantOpen(true)
+    if (aiResponseTimerRef.current) {
+      window.clearTimeout(aiResponseTimerRef.current)
+    }
+    aiResponseTimerRef.current = window.setTimeout(() => {
+      setAiMessages((prev) =>
+        prev.map((message) =>
+          message.id === loadingId
+            ? {
+                id: `a-log-${Date.now()}-${row.id}`,
+                role: 'assistant',
+                text: analysisMarkdown,
+              }
+            : message,
+        ),
+      )
+      aiResponseTimerRef.current = null
+    }, 900)
   }
 
   return (
@@ -501,66 +573,6 @@ function ServiceOverview({
                 />
               </Box>
 
-              <Box style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 12, marginBottom: 8 }}>
-                <Box style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 12, flex: '1 1 auto', minWidth: 0 }}>
-                  <DateTimeRangePicker
-                    aria-label="Date and time range"
-                    granularity="minute"
-                    value={dateRange ?? undefined}
-                    reserveSpaceForError={false}
-                    onChange={(value) => {
-                      if (value?.start && value?.end) {
-                        setDateRange({ start: value.start as CalendarDateTime, end: value.end as CalendarDateTime })
-                      } else {
-                        setDateRange(null)
-                      }
-                    }}
-                    shouldCloseOnSelect={false}
-                  >
-                    <DateRangeFilterTrigger />
-                    <DateTimeRangePicker.Calendar />
-                  </DateTimeRangePicker>
-
-                  <div ref={eventFilterRef} style={{ position: 'relative' }}>
-                    <Filter.Trigger
-                      labelText="Event type"
-                      icon={filterIcon}
-                      value={selectedEventTypes.length > 0 ? selectedEventTypes.join(', ') : undefined}
-                      onClear={selectedEventTypes.length > 0 ? () => setSelectedEventTypes([]) : undefined}
-                      onClick={() => setEventFilterOpen((open) => !open)}
-                    />
-                    {eventFilterOpen && (
-                      <Box
-                        style={{
-                          position: 'absolute',
-                          top: 'calc(100% + 8px)',
-                          left: 0,
-                          zIndex: 200,
-                          backgroundColor: '#fff',
-                          border: '1px solid #e0e0e8',
-                          borderRadius: 8,
-                          boxShadow: '0 4px 24px rgba(0, 0, 0, 0.12)',
-                          padding: 16,
-                          minWidth: 260,
-                        }}
-                      >
-                        <CheckboxGroup
-                          labelText="Event type"
-                          value={selectedEventTypes}
-                          onChange={(value) => setSelectedEventTypes(value ?? [])}
-                        >
-                          {LOG_EVENT_TYPE_OPTIONS.map((option) => (
-                            <Checkbox key={option} value={option}>
-                              {option}
-                            </Checkbox>
-                          ))}
-                        </CheckboxGroup>
-                      </Box>
-                    )}
-                  </div>
-                </Box>
-              </Box>
-
               <Box style={{ marginTop: 0 }} role="region" aria-label="Service logs">
                 <Box style={{ marginBottom: 12 }}>
                   <AuditLogsHistogram
@@ -577,6 +589,66 @@ function ServiceOverview({
                   />
                 </Box>
 
+                <Box style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 12, marginBottom: 12 }}>
+                  <Box style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 12, flex: '1 1 auto', minWidth: 0 }}>
+                    <DateTimeRangePicker
+                      aria-label="Date and time range"
+                      granularity="minute"
+                      value={dateRange ?? undefined}
+                      reserveSpaceForError={false}
+                      onChange={(value) => {
+                        if (value?.start && value?.end) {
+                          setDateRange({ start: value.start as CalendarDateTime, end: value.end as CalendarDateTime })
+                        } else {
+                          setDateRange(null)
+                        }
+                      }}
+                      shouldCloseOnSelect={false}
+                    >
+                      <DateRangeFilterTrigger />
+                      <DateTimeRangePicker.Calendar />
+                    </DateTimeRangePicker>
+
+                    <div ref={eventFilterRef} style={{ position: 'relative' }}>
+                      <Filter.Trigger
+                        labelText="Event type"
+                        icon={filterIcon}
+                        value={selectedEventTypes.length > 0 ? selectedEventTypes.join(', ') : undefined}
+                        onClear={selectedEventTypes.length > 0 ? () => setSelectedEventTypes([]) : undefined}
+                        onClick={() => setEventFilterOpen((open) => !open)}
+                      />
+                      {eventFilterOpen && (
+                        <Box
+                          style={{
+                            position: 'absolute',
+                            top: 'calc(100% + 8px)',
+                            left: 0,
+                            zIndex: 200,
+                            backgroundColor: '#fff',
+                            border: '1px solid #e0e0e8',
+                            borderRadius: 8,
+                            boxShadow: '0 4px 24px rgba(0, 0, 0, 0.12)',
+                            padding: 16,
+                            minWidth: 260,
+                          }}
+                        >
+                          <CheckboxGroup
+                            labelText="Event type"
+                            value={selectedEventTypes}
+                            onChange={(value) => setSelectedEventTypes(value ?? [])}
+                          >
+                            {LOG_EVENT_TYPE_OPTIONS.map((option) => (
+                              <Checkbox key={option} value={option}>
+                                {option}
+                              </Checkbox>
+                            ))}
+                          </CheckboxGroup>
+                        </Box>
+                      )}
+                    </div>
+                  </Box>
+                </Box>
+
                 {selectedLogRange && (
                   <Box style={{ marginBottom: 12 }}>
                     <Button.Ghost type="button" dense onClick={() => setSelectedLogRange(null)}>
@@ -588,7 +660,7 @@ function ServiceOverview({
                 {visibleLogRows.length === 0 ? (
                   <Typography.Default>No log entries for this filter.</Typography.Default>
                 ) : (
-                  <LogsDataList rows={visibleLogRows} />
+                  <LogsDataList rows={visibleLogRows} onExploreWithAi={handleExploreLogWithAi} />
                 )}
               </Box>
             </>
@@ -901,28 +973,9 @@ function ServiceOverview({
       open={aiAssistantOpen}
       onClose={() => setAiAssistantOpen(false)}
       title="AI assistant"
-      size="sm"
+      size="md"
     >
-      <Box style={{ display: 'flex', flexDirection: 'column', gap: 12, minHeight: 420 }}>
-        <Box style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
-          <Box style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
-            <Icon icon={pulseIcon} style={{ color: '#006260' }} />
-            <Typography.SmallStrong>Service investigator</Typography.SmallStrong>
-            <StatusChip text="Live" status="success" dense badge />
-          </Box>
-          <Button.Icon
-            type="button"
-            dense
-            aria-label="Collapse AI assistant"
-            icon={chevronRight}
-            onClick={() => setAiAssistantOpen(false)}
-          />
-        </Box>
-
-        <Box style={{ color: '#787885' }}>
-          <Typography.Caption>Aiven / dev-sandbox / {serviceName} / Service logs</Typography.Caption>
-        </Box>
-
+      <Box style={{ display: 'flex', flexDirection: 'column', gap: 12, minHeight: 420, height: '100%' }}>
         <Box
           style={{
             border: '1px solid #ededf0',
@@ -931,7 +984,8 @@ function ServiceOverview({
             display: 'flex',
             flexDirection: 'column',
             gap: 10,
-            maxHeight: 320,
+            flex: 1,
+            minHeight: 220,
             overflow: 'auto',
             backgroundColor: '#fff',
           }}
@@ -947,16 +1001,15 @@ function ServiceOverview({
                 padding: '8px 10px',
               }}
             >
-              <Typography.Small>{message.text}</Typography.Small>
+              {message.loading && (
+                <Box style={{ marginBottom: 4 }}>
+                  <StatusChip text="Loading" status="neutral" dense badge />
+                </Box>
+              )}
+              <Box style={{ whiteSpace: 'pre-wrap' }}>
+                <Typography.Small>{message.text}</Typography.Small>
+              </Box>
             </Box>
-          ))}
-        </Box>
-
-        <Box style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-          {AI_SUGGESTIONS.map((suggestion) => (
-            <Button.Ghost key={suggestion} type="button" dense onClick={() => setAiDraft(suggestion)}>
-              {suggestion}
-            </Button.Ghost>
           ))}
         </Box>
 
@@ -987,6 +1040,14 @@ function ServiceOverview({
             style={{ position: 'absolute', right: 8, bottom: 8 }}
           />
         </Box>
+
+        <Box style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+          {AI_SUGGESTIONS.map((suggestion) => (
+            <Button.Ghost key={suggestion} type="button" dense onClick={() => setAiDraft(suggestion)}>
+              {suggestion}
+            </Button.Ghost>
+          ))}
+        </Box>
       </Box>
     </Drawer>
     </>
@@ -997,7 +1058,7 @@ ServiceOverview.displayName = 'ServiceOverview'
 
 export default ServiceOverview
 
-function LogsDataList({ rows }: { rows: LogRow[] }) {
+function LogsDataList({ rows, onExploreWithAi }: { rows: LogRow[]; onExploreWithAi: (row: LogRow) => void }) {
   if (rows.length === 0) return null
   const columns = [
     {
@@ -1050,7 +1111,7 @@ function LogsDataList({ rows }: { rows: LogRow[] }) {
         sticky
         rows={rows}
         columns={columns}
-        rowDetails={(row) => <LogsRowDetails row={row} />}
+        rowDetails={(row) => <LogsRowDetails row={row} onExploreWithAi={onExploreWithAi} />}
       />
     </div>
   )
@@ -1058,54 +1119,53 @@ function LogsDataList({ rows }: { rows: LogRow[] }) {
 
 LogsDataList.displayName = 'LogsDataList'
 
-function LogsRowDetails({ row }: { row: LogRow }) {
+function LogsRowDetails({ row, onExploreWithAi }: { row: LogRow; onExploreWithAi: (row: LogRow) => void }) {
+  const [copied, setCopied] = useState(false)
   const copyToClipboard = (value: string) => {
     if (typeof navigator === 'undefined' || !navigator.clipboard?.writeText) return
     void navigator.clipboard.writeText(value)
+    setCopied(true)
+    window.setTimeout(() => setCopied(false), 1200)
   }
+  const logDetailRows = [
+    ...row.metadata,
+    ...Object.entries(row.keyValues).map(([label, value]) => ({ label, value })),
+  ]
+  const allLogDetails = logDetailRows.map((item) => `${item.label}: ${item.value}`).join('\n')
 
   return (
     <Box style={{ padding: '8px 8px 12px' }}>
-      <Box style={{ marginBottom: 12 }}>
-        <Typography.SmallStrong>Metadata</Typography.SmallStrong>
+      <Box style={{ marginBottom: 12, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
+        <Typography.SmallStrong>Log details</Typography.SmallStrong>
+        <Box style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+          <Tooltip content="Explore with AI">
+            <Button.Icon
+              type="button"
+              dense
+              icon={pulseIcon}
+              aria-label="Explore with AI"
+              onClick={() => onExploreWithAi(row)}
+            />
+          </Tooltip>
+          <Tooltip content={copied ? 'Copied' : 'Copy all log details'}>
+            <Button.Icon
+              type="button"
+              dense
+              icon={duplicateIcon}
+              aria-label="Copy all log details"
+              onClick={() => copyToClipboard(allLogDetails)}
+            />
+          </Tooltip>
+        </Box>
       </Box>
-      <Box style={{ display: 'grid', rowGap: 6, marginBottom: 16 }}>
-        {row.metadata.map((item) => (
-          <Box key={item.label} style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+      <Box style={{ display: 'grid', rowGap: 6 }}>
+        {logDetailRows.map((item, index) => (
+          <Box key={`${item.label}-${index}`} style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
             <Box style={{ minWidth: 120, color: '#787885' }}>
               <Typography.Small>{item.label}</Typography.Small>
             </Box>
             <Box style={{ color: '#1a1b24', flex: 1, minWidth: 0 }}>
               <Typography.Small>{item.value}</Typography.Small>
-            </Box>
-            <Button.Icon
-              type="button"
-              dense
-              icon={duplicateIcon}
-              aria-label={`Copy ${item.label}`}
-              onClick={() => copyToClipboard(item.value)}
-            />
-          </Box>
-        ))}
-      </Box>
-
-      <Box style={{ marginBottom: 8 }}>
-        <Typography.SmallStrong>Key/value pairs</Typography.SmallStrong>
-      </Box>
-      <Box
-        style={{
-          display: 'grid',
-          gridTemplateColumns: 'minmax(130px, 220px) 1fr',
-          gap: '8px 24px',
-        }}
-      >
-        {Object.entries(row.keyValues).map(([key, value]) => (
-          <Box key={key} style={{ display: 'contents' }}>
-            <Box style={{ color: '#787885' }}>
-              <Typography.Small>{key}</Typography.Small>
-            </Box>
-            <Box style={{ color: '#1a1b24', wordBreak: 'break-all' }}>
-              <Typography.Small>{value}</Typography.Small>
             </Box>
           </Box>
         ))}

@@ -9,7 +9,7 @@ import ServiceOverview from './screens/ServiceOverview'
 import BillingInvoiceDetail from './screens/BillingInvoiceDetail'
 import OrgHomePage from './screens/OrgHomePage'
 import ServiceTypeSelectModal, { getServiceTypeDisplayName, type ServiceTypeId } from './screens/ServiceTypeSelectModal'
-import { ScenarioProvider, ScenarioPanel, ScenarioTrigger, ScenarioBadge, useScenario } from './scenarios'
+import { ScenarioProvider, ScenarioPanel, ScenarioTrigger, useScenario } from './scenarios'
 import { MysqlAcuRolloutModal } from './screens/MysqlAcuRolloutModal'
 import { UpgradeServiceModal, UPGRADE_PLAN_SERVICE_DATA, type UpgradeTier } from './screens/UpgradeServiceModal'
 import { UpgradeServiceModalV2 } from './screens/UpgradeServiceModalV2'
@@ -492,7 +492,6 @@ function AppContent() {
       {/* ── Prototype scenario layer — not part of the product UI ── */}
       <ScenarioTrigger />
       <ScenarioPanel />
-      <ScenarioBadge />
 
       {/* ── Scenario: MySQL ACU rollout — intro modal ── */}
       <MysqlAcuRolloutModal

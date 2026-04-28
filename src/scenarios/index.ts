@@ -6,7 +6,6 @@ export type { ScenarioContextValue } from './ScenarioContext'
 
 export { ScenarioPanel } from './ScenarioPanel'
 export { ScenarioTrigger } from './ScenarioTrigger'
-export { ScenarioBadge } from './ScenarioBadge'
 
 export { SCENARIOS, getScenarioById, getGroups, getScenariosByGroup } from './scenarioConfig'
 export type { Scenario } from './scenarioConfig'
