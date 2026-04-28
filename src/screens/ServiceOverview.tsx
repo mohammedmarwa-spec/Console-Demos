@@ -277,7 +277,6 @@ type CompactServiceHeaderProps = {
   version: string
   statusText: string
   nodeCount: number
-  eolText: string
 }
 
 function CompactServiceHeader({
@@ -286,7 +285,6 @@ function CompactServiceHeader({
   version,
   statusText,
   nodeCount,
-  eolText,
 }: CompactServiceHeaderProps) {
   return (
     <Box
@@ -313,8 +311,7 @@ function CompactServiceHeader({
         <Box style={{ display: 'inline-flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
           <StatusChip text={version} status="neutral" icon={cpuChipIcon} dense />
           <StatusChip text={statusText} status="success" icon={tickCircleIcon} dense />
-          <StatusChip text="Nodes" status="neutral" icon={nodesIcon} badge={nodeCount} dense />
-          <StatusChip text={eolText} status="neutral" icon={infoSignIcon} dense />
+          <StatusChip text="Nodes" status="success" icon={nodesIcon} badge={nodeCount} dense />
         </Box>
       </Box>
     </Box>
@@ -369,7 +366,6 @@ function ServiceOverview({
   const replicas = services.filter((s) => s.sourceServiceId === (serviceIdProp ?? undefined) && s.replicationRole === 'read_replica')
   const serviceName = serviceIdProp ?? (isMySQL ? MYSQL_SERVICE_NAME : PG_SERVICE_NAME)
   const serviceVersion = isMySQL ? 'MySQL 8.0.45' : 'PostgreSQL 17'
-  const serviceEolText = isPostgres ? 'EOL: 8 November 2029' : 'EOL: 30 April 2032'
 
   // Relationship metadata
   const currentService = services.find((s) => s.id === serviceIdProp)
@@ -676,7 +672,6 @@ function ServiceOverview({
                   version={serviceVersion}
                   statusText="Running"
                   nodeCount={nodeCount}
-                  eolText={serviceEolText}
                 />
                 <PageHeader
                   title=""
@@ -715,29 +710,6 @@ function ServiceOverview({
               </Box>
 
               <Box style={{ marginTop: 0 }} role="region" aria-label="Service logs">
-                <Box style={{ marginBottom: 12 }}>
-                  <AuditLogsHistogram
-                    status="ready"
-                    buckets={histogramBucketsData.buckets.map((bucket) => ({
-                      index: bucket.index,
-                      startMs: bucket.startMs,
-                      endMs: bucket.endMs,
-                      count: bucket.total,
-                    }))}
-                    severityCountsByBucket={severityCountsByBucket}
-                    range={histogramBucketsData.range}
-                    selectedRange={selectedHistogramRange}
-                    isRefreshing={isHistogramRefreshing}
-                    onRangeSelected={(range) => {
-                      setSelectedHistogramRange(range)
-                      setDateRange({
-                        start: utcDateToCalendarDateTime(new Date(range.startMs)),
-                        end: utcDateToCalendarDateTime(new Date(range.endMs)),
-                      })
-                    }}
-                  />
-                </Box>
-
                 <Box style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 12, marginBottom: 12 }}>
                   <Box style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 12, flex: '1 1 auto', minWidth: 0 }}>
                     <Box style={{ flex: '1 1 340px', minWidth: 240, maxWidth: 480 }}>
@@ -852,6 +824,29 @@ function ServiceOverview({
                   </Box>
                 </Box>
 
+                <Box style={{ marginBottom: 12 }}>
+                  <AuditLogsHistogram
+                    status="ready"
+                    buckets={histogramBucketsData.buckets.map((bucket) => ({
+                      index: bucket.index,
+                      startMs: bucket.startMs,
+                      endMs: bucket.endMs,
+                      count: bucket.total,
+                    }))}
+                    severityCountsByBucket={severityCountsByBucket}
+                    range={histogramBucketsData.range}
+                    selectedRange={selectedHistogramRange}
+                    isRefreshing={isHistogramRefreshing}
+                    onRangeSelected={(range) => {
+                      setSelectedHistogramRange(range)
+                      setDateRange({
+                        start: utcDateToCalendarDateTime(new Date(range.startMs)),
+                        end: utcDateToCalendarDateTime(new Date(range.endMs)),
+                      })
+                    }}
+                  />
+                </Box>
+
                 {visibleLogRows.length === 0 ? (
                   <Typography.Default>No log entries for this filter.</Typography.Default>
                 ) : (
@@ -869,7 +864,6 @@ function ServiceOverview({
               version={serviceVersion}
               statusText="Running"
               nodeCount={nodeCount}
-              eolText={serviceEolText}
             />
             <PageHeader
               title={serviceName}
