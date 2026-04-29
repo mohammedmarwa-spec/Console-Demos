@@ -167,6 +167,8 @@ const LOG_MONO_FONT =
 const ONE_HOUR_MS = 60 * 60 * 1000
 const DEFAULT_HISTOGRAM_HOURS = 24
 const MAX_HISTOGRAM_BARS = 72
+/** Keep histogram dimming aligned with the table after a bar click while `dateRange` still matches that window. */
+const HISTOGRAM_BAR_TRACK_SLACK_MS = 120_000
 const LOGS_PAGE_SIZE = 30
 /** Matches main content horizontal padding; top padding collapses while logs header is stuck. */
 const MAIN_CONTENT_SCROLL_PAD = 24
@@ -262,6 +264,48 @@ function toHistogramRange(range: LogDateRange): HistogramRange {
   }
 }
 
+/** True when the applied table filter still matches a histogram bar click (calendar / float edges). */
+function histogramRangesAlignLoose(a: HistogramRange, b: HistogramRange, epsMs: number): boolean {
+  return Math.abs(a.startMs - b.startMs) <= epsMs && Math.abs(a.endMs - b.endMs) <= epsMs
+}
+
+/**
+ * When there is no active `histogramBarSelection`, infers bar highlight from `dateRange` alone.
+ * Uses generous edge tolerance + midpoint for float bucket boundaries and minute-level picker values.
+ */
+function findHistogramBucketForTimeFilter(
+  filterMs: HistogramRange | null,
+  buckets: { startMs: number; endMs: number }[],
+): HistogramRange | null {
+  if (!filterMs || buckets.length === 0) return null
+  const filterSpan = filterMs.endMs - filterMs.startMs
+  if (!Number.isFinite(filterSpan) || filterSpan <= 0) return null
+
+  const widths = buckets.map((b) => Math.max(0, b.endMs - b.startMs)).filter((w) => w > 0)
+  const minBucket = widths.length > 0 ? Math.min(...widths) : ONE_HOUR_MS
+  const maxBucket = widths.length > 0 ? Math.max(...widths) : ONE_HOUR_MS
+
+  const EDGE_EPS_MS = 90_000
+
+  for (const b of buckets) {
+    if (
+      Math.abs(b.startMs - filterMs.startMs) <= EDGE_EPS_MS &&
+      Math.abs(b.endMs - filterMs.endMs) <= EDGE_EPS_MS
+    ) {
+      return { startMs: b.startMs, endMs: b.endMs }
+    }
+  }
+
+  if (filterSpan < minBucket * 0.38 || filterSpan > maxBucket * 1.38) return null
+  const mid = (filterMs.startMs + filterMs.endMs) / 2
+  for (const b of buckets) {
+    if (mid >= b.startMs - EDGE_EPS_MS && mid < b.endMs + EDGE_EPS_MS) {
+      return { startMs: b.startMs, endMs: b.endMs }
+    }
+  }
+  return null
+}
+
 function classifyLogEventType(row: LogRow): (typeof LOG_EVENT_TYPE_OPTIONS)[number] {
   if ((LOG_EVENT_TYPE_OPTIONS as readonly string[]).includes(row.eventType)) {
     return row.eventType as (typeof LOG_EVENT_TYPE_OPTIONS)[number]
@@ -275,7 +319,13 @@ function matchesLogSearch(row: LogRow, query: string): boolean {
   return row.searchableText.includes(normalized)
 }
 
-function DateRangeFilterTrigger() {
+function DateRangeFilterTrigger({
+  appliedRange,
+  onClearAppliedRange,
+}: {
+  appliedRange: LogDateRange | null
+  onClearAppliedRange?: () => void
+}) {
   const dateRangeState = useContext(AriaDateRangePickerStateContext) as
     | { setOpen?: (open: boolean) => void }
     | null
@@ -284,6 +334,7 @@ function DateRangeFilterTrigger() {
     <Filter.Trigger
       labelText="Time range"
       icon={filterIcon}
+      onClear={appliedRange && onClearAppliedRange ? () => onClearAppliedRange() : undefined}
       onClick={() => dateRangeState?.setOpen?.(true)}
     />
   )
@@ -426,7 +477,8 @@ function ServiceOverview({
   const defaultLogRange = createRelativeLogRange(new Date(latestLogMs), DEFAULT_HISTOGRAM_HOURS * 60)
   const [dateRange, setDateRange] = useState<LogDateRange | null>(null)
   const [histogramWindowRange, setHistogramWindowRange] = useState<HistogramRange>(toHistogramRange(defaultLogRange))
-  const [selectedHistogramRange, setSelectedHistogramRange] = useState<HistogramRange | null>(null)
+  /** Exact bucket `{ startMs, endMs }` from the last bar click; cleared when the time filter no longer matches. */
+  const [histogramBarSelection, setHistogramBarSelection] = useState<HistogramRange | null>(null)
   const [isHistogramRefreshing, setIsHistogramRefreshing] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
   const [eventFilterOpen, setEventFilterOpen] = useState(false)
@@ -512,6 +564,24 @@ function ServiceOverview({
       getHourlyBucketCount(clampedHistogramRange),
     )
   }, [histogramFilteredByEventTypeRows, clampedHistogramRange])
+  const histogramFilterRangeMs = useMemo((): HistogramRange | null => {
+    if (!dateRange) return null
+    return toHistogramRange(dateRange)
+  }, [dateRange])
+  const selectedHistogramRange = useMemo((): HistogramRange | null => {
+    if (histogramBarSelection && histogramFilterRangeMs) {
+      if (
+        histogramRangesAlignLoose(
+          histogramFilterRangeMs,
+          histogramBarSelection,
+          HISTOGRAM_BAR_TRACK_SLACK_MS,
+        )
+      ) {
+        return histogramBarSelection
+      }
+    }
+    return findHistogramBucketForTimeFilter(histogramFilterRangeMs, histogramBucketsData.buckets)
+  }, [histogramBarSelection, histogramBucketsData.buckets, histogramFilterRangeMs])
   const severityCountsByBucket = useMemo<Record<number, { info: number; warning: number; error: number }>>(() => {
     const out: Record<number, { info: number; warning: number; error: number }> = {}
     for (const bucket of histogramBucketsData.buckets) {
@@ -539,7 +609,7 @@ function ServiceOverview({
     const resetRange = createRelativeLogRange(new Date(latestLogMs), DEFAULT_HISTOGRAM_HOURS * 60)
     setDateRange(null)
     setHistogramWindowRange(toHistogramRange(resetRange))
-    setSelectedHistogramRange(null)
+    setHistogramBarSelection(null)
     setSearchQuery('')
     setSelectedEventTypes([])
     setSelectedSeverities([])
@@ -554,6 +624,12 @@ function ServiceOverview({
       aiResponseTimerRef.current = null
     }
   }, [serviceIdProp, initialSidebarItem, latestLogMs])
+
+  useEffect(() => {
+    if (dateRange === null) {
+      setHistogramBarSelection(null)
+    }
+  }, [dateRange])
 
   useEffect(() => {
     return () => {
@@ -753,7 +829,7 @@ function ServiceOverview({
     const centeredRange = createCenteredLogRange(row.timestampMs, 2 * 60 * 1000)
     setDateRange(centeredRange)
     setHistogramWindowRange(toHistogramRange(centeredRange))
-    setSelectedHistogramRange(null)
+    setHistogramBarSelection(null)
   }
 
   return (
@@ -849,18 +925,30 @@ function ServiceOverview({
                       onChange={(value) => {
                         if (value?.start && value?.end) {
                           const nextRange = { start: value.start as CalendarDateTime, end: value.end as CalendarDateTime }
+                          const nextMs = toHistogramRange(nextRange)
                           setDateRange(nextRange)
-                          setHistogramWindowRange(toHistogramRange(nextRange))
-                          setSelectedHistogramRange(null)
+                          setHistogramWindowRange(nextMs)
+                          setHistogramBarSelection((prev) =>
+                            prev && histogramRangesAlignLoose(nextMs, prev, HISTOGRAM_BAR_TRACK_SLACK_MS)
+                              ? prev
+                              : null,
+                          )
                         } else {
                           setDateRange(null)
                           setHistogramWindowRange(toHistogramRange(defaultLogRange))
-                          setSelectedHistogramRange(null)
+                          setHistogramBarSelection(null)
                         }
                       }}
                       shouldCloseOnSelect={false}
                     >
-                      <DateRangeFilterTrigger />
+                      <DateRangeFilterTrigger
+                        appliedRange={dateRange}
+                        onClearAppliedRange={() => {
+                          setDateRange(null)
+                          setHistogramWindowRange(toHistogramRange(defaultLogRange))
+                          setHistogramBarSelection(null)
+                        }}
+                      />
                       <DateTimeRangePicker.Calendar />
                     </DateTimeRangePicker>
 
@@ -959,7 +1047,7 @@ function ServiceOverview({
                     selectedRange={selectedHistogramRange}
                     isRefreshing={isHistogramRefreshing}
                     onRangeSelected={(range) => {
-                      setSelectedHistogramRange(range)
+                      setHistogramBarSelection({ startMs: range.startMs, endMs: range.endMs })
                       setDateRange({
                         start: utcDateToCalendarDateTime(new Date(range.startMs)),
                         end: utcDateToCalendarDateTime(new Date(range.endMs)),

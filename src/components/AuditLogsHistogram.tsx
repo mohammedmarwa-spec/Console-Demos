@@ -55,6 +55,15 @@ export function AuditLogsHistogram({
     }
   }, [])
 
+  useEffect(() => {
+    if (selectedRange) return
+    if (hoverClearTimeoutRef.current) {
+      clearTimeout(hoverClearTimeoutRef.current)
+      hoverClearTimeoutRef.current = null
+    }
+    setHoveredBucketIndex(null)
+  }, [selectedRange])
+
   const clearPendingHoverReset = () => {
     if (hoverClearTimeoutRef.current) {
       clearTimeout(hoverClearTimeoutRef.current)

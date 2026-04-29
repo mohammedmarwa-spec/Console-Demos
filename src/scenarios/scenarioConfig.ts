@@ -26,8 +26,8 @@ export const SCENARIOS: Scenario[] = [
   { id: 'free-dev-upgrade',    label: 'Free & Dev: Quick upgrade',    group: 'Pricing upgrade', description: '1 Free + 1 Developer tier service to test the Quick upgrade flow' },
   { id: 'free-dev-upgrade-v2', label: 'Free & Dev: Quick Upgrade V2', group: 'Pricing upgrade', description: 'Same services, V2 modal with tier headers and region selectors' },
 
-  // Logs
-  { id: 'deeptrace-demo',      label: 'Service event logs',             group: 'Logs',            description: 'PostgreSQL service, Logs view' },
+  // Platform observability
+  { id: 'deeptrace-demo',      label: 'Service event logs',             group: 'Platform observability', description: 'PostgreSQL service, Logs view' },
 ]
 
 // ─── Derived helpers ──────────────────────────────────────────────────────────
