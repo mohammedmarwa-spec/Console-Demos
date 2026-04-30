@@ -20,12 +20,16 @@ import {
   StatusChip,
   Switch,
   Table,
+  Tooltip,
   Typography,
 } from '@aivenio/aquarium'
 import filterIcon from '@aivenio/aquarium/icons/filter'
 import chevronDownIcon from '@aivenio/aquarium/icons/chevronDown'
 import chevronRightIcon from '@aivenio/aquarium/icons/chevronRight'
 import infoSignIcon from '@aivenio/aquarium/icons/infoSign'
+import appUsersIcon from '@aivenio/aquarium/icons/appUsers'
+import containerIcon from '@aivenio/aquarium/icons/container'
+import proPlansIcon from '@aivenio/aquarium/icons/proPlans'
 import { ConsoleHeader } from '../components/ConsoleHeader'
 import { ProjectSidebar } from '../components/ProjectSidebar'
 import { getServiceIconUrl } from '../components/ServiceIcon'
@@ -44,6 +48,12 @@ export type ServiceRow = {
   cloudRegion: string
   location: string
   created: string
+  /** 2–3 letters in the Created-column avatar; omit to show an icon avatar instead. */
+  createdByInitials?: string
+  /** Full name for avatar tooltip when using initials. */
+  createdByFullName?: string
+  /** Icon avatar when `createdByInitials` is unset (`user`, automation, or MCP “spark”). */
+  createdByAvatarVariant?: 'user' | 'automation' | 'mcp-ai'
   /** Optional: for table icon (e.g. 'M', 'P') */
   iconLetter?: string
   /** Optional: for opening overview (mysql, postgresql, etc.) */
@@ -82,6 +92,8 @@ export const INITIAL_SERVICES: ServiceRow[] = [
     cloudRegion: 'Google Cloud: asia-east1',
     location: 'Asia, Taiwan',
     created: '16 minutes ago',
+    createdByInitials: 'RS',
+    createdByFullName: 'Rick Salevsky',
     iconLetter: 'M',
     serviceTypeId: 'mysql',
     pricingType: 'ACU',
@@ -725,6 +737,69 @@ function getPlanCaption(row: ServiceRow): string {
   return row.planDetails
 }
 
+const CREATED_WITH_MCP_TOOLTIP = 'Aiven MCP'
+
+/** 24px circular avatar (Ant Design Avatar–style): initials or Aquarium icon fallback. */
+function UserAvatar24({
+  initials,
+  variant = 'user',
+  tooltip,
+}: {
+  initials?: string
+  variant?: 'user' | 'automation' | 'mcp-ai'
+  tooltip?: string
+}) {
+  const isMcp = variant === 'mcp-ai'
+  const raw = isMcp ? '' : (initials?.trim() ?? '')
+  const letters = raw.slice(0, 3).toUpperCase()
+  const showLetters = letters.length > 0
+  const icon = isMcp ? proPlansIcon : variant === 'automation' ? containerIcon : appUsersIcon
+  const mcpBg = 'linear-gradient(135deg, rgba(53, 69, 190, 0.14) 0%, rgba(139, 92, 246, 0.12) 100%)'
+
+  const avatar = (
+    <Box
+      style={{
+        width: 24,
+        height: 24,
+        minWidth: 24,
+        borderRadius: '50%',
+        flexShrink: 0,
+        display: 'inline-flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        background: isMcp ? mcpBg : 'var(--aquarium-background-color-inactive, #f5f5f7)',
+        color: isMcp
+          ? 'var(--aquarium-background-color-primary-default, #3545be)'
+          : 'var(--aquarium-colors-grey-70, #5c5c6f)',
+        fontSize: letters.length >= 3 ? 9 : letters.length === 2 ? 10 : 11,
+        fontWeight: 400,
+        letterSpacing: letters.length >= 3 ? '-0.02em' : undefined,
+        lineHeight: 1,
+        cursor: tooltip ? 'default' : undefined,
+      }}
+    >
+      {showLetters ? (
+        <span>{letters}</span>
+      ) : (
+        <Box style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'inherit' }}>
+          <InlineIcon icon={icon} />
+        </Box>
+      )}
+    </Box>
+  )
+
+  if (tooltip) {
+    return (
+      <Tooltip placement="top" content={tooltip}>
+        {avatar}
+      </Tooltip>
+    )
+  }
+  return avatar
+}
+
+UserAvatar24.displayName = 'UserAvatar24'
+
 // ─── Sub-components ───────────────────────────────────────────────────────────
 
 function EmptyState({ onCreateServiceClick }: { onCreateServiceClick: () => void }) {
@@ -1164,9 +1239,26 @@ function ProjectServices({ services, onCreateServiceClick, onServiceClick, onDel
                     }),
                   },
                   {
-                    type: 'text',
+                    type: 'custom',
                     headerName: 'Created',
-                    field: 'created',
+                    UNSAFE_render: (row) => (
+                      <Box style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                        <UserAvatar24
+                          initials={row.createdByInitials}
+                          variant={row.createdByAvatarVariant ?? 'user'}
+                          tooltip={
+                            row.createdByAvatarVariant === 'mcp-ai'
+                              ? CREATED_WITH_MCP_TOOLTIP
+                              : row.createdByFullName?.trim()
+                              ? row.createdByFullName.trim()
+                              : undefined
+                          }
+                        />
+                        <Box component="span" style={{ fontSize: 14, lineHeight: '20px' }}>
+                          {row.created}
+                        </Box>
+                      </Box>
+                    ),
                   },
                 ]}
                 menu={() => (

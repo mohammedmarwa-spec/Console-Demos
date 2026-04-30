@@ -13,6 +13,7 @@ import { ScenarioProvider, ScenarioPanel, ScenarioTrigger, useScenario } from '.
 import { MysqlAcuRolloutModal } from './screens/MysqlAcuRolloutModal'
 import { UpgradeServiceModal, UPGRADE_PLAN_SERVICE_DATA, type UpgradeTier } from './screens/UpgradeServiceModal'
 import { UpgradeServiceModalV2 } from './screens/UpgradeServiceModalV2'
+import { enrichServicesWithRandomCreatedBy } from './utils/serviceCreatedByDataset'
 
 type View = 'org-home' | 'project-services' | 'service-overview' | 'billing-invoice'
 
@@ -173,20 +174,26 @@ function shuffle<T>(arr: T[]): T[] {
   return out
 }
 
+/** Random creator initials + MCP spark avatars; skip for single-service lists. */
+function withRandomCreatedByAvatars(services: ServiceRow[]): ServiceRow[] {
+  if (services.length <= 1) return services
+  return enrichServicesWithRandomCreatedBy(services)
+}
+
 function getInitialServicesForScenario(scenarioId: string | null): ServiceRow[] {
   switch (scenarioId) {
     case 'empty-state':
     case 'first-time-user':
       return []
     case 'many-services':
-      return shuffle(MANY_SERVICES)
+      return withRandomCreatedByAvatars(shuffle([...MANY_SERVICES]))
     case 'mysql-acu-rollout':
-      return MYSQL_ACU_ROLLOUT_SERVICES
+      return withRandomCreatedByAvatars([...MYSQL_ACU_ROLLOUT_SERVICES])
     case 'replica-mixed-pricing':
-      return REPLICA_MIXED_SERVICES
+      return withRandomCreatedByAvatars([...REPLICA_MIXED_SERVICES])
     case 'free-dev-upgrade':
     case 'free-dev-upgrade-v2':
-      return FREE_DEV_UPGRADE_SERVICES
+      return withRandomCreatedByAvatars([...FREE_DEV_UPGRADE_SERVICES])
     case 'deeptrace-demo':
       return DEEPTRACE_DEMO_SERVICES
     default:
@@ -324,6 +331,8 @@ function AppContent() {
           cloudRegion: `${data.cloud}: ${data.region}`,
           location: data.location,
           created: 'Just now',
+          createdByInitials: 'ME',
+          createdByFullName: 'You',
           iconLetter,
           serviceTypeId: data.serviceTypeId,
           pricingType,
