@@ -24,6 +24,7 @@ import {
   Typography,
 } from '@aivenio/aquarium'
 import duplicateIcon from '@aivenio/aquarium/icons/duplicate'
+import exportIcon from '@aivenio/aquarium/icons/export'
 import filterIcon from '@aivenio/aquarium/icons/filter'
 import infoSignIcon from '@aivenio/aquarium/icons/infoSign'
 import cpuChipIcon from '@aivenio/aquarium/icons/cpuChip'
@@ -319,6 +320,40 @@ function matchesLogSearch(row: LogRow, query: string): boolean {
   return row.searchableText.includes(normalized)
 }
 
+function logRowToJson(row: LogRow) {
+  return {
+    id: row.id,
+    timestampMs: row.timestampMs,
+    time: row.time,
+    displayTime: row.displayTime,
+    source: row.source,
+    message: row.message,
+    severity: row.severity,
+    eventType: row.eventType,
+    component: row.component,
+    service: row.service,
+    project: row.project,
+    region: row.region,
+    metadata: row.metadata,
+    keyValues: row.keyValues,
+  }
+}
+
+/** Full filtered log set for export (same filters as the table, not load-more limited). */
+function downloadServiceLogsJson(rows: LogRow[], filename = 'service-logs.json') {
+  const payload = {
+    exportedAt: new Date().toISOString(),
+    count: rows.length,
+    logs: rows.map(logRowToJson),
+  }
+  const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json;charset=utf-8' })
+  const a = document.createElement('a')
+  a.href = URL.createObjectURL(blob)
+  a.download = filename
+  a.click()
+  URL.revokeObjectURL(a.href)
+}
+
 function DateRangeFilterTrigger({
   appliedRange,
   onClearAppliedRange,
@@ -599,6 +634,11 @@ function ServiceOverview({
   const sortedLogRows = useMemo(() => {
     return [...filteredLogRows].sort((a, b) => b.timestampMs - a.timestampMs)
   }, [filteredLogRows])
+
+  const hasExplicitLogTimeRange =
+    dateRange != null &&
+    calendarDateTimeToUtcMs(dateRange.start) <= calendarDateTimeToUtcMs(dateRange.end)
+
   const visibleLogRows = useMemo(() => {
     return sortedLogRows.slice(0, visibleLogsCount)
   }, [sortedLogRows, visibleLogsCount])
@@ -907,7 +947,16 @@ function ServiceOverview({
               </Box>
 
               <Box style={{ marginTop: 0 }} role="region" aria-label="Service logs">
-                <Box style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 12, marginBottom: 20 }}>
+                <Box
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    flexWrap: 'wrap',
+                    gap: 12,
+                    marginBottom: 20,
+                    width: '100%',
+                  }}
+                >
                   <Box style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 12, flex: '1 1 auto', minWidth: 0 }}>
                     <Box style={{ flex: '1 1 340px', minWidth: 240, maxWidth: 480 }}>
                       <InputBase
@@ -1031,6 +1080,19 @@ function ServiceOverview({
                       )}
                     </div>
                   </Box>
+
+                  {hasExplicitLogTimeRange ? (
+                    <Box style={{ marginLeft: 'auto', flexShrink: 0 }}>
+                      <Button.Secondary
+                        dense
+                        type="button"
+                        icon={exportIcon}
+                        onClick={() => downloadServiceLogsJson(sortedLogRows)}
+                      >
+                        Export JSON
+                      </Button.Secondary>
+                    </Box>
+                  ) : null}
                 </Box>
 
                 <Box style={{ marginBottom: 12 }}>

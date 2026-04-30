@@ -30,6 +30,7 @@ import infoSignIcon from '@aivenio/aquarium/icons/infoSign'
 import appUsersIcon from '@aivenio/aquarium/icons/appUsers'
 import containerIcon from '@aivenio/aquarium/icons/container'
 import proPlansIcon from '@aivenio/aquarium/icons/proPlans'
+import exportIcon from '@aivenio/aquarium/icons/export'
 import { ConsoleHeader } from '../components/ConsoleHeader'
 import { ProjectSidebar } from '../components/ProjectSidebar'
 import { getServiceIconUrl } from '../components/ServiceIcon'
@@ -307,25 +308,30 @@ const DEFAULT_AUDIT_DATE_RANGE = createRelativeAuditRange(
   24 * 60,
 )
 
-function downloadAuditLogsCsv(rows: AuditLogEntry[]) {
-  const headers = ['Time (Helsinki, GMT+2/GMT+3)', 'Initiated by', 'Event type', 'Event', 'Request ID', 'Client IP', 'User agent', ...Object.keys(rows[0]?.details ?? {})]
-  const lines = [headers.join(',')]
-  for (const row of rows) {
-    const reqId = row.metadata.find((m) => m.label === 'Request ID')?.value ?? ''
-    const ip = row.metadata.find((m) => m.label === 'Client IP')?.value ?? ''
-    const ua = row.metadata.find((m) => m.label === 'User agent')?.value ?? ''
-    const base = [row.dateTimeLabel, row.user, row.eventType, row.event, reqId, ip, ua]
-    const detailVals = Object.values(row.details).map((v) => String(v).replaceAll('"', '""'))
-    lines.push(
-      [...base, ...detailVals]
-        .map((cell) => (typeof cell === 'string' && (cell.includes(',') || cell.includes('"')) ? `"${cell}"` : cell))
-        .join(','),
-    )
+function auditLogEntryToJson(row: AuditLogEntry) {
+  return {
+    id: row.id,
+    occurredAt: row.occurredAt.toISOString(),
+    dateTimeLabel: row.dateTimeLabel,
+    user: row.user,
+    userHref: row.userHref,
+    eventType: row.eventType,
+    event: row.event,
+    metadata: row.metadata,
+    details: row.details,
   }
-  const blob = new Blob([lines.join('\n')], { type: 'text/csv;charset=utf-8' })
+}
+
+function downloadAuditLogsJson(rows: AuditLogEntry[]) {
+  const payload = {
+    exportedAt: new Date().toISOString(),
+    count: rows.length,
+    logs: rows.map(auditLogEntryToJson),
+  }
+  const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json;charset=utf-8' })
   const a = document.createElement('a')
   a.href = URL.createObjectURL(blob)
-  a.download = 'audit-logs.csv'
+  a.download = 'audit-logs.json'
   a.click()
   URL.revokeObjectURL(a.href)
 }
@@ -427,6 +433,10 @@ function AuditLogsSection() {
   const quickRangeValueText = quickRangePreset ? QUICK_RANGE_LABELS[quickRangePreset] : undefined
   const latestAuditTimestamp = MOCK_AUDIT_LOGS[MOCK_AUDIT_LOGS.length - 1]?.occurredAt ?? new Date()
 
+  const hasValidAuditTimeRange =
+    dateRange != null &&
+    calendarDateTimeToUtcMs(dateRange.start) <= calendarDateTimeToUtcMs(dateRange.end)
+
   function applyQuickRange(preset: Exclude<QuickRangePreset, null>) {
     const minutes = preset === 'last-15m' ? 15 : preset === 'last-1h' ? 60 : 24 * 60
     setDateRange(createRelativeAuditRange(latestAuditTimestamp, minutes))
@@ -444,44 +454,50 @@ function AuditLogsSection() {
             onChange={(e) => setSearch((e.target as HTMLInputElement).value)}
           />
         </Box>
-        <Button.Secondary type="button" style={{ flexShrink: 0 }} onClick={() => downloadAuditLogsCsv(queryRows)}>
-          Download CSV
-        </Button.Secondary>
       </Box>
 
-      <Box style={{ display: 'flex', alignItems: 'flex-start', gap: 16, marginBottom: 24, flexWrap: 'wrap' }}>
-        <DropdownMenu
-          minWidth={220}
-          placement="bottom-left"
-          onAction={(action) => {
-            if (action === 'last-15m' || action === 'last-1h' || action === 'last-24h') {
-              applyQuickRange(action)
-            }
-          }}
-        >
-          <DropdownMenu.Trigger>
-            <Filter.Trigger
-              labelText="Last"
-              icon={filterIcon}
-              value={quickRangeValueText}
-              onClear={
-                quickRangePreset
-                  ? () => {
-                      setQuickRangePreset(null)
-                      setDateRange(null)
-                    }
-                  : undefined
+      <Box
+        style={{
+          display: 'flex',
+          alignItems: 'flex-start',
+          gap: 16,
+          marginBottom: 24,
+          flexWrap: 'wrap',
+          width: '100%',
+        }}
+      >
+        <Box style={{ display: 'flex', alignItems: 'flex-start', gap: 16, flexWrap: 'wrap', flex: '1 1 auto', minWidth: 0 }}>
+          <DropdownMenu
+            minWidth={220}
+            placement="bottom-left"
+            onAction={(action) => {
+              if (action === 'last-15m' || action === 'last-1h' || action === 'last-24h') {
+                applyQuickRange(action)
               }
-            />
-          </DropdownMenu.Trigger>
-          <DropdownMenu.Items>
-            <DropdownMenu.Item id="last-15m">{QUICK_RANGE_LABELS['last-15m']}</DropdownMenu.Item>
-            <DropdownMenu.Item id="last-1h">{QUICK_RANGE_LABELS['last-1h']}</DropdownMenu.Item>
-            <DropdownMenu.Item id="last-24h">{QUICK_RANGE_LABELS['last-24h']}</DropdownMenu.Item>
-          </DropdownMenu.Items>
-        </DropdownMenu>
+            }}
+          >
+            <DropdownMenu.Trigger>
+              <Filter.Trigger
+                labelText="Last"
+                icon={filterIcon}
+                value={quickRangeValueText}
+                onClear={
+                  quickRangePreset
+                    ? () => {
+                        setQuickRangePreset(null)
+                        setDateRange(null)
+                      }
+                    : undefined
+                }
+              />
+            </DropdownMenu.Trigger>
+            <DropdownMenu.Items>
+              <DropdownMenu.Item id="last-15m">{QUICK_RANGE_LABELS['last-15m']}</DropdownMenu.Item>
+              <DropdownMenu.Item id="last-1h">{QUICK_RANGE_LABELS['last-1h']}</DropdownMenu.Item>
+              <DropdownMenu.Item id="last-24h">{QUICK_RANGE_LABELS['last-24h']}</DropdownMenu.Item>
+            </DropdownMenu.Items>
+          </DropdownMenu>
 
-        <Box>
           <DateTimeRangePicker
             aria-label="Date and time range"
             granularity="minute"
@@ -501,50 +517,62 @@ function AuditLogsSection() {
             <DateRangeFilterTrigger />
             <DateTimeRangePicker.Calendar />
           </DateTimeRangePicker>
+
+          <div ref={eventFilterRef} style={{ position: 'relative' }}>
+            <Filter.Trigger
+              labelText="Event type"
+              icon={filterIcon}
+              value={eventFilterValueText}
+              onClear={eventFilterActive ? () => setSelectedEventTypes([]) : undefined}
+              onClick={() => {
+                setEventFilterOpen((o) => !o)
+              }}
+            />
+            {eventFilterOpen && (
+              <Box
+                style={{
+                  position: 'absolute',
+                  top: 'calc(100% + 8px)',
+                  left: 0,
+                  zIndex: 200,
+                  backgroundColor: '#fff',
+                  border: '1px solid #e0e0e8',
+                  borderRadius: 8,
+                  boxShadow: '0 4px 24px rgba(0, 0, 0, 0.12)',
+                  padding: 16,
+                  minWidth: 280,
+                  maxHeight: 320,
+                  overflow: 'auto',
+                }}
+              >
+                <CheckboxGroup
+                  labelText="Event types"
+                  value={selectedEventTypes}
+                  onChange={(val) => setSelectedEventTypes(val ?? [])}
+                >
+                  {EVENT_TYPE_FILTER_OPTIONS.map((opt) => (
+                    <Checkbox key={opt.value} value={opt.value}>
+                      {opt.label}
+                    </Checkbox>
+                  ))}
+                </CheckboxGroup>
+              </Box>
+            )}
+          </div>
         </Box>
 
-        <div ref={eventFilterRef} style={{ position: 'relative' }}>
-          <Filter.Trigger
-            labelText="Event type"
-            icon={filterIcon}
-            value={eventFilterValueText}
-            onClear={eventFilterActive ? () => setSelectedEventTypes([]) : undefined}
-            onClick={() => {
-              setEventFilterOpen((o) => !o)
-            }}
-          />
-          {eventFilterOpen && (
-            <Box
-              style={{
-                position: 'absolute',
-                top: 'calc(100% + 8px)',
-                left: 0,
-                zIndex: 200,
-                backgroundColor: '#fff',
-                border: '1px solid #e0e0e8',
-                borderRadius: 8,
-                boxShadow: '0 4px 24px rgba(0, 0, 0, 0.12)',
-                padding: 16,
-                minWidth: 280,
-                maxHeight: 320,
-                overflow: 'auto',
-              }}
+        {hasValidAuditTimeRange && queryStatus === 'ready' ? (
+          <Box style={{ marginLeft: 'auto', flexShrink: 0 }}>
+            <Button.Secondary
+              dense
+              type="button"
+              icon={exportIcon}
+              onClick={() => downloadAuditLogsJson(queryRows)}
             >
-              <CheckboxGroup
-                labelText="Event types"
-                value={selectedEventTypes}
-                onChange={(val) => setSelectedEventTypes(val ?? [])}
-              >
-                {EVENT_TYPE_FILTER_OPTIONS.map((opt) => (
-                  <Checkbox key={opt.value} value={opt.value}>
-                    {opt.label}
-                  </Checkbox>
-                ))}
-              </CheckboxGroup>
-            </Box>
-          )}
-        </div>
-
+              Export JSON
+            </Button.Secondary>
+          </Box>
+        ) : null}
       </Box>
 
       <Table ariaLabel="Audit logs" style={{ tableLayout: 'fixed', width: '100%' }}>
