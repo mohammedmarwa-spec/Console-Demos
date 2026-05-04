@@ -23,13 +23,28 @@ body {
 }
 
 body {
-  background-color: var(--aquarium-background-color-body);
+  background-color: var(--aquarium-colors-grey-90);
   color: var(--aquarium-text-color-default);
 }
 
 #root {
   width: 100%;
   min-height: 100vh;
+  background-color: var(--aquarium-colors-grey-90);
+}
+
+/* Sidebar chrome: single 1px rule - outer shell no longer stacks a second border on Navigation border-r. */
+nav.Aquarium-Navigation {
+  border-right-width: 1px;
+  border-right-style: solid;
+  border-right-color: var(--aquarium-border-color-muted);
+}
+
+/* Navigation.Divider: keep hairline at 1px regardless of token rounding. */
+nav.Aquarium-Navigation li[aria-hidden='true'] {
+  border-top-width: 1px;
+  border-top-style: solid;
+  border-top-color: var(--aquarium-border-color-muted);
 }
 
 /* Selected row highlight for plan DataTable */
@@ -64,7 +79,7 @@ tr.logs-row-error td:first-child {
 .service-logs-data-table table.Aquarium-DataTable thead th,
 .service-logs-data-list .Aquarium-DataList [role='columnheader'] {
   z-index: 30 !important;
-  background-color: var(--aquarium-background-color-inactive) !important;
+  background-color: var(--aquarium-colors-grey-90) !important;
   background-clip: padding-box;
   box-shadow: inset 0 -1px 0 0 var(--aquarium-border-color-muted);
 }
@@ -98,12 +113,13 @@ tr.logs-row-error td:first-child {
 .nodes-chip--rebuilding .Aquarium-Badge { color: var(--aquarium-background-color-info-graphic) !important; }
 .nodes-chip--muted .Aquarium-Badge      { color: var(--aquarium-colors-grey-50) !important; }
 
-/* Aquarium PageHeader: remove extra bottom padding. */
+/* Aquarium PageHeader: explicit fill + trim extra bottom padding. */
 .Aquarium-PageHeader {
+  background-color: var(--aquarium-colors-grey-90);
   padding-bottom: 0 !important;
 }
 
-/* Subtle pulse for live logs indicator dot. */
+/* Subtle pulse for live logs indicator dot (success graphic token). */
 .logs-live-dot {
   animation: logsLiveDotPulse 1.8s ease-in-out infinite;
 }
@@ -112,16 +128,21 @@ tr.logs-row-error td:first-child {
   0% {
     transform: scale(1);
     opacity: 0.92;
-    box-shadow: 0 0 0 0 rgba(18, 183, 106, 0.35);
+    box-shadow: 0 0 0 0 color-mix(in srgb, var(--aquarium-background-color-success-graphic) 35%, transparent);
   }
   50% {
     transform: scale(1.08);
     opacity: 1;
-    box-shadow: 0 0 0 4px rgba(18, 183, 106, 0.12);
+    box-shadow: 0 0 0 4px color-mix(in srgb, var(--aquarium-background-color-success-graphic) 12%, transparent);
   }
   100% {
     transform: scale(1);
     opacity: 0.92;
-    box-shadow: 0 0 0 0 rgba(18, 183, 106, 0);
+    box-shadow: 0 0 0 0 color-mix(in srgb, var(--aquarium-background-color-success-graphic) 0%, transparent);
   }
+}
+
+/* Log volume timeline: avoid an extra “card” panel in dark mode (flush with main column). */
+html.aquarium-theme-dark .audit-logs-histogram {
+  border-color: transparent;
 }

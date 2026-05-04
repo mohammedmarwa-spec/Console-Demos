@@ -774,7 +774,7 @@ function BillingInvoiceDetail({ onBack, onOrgHomeClick, onBillingClick }: Billin
   const invoicePaid = !isPlanMixed
 
   return (
-    <Box style={{ minHeight: '100vh', backgroundColor: '#f9f9fb', display: 'flex', flexDirection: 'column' }}>
+    <Box style={{ minHeight: '100vh', backgroundColor: 'var(--aquarium-colors-grey-90)', display: 'flex', flexDirection: 'column' }}>
       <ConsoleHeader
         activeNav="billing"
         onHomeClick={onOrgHomeClick}
@@ -791,7 +791,7 @@ function BillingInvoiceDetail({ onBack, onOrgHomeClick, onBillingClick }: Billin
         />
 
         {/* Main content */}
-        <Box style={{ flex: 1, minWidth: 0, padding: 24, overflow: 'auto', backgroundColor: '#fff' }}>
+        <Box style={{ flex: 1, minWidth: 0, padding: 24, overflow: 'auto', backgroundColor: 'var(--aquarium-colors-grey-90)' }}>
           {/* Page header */}
           <Box style={{ marginBottom: 24 }}>
             <PageHeader

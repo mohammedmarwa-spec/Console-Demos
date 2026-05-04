@@ -280,7 +280,7 @@ function OrgHomePage({ onProjectsClick, onBillingClick, onInvoiceClick }: OrgHom
     <Box
       style={{
         minHeight: '100vh',
-        backgroundColor: 'var(--aquarium-background-color-muted)',
+        backgroundColor: 'var(--aquarium-colors-grey-90)',
         display: 'flex',
         flexDirection: 'column',
       }}
@@ -308,7 +308,7 @@ function OrgHomePage({ onProjectsClick, onBillingClick, onInvoiceClick }: OrgHom
             minWidth: 0,
             padding: 24,
             overflow: 'auto',
-            backgroundColor: 'var(--aquarium-background-color-muted)',
+            backgroundColor: 'var(--aquarium-colors-grey-90)',
           }}
         >
           {/* Page header */}

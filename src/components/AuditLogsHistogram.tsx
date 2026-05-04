@@ -10,6 +10,15 @@ import {
 const ONE_HOUR_MS = 60 * 60 * 1000
 const HOVER_CLEAR_DELAY_MS = 90
 
+/** Secondary categorical chart tokens (Design tokens → Chart Colors). */
+const CHART_INFO = 'var(--aquarium-chart-colors-secondary-categorical-0)'
+const CHART_WARNING = 'var(--aquarium-chart-colors-secondary-categorical-1)'
+const CHART_ERROR = 'var(--aquarium-chart-colors-secondary-categorical-2)'
+
+function chartFillMuted(tokenVar: string): string {
+  return `color-mix(in srgb, ${tokenVar} 85%, transparent)`
+}
+
 type HistogramStatus = 'loading' | 'ready' | 'error'
 
 type AuditLogsHistogramProps = {
@@ -156,28 +165,28 @@ export function AuditLogsHistogram({
 
   return (
     <Box
+      className="audit-logs-histogram"
       style={{
-        border: '1px solid #e7e8ed',
+        border: '1px solid var(--aquarium-border-color-muted)',
         borderRadius: 10,
         padding: 12,
         marginBottom: 16,
-        backgroundColor: '#fff',
       }}
     >
       {status === 'loading' && (
-        <Box style={{ color: '#787885', padding: '10px 4px' }}>
+        <Box style={{ color: 'var(--aquarium-text-color-muted)', padding: '10px 4px' }}>
           <Typography.Small>Loading histogram...</Typography.Small>
         </Box>
       )}
 
       {status === 'error' && (
-        <Box style={{ color: '#d92d20', padding: '10px 4px' }}>
+        <Box style={{ color: 'var(--aquarium-text-color-danger-default)', padding: '10px 4px' }}>
           <Typography.Small>{errorMessage ?? 'Failed to load histogram'}</Typography.Small>
         </Box>
       )}
 
       {status === 'ready' && buckets.length === 0 && (
-        <Box style={{ color: '#787885', padding: '10px 4px' }}>
+        <Box style={{ color: 'var(--aquarium-text-color-muted)', padding: '10px 4px' }}>
           <Typography.Small>No logs found for selected filters.</Typography.Small>
         </Box>
       )}
@@ -194,17 +203,35 @@ export function AuditLogsHistogram({
             }}
           >
             <Box>
-              <Box style={{ display: 'inline-flex', alignItems: 'center', gap: 8, fontSize: 16, lineHeight: '24px', fontWeight: 500, color: '#242429' }}>
-                <Box className="logs-live-dot" style={{ width: 8, height: 8, borderRadius: '50%', backgroundColor: '#12B76A' }} />
+              <Box
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: 8,
+                  fontSize: 16,
+                  lineHeight: '24px',
+                  fontWeight: 500,
+                  color: 'var(--aquarium-text-color-default)',
+                }}
+              >
+                <Box
+                  className="logs-live-dot"
+                  style={{
+                    width: 8,
+                    height: 8,
+                    borderRadius: '50%',
+                    backgroundColor: 'var(--aquarium-background-color-success-graphic)',
+                  }}
+                />
                 Log volume timeline
               </Box>
-              <Box style={{ color: '#787885', fontSize: 14, lineHeight: '20px', marginTop: 4 }}>
+              <Box style={{ color: 'var(--aquarium-text-color-muted)', fontSize: 14, lineHeight: '20px', marginTop: 4 }}>
                 {histogramMetaText}
               </Box>
             </Box>
             <Box
               style={{
-                color: '#787885',
+                color: 'var(--aquarium-text-color-muted)',
                 fontSize: 14,
                 lineHeight: '20px',
                 display: 'inline-flex',
@@ -214,9 +241,9 @@ export function AuditLogsHistogram({
               }}
             >
               <Box style={{ display: 'inline-flex', alignItems: 'center', gap: 14 }}>
-                <LegendDot color="#d92d20" label="Error" />
-                <LegendDot color="#f79009" label="Warning" />
-                <LegendDot color="#3545BE" label="Info" />
+                <LegendDot color={CHART_ERROR} label="Error" />
+                <LegendDot color={CHART_WARNING} label="Warning" />
+                <LegendDot color={CHART_INFO} label="Info" />
               </Box>
             </Box>
           </Box>
@@ -228,11 +255,11 @@ export function AuditLogsHistogram({
                 right: 8,
                 zIndex: 10,
                 pointerEvents: 'none',
-                backgroundColor: 'rgba(255, 255, 255, 0.88)',
-                border: '1px solid #e7e8ed',
+                backgroundColor: 'color-mix(in srgb, var(--aquarium-background-color-popover-content) 88%, transparent)',
+                border: '1px solid var(--aquarium-border-color-muted)',
                 borderRadius: 999,
                 padding: '2px 8px',
-                color: '#787885',
+                color: 'var(--aquarium-text-color-muted)',
               }}
             >
               <Typography.Caption>Updating...</Typography.Caption>
@@ -273,7 +300,7 @@ export function AuditLogsHistogram({
               dataKey="infoInactive"
               stackId="logs"
               name="Neutral (inactive)"
-              fill="rgba(53, 69, 190, 0.9)"
+              fill={chartFillMuted(CHART_INFO)}
               isAnimationActive={false}
               onMouseEnter={handleBarPointerEnter}
               onMouseLeave={handleBarPointerLeave}
@@ -283,7 +310,7 @@ export function AuditLogsHistogram({
               dataKey="infoActive"
               stackId="logs"
               name="Neutral"
-              fill="#3545BE"
+              fill={CHART_INFO}
               isAnimationActive={false}
               onMouseEnter={handleBarPointerEnter}
               onMouseLeave={handleBarPointerLeave}
@@ -293,7 +320,7 @@ export function AuditLogsHistogram({
               dataKey="warningInactive"
               stackId="logs"
               name="Warning (inactive)"
-              fill="rgba(247, 144, 9, 0.9)"
+              fill={chartFillMuted(CHART_WARNING)}
               isAnimationActive={false}
               onMouseEnter={handleBarPointerEnter}
               onMouseLeave={handleBarPointerLeave}
@@ -303,7 +330,7 @@ export function AuditLogsHistogram({
               dataKey="warningActive"
               stackId="logs"
               name="Warning"
-              fill="#f79009"
+              fill={CHART_WARNING}
               isAnimationActive={false}
               onMouseEnter={handleBarPointerEnter}
               onMouseLeave={handleBarPointerLeave}
@@ -313,7 +340,7 @@ export function AuditLogsHistogram({
               dataKey="errorInactive"
               stackId="logs"
               name="Error (inactive)"
-              fill="rgba(217, 45, 32, 0.9)"
+              fill={chartFillMuted(CHART_ERROR)}
               isAnimationActive={false}
               onMouseEnter={handleBarPointerEnter}
               onMouseLeave={handleBarPointerLeave}
@@ -323,7 +350,7 @@ export function AuditLogsHistogram({
               dataKey="errorActive"
               stackId="logs"
               name="Error"
-              fill="#d92d20"
+              fill={CHART_ERROR}
               isAnimationActive={false}
               onMouseEnter={handleBarPointerEnter}
               onMouseLeave={handleBarPointerLeave}
@@ -374,14 +401,23 @@ function HistogramTooltipContent({ active, chartData, hoveredBucketIndex }: Tool
   const warning = (row.warningActive ?? 0) + (row.warningInactive ?? 0)
   const error = (row.errorActive ?? 0) + (row.errorInactive ?? 0)
   return (
-    <Box style={{ backgroundColor: '#fff', border: '1px solid #d7d8df', borderRadius: 8, padding: 12, minWidth: 260, pointerEvents: 'none' }}>
-      <Box style={{ marginBottom: 8, color: '#4a4b57' }}>
+    <Box
+      style={{
+        backgroundColor: 'var(--aquarium-background-color-popover-content)',
+        border: '1px solid var(--aquarium-border-color-muted)',
+        borderRadius: 8,
+        padding: 12,
+        minWidth: 260,
+        pointerEvents: 'none',
+      }}
+    >
+      <Box style={{ marginBottom: 8, color: 'var(--aquarium-text-color-muted)' }}>
         <Typography.Small>{formatBucketLabel(row.startMs, row.endMs, row.total)}</Typography.Small>
       </Box>
       <Box style={{ display: 'grid', gap: 6 }}>
-        <TooltipRow color="#3545BE" label="Info" value={info} />
-        <TooltipRow color="#f79009" label="Warning" value={warning} />
-        <TooltipRow color="#d92d20" label="Error" value={error} />
+        <TooltipRow color={CHART_INFO} label="Info" value={info} />
+        <TooltipRow color={CHART_WARNING} label="Warning" value={warning} />
+        <TooltipRow color={CHART_ERROR} label="Error" value={error} />
       </Box>
     </Box>
   )

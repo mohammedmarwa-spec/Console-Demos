@@ -933,9 +933,7 @@ function CreateService({
     <Box
       style={{
         minHeight: embedded ? undefined : '100vh',
-        backgroundColor: embedded
-          ? 'var(--aquarium-background-color-layer)'
-          : 'var(--aquarium-background-color-muted)',
+        backgroundColor: 'var(--aquarium-colors-grey-90)',
         width: '100%',
       }}
     >

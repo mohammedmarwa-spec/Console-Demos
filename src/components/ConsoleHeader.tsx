@@ -58,7 +58,7 @@ function NavButton({ label, active = false, hasDropdown = false }: NavButtonProp
     <Box
       component="button"
       style={{
-        background: 'none',
+        backgroundColor: 'transparent',
         border: 'none',
         borderBottom: 'none',
         cursor: 'pointer',
@@ -98,7 +98,7 @@ function OrgSelector({ orgName, orgSublabel }: OrgSelectorProps) {
         <Box
           component="button"
           style={{
-            background: 'none',
+            backgroundColor: 'transparent',
             border: 'none',
             cursor: 'pointer',
             padding: '8px 12px',
@@ -188,7 +188,7 @@ export function ConsoleHeader({
       component="header"
       style={{
         height: 66,
-        backgroundColor: 'var(--aquarium-background-color-layer)',
+        backgroundColor: 'var(--aquarium-colors-grey-90)',
         borderBottom: '1px solid var(--aquarium-border-color-muted)',
         display: 'flex',
         alignItems: 'center',
@@ -258,7 +258,7 @@ export function ConsoleHeader({
           component="button"
           aria-label="Notifications"
           style={{
-            background: 'none',
+            backgroundColor: 'transparent',
             border: 'none',
             cursor: 'pointer',
             width: 36,
@@ -278,7 +278,7 @@ export function ConsoleHeader({
           component="button"
           aria-label="Help"
           style={{
-            background: 'none',
+            backgroundColor: 'transparent',
             border: 'none',
             cursor: 'pointer',
             width: 36,

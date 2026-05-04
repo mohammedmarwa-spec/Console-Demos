@@ -180,25 +180,22 @@ function formatSeverityOption(severity: LogSeverity): string {
 }
 
 function logMessageHighlightStyle(severity: LogSeverity): React.CSSProperties {
+  const chip = { borderRadius: 6, padding: '2px 6px', fontWeight: 500 as const }
   if (severity === 'warning') {
     return {
-      color: '#9a3412',
-      backgroundColor: '#fff7ed',
-      borderRadius: 6,
-      padding: '2px 6px',
-      fontWeight: 500,
+      ...chip,
+      color: 'var(--aquarium-text-color-warning-intense)',
+      backgroundColor: 'var(--aquarium-background-color-warning-muted)',
     }
   }
   if (severity === 'error') {
     return {
-      color: '#991b1b',
-      backgroundColor: '#fef2f2',
-      borderRadius: 6,
-      padding: '2px 6px',
-      fontWeight: 500,
+      ...chip,
+      color: 'var(--aquarium-text-color-danger-intense)',
+      backgroundColor: 'var(--aquarium-background-color-danger-muted)',
     }
   }
-  return { color: '#242429' }
+  return { color: 'var(--aquarium-text-color-default)' }
 }
 
 function utcDateToCalendarDateTime(date: Date): CalendarDateTime {
@@ -392,7 +389,7 @@ function CompactServiceHeader({
         gap: 16,
         paddingBottom: 12,
         marginBottom: 12,
-        borderBottom: '1px solid #e7e8ed',
+        borderBottom: '1px solid var(--aquarium-border-color-muted)',
       }}
     >
       <Box style={{ display: 'inline-flex', alignItems: 'center', gap: 12, minWidth: 0 }}>
@@ -916,7 +913,7 @@ function ServiceOverview({
     <Box
       style={{
         height: '100vh',
-        backgroundColor: 'var(--aquarium-background-color-body)',
+        backgroundColor: 'var(--aquarium-colors-grey-90)',
         display: 'flex',
         flexDirection: 'column',
       }}
@@ -945,7 +942,7 @@ function ServiceOverview({
                 : MAIN_CONTENT_SCROLL_PAD,
             overflow: 'auto',
             overflowAnchor: 'none',
-            backgroundColor: 'var(--aquarium-background-color-layer)',
+            backgroundColor: 'var(--aquarium-colors-grey-90)',
           }}
         >
           {sidebarItem === 'logs' ? (
@@ -1077,10 +1074,10 @@ function ServiceOverview({
                             top: 'calc(100% + 8px)',
                             left: 0,
                             zIndex: 200,
-                            backgroundColor: '#fff',
-                            border: '1px solid #e0e0e8',
+                            backgroundColor: 'var(--aquarium-background-color-popover-content)',
+                            border: '1px solid var(--aquarium-border-color-muted)',
                             borderRadius: 8,
-                            boxShadow: '0 4px 24px rgba(0, 0, 0, 0.12)',
+                            boxShadow: '0 4px 24px color-mix(in srgb, var(--aquarium-colors-black) 14%, transparent)',
                             padding: 16,
                             minWidth: 220,
                           }}
@@ -1209,7 +1206,7 @@ function ServiceOverview({
                     )}
                   </Box>
                   {isReplica && primaryService && (
-                    <Box component="span" style={{ color: '#787885' }}>
+                    <Box component="span" style={{ color: 'var(--aquarium-text-color-muted)' }}>
                       <Typography.Caption>
                         Replica of{' '}
                         <Link
@@ -1225,7 +1222,7 @@ function ServiceOverview({
                     </Box>
                   )}
                   {isFork && primaryService && (
-                    <Box component="span" style={{ color: '#787885' }}>
+                    <Box component="span" style={{ color: 'var(--aquarium-text-color-muted)' }}>
                       <Typography.Caption>
                         Forked from{' '}
                         <Link
@@ -1341,7 +1338,7 @@ function ServiceOverview({
                     ).map((row) => (
                       <Box key={row.label} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16, flexWrap: 'wrap' }}>
                         <Box>
-                          <Box style={{ color: '#787885' }}><Typography.Caption>{row.label}</Typography.Caption></Box>
+                          <Box style={{ color: 'var(--aquarium-text-color-muted)' }}><Typography.Caption>{row.label}</Typography.Caption></Box>
                           <Typography.Small>{row.value}</Typography.Small>
                         </Box>
                         <Button.Ghost type="button" aria-label={`Copy ${row.label}`} dense>
@@ -1479,7 +1476,7 @@ function ServiceOverview({
       <Box style={{ display: 'flex', flexDirection: 'column', gap: 12, minHeight: 420, height: '100%' }}>
         <Box
           style={{
-            border: '1px solid #ededf0',
+            border: '1px solid var(--aquarium-border-color-muted)',
             borderRadius: 8,
             padding: 12,
             display: 'flex',
@@ -1488,7 +1485,7 @@ function ServiceOverview({
             flex: 1,
             minHeight: 220,
             overflow: 'auto',
-            backgroundColor: '#fff',
+            backgroundColor: 'var(--aquarium-background-color-layer)',
           }}
         >
           {aiMessages.map((message) => (
@@ -1497,7 +1494,10 @@ function ServiceOverview({
               style={{
                 alignSelf: message.role === 'user' ? 'flex-end' : 'flex-start',
                 maxWidth: '92%',
-                backgroundColor: message.role === 'user' ? '#e9f7f7' : '#f5f5f7',
+                backgroundColor:
+                  message.role === 'user'
+                    ? 'var(--aquarium-background-color-primary-muted)'
+                    : 'var(--aquarium-background-color-muted)',
                 borderRadius: 8,
                 padding: '8px 10px',
               }}
@@ -1523,13 +1523,15 @@ function ServiceOverview({
             style={{
               width: '100%',
               resize: 'vertical',
-              border: '1px solid #d6d6d6',
+              border: '1px solid var(--aquarium-border-color-muted)',
               borderRadius: 8,
               padding: '10px 48px 10px 10px',
               fontFamily: 'inherit',
               fontSize: 14,
               lineHeight: 1.4,
               boxSizing: 'border-box',
+              backgroundColor: 'var(--aquarium-background-color-layer)',
+              color: 'var(--aquarium-text-color-default)',
             }}
           />
           <Button.Icon
@@ -1575,7 +1577,7 @@ function LogsDataList({
       headerName: 'Time',
       width: 248,
       UNSAFE_render: (row: LogRow) => (
-        <Box component="span" style={{ color: '#242429' }}>
+        <Box component="span" style={{ color: 'var(--aquarium-text-color-default)' }}>
           <Box component="span" style={{ fontFamily: LOG_MONO_FONT, fontSize: 12, lineHeight: '16px' }}>
             {row.displayTime}
           </Box>
@@ -1587,7 +1589,7 @@ function LogsDataList({
       headerName: 'Severity',
       width: 110,
       UNSAFE_render: (row: LogRow) => (
-        <Box component="span" style={{ color: '#242429' }}>
+        <Box component="span" style={{ color: 'var(--aquarium-text-color-default)' }}>
           <Box
             component="span"
             style={{
@@ -1607,7 +1609,7 @@ function LogsDataList({
       headerName: 'Source',
       width: 160,
       UNSAFE_render: (row: LogRow) => (
-        <Box component="span" style={{ color: '#242429' }}>
+        <Box component="span" style={{ color: 'var(--aquarium-text-color-default)' }}>
           <Box component="span" style={{ fontFamily: LOG_MONO_FONT, fontSize: 12, lineHeight: '16px' }}>
             {row.source}
           </Box>
@@ -1697,10 +1699,10 @@ function LogsRowDetails({
       <Box style={{ display: 'grid', rowGap: 6 }}>
         {logDetailRows.map((item, index) => (
           <Box key={`${item.label}-${index}`} style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-            <Box style={{ minWidth: 120, color: '#787885' }}>
+            <Box style={{ minWidth: 120, color: 'var(--aquarium-text-color-muted)' }}>
               <Typography.Small>{item.label}</Typography.Small>
             </Box>
-            <Box style={{ color: '#1a1b24', flex: 1, minWidth: 0 }}>
+            <Box style={{ color: 'var(--aquarium-text-color-default)', flex: 1, minWidth: 0 }}>
               <Typography.Small>{item.value}</Typography.Small>
             </Box>
           </Box>
@@ -1715,7 +1717,7 @@ LogsRowDetails.displayName = 'LogsRowDetails'
 function Row({ label, value }: { label: string; value: string }) {
   return (
     <Box style={{ display: 'flex', gap: 16 }}>
-      <Box style={{ color: '#787885', minWidth: 140 }}>
+      <Box style={{ color: 'var(--aquarium-text-color-muted)', minWidth: 140 }}>
         <Typography.Caption>{label}</Typography.Caption>
       </Box>
       <Typography.Default>{value}</Typography.Default>
@@ -1732,8 +1734,15 @@ function PlanUsageBar({ label, value, percent }: { label: string; value: string;
         <Typography.Caption>{label}</Typography.Caption>
         <Typography.Caption>{value}</Typography.Caption>
       </Box>
-      <Box style={{ height: 4, backgroundColor: '#ededf0', borderRadius: 12, overflow: 'hidden' }}>
-        <Box style={{ width: `${percent}%`, height: '100%', backgroundColor: '#3545be', borderRadius: 12 }} />
+      <Box style={{ height: 4, backgroundColor: 'var(--aquarium-background-color-default)', borderRadius: 12, overflow: 'hidden' }}>
+        <Box
+          style={{
+            width: `${percent}%`,
+            height: '100%',
+            backgroundColor: 'var(--aquarium-background-color-primary-graphic)',
+            borderRadius: 12,
+          }}
+        />
       </Box>
     </Box>
   )
@@ -1765,20 +1774,70 @@ function CpuLineChart() {
       aria-label="CPU usage chart"
     >
       {/* Y-axis labels */}
-      <text x={labelW - 4} y={4}            style={{ fontSize: 10 }} fill="#787885" textAnchor="end" dominantBaseline="hanging">100%</text>
-      <text x={labelW - 4} y={plotH / 2}    style={{ fontSize: 10 }} fill="#787885" textAnchor="end" dominantBaseline="middle">50%</text>
-      <text x={labelW - 4} y={plotH}        style={{ fontSize: 10 }} fill="#787885" textAnchor="end" dominantBaseline="auto">0</text>
+      <text
+        x={labelW - 4}
+        y={4}
+        style={{ fontSize: 10 }}
+        fill="var(--aquarium-text-color-muted)"
+        textAnchor="end"
+        dominantBaseline="hanging"
+      >
+        100%
+      </text>
+      <text
+        x={labelW - 4}
+        y={plotH / 2}
+        style={{ fontSize: 10 }}
+        fill="var(--aquarium-text-color-muted)"
+        textAnchor="end"
+        dominantBaseline="middle"
+      >
+        50%
+      </text>
+      <text
+        x={labelW - 4}
+        y={plotH}
+        style={{ fontSize: 10 }}
+        fill="var(--aquarium-text-color-muted)"
+        textAnchor="end"
+        dominantBaseline="auto"
+      >
+        0
+      </text>
 
       {/* Grid lines */}
-      <line x1={labelW} y1={1}           x2={labelW + plotW} y2={1}           stroke="#D2D2D6" strokeWidth="1" strokeDasharray="3 3" />
-      <line x1={labelW} y1={plotH / 2}   x2={labelW + plotW} y2={plotH / 2}   stroke="#D2D2D6" strokeWidth="1" strokeDasharray="3 3" />
-      <line x1={labelW} y1={plotH}       x2={labelW + plotW} y2={plotH}       stroke="#D2D2D6" strokeWidth="1" />
+      <line
+        x1={labelW}
+        y1={1}
+        x2={labelW + plotW}
+        y2={1}
+        stroke="var(--aquarium-border-color-muted)"
+        strokeWidth="1"
+        strokeDasharray="3 3"
+      />
+      <line
+        x1={labelW}
+        y1={plotH / 2}
+        x2={labelW + plotW}
+        y2={plotH / 2}
+        stroke="var(--aquarium-border-color-muted)"
+        strokeWidth="1"
+        strokeDasharray="3 3"
+      />
+      <line
+        x1={labelW}
+        y1={plotH}
+        x2={labelW + plotW}
+        y2={plotH}
+        stroke="var(--aquarium-border-color-muted)"
+        strokeWidth="1"
+      />
 
       {/* Data line */}
       <polyline
         points={polyline}
         fill="none"
-        stroke="#4CC2F7"
+        stroke="var(--aquarium-text-color-info-graphic)"
         strokeWidth="1.5"
         strokeLinejoin="round"
         strokeLinecap="round"
@@ -1791,7 +1850,7 @@ function CpuLineChart() {
           x={labelW + i * xStep}
           y={plotH + bottomPad - 2}
           style={{ fontSize: 10 }}
-          fill="#787885"
+          fill="var(--aquarium-text-color-muted)"
           textAnchor="middle"
         >
           {label}
@@ -1807,10 +1866,10 @@ function BackupStat({ label, value, showInfo, tooltip }: { label: string; value:
   return (
     <Box style={{ display: 'flex', flexDirection: 'column', gap: 4, flex: 1, minWidth: 0 }}>
       <Box style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-        <Box style={{ color: '#787885', whiteSpace: 'nowrap' }}><Typography.Caption>{label}</Typography.Caption></Box>
+        <Box style={{ color: 'var(--aquarium-text-color-muted)', whiteSpace: 'nowrap' }}><Typography.Caption>{label}</Typography.Caption></Box>
         {showInfo && tooltip && (
           <Tooltip placement="top" content={tooltip}>
-            <Icon icon={infoSignIcon} style={{ width: 16, height: 16, color: '#787885', flexShrink: 0 }} />
+            <Icon icon={infoSignIcon} style={{ width: 16, height: 16, color: 'var(--aquarium-text-color-muted)', flexShrink: 0 }} />
           </Tooltip>
         )}
       </Box>
