@@ -731,7 +731,12 @@ function CreateService({
 
   // ── State ──
   const [tier, setTier] = useState<ServiceTier>(() => {
-    const fromInit = parseTierFromPlanName(initialValues?.planName)
+    // Blank create (no service row): start on the first catalog tier (Free), not
+    // `parseTierFromPlanName(undefined)` which maps empty plan names to Professional.
+    if (!initialValues) {
+      return (config.tiers[0]?.id ?? 'developer') as ServiceTier
+    }
+    const fromInit = parseTierFromPlanName(initialValues.planName)
     return (config.tiers.find((t) => t.id === fromInit)?.id ?? config.tiers[0]?.id ?? 'developer') as ServiceTier
   })
   const [serviceName, setServiceName] = useState(

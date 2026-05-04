@@ -337,7 +337,7 @@ describe('ProjectServices — replica as normal service row', () => {
     const menuButtons = screen.getAllByRole('button', { name: /context menu/i })
     // The replica is the second row
     await user.click(menuButtons[1])
-    await user.click(await screen.findByRole('menuitem', { name: /delete service/i }))
+    await user.click(within(await screen.findByRole('menu')).getByText('Delete service'))
     expect(onDeleteService).toHaveBeenCalledWith('replica-mysql-204e49c9')
   })
 })
@@ -425,10 +425,13 @@ describe('App — full create-replica flow (integration)', () => {
     expect(replicaLink).toBeTruthy()
     await user.click(replicaLink!)
 
-    // Now on replica's overview — delete via the standard ⋯ service menu
-    await waitFor(() => expect(screen.getAllByRole('button', { name: /^menu$/i }).length).toBeGreaterThan(0))
-    await user.click(screen.getAllByRole('button', { name: /^menu$/i }).at(-1)!)
-    await user.click(await screen.findByRole('menuitem', { name: /delete service/i }))
+    // Now on replica's overview — delete via the PageHeader overflow (default `menuAriaLabel` is "Context menu")
+    await waitFor(() =>
+      expect(screen.getAllByRole('button', { name: /context menu/i }).length).toBeGreaterThan(0),
+    )
+    await user.click(screen.getAllByRole('button', { name: /context menu/i })[0])
+    const menu = await screen.findByRole('menu')
+    await user.click(within(menu).getByText('Delete service'))
 
     // Navigated back to project services; replica gone
     await waitFor(() => {
@@ -462,7 +465,7 @@ describe('App — full create-replica flow (integration)', () => {
     const menuButtons = screen.getAllByRole('button', { name: /context menu/i })
     // Replica is the second row (mysql is first)
     await user.click(menuButtons[1])
-    await user.click(await screen.findByRole('menuitem', { name: /delete service/i }))
+    await user.click(within(await screen.findByRole('menu')).getByText('Delete service'))
 
     // Replica no longer in the list
     await waitFor(() => {
@@ -493,8 +496,8 @@ describe('App — full create-replica flow (integration)', () => {
     await waitFor(() => {
       expect(screen.getAllByText('replica-mysql-204e49c9').length).toBeGreaterThan(0)
     })
-    // Standard service overview elements present: the ⋯ menu button and Quick connect
-    expect(screen.getAllByRole('button', { name: /^menu$/i }).length).toBeGreaterThan(0)
+    // Standard service overview: PageHeader overflow + Quick connect
+    expect(screen.getAllByRole('button', { name: /context menu/i }).length).toBeGreaterThan(0)
     expect(screen.getByText('Quick connect')).toBeInTheDocument()
   })
 
@@ -789,7 +792,7 @@ describe('ProjectServices — fork as normal service row', () => {
     )
     const menuButtons = screen.getAllByRole('button', { name: /context menu/i })
     await user.click(menuButtons[1])
-    await user.click(await screen.findByRole('menuitem', { name: /delete service/i }))
+    await user.click(within(await screen.findByRole('menu')).getByText('Delete service'))
     expect(onDeleteService).toHaveBeenCalledWith('fork-mysql-204e49c9')
   })
 })
@@ -905,10 +908,13 @@ describe('App — full create-fork flow (integration)', () => {
     await waitFor(() => screen.getByText('fork-mysql-204e49c9'))
     await user.click(screen.getByText('fork-mysql-204e49c9'))
 
-    // Delete via ⋯ menu on fork's overview
-    await waitFor(() => expect(screen.getAllByRole('button', { name: /^menu$/i }).length).toBeGreaterThan(0))
-    await user.click(screen.getAllByRole('button', { name: /^menu$/i }).at(-1)!)
-    await user.click(await screen.findByRole('menuitem', { name: /delete service/i }))
+    // Delete via PageHeader overflow on fork's overview
+    await waitFor(() =>
+      expect(screen.getAllByRole('button', { name: /context menu/i }).length).toBeGreaterThan(0),
+    )
+    await user.click(screen.getAllByRole('button', { name: /context menu/i })[0])
+    const menu = await screen.findByRole('menu')
+    await user.click(within(menu).getByText('Delete service'))
 
     // Back to project services; fork gone
     await waitFor(() => {
@@ -1081,53 +1087,52 @@ describe('App — service creation data propagation (integration)', () => {
     const user = await createNewPgService()
     // Click the primary Create button in the summary sidebar
     const dialog = screen.getByRole('dialog', { name: /create postgresql/i })
-    const createBtn = within(dialog).getByRole('button', { name: /create postgresql/i })
-    await user.click(createBtn)
+    await user.click(within(dialog).getByRole('button', { name: 'Create PostgreSQL® service' }))
     // App navigates to ServiceOverview then; go back to the list
     await waitFor(() => expect(screen.queryByRole('dialog', { name: /create postgresql/i })).not.toBeInTheDocument())
     const backLinks = screen.getAllByText('← Back to project')
     await user.click(backLinks[0])
-    // Default service name from CreateService is pg-2536119c
+    // Default service name from CreateService is `${serviceTypeId}-2536119c`
     await waitFor(() => {
-      expect(screen.getByText('pg-2536119c')).toBeInTheDocument()
+      expect(screen.getByText('postgresql-2536119c')).toBeInTheDocument()
     })
   })
 
   it('newly created service shows the correct plan name in the list', async () => {
     const user = await createNewPgService()
     const dialog = screen.getByRole('dialog', { name: /create postgresql/i })
-    const createBtn = within(dialog).getByRole('button', { name: /create postgresql/i })
-    await user.click(createBtn)
+    await user.click(within(dialog).getByRole('button', { name: 'Create PostgreSQL® service' }))
     await waitFor(() =>
       expect(screen.queryByRole('dialog', { name: /create postgresql/i })).not.toBeInTheDocument(),
     )
     const backLinks = screen.getAllByText('← Back to project')
     await user.click(backLinks[0])
-    // Default plan is Startup-4
+    // PostgreSQL defaults to ACU with the first tier (`free`) — submitted planName is "Free".
     await waitFor(() => {
-      expect(screen.getByText('Startup-4')).toBeInTheDocument()
+      const nameCell = screen.getByText('postgresql-2536119c')
+      const row = nameCell.closest('tr') ?? nameCell.closest('[role="row"]')
+      expect(row).toBeTruthy()
+      expect(within(row as HTMLElement).getByText('Free')).toBeInTheDocument()
     })
   })
 
   it('service overview after creation shows RAM capacity from the selected plan', async () => {
     const user = await createNewPgService()
     const dialog = screen.getByRole('dialog', { name: /create postgresql/i })
-    const createBtn = within(dialog).getByRole('button', { name: /create postgresql/i })
-    await user.click(createBtn)
-    // After creation, App navigates to ServiceOverview — RAM from default Startup-4 plan is 4 GB
+    await user.click(within(dialog).getByRole('button', { name: 'Create PostgreSQL® service' }))
+    // Free tier fixed plan uses 1 GB RAM (see `STANDARD_FIXED_TIER_PLANS` + `handleCreate` simple tier path).
     await waitFor(() => {
-      expect(screen.getByText(/of 4 GB/)).toBeInTheDocument()
+      expect(screen.getByText(/of 1 GB \(37%\)/)).toBeInTheDocument()
     })
   })
 
   it('service overview after creation shows storage capacity from the selected plan', async () => {
     const user = await createNewPgService()
     const dialog = screen.getByRole('dialog', { name: /create postgresql/i })
-    const createBtn = within(dialog).getByRole('button', { name: /create postgresql/i })
-    await user.click(createBtn)
-    // Startup-4 plan has 80 GB storage
+    await user.click(within(dialog).getByRole('button', { name: 'Create PostgreSQL® service' }))
+    // Free tier uses 1 GB storage in the plan usage bar copy.
     await waitFor(() => {
-      expect(screen.getByText(/of 80 GB/)).toBeInTheDocument()
+      expect(screen.getByText(/of 1 GB \(13%\)/)).toBeInTheDocument()
     })
   })
 })
