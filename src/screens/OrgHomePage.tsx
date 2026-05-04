@@ -277,7 +277,14 @@ export type OrgHomePageProps = {
 
 function OrgHomePage({ onProjectsClick, onBillingClick, onInvoiceClick }: OrgHomePageProps) {
   return (
-    <Box style={{ minHeight: '100vh', backgroundColor: '#f9f9fb', display: 'flex', flexDirection: 'column' }}>
+    <Box
+      style={{
+        minHeight: '100vh',
+        backgroundColor: 'var(--aquarium-background-color-muted)',
+        display: 'flex',
+        flexDirection: 'column',
+      }}
+    >
       <ConsoleHeader
         activeNav="home"
         onHomeClick={() => {}}
@@ -295,7 +302,15 @@ function OrgHomePage({ onProjectsClick, onBillingClick, onInvoiceClick }: OrgHom
         />
 
         {/* Main content */}
-        <Box style={{ flex: 1, minWidth: 0, padding: 24, overflow: 'auto', backgroundColor: '#f9f9fb' }}>
+        <Box
+          style={{
+            flex: 1,
+            minWidth: 0,
+            padding: 24,
+            overflow: 'auto',
+            backgroundColor: 'var(--aquarium-background-color-muted)',
+          }}
+        >
           {/* Page header */}
           <Box style={{ marginBottom: 24 }}>
             <PageHeader

@@ -8,209 +8,27 @@
  */
 
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { render, screen, waitFor } from '@testing-library/react'
+import { render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import React from 'react'
 
-// ─── Aquarium mock ────────────────────────────────────────────────────────────
-// vi.mock is hoisted to the top of the file, so the factory must be self-contained
-// (no references to variables declared in outer scope).
+// ─── Aquarium ─────────────────────────────────────────────────────────────────
+// Re-export the real package so tests track new components (e.g. Drawer). Charts stay mocked
+// because `recharts` deep imports break Vitest's Node ESM resolver.
+vi.mock('@aivenio/aquarium', async (importOriginal) => {
+  const mod = await importOriginal<typeof import('@aivenio/aquarium')>()
+  return { ...mod }
+})
 
-vi.mock('@aivenio/aquarium', () => {
+// Aquarium charts pull recharts with a deep import that breaks Vitest's native ESM resolver.
+vi.mock('@aivenio/aquarium/charts', () => {
   const React = require('react') as typeof import('react')
-  const pass =
-    (tag = 'div') =>
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    ({ children, onClick, href, ...rest }: any) =>
-      React.createElement(tag, { onClick, href, 'data-testid': rest['data-testid'] }, children)
-
-  const Button = {
-    Primary: ({ children, onClick, disabled }: { children?: React.ReactNode; onClick?: () => void; disabled?: boolean }) =>
-      React.createElement('button', { onClick, disabled, 'data-type': 'primary' }, children),
-    Secondary: ({ children, onClick }: { children?: React.ReactNode; onClick?: () => void }) =>
-      React.createElement('button', { onClick, 'data-type': 'secondary' }, children),
-    Ghost: ({ children, onClick, 'aria-label': ariaLabel }: { children?: React.ReactNode; onClick?: () => void; 'aria-label'?: string }) =>
-      React.createElement('button', { onClick, 'aria-label': ariaLabel, 'data-type': 'ghost' }, children),
+  return {
+    timeHour: { every: () => () => [] as unknown[] },
+    Axis: () => null,
+    BarChart: ({ children }: { children?: React.ReactNode }) => React.createElement('div', {}, children),
   }
-
-  const Typography = {
-    Default: pass('span'),
-    DefaultStrong: pass('strong'),
-    Small: pass('small'),
-    SmallStrong: pass('strong'),
-    Caption: pass('span'),
-    Heading: pass('h2'),
-    LargeHeading: pass('h1'),
-  }
-
-  const Modal = ({ open, children, title, onClose }: { open: boolean; children?: React.ReactNode; title?: string; onClose?: () => void }) =>
-    open
-      ? React.createElement('div', { role: 'dialog', 'aria-label': title },
-          React.createElement('button', { onClick: onClose, 'aria-label': 'close' }, '×'),
-          children,
-        )
-      : null
-
-  const Section = ({ title, children, actions }: {
-    title?: string
-    children?: React.ReactNode
-    actions?: { text: string; onClick?: () => void }
-    [key: string]: unknown
-  }) =>
-    React.createElement('section', {},
-      React.createElement('h3', {}, title),
-      actions ? React.createElement('button', { onClick: actions.onClick }, actions.text) : null,
-      children,
-    )
-
-  const Alert = ({ children }: { children?: React.ReactNode }) =>
-    React.createElement('div', { role: 'alert' }, children)
-
-  const Input = ({ labelText, value, onChange, description }: { labelText?: string; value?: string; onChange?: React.ChangeEventHandler<HTMLInputElement>; description?: string }) =>
-    React.createElement('div', {},
-      labelText ? React.createElement('label', {}, labelText) : null,
-      description ? React.createElement('span', {}, description) : null,
-      React.createElement('input', { value, onChange, 'aria-label': labelText }),
-    )
-
-  const Box = ({ children, component, onClick, ...rest }: { children?: React.ReactNode; component?: string; onClick?: () => void; style?: unknown; [key: string]: unknown }) => {
-    const tag = component ?? 'div'
-    return React.createElement(tag as string, { onClick, 'data-testid': rest['data-testid'] }, children)
-  }
-
-  const TagLabelComp = ({ title }: { title?: string }) =>
-    React.createElement('span', { 'data-testid': 'tag-label' }, title)
-
-  const Link = ({ children, onClick, href }: { children?: React.ReactNode; onClick?: React.MouseEventHandler; href?: string }) =>
-    React.createElement('a', { onClick, href }, children)
-
-  // DropdownMenu: uses React context to propagate onAction from parent to items
-  const DropdownCtx = React.createContext<((key: string) => void) | undefined>(undefined)
-  const DropdownMenu = Object.assign(
-    ({ children, onAction }: { children?: React.ReactNode; onAction?: (key: string) => void }) =>
-      React.createElement(DropdownCtx.Provider, { value: onAction },
-        React.createElement('div', {}, children),
-      ),
-    {
-      Trigger: ({ children }: { children?: React.ReactNode }) => React.createElement('div', {}, children),
-      Items: ({ children }: { children?: React.ReactNode }) => React.createElement('ul', {}, children),
-      Item: ({ children, id }: { children?: React.ReactNode; id?: string }) => {
-        const onAction = React.useContext(DropdownCtx)
-        return React.createElement('button', { onClick: () => onAction?.(id ?? '') }, children)
-      },
-    },
-  )
-
-  // PageHeader: renders title, subtitle, primaryAction button, and wires onAction for menu items.
-  const PageHeader = ({
-    title,
-    subtitle,
-    primaryAction,
-    menu,
-    onAction,
-  }: {
-    title?: string
-    subtitle?: React.ReactNode
-    primaryAction?: { text: string; onClick?: () => void }
-    menu?: React.ReactNode
-    onAction?: (key: string) => void
-    [key: string]: unknown
-  }) =>
-    React.createElement('div', {},
-      React.createElement('h1', {}, title),
-      subtitle ? React.createElement('div', {}, subtitle) : null,
-      primaryAction
-        ? React.createElement('button', { onClick: primaryAction.onClick, 'data-type': 'primary' }, primaryAction.text)
-        : null,
-      React.createElement(DropdownCtx.Provider, { value: onAction },
-        React.createElement('button', { 'aria-label': 'menu' }, 'menu'),
-        menu,
-      ),
-    )
-
-  const Breadcrumbs = Object.assign(
-    ({ children }: { children?: React.ReactNode }) => React.createElement('nav', {}, children),
-    {
-      Crumb: ({ children }: { children?: React.ReactNode }) => React.createElement('span', {}, children),
-    },
-  )
-
-  const Tabs = Object.assign(
-    ({ children }: { children?: React.ReactNode }) => React.createElement('div', {}, children),
-    {
-      Tab: ({ title }: { title?: string }) => React.createElement('button', {}, title),
-    },
-  )
-
-  const Tooltip = ({ children }: { children?: React.ReactNode }) => React.createElement('span', {}, children)
-  const Icon = () => React.createElement('span', { 'aria-hidden': true })
-
-    const NavigationComp = Object.assign(
-      ({ children }: { children?: React.ReactNode }) => React.createElement('nav', {}, children),
-      {
-        Header: Object.assign(
-          ({ children }: { children?: React.ReactNode }) => React.createElement('div', {}, children),
-          {
-            Title: pass('h2'),
-            Subtitle: pass('span'),
-          },
-        ),
-        Item: ({ children, onClick, href }: { children?: React.ReactNode; onClick?: React.MouseEventHandler; href?: string }) =>
-          React.createElement('a', { onClick, href }, children),
-        Divider: () => React.createElement('hr', {}),
-      },
-    )
-
-    const BadgeComp = Object.assign(pass(), {
-      Notification: ({ children }: { children?: React.ReactNode }) => React.createElement('div', {}, children),
-    })
-
-    const RadioButton = ({ children, caption }: { children?: React.ReactNode; caption?: React.ReactNode; [key: string]: unknown }) =>
-      React.createElement('div', {},
-        React.createElement('span', {}, children),
-        caption ? React.createElement('span', {}, caption) : null,
-      )
-
-    return {
-      Box,
-      Button,
-      Typography,
-      Modal,
-      Section,
-      Alert,
-      Input,
-      InputBase: Input,
-      TagLabel: TagLabelComp,
-      Link,
-      DropdownMenu,
-      Tabs,
-      Tooltip,
-      Icon,
-      Badge: BadgeComp,
-      Navigation: NavigationComp,
-      PageHeader,
-      Breadcrumbs,
-      StatusChip: ({ text, badge }: { text?: string; badge?: number; [key: string]: unknown }) =>
-        React.createElement('span', {}, badge != null ? `${text} ${badge}` : text),
-      Switch: pass(),
-      Table: Object.assign(pass(), {
-        Head: pass(),
-        Body: pass(),
-        Row: pass(),
-        Cell: pass('td'),
-      }),
-      Select: pass(),
-      RadioButton,
-      ChoiceChip: pass(),
-      ChoiceChipGroup: pass(),
-      DataTable: pass(),
-    }
-  })
-
-vi.mock('@aivenio/aquarium/icons/infoSign', () => ({ default: {} }))
-vi.mock('@aivenio/aquarium/icons/database', () => ({ default: {} }))
-vi.mock('@aivenio/aquarium/icons/database02', () => ({ default: {} }))
-vi.mock('@aivenio/aquarium/icons/tag', () => ({ default: {} }))
+})
 
 // ─── Imports (after mocks) ────────────────────────────────────────────────────
 
@@ -237,6 +55,7 @@ const MYSQL_SERVICE: ServiceRow = {
   location: 'Asia, Taiwan',
   created: '16 minutes ago',
   iconLetter: 'M',
+  monthlyPrice: '$75',
 }
 
 const PG_SERVICE: ServiceRow = {
@@ -333,8 +152,8 @@ describe('CreateReadReplicaModal', () => {
     const input = screen.getByDisplayValue('replica-mysql-204e49c9')
     await user.clear(input)
     await user.type(input, 'my-custom-replica')
-    await user.click(screen.getByText('Create read-replica'))
-    expect(onCreateReplica).toHaveBeenCalledWith('my-custom-replica')
+    await user.click(screen.getByRole('button', { name: /^Create read-replica$/ }))
+    expect(onCreateReplica).toHaveBeenCalledWith('my-custom-replica', false)
   })
 
   it('disables the submit button when the name is cleared', async () => {
@@ -349,7 +168,7 @@ describe('CreateReadReplicaModal', () => {
     )
     const input = screen.getByDisplayValue('replica-mysql-204e49c9')
     await user.clear(input)
-    expect(screen.getByText('Create read-replica').closest('button')).toBeDisabled()
+    expect(screen.getByRole('button', { name: /^Create read-replica$/ })).toBeDisabled()
   })
 
   it('calls onClose when the close button is clicked', async () => {
@@ -389,7 +208,7 @@ describe('CreateReadReplicaModal', () => {
         onCreateReplica={vi.fn()}
       />,
     )
-    expect(screen.getByRole('alert')).toHaveTextContent(/single-node/i)
+    expect(screen.getByText(/single-node/i)).toBeInTheDocument()
   })
 
   it('shows the service summary panel', () => {
@@ -514,11 +333,11 @@ describe('ProjectServices — replica as normal service row', () => {
         onDeleteService={onDeleteService}
       />,
     )
-    // Each row has an "Open service menu" button with aria-label
-    const menuButtons = screen.getAllByRole('button', { name: /open service menu/i })
+    // Each row has a DataTable context-menu trigger (see `menuAriaLabel` on DataTable).
+    const menuButtons = screen.getAllByRole('button', { name: /context menu/i })
     // The replica is the second row
     await user.click(menuButtons[1])
-    await user.click(screen.getAllByText('Delete service')[1])
+    await user.click(await screen.findByRole('menuitem', { name: /delete service/i }))
     expect(onDeleteService).toHaveBeenCalledWith('replica-mysql-204e49c9')
   })
 })
@@ -551,8 +370,8 @@ describe('App — full create-replica flow (integration)', () => {
   it('closes the modal when × is clicked', async () => {
     const user = await openServiceOverview()
     await user.click(screen.getByText('Create replica'))
-    await waitFor(() => screen.getByRole('dialog'))
-    await user.click(screen.getByRole('button', { name: /close/i }))
+    const dialog = await screen.findByRole('dialog', { name: /create read-replica/i })
+    await user.click(within(dialog).getByRole('button', { name: /close/i }))
     await waitFor(() => {
       expect(screen.queryByRole('dialog', { name: /create read-replica/i })).not.toBeInTheDocument()
     })
@@ -564,7 +383,7 @@ describe('App — full create-replica flow (integration)', () => {
     await waitFor(() => screen.getByRole('dialog'))
 
     // Submit with the pre-filled default name
-    await user.click(screen.getByText('Create read-replica'))
+    await user.click(screen.getByRole('button', { name: /^Create read-replica$/ }))
 
     await waitFor(() => {
       expect(screen.queryByRole('dialog', { name: /create read-replica/i })).not.toBeInTheDocument()
@@ -582,7 +401,7 @@ describe('App — full create-replica flow (integration)', () => {
 
     await user.click(screen.getByText('Create replica'))
     await waitFor(() => screen.getByRole('dialog'))
-    await user.click(screen.getByText('Create read-replica'))
+    await user.click(screen.getByRole('button', { name: /^Create read-replica$/ }))
 
     await waitFor(() => {
       expect(screen.queryByRole('dialog', { name: /create read-replica/i })).not.toBeInTheDocument()
@@ -598,7 +417,7 @@ describe('App — full create-replica flow (integration)', () => {
     const user = await openServiceOverview()
     await user.click(screen.getByText('Create replica'))
     await waitFor(() => screen.getByRole('dialog'))
-    await user.click(screen.getByText('Create read-replica'))
+    await user.click(screen.getByRole('button', { name: /^Create read-replica$/ }))
 
     // Still on primary overview; click the replica link to navigate to replica's own overview
     await waitFor(() => screen.getByText('replica-mysql-204e49c9'))
@@ -607,9 +426,9 @@ describe('App — full create-replica flow (integration)', () => {
     await user.click(replicaLink!)
 
     // Now on replica's overview — delete via the standard ⋯ service menu
-    await waitFor(() => screen.getByRole('button', { name: /^menu$/i }))
-    await user.click(screen.getByRole('button', { name: /^menu$/i }))
-    await user.click(screen.getByText('Delete service'))
+    await waitFor(() => expect(screen.getAllByRole('button', { name: /^menu$/i }).length).toBeGreaterThan(0))
+    await user.click(screen.getAllByRole('button', { name: /^menu$/i }).at(-1)!)
+    await user.click(await screen.findByRole('menuitem', { name: /delete service/i }))
 
     // Navigated back to project services; replica gone
     await waitFor(() => {
@@ -627,7 +446,7 @@ describe('App — full create-replica flow (integration)', () => {
     const user = await openServiceOverview()
     await user.click(screen.getByText('Create replica'))
     await waitFor(() => screen.getByRole('dialog'))
-    await user.click(screen.getByText('Create read-replica'))
+    await user.click(screen.getByRole('button', { name: /^Create read-replica$/ }))
 
     // Navigate back to project services from the primary overview
     await waitFor(() => screen.getByText('replica-mysql-204e49c9'))
@@ -639,11 +458,11 @@ describe('App — full create-replica flow (integration)', () => {
       expect(screen.getByText('replica-mysql-204e49c9')).toBeInTheDocument()
     })
 
-    // Delete the replica via its row's "Open service menu" button (aria-label)
-    const menuButtons = screen.getAllByRole('button', { name: /open service menu/i })
+    // Delete the replica via its row's DataTable context-menu trigger
+    const menuButtons = screen.getAllByRole('button', { name: /context menu/i })
     // Replica is the second row (mysql is first)
     await user.click(menuButtons[1])
-    await user.click(screen.getAllByText('Delete service')[1])
+    await user.click(await screen.findByRole('menuitem', { name: /delete service/i }))
 
     // Replica no longer in the list
     await waitFor(() => {
@@ -661,7 +480,7 @@ describe('App — full create-replica flow (integration)', () => {
     const user = await openServiceOverview()
     await user.click(screen.getByText('Create replica'))
     await waitFor(() => screen.getByRole('dialog'))
-    await user.click(screen.getByText('Create read-replica'))
+    await user.click(screen.getByRole('button', { name: /^Create read-replica$/ }))
 
     // Replica is now visible in the primary service's Read replica section
     await waitFor(() => screen.getByText('Active'))
@@ -675,7 +494,7 @@ describe('App — full create-replica flow (integration)', () => {
       expect(screen.getAllByText('replica-mysql-204e49c9').length).toBeGreaterThan(0)
     })
     // Standard service overview elements present: the ⋯ menu button and Quick connect
-    expect(screen.getByRole('button', { name: /^menu$/i })).toBeInTheDocument()
+    expect(screen.getAllByRole('button', { name: /^menu$/i }).length).toBeGreaterThan(0)
     expect(screen.getByText('Quick connect')).toBeInTheDocument()
   })
 
@@ -780,8 +599,8 @@ describe('CreateForkModal', () => {
     const input = screen.getByDisplayValue('fork-mysql-204e49c9')
     await user.clear(input)
     await user.type(input, 'my-custom-fork')
-    await user.click(screen.getByText('Create fork'))
-    expect(onCreateFork).toHaveBeenCalledWith('my-custom-fork')
+    await user.click(screen.getByRole('button', { name: /^Create fork$/ }))
+    expect(onCreateFork).toHaveBeenCalledWith('my-custom-fork', false)
   })
 
   it('disables the submit button when the name is cleared', async () => {
@@ -796,7 +615,7 @@ describe('CreateForkModal', () => {
     )
     const input = screen.getByDisplayValue('fork-mysql-204e49c9')
     await user.clear(input)
-    expect(screen.getByText('Create fork').closest('button')).toBeDisabled()
+    expect(screen.getByRole('button', { name: /^Create fork$/ })).toBeDisabled()
   })
 
   it('calls onClose when the close button is clicked', async () => {
@@ -906,7 +725,7 @@ describe('ServiceOverview — fork', () => {
         onCreateFork={onCreateFork}
       />,
     )
-    await user.click(screen.getByText('Create fork'))
+    await user.click(screen.getByRole('button', { name: /^Create fork$/ }))
     expect(onCreateFork).toHaveBeenCalledOnce()
   })
 
@@ -968,9 +787,9 @@ describe('ProjectServices — fork as normal service row', () => {
         onDeleteService={onDeleteService}
       />,
     )
-    const menuButtons = screen.getAllByRole('button', { name: /open service menu/i })
+    const menuButtons = screen.getAllByRole('button', { name: /context menu/i })
     await user.click(menuButtons[1])
-    await user.click(screen.getAllByText('Delete service')[1])
+    await user.click(await screen.findByRole('menuitem', { name: /delete service/i }))
     expect(onDeleteService).toHaveBeenCalledWith('fork-mysql-204e49c9')
   })
 })
@@ -989,7 +808,7 @@ describe('App — full create-fork flow (integration)', () => {
 
   it('opens the Create fork modal when "Create fork" is clicked', async () => {
     const user = await openServiceOverview()
-    await user.click(screen.getByText('Create fork'))
+    await user.click(screen.getByRole('button', { name: /^Create fork$/ }))
     await waitFor(() => {
       expect(screen.getByRole('dialog', { name: /create.*fork/i })).toBeInTheDocument()
     })
@@ -997,9 +816,9 @@ describe('App — full create-fork flow (integration)', () => {
 
   it('closes the fork modal when × is clicked', async () => {
     const user = await openServiceOverview()
-    await user.click(screen.getByText('Create fork'))
-    await waitFor(() => screen.getByRole('dialog', { name: /create.*fork/i }))
-    await user.click(screen.getByRole('button', { name: /close/i }))
+    await user.click(screen.getByRole('button', { name: /^Create fork$/ }))
+    const dialog = await screen.findByRole('dialog', { name: /create.*fork/i })
+    await user.click(within(dialog).getByRole('button', { name: /close/i }))
     await waitFor(() => {
       expect(screen.queryByRole('dialog', { name: /create.*fork/i })).not.toBeInTheDocument()
     })
@@ -1008,13 +827,12 @@ describe('App — full create-fork flow (integration)', () => {
   /** Click "Create fork" submit button inside the open modal dialog. */
   async function submitForkModal(user: ReturnType<typeof userEvent.setup>) {
     const dialog = screen.getByRole('dialog', { name: /create.*fork/i })
-    const submitBtn = dialog.querySelector('button[data-type="primary"]') as HTMLElement
-    await user.click(submitBtn)
+    await user.click(within(dialog).getByRole('button', { name: /^Create fork$/ }))
   }
 
   it('creates a fork with auto-generated name and stays on primary service overview', async () => {
     const user = await openServiceOverview()
-    await user.click(screen.getByText('Create fork'))
+    await user.click(screen.getByRole('button', { name: /^Create fork$/ }))
     await waitFor(() => screen.getByRole('dialog', { name: /create.*fork/i }))
 
     await submitForkModal(user)
@@ -1029,7 +847,7 @@ describe('App — full create-fork flow (integration)', () => {
 
   it('fork appears in the services list after creation', async () => {
     const user = await openServiceOverview()
-    await user.click(screen.getByText('Create fork'))
+    await user.click(screen.getByRole('button', { name: /^Create fork$/ }))
     await waitFor(() => screen.getByRole('dialog', { name: /create.*fork/i }))
     await submitForkModal(user)
 
@@ -1048,7 +866,7 @@ describe('App — full create-fork flow (integration)', () => {
 
   it('fork can be opened from the services list as a standard service overview', async () => {
     const user = await openServiceOverview()
-    await user.click(screen.getByText('Create fork'))
+    await user.click(screen.getByRole('button', { name: /^Create fork$/ }))
     await waitFor(() => screen.getByRole('dialog', { name: /create.*fork/i }))
     await submitForkModal(user)
 
@@ -1073,7 +891,7 @@ describe('App — full create-fork flow (integration)', () => {
 
   it('deleting a fork from its overview removes it from the services list', async () => {
     const user = await openServiceOverview()
-    await user.click(screen.getByText('Create fork'))
+    await user.click(screen.getByRole('button', { name: /^Create fork$/ }))
     await waitFor(() => screen.getByRole('dialog', { name: /create.*fork/i }))
     await submitForkModal(user)
 
@@ -1088,9 +906,9 @@ describe('App — full create-fork flow (integration)', () => {
     await user.click(screen.getByText('fork-mysql-204e49c9'))
 
     // Delete via ⋯ menu on fork's overview
-    await waitFor(() => screen.getByRole('button', { name: /^menu$/i }))
-    await user.click(screen.getByRole('button', { name: /^menu$/i }))
-    await user.click(screen.getByText('Delete service'))
+    await waitFor(() => expect(screen.getAllByRole('button', { name: /^menu$/i }).length).toBeGreaterThan(0))
+    await user.click(screen.getAllByRole('button', { name: /^menu$/i }).at(-1)!)
+    await user.click(await screen.findByRole('menuitem', { name: /delete service/i }))
 
     // Back to project services; fork gone
     await waitFor(() => {
@@ -1187,7 +1005,12 @@ describe('ProjectServices — table row renders plan and cloud data', () => {
 
   it('renders node count string in the Nodes column', () => {
     render(<ProjectServices services={[service]} onCreateServiceClick={vi.fn()} />)
-    expect(screen.getByText('Nodes 2')).toBeInTheDocument()
+    const chip = screen
+      .getAllByText('Nodes')
+      .map((el) => el.closest('.nodes-chip'))
+      .find(Boolean)
+    expect(chip).toBeTruthy()
+    expect(chip).toHaveTextContent('2')
   })
 })
 
@@ -1258,7 +1081,7 @@ describe('App — service creation data propagation (integration)', () => {
     const user = await createNewPgService()
     // Click the primary Create button in the summary sidebar
     const dialog = screen.getByRole('dialog', { name: /create postgresql/i })
-    const createBtn = dialog.querySelector('button[data-type="primary"]') as HTMLElement
+    const createBtn = within(dialog).getByRole('button', { name: /create postgresql/i })
     await user.click(createBtn)
     // App navigates to ServiceOverview then; go back to the list
     await waitFor(() => expect(screen.queryByRole('dialog', { name: /create postgresql/i })).not.toBeInTheDocument())
@@ -1273,9 +1096,11 @@ describe('App — service creation data propagation (integration)', () => {
   it('newly created service shows the correct plan name in the list', async () => {
     const user = await createNewPgService()
     const dialog = screen.getByRole('dialog', { name: /create postgresql/i })
-    const createBtn = dialog.querySelector('button[data-type="primary"]') as HTMLElement
+    const createBtn = within(dialog).getByRole('button', { name: /create postgresql/i })
     await user.click(createBtn)
-    await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument())
+    await waitFor(() =>
+      expect(screen.queryByRole('dialog', { name: /create postgresql/i })).not.toBeInTheDocument(),
+    )
     const backLinks = screen.getAllByText('← Back to project')
     await user.click(backLinks[0])
     // Default plan is Startup-4
@@ -1287,7 +1112,7 @@ describe('App — service creation data propagation (integration)', () => {
   it('service overview after creation shows RAM capacity from the selected plan', async () => {
     const user = await createNewPgService()
     const dialog = screen.getByRole('dialog', { name: /create postgresql/i })
-    const createBtn = dialog.querySelector('button[data-type="primary"]') as HTMLElement
+    const createBtn = within(dialog).getByRole('button', { name: /create postgresql/i })
     await user.click(createBtn)
     // After creation, App navigates to ServiceOverview — RAM from default Startup-4 plan is 4 GB
     await waitFor(() => {
@@ -1298,7 +1123,7 @@ describe('App — service creation data propagation (integration)', () => {
   it('service overview after creation shows storage capacity from the selected plan', async () => {
     const user = await createNewPgService()
     const dialog = screen.getByRole('dialog', { name: /create postgresql/i })
-    const createBtn = dialog.querySelector('button[data-type="primary"]') as HTMLElement
+    const createBtn = within(dialog).getByRole('button', { name: /create postgresql/i })
     await user.click(createBtn)
     // Startup-4 plan has 80 GB storage
     await waitFor(() => {

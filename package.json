@@ -12,7 +12,7 @@
     "test:watch": "vitest"
   },
   "dependencies": {
-    "@aivenio/aquarium": "^5.2.0",
+    "@aivenio/aquarium": "^6.0.1",
     "react": "^19.2.0",
     "react-dom": "^19.2.0"
   },

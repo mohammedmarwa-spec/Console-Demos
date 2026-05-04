@@ -188,8 +188,8 @@ export function ConsoleHeader({
       component="header"
       style={{
         height: 66,
-        backgroundColor: '#fff',
-        borderBottom: '1px solid #ededed',
+        backgroundColor: 'var(--aquarium-background-color-layer)',
+        borderBottom: '1px solid var(--aquarium-border-color-muted)',
         display: 'flex',
         alignItems: 'center',
         paddingInline: 16,

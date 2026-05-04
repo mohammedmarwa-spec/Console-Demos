@@ -1,7 +1,11 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { Box, Typography } from '@aivenio/aquarium'
 import { Axis, BarChart, timeHour } from '@aivenio/aquarium/charts'
-import type { HistogramBucket, HistogramRange } from '../utils/auditHistogram'
+import {
+  type HistogramBucket,
+  type HistogramRange,
+  getHistogramBucketStackFlags,
+} from '../utils/auditHistogram'
 
 const ONE_HOUR_MS = 60 * 60 * 1000
 const HOVER_CLEAR_DELAY_MS = 90
@@ -44,8 +48,6 @@ export function AuditLogsHistogram({
 }: AuditLogsHistogramProps) {
   const [hoveredBucketIndex, setHoveredBucketIndex] = useState<number | null>(null)
   const hoverClearTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
-  const hasSelection = Boolean(selectedRange)
-  const hasHover = hoveredBucketIndex !== null
 
   useEffect(() => {
     return () => {
@@ -54,15 +56,6 @@ export function AuditLogsHistogram({
       }
     }
   }, [])
-
-  useEffect(() => {
-    if (selectedRange) return
-    if (hoverClearTimeoutRef.current) {
-      clearTimeout(hoverClearTimeoutRef.current)
-      hoverClearTimeoutRef.current = null
-    }
-    setHoveredBucketIndex(null)
-  }, [selectedRange])
 
   const clearPendingHoverReset = () => {
     if (hoverClearTimeoutRef.current) {
@@ -78,12 +71,49 @@ export function AuditLogsHistogram({
       hoverClearTimeoutRef.current = null
     }, HOVER_CLEAR_DELAY_MS)
   }
+
+  const dismissTooltipAfterSelect = () => {
+    clearPendingHoverReset()
+    setHoveredBucketIndex(null)
+  }
+
+  const handleBarClick = (entry: { payload?: { startMs?: number; endMs?: number } }) => {
+    const payload = entry?.payload
+    if (
+      !payload ||
+      typeof payload.startMs !== 'number' ||
+      typeof payload.endMs !== 'number' ||
+      !Number.isFinite(payload.startMs) ||
+      !Number.isFinite(payload.endMs)
+    ) {
+      return
+    }
+    onRangeSelected({ startMs: payload.startMs, endMs: payload.endMs })
+    dismissTooltipAfterSelect()
+  }
+
+  const handleBarPointerEnter = (data: { payload?: { index?: number } }) => {
+    const idx = data?.payload?.index
+    if (typeof idx !== 'number' || !Number.isFinite(idx)) return
+    clearPendingHoverReset()
+    setHoveredBucketIndex(idx)
+  }
+
+  const handleBarPointerLeave = () => {
+    scheduleHoverReset()
+  }
+
+  useEffect(() => {
+    if (hoverClearTimeoutRef.current) {
+      clearTimeout(hoverClearTimeoutRef.current)
+      hoverClearTimeoutRef.current = null
+    }
+    setHoveredBucketIndex(null)
+  }, [selectedRange?.startMs, selectedRange?.endMs])
+
   const chartData = useMemo(() => {
     return buckets.map((bucket) => {
-      const isSelected = isRangeSelected(selectedRange, bucket.startMs, bucket.endMs)
-      const isHovered = hoveredBucketIndex === bucket.index
-      const isEmphasized = hasHover ? isHovered : !hasSelection || isSelected
-      const isDimmed = hasHover ? !isHovered : hasSelection && !isSelected
+      const { isEmphasized, isDimmed } = getHistogramBucketStackFlags(bucket, selectedRange, hoveredBucketIndex)
       const severity = severityCountsByBucket?.[bucket.index]
       if (!severity) {
         const infoValue = bucket.count
@@ -116,7 +146,7 @@ export function AuditLogsHistogram({
         total,
       }
     })
-  }, [buckets, hasHover, hasSelection, hoveredBucketIndex, selectedRange, severityCountsByBucket])
+  }, [buckets, hoveredBucketIndex, selectedRange, severityCountsByBucket])
   const tickEveryHours = useMemo(() => {
     if (!range) return 1
     const spanHours = Math.max(1, Math.ceil((range.endMs - range.startMs) / ONE_HOUR_MS))
@@ -222,12 +252,7 @@ export function AuditLogsHistogram({
                     ? Number(rawIndex)
                     : null
               const safeIndex = Number.isFinite(nextIndex) ? Number(nextIndex) : null
-              if (safeIndex === null) {
-                scheduleHoverReset()
-                return
-              }
-              clearPendingHoverReset()
-              setHoveredBucketIndex((previous) => (previous === safeIndex ? previous : safeIndex))
+              if (safeIndex === null) scheduleHoverReset()
             }}
             onMouseLeave={scheduleHoverReset}
           >
@@ -241,17 +266,18 @@ export function AuditLogsHistogram({
               tickFormatter={(value) => formatShortTime(Number(value))}
             />
             <Axis.YAxis hide />
-            <BarChart.Tooltip content={<HistogramTooltipContent hoveredBucketIndex={hoveredBucketIndex} />} />
+            <BarChart.Tooltip
+              content={<HistogramTooltipContent chartData={chartData} hoveredBucketIndex={hoveredBucketIndex} />}
+            />
             <BarChart.Bar
               dataKey="infoInactive"
               stackId="logs"
               name="Neutral (inactive)"
-              fill="rgba(53, 69, 190, 0.95)"
+              fill="rgba(53, 69, 190, 0.9)"
               isAnimationActive={false}
-              onClick={(entry) => {
-                const payload = entry?.payload as { startMs: number; endMs: number } | undefined
-                if (payload) onRangeSelected({ startMs: payload.startMs, endMs: payload.endMs })
-              }}
+              onMouseEnter={handleBarPointerEnter}
+              onMouseLeave={handleBarPointerLeave}
+              onClick={handleBarClick}
             />
             <BarChart.Bar
               dataKey="infoActive"
@@ -259,21 +285,19 @@ export function AuditLogsHistogram({
               name="Neutral"
               fill="#3545BE"
               isAnimationActive={false}
-              onClick={(entry) => {
-                const payload = entry?.payload as { startMs: number; endMs: number } | undefined
-                if (payload) onRangeSelected({ startMs: payload.startMs, endMs: payload.endMs })
-              }}
+              onMouseEnter={handleBarPointerEnter}
+              onMouseLeave={handleBarPointerLeave}
+              onClick={handleBarClick}
             />
             <BarChart.Bar
               dataKey="warningInactive"
               stackId="logs"
               name="Warning (inactive)"
-              fill="rgba(247, 144, 9, 0.95)"
+              fill="rgba(247, 144, 9, 0.9)"
               isAnimationActive={false}
-              onClick={(entry) => {
-                const payload = entry?.payload as { startMs: number; endMs: number } | undefined
-                if (payload) onRangeSelected({ startMs: payload.startMs, endMs: payload.endMs })
-              }}
+              onMouseEnter={handleBarPointerEnter}
+              onMouseLeave={handleBarPointerLeave}
+              onClick={handleBarClick}
             />
             <BarChart.Bar
               dataKey="warningActive"
@@ -281,21 +305,19 @@ export function AuditLogsHistogram({
               name="Warning"
               fill="#f79009"
               isAnimationActive={false}
-              onClick={(entry) => {
-                const payload = entry?.payload as { startMs: number; endMs: number } | undefined
-                if (payload) onRangeSelected({ startMs: payload.startMs, endMs: payload.endMs })
-              }}
+              onMouseEnter={handleBarPointerEnter}
+              onMouseLeave={handleBarPointerLeave}
+              onClick={handleBarClick}
             />
             <BarChart.Bar
               dataKey="errorInactive"
               stackId="logs"
               name="Error (inactive)"
-              fill="rgba(217, 45, 32, 0.95)"
+              fill="rgba(217, 45, 32, 0.9)"
               isAnimationActive={false}
-              onClick={(entry) => {
-                const payload = entry?.payload as { startMs: number; endMs: number } | undefined
-                if (payload) onRangeSelected({ startMs: payload.startMs, endMs: payload.endMs })
-              }}
+              onMouseEnter={handleBarPointerEnter}
+              onMouseLeave={handleBarPointerLeave}
+              onClick={handleBarClick}
             />
             <BarChart.Bar
               dataKey="errorActive"
@@ -303,10 +325,9 @@ export function AuditLogsHistogram({
               name="Error"
               fill="#d92d20"
               isAnimationActive={false}
-              onClick={(entry) => {
-                const payload = entry?.payload as { startMs: number; endMs: number } | undefined
-                if (payload) onRangeSelected({ startMs: payload.startMs, endMs: payload.endMs })
-              }}
+              onMouseEnter={handleBarPointerEnter}
+              onMouseLeave={handleBarPointerLeave}
+              onClick={handleBarClick}
             />
           </BarChart>
         </Box>
@@ -326,29 +347,28 @@ function formatShortTime(ms: number): string {
 
 AuditLogsHistogram.displayName = 'AuditLogsHistogram'
 
-type TooltipSeries = {
-  payload?: {
-    startMs: number
-    endMs: number
-    total: number
-    infoActive?: number
-    infoInactive?: number
-    warningActive?: number
-    warningInactive?: number
-    errorActive?: number
-    errorInactive?: number
-  }
+type HistogramChartRow = {
+  index: number
+  startMs: number
+  endMs: number
+  total: number
+  infoActive?: number
+  infoInactive?: number
+  warningActive?: number
+  warningInactive?: number
+  errorActive?: number
+  errorInactive?: number
 }
 
 type TooltipContentProps = {
   active?: boolean
-  payload?: TooltipSeries[]
+  chartData: HistogramChartRow[]
   hoveredBucketIndex: number | null
 }
 
-function HistogramTooltipContent({ active, payload, hoveredBucketIndex }: TooltipContentProps) {
-  if (hoveredBucketIndex === null || !active || !payload || payload.length === 0) return null
-  const row = payload[0]?.payload
+function HistogramTooltipContent({ active, chartData, hoveredBucketIndex }: TooltipContentProps) {
+  if (hoveredBucketIndex === null || !active || chartData.length === 0) return null
+  const row = chartData[hoveredBucketIndex]
   if (!row) return null
   const info = (row.infoActive ?? 0) + (row.infoInactive ?? 0)
   const warning = (row.warningActive ?? 0) + (row.warningInactive ?? 0)
@@ -386,13 +406,4 @@ function LegendDot({ color, label }: { color: string; label: string }) {
       <Box style={{ fontSize: 14, lineHeight: '20px' }}>{label}</Box>
     </Box>
   )
-}
-
-function isRangeSelected(
-  selectedRange: HistogramRange | null | undefined,
-  startMs: number,
-  endMs: number,
-): boolean {
-  if (!selectedRange) return false
-  return selectedRange.startMs === startMs && selectedRange.endMs === endMs
 }

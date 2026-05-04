@@ -925,7 +925,15 @@ function CreateService({
 
   // ── Render ──
   return (
-    <Box style={{ minHeight: embedded ? undefined : '100vh', backgroundColor: embedded ? '#fff' : '#f9f9fb', width: '100%' }}>
+    <Box
+      style={{
+        minHeight: embedded ? undefined : '100vh',
+        backgroundColor: embedded
+          ? 'var(--aquarium-background-color-layer)'
+          : 'var(--aquarium-background-color-muted)',
+        width: '100%',
+      }}
+    >
       {embedded && onClose && !editMode && (
         <Box style={{ padding: `0 ${PADDING}px`, height: 24, display: 'flex', alignItems: 'center' }}>
           <Button.Ghost dense type="button" onClick={onClose}>← Back</Button.Ghost>

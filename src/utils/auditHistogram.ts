@@ -10,6 +10,35 @@ export type HistogramBucket = {
   count: number
 }
 
+const BUCKET_MATCH_EPS_MS = 90_000
+
+function isRangeSelected(
+  selectedRange: HistogramRange | null | undefined,
+  startMs: number,
+  endMs: number,
+): boolean {
+  if (!selectedRange) return false
+  return (
+    Math.abs(selectedRange.startMs - startMs) <= BUCKET_MATCH_EPS_MS &&
+    Math.abs(selectedRange.endMs - endMs) <= BUCKET_MATCH_EPS_MS
+  )
+}
+
+/** Selection wins over hover for bar-stack emphasis (stable selected styling). */
+export function getHistogramBucketStackFlags(
+  bucket: { index: number; startMs: number; endMs: number },
+  selectedRange: HistogramRange | null | undefined,
+  hoveredBucketIndex: number | null,
+): { isEmphasized: boolean; isDimmed: boolean } {
+  const hasSelection = Boolean(selectedRange)
+  const hasHover = hoveredBucketIndex !== null
+  const isSelected = isRangeSelected(selectedRange, bucket.startMs, bucket.endMs)
+  const isHovered = hoveredBucketIndex === bucket.index
+  const isEmphasized = hasSelection ? isSelected : hasHover ? isHovered : true
+  const isDimmed = hasSelection ? !isSelected : hasHover ? !isHovered : false
+  return { isEmphasized, isDimmed }
+}
+
 export type TimestampedLog = {
   occurredAt: Date
 }

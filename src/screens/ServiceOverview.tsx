@@ -61,7 +61,6 @@ type LogRow = {
   source: string
   message: string
   severity: LogSeverity
-  eventType: string
   component: PostgresServiceEventLog['component']
   service: string
   project: string
@@ -85,22 +84,19 @@ function pad2(value: number): string {
   return String(value).padStart(2, '0')
 }
 
-function pad3(value: number): string {
-  return String(value).padStart(3, '0')
-}
-
-function formatLogTimestamp(isoUtc: string): string {
+/** UTC instant as `2026-05-04T11:17:28Z` (no fractional seconds). */
+function formatLogTimestampIso8601Utc(isoUtc: string): string {
   const d = new Date(isoUtc)
-  return `${pad2(d.getUTCDate())}/${pad2(d.getUTCMonth() + 1)}/${String(d.getUTCFullYear()).slice(-2)} ${pad2(
+  if (Number.isNaN(d.getTime())) return isoUtc
+  return `${d.getUTCFullYear()}-${pad2(d.getUTCMonth() + 1)}-${pad2(d.getUTCDate())}T${pad2(
     d.getUTCHours(),
-  )}:${pad2(d.getUTCMinutes())}:${pad2(d.getUTCSeconds())}:${pad3(d.getUTCMilliseconds())}`
+  )}:${pad2(d.getUTCMinutes())}:${pad2(d.getUTCSeconds())}Z`
 }
 
 function mapServiceEventToLogRow(log: PostgresServiceEventLog): LogRow {
   const source = [log.component, log.host].filter(Boolean).join(' | ')
   const metadata = [
     { label: 'Severity', value: log.severity.toUpperCase() },
-    { label: 'Event type', value: log.eventType },
     { label: 'Component', value: log.component },
     ...(log.host ? [{ label: 'Host', value: log.host }] : []),
   ]
@@ -113,12 +109,11 @@ function mapServiceEventToLogRow(log: PostgresServiceEventLog): LogRow {
   for (const [key, value] of Object.entries(log.metadata ?? {})) {
     keyValues[key] = String(value)
   }
-  const displayTime = formatLogTimestamp(log.timestamp)
+  const displayTime = formatLogTimestampIso8601Utc(log.timestamp)
   const searchableText = [
     displayTime,
     source,
     log.message,
-    log.eventType,
     log.severity,
     log.component,
     log.service,
@@ -138,7 +133,6 @@ function mapServiceEventToLogRow(log: PostgresServiceEventLog): LogRow {
     source,
     message: log.message,
     severity: log.severity,
-    eventType: log.eventType,
     component: log.component,
     service: log.service,
     project: log.project,
@@ -168,29 +162,17 @@ const LOG_MONO_FONT =
 const ONE_HOUR_MS = 60 * 60 * 1000
 const DEFAULT_HISTOGRAM_HOURS = 24
 const MAX_HISTOGRAM_BARS = 72
-/** Keep histogram dimming aligned with the table after a bar click while `dateRange` still matches that window. */
+/** Keep histogram dimming aligned with the table after a bar click while the custom time filter still matches that window. */
 const HISTOGRAM_BAR_TRACK_SLACK_MS = 120_000
 const LOGS_PAGE_SIZE = 30
 /** Matches main content horizontal padding; top padding collapses while logs header is stuck. */
 const MAIN_CONTENT_SCROLL_PAD = 24
 /** Slack before restoring top padding when scrolling back (avoids padding ↔ measure oscillation). */
 const LOGS_STICKY_PAD_HYSTERESIS_PX = 40
-type LogDateRange = { start: CalendarDateTime; end: CalendarDateTime }
-const LOG_EVENT_TYPE_OPTIONS = [
-  'service.health_check_passed',
-  'connection.accepted',
-  'connection.count_high',
-  'connection.pool_saturation',
-  'connection.timeout',
-  'connection.rejected',
-  'postgres.too_many_connections',
-  'query.slow',
-  'pgbouncer.client_login_failed',
-  'pgbouncer.pool_wait_timeout',
-  'service.degraded',
-  'service.recovery_started',
-  'service.health_check_restored',
-] as const
+export type LogDateRange = { start: CalendarDateTime; end: CalendarDateTime }
+
+type ServiceLogTimeMode = 'relative-last-24h' | 'custom'
+
 const LOG_SEVERITY_OPTIONS: readonly LogSeverity[] = ['info', 'warning', 'error']
 
 function formatSeverityOption(severity: LogSeverity): string {
@@ -271,9 +253,30 @@ function histogramRangesAlignLoose(a: HistogramRange, b: HistogramRange, epsMs: 
 }
 
 /**
- * When there is no active `histogramBarSelection`, infers bar highlight from `dateRange` alone.
+ * When there is no active `histogramBarSelection`, infers bar highlight from the custom time filter alone.
  * Uses generous edge tolerance + midpoint for float bucket boundaries and minute-level picker values.
  */
+/** Maps a clicked or inferred window to canonical bucket `{ startMs, endMs }` for chart selection styling. */
+function snapRangeToHistogramBucket(
+  range: HistogramRange,
+  buckets: { startMs: number; endMs: number }[],
+  epsMs: number,
+): HistogramRange | null {
+  if (buckets.length === 0) return null
+  for (const b of buckets) {
+    if (Math.abs(b.startMs - range.startMs) <= epsMs && Math.abs(b.endMs - range.endMs) <= epsMs) {
+      return { startMs: b.startMs, endMs: b.endMs }
+    }
+  }
+  const mid = (range.startMs + range.endMs) / 2
+  for (const b of buckets) {
+    if (mid >= b.startMs && mid < b.endMs) {
+      return { startMs: b.startMs, endMs: b.endMs }
+    }
+  }
+  return null
+}
+
 function findHistogramBucketForTimeFilter(
   filterMs: HistogramRange | null,
   buckets: { startMs: number; endMs: number }[],
@@ -307,13 +310,6 @@ function findHistogramBucketForTimeFilter(
   return null
 }
 
-function classifyLogEventType(row: LogRow): (typeof LOG_EVENT_TYPE_OPTIONS)[number] {
-  if ((LOG_EVENT_TYPE_OPTIONS as readonly string[]).includes(row.eventType)) {
-    return row.eventType as (typeof LOG_EVENT_TYPE_OPTIONS)[number]
-  }
-  return 'service.health_check_passed'
-}
-
 function matchesLogSearch(row: LogRow, query: string): boolean {
   const normalized = query.trim().toLowerCase()
   if (!normalized) return true
@@ -329,7 +325,6 @@ function logRowToJson(row: LogRow) {
     source: row.source,
     message: row.message,
     severity: row.severity,
-    eventType: row.eventType,
     component: row.component,
     service: row.service,
     project: row.project,
@@ -354,13 +349,11 @@ function downloadServiceLogsJson(rows: LogRow[], filename = 'service-logs.json')
   URL.revokeObjectURL(a.href)
 }
 
-function DateRangeFilterTrigger({
-  appliedRange,
-  onClearAppliedRange,
-}: {
-  appliedRange: LogDateRange | null
-  onClearAppliedRange?: () => void
-}) {
+/**
+ * Opens the range calendar. Omit `value` on `Filter.Trigger` so only Aquarium’s locale
+ * preview (`DateDisplay`, e.g. `03/05/2026, 11:23`) is shown — passing `value` would duplicate it.
+ */
+function DateRangeFilterTrigger({ onClear }: { onClear?: () => void }) {
   const dateRangeState = useContext(AriaDateRangePickerStateContext) as
     | { setOpen?: (open: boolean) => void }
     | null
@@ -369,7 +362,8 @@ function DateRangeFilterTrigger({
     <Filter.Trigger
       labelText="Time range"
       icon={filterIcon}
-      onClear={appliedRange && onClearAppliedRange ? () => onClearAppliedRange() : undefined}
+      clearSelectionEnabled={!!onClear}
+      onClear={onClear}
       onClick={() => dateRangeState?.setOpen?.(true)}
     />
   )
@@ -447,6 +441,11 @@ export type ServiceOverviewProps = {
   onOrgHomeClick?: () => void
   /** Optional scenario hook to open a specific sidebar item by default. */
   initialSidebarItem?: string
+  /**
+   * When set (shared link, saved search, etc.), loads this absolute window and keeps it until the user changes it.
+   * Omit to use the rolling **Last 24 hours** preset anchored to the current instant.
+   */
+  initialServiceLogsTimeRange?: LogDateRange
 }
 
 function ServiceOverview({
@@ -462,6 +461,7 @@ function ServiceOverview({
   onBillingClick,
   onOrgHomeClick,
   initialSidebarItem,
+  initialServiceLogsTimeRange,
 }: ServiceOverviewProps) {
   const isMySQL = serviceTypeId === 'mysql'
   const isPostgres = serviceTypeId === 'postgresql'
@@ -508,17 +508,23 @@ function ServiceOverview({
 
   const [comparePricingOpen, setComparePricingOpen] = useState(false)
   const [sidebarItem, setSidebarItem] = useState(initialSidebarItem ?? 'overview')
-  const latestLogMs = Date.parse(MOCK_LOG_ROWS[MOCK_LOG_ROWS.length - 1]?.time ?? new Date().toISOString())
-  const defaultLogRange = createRelativeLogRange(new Date(latestLogMs), DEFAULT_HISTOGRAM_HOURS * 60)
-  const [dateRange, setDateRange] = useState<LogDateRange | null>(null)
-  const [histogramWindowRange, setHistogramWindowRange] = useState<HistogramRange>(toHistogramRange(defaultLogRange))
+  const [rollingNow, setRollingNow] = useState(() => new Date())
+  const [logTimeRangeMode, setLogTimeRangeMode] = useState<ServiceLogTimeMode>(() =>
+    initialServiceLogsTimeRange ? 'custom' : 'relative-last-24h',
+  )
+  const [customLogDateRange, setCustomLogDateRange] = useState<LogDateRange | null>(() =>
+    initialServiceLogsTimeRange ?? null,
+  )
+  const [histogramWindowRange, setHistogramWindowRange] = useState<HistogramRange>(() =>
+    initialServiceLogsTimeRange
+      ? toHistogramRange(initialServiceLogsTimeRange)
+      : toHistogramRange(createRelativeLogRange(new Date(), DEFAULT_HISTOGRAM_HOURS * 60)),
+  )
   /** Exact bucket `{ startMs, endMs }` from the last bar click; cleared when the time filter no longer matches. */
   const [histogramBarSelection, setHistogramBarSelection] = useState<HistogramRange | null>(null)
   const [isHistogramRefreshing, setIsHistogramRefreshing] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
-  const [eventFilterOpen, setEventFilterOpen] = useState(false)
   const [severityFilterOpen, setSeverityFilterOpen] = useState(false)
-  const [selectedEventTypes, setSelectedEventTypes] = useState<string[]>([])
   const [selectedSeverities, setSelectedSeverities] = useState<LogSeverity[]>([])
   const [visibleLogsCount, setVisibleLogsCount] = useState(LOGS_PAGE_SIZE)
   const [logsTopPadCollapsed, setLogsTopPadCollapsed] = useState(false)
@@ -529,26 +535,28 @@ function ServiceOverview({
   const histogramRefreshTimerRef = useRef<number | null>(null)
   const hasMountedRef = useRef(false)
   const loadMoreSentinelRef = useRef<HTMLDivElement>(null)
-  const eventFilterRef = useRef<HTMLDivElement>(null)
   const severityFilterRef = useRef<HTMLDivElement>(null)
   const contentRef = useRef<HTMLDivElement>(null)
   /** Sits flush above the logs DataList; when it leaves the top of the scrollport, the table header is stuck. */
   const logsStickySentinelRef = useRef<HTMLDivElement>(null)
+  const activeLogRange = useMemo((): LogDateRange => {
+    if (logTimeRangeMode === 'custom' && customLogDateRange) {
+      return customLogDateRange
+    }
+    return createRelativeLogRange(rollingNow, DEFAULT_HISTOGRAM_HOURS * 60)
+  }, [logTimeRangeMode, customLogDateRange, rollingNow])
+
   const filteredLogRows = useMemo(() => {
-    const activeRange = dateRange ?? defaultLogRange
-    const startMs = calendarDateTimeToUtcMs(activeRange.start)
-    const endMs = calendarDateTimeToUtcMs(activeRange.end)
+    const startMs = calendarDateTimeToUtcMs(activeLogRange.start)
+    const endMs = calendarDateTimeToUtcMs(activeLogRange.end)
     return MOCK_LOG_ROWS.filter((row) => {
       const ts = row.timestampMs
       if (ts < startMs || ts > endMs) return false
       if (!matchesLogSearch(row, searchQuery)) return false
       if (selectedSeverities.length > 0 && !selectedSeverities.includes(row.severity)) return false
-      if (selectedEventTypes.length > 0 && !selectedEventTypes.includes(classifyLogEventType(row))) {
-        return false
-      }
       return true
     })
-  }, [dateRange, defaultLogRange, searchQuery, selectedEventTypes, selectedSeverities])
+  }, [activeLogRange, searchQuery, selectedSeverities])
   const clampedHistogramRange = useMemo<HistogramRange>(() => {
     const alignedStartMs = Math.floor(histogramWindowRange.startMs / ONE_HOUR_MS) * ONE_HOUR_MS
     const alignedEndMs = Math.max(
@@ -573,23 +581,22 @@ function ServiceOverview({
       return ts >= clampedHistogramRange.startMs && ts <= clampedHistogramRange.endMs
     })
   }, [clampedHistogramRange])
-  const histogramFilteredByEventTypeRows = useMemo(() => {
+  const histogramFilteredRows = useMemo(() => {
     return histogramLogRows.filter((row) => {
       if (!matchesLogSearch(row, searchQuery)) return false
       if (selectedSeverities.length > 0 && !selectedSeverities.includes(row.severity)) return false
-      if (selectedEventTypes.length === 0) return true
-      return selectedEventTypes.includes(classifyLogEventType(row))
+      return true
     })
-  }, [histogramLogRows, searchQuery, selectedEventTypes, selectedSeverities])
+  }, [histogramLogRows, searchQuery, selectedSeverities])
   const histogramBucketsData = useMemo(() => {
     return buildLogHistogramBuckets(
-      histogramFilteredByEventTypeRows.map((row) => ({
+      histogramFilteredRows.map((row) => ({
         id: row.id,
         timestamp: row.time,
         service: 'checkout-pg-prod',
         serviceType: 'postgresql',
         severity: row.severity,
-        eventType: row.eventType,
+        eventType: '',
         message: row.message,
         component: row.component,
         project: 'payments-prod',
@@ -598,24 +605,25 @@ function ServiceOverview({
       clampedHistogramRange,
       getHourlyBucketCount(clampedHistogramRange),
     )
-  }, [histogramFilteredByEventTypeRows, clampedHistogramRange])
+  }, [histogramFilteredRows, clampedHistogramRange])
   const histogramFilterRangeMs = useMemo((): HistogramRange | null => {
-    if (!dateRange) return null
-    return toHistogramRange(dateRange)
-  }, [dateRange])
+    if (logTimeRangeMode !== 'custom' || !customLogDateRange) return null
+    return toHistogramRange(customLogDateRange)
+  }, [logTimeRangeMode, customLogDateRange])
   const selectedHistogramRange = useMemo((): HistogramRange | null => {
-    if (histogramBarSelection && histogramFilterRangeMs) {
-      if (
-        histogramRangesAlignLoose(
-          histogramFilterRangeMs,
-          histogramBarSelection,
-          HISTOGRAM_BAR_TRACK_SLACK_MS,
-        )
-      ) {
-        return histogramBarSelection
-      }
+    if (histogramBarSelection && histogramBucketsData.buckets.length > 0) {
+      const snapped = snapRangeToHistogramBucket(
+        histogramBarSelection,
+        histogramBucketsData.buckets,
+        HISTOGRAM_BAR_TRACK_SLACK_MS,
+      )
+      if (snapped) return snapped
     }
-    return findHistogramBucketForTimeFilter(histogramFilterRangeMs, histogramBucketsData.buckets)
+    return (
+      findHistogramBucketForTimeFilter(histogramFilterRangeMs, histogramBucketsData.buckets) ??
+      histogramBarSelection ??
+      null
+    )
   }, [histogramBarSelection, histogramBucketsData.buckets, histogramFilterRangeMs])
   const severityCountsByBucket = useMemo<Record<number, { info: number; warning: number; error: number }>>(() => {
     const out: Record<number, { info: number; warning: number; error: number }> = {}
@@ -636,25 +644,36 @@ function ServiceOverview({
   }, [filteredLogRows])
 
   const hasExplicitLogTimeRange =
-    dateRange != null &&
-    calendarDateTimeToUtcMs(dateRange.start) <= calendarDateTimeToUtcMs(dateRange.end)
+    logTimeRangeMode === 'custom' &&
+    customLogDateRange != null &&
+    calendarDateTimeToUtcMs(customLogDateRange.start) <= calendarDateTimeToUtcMs(customLogDateRange.end)
 
   const visibleLogRows = useMemo(() => {
     return sortedLogRows.slice(0, visibleLogsCount)
   }, [sortedLogRows, visibleLogsCount])
   const hasMoreLogRows = visibleLogRows.length < sortedLogRows.length
 
+  const initialServiceLogsTimeRangeRef = useRef(initialServiceLogsTimeRange)
+  initialServiceLogsTimeRangeRef.current = initialServiceLogsTimeRange
+
   useEffect(() => {
     setSidebarItem(initialSidebarItem ?? 'overview')
-    const resetRange = createRelativeLogRange(new Date(latestLogMs), DEFAULT_HISTOGRAM_HOURS * 60)
-    setDateRange(null)
-    setHistogramWindowRange(toHistogramRange(resetRange))
+    const fresh = new Date()
+    setRollingNow(fresh)
+    const logsTimeFromProps = initialServiceLogsTimeRangeRef.current
+    if (logsTimeFromProps) {
+      setLogTimeRangeMode('custom')
+      setCustomLogDateRange(logsTimeFromProps)
+      setHistogramWindowRange(toHistogramRange(logsTimeFromProps))
+    } else {
+      setLogTimeRangeMode('relative-last-24h')
+      setCustomLogDateRange(null)
+      setHistogramWindowRange(toHistogramRange(createRelativeLogRange(fresh, DEFAULT_HISTOGRAM_HOURS * 60)))
+    }
     setHistogramBarSelection(null)
     setSearchQuery('')
-    setSelectedEventTypes([])
     setSelectedSeverities([])
     setVisibleLogsCount(LOGS_PAGE_SIZE)
-    setEventFilterOpen(false)
     setSeverityFilterOpen(false)
     setAiAssistantOpen(false)
     setAiDraft('')
@@ -663,13 +682,27 @@ function ServiceOverview({
       window.clearTimeout(aiResponseTimerRef.current)
       aiResponseTimerRef.current = null
     }
-  }, [serviceIdProp, initialSidebarItem, latestLogMs])
+  }, [serviceIdProp, initialSidebarItem])
 
   useEffect(() => {
-    if (dateRange === null) {
+    if (logTimeRangeMode === 'relative-last-24h') {
       setHistogramBarSelection(null)
     }
-  }, [dateRange])
+  }, [logTimeRangeMode])
+
+  useEffect(() => {
+    if (sidebarItem !== 'logs' || logTimeRangeMode !== 'relative-last-24h') return
+    setRollingNow(new Date())
+    const id = window.setInterval(() => {
+      setRollingNow(new Date())
+    }, 60_000)
+    return () => window.clearInterval(id)
+  }, [sidebarItem, logTimeRangeMode])
+
+  useEffect(() => {
+    if (logTimeRangeMode !== 'relative-last-24h') return
+    setHistogramWindowRange(toHistogramRange(createRelativeLogRange(rollingNow, DEFAULT_HISTOGRAM_HOURS * 60)))
+  }, [logTimeRangeMode, rollingNow])
 
   useEffect(() => {
     return () => {
@@ -700,22 +733,19 @@ function ServiceOverview({
   }, [searchQuery])
 
   useEffect(() => {
-    if (!eventFilterOpen && !severityFilterOpen) return
+    if (!severityFilterOpen) return
     function handleMouseDown(event: MouseEvent) {
-      if (eventFilterRef.current && !eventFilterRef.current.contains(event.target as Node)) {
-        setEventFilterOpen(false)
-      }
       if (severityFilterRef.current && !severityFilterRef.current.contains(event.target as Node)) {
         setSeverityFilterOpen(false)
       }
     }
     document.addEventListener('mousedown', handleMouseDown)
     return () => document.removeEventListener('mousedown', handleMouseDown)
-  }, [eventFilterOpen, severityFilterOpen])
+  }, [severityFilterOpen])
 
   useEffect(() => {
     setVisibleLogsCount(LOGS_PAGE_SIZE)
-  }, [dateRange, searchQuery, selectedEventTypes, selectedSeverities])
+  }, [activeLogRange, searchQuery, selectedSeverities])
 
   useEffect(() => {
     if (!hasMoreLogRows || !loadMoreSentinelRef.current || !contentRef.current) return
@@ -816,7 +846,6 @@ function ServiceOverview({
       `#### Summary`,
       `- **Time**: ${row.displayTime}`,
       `- **Severity**: ${row.severity.toUpperCase()}`,
-      `- **Event type**: ${row.eventType}`,
       `- **Source**: ${row.source}`,
       ``,
       `#### Message`,
@@ -836,7 +865,7 @@ function ServiceOverview({
       {
         id: `u-log-${Date.now()}-${row.id}`,
         role: 'user',
-        text: `Explore this log entry with AI: ${row.displayTime} · ${row.eventType}`,
+        text: `Explore this log entry with AI: ${row.displayTime} · ${row.source}`,
       },
       {
         id: loadingId,
@@ -867,14 +896,31 @@ function ServiceOverview({
 
   const handleExploreLogWindow = (row: LogRow) => {
     const centeredRange = createCenteredLogRange(row.timestampMs, 2 * 60 * 1000)
-    setDateRange(centeredRange)
+    setLogTimeRangeMode('custom')
+    setCustomLogDateRange(centeredRange)
     setHistogramWindowRange(toHistogramRange(centeredRange))
+    setHistogramBarSelection(null)
+  }
+
+  const clearServiceLogsTimeFilter = () => {
+    const fresh = new Date()
+    setRollingNow(fresh)
+    setLogTimeRangeMode('relative-last-24h')
+    setCustomLogDateRange(null)
+    setHistogramWindowRange(toHistogramRange(createRelativeLogRange(fresh, DEFAULT_HISTOGRAM_HOURS * 60)))
     setHistogramBarSelection(null)
   }
 
   return (
     <>
-    <Box style={{ height: '100vh', backgroundColor: '#fff', display: 'flex', flexDirection: 'column' }}>
+    <Box
+      style={{
+        height: '100vh',
+        backgroundColor: 'var(--aquarium-background-color-body)',
+        display: 'flex',
+        flexDirection: 'column',
+      }}
+    >
       <ConsoleHeader activeNav="projects" onHomeClick={onOrgHomeClick} onBillingClick={onBillingClick} onProjectsClick={onOrgHomeClick} />
 
       <Box style={{ display: 'flex', flex: 1, minHeight: 0 }}>
@@ -899,7 +945,7 @@ function ServiceOverview({
                 : MAIN_CONTENT_SCROLL_PAD,
             overflow: 'auto',
             overflowAnchor: 'none',
-            backgroundColor: '#fff',
+            backgroundColor: 'var(--aquarium-background-color-layer)',
           }}
         >
           {sidebarItem === 'logs' ? (
@@ -960,7 +1006,7 @@ function ServiceOverview({
                   <Box style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 12, flex: '1 1 auto', minWidth: 0 }}>
                     <Box style={{ flex: '1 1 340px', minWidth: 240, maxWidth: 480 }}>
                       <InputBase
-                        placeholder="Search logs by message, event type, source, or metadata..."
+                        placeholder="Search logs by message, source, or metadata..."
                         aria-label="Search service logs"
                         value={searchQuery}
                         onChange={(event) => setSearchQuery((event.target as HTMLInputElement).value)}
@@ -969,13 +1015,14 @@ function ServiceOverview({
                     <DateTimeRangePicker
                       aria-label="Date and time range"
                       granularity="minute"
-                      value={dateRange ?? undefined}
+                      value={activeLogRange}
                       reserveSpaceForError={false}
                       onChange={(value) => {
                         if (value?.start && value?.end) {
                           const nextRange = { start: value.start as CalendarDateTime, end: value.end as CalendarDateTime }
                           const nextMs = toHistogramRange(nextRange)
-                          setDateRange(nextRange)
+                          setLogTimeRangeMode('custom')
+                          setCustomLogDateRange(nextRange)
                           setHistogramWindowRange(nextMs)
                           setHistogramBarSelection((prev) =>
                             prev && histogramRangesAlignLoose(nextMs, prev, HISTOGRAM_BAR_TRACK_SLACK_MS)
@@ -983,61 +1030,34 @@ function ServiceOverview({
                               : null,
                           )
                         } else {
-                          setDateRange(null)
-                          setHistogramWindowRange(toHistogramRange(defaultLogRange))
-                          setHistogramBarSelection(null)
+                          clearServiceLogsTimeFilter()
                         }
                       }}
                       shouldCloseOnSelect={false}
                     >
-                      <DateRangeFilterTrigger
-                        appliedRange={dateRange}
-                        onClearAppliedRange={() => {
-                          setDateRange(null)
-                          setHistogramWindowRange(toHistogramRange(defaultLogRange))
-                          setHistogramBarSelection(null)
-                        }}
-                      />
+                      <Box style={{ position: 'relative', display: 'inline-block' }}>
+                        <Box
+                          aria-hidden
+                          style={{
+                            position: 'absolute',
+                            inset: 0,
+                            opacity: 0,
+                            pointerEvents: 'none',
+                            overflow: 'hidden',
+                            zIndex: 0,
+                          }}
+                        >
+                          <DateTimeRangePicker.Field clearSelectionEnabled={false} />
+                        </Box>
+                        <Box style={{ position: 'relative', zIndex: 1 }}>
+                          <DateRangeFilterTrigger
+                            onClear={hasExplicitLogTimeRange ? clearServiceLogsTimeFilter : undefined}
+                          />
+                        </Box>
+                      </Box>
                       <DateTimeRangePicker.Calendar />
                     </DateTimeRangePicker>
 
-                    <div ref={eventFilterRef} style={{ position: 'relative' }}>
-                      <Filter.Trigger
-                        labelText="Event type"
-                        icon={filterIcon}
-                        value={selectedEventTypes.length > 0 ? selectedEventTypes.join(', ') : undefined}
-                        onClear={selectedEventTypes.length > 0 ? () => setSelectedEventTypes([]) : undefined}
-                        onClick={() => setEventFilterOpen((open) => !open)}
-                      />
-                      {eventFilterOpen && (
-                        <Box
-                          style={{
-                            position: 'absolute',
-                            top: 'calc(100% + 8px)',
-                            left: 0,
-                            zIndex: 200,
-                            backgroundColor: '#fff',
-                            border: '1px solid #e0e0e8',
-                            borderRadius: 8,
-                            boxShadow: '0 4px 24px rgba(0, 0, 0, 0.12)',
-                            padding: 16,
-                            minWidth: 260,
-                          }}
-                        >
-                          <CheckboxGroup
-                            labelText="Event type"
-                            value={selectedEventTypes}
-                            onChange={(value) => setSelectedEventTypes(value ?? [])}
-                          >
-                            {LOG_EVENT_TYPE_OPTIONS.map((option) => (
-                              <Checkbox key={option} value={option}>
-                                {option}
-                              </Checkbox>
-                            ))}
-                          </CheckboxGroup>
-                        </Box>
-                      )}
-                    </div>
                     <div ref={severityFilterRef} style={{ position: 'relative' }}>
                       <Filter.Trigger
                         labelText="Severity"
@@ -1110,7 +1130,8 @@ function ServiceOverview({
                     isRefreshing={isHistogramRefreshing}
                     onRangeSelected={(range) => {
                       setHistogramBarSelection({ startMs: range.startMs, endMs: range.endMs })
-                      setDateRange({
+                      setLogTimeRangeMode('custom')
+                      setCustomLogDateRange({
                         start: utcDateToCalendarDateTime(new Date(range.startMs)),
                         end: utcDateToCalendarDateTime(new Date(range.endMs)),
                       })
@@ -1552,7 +1573,7 @@ function LogsDataList({
     {
       type: 'custom' as const,
       headerName: 'Time',
-      width: 220,
+      width: 248,
       UNSAFE_render: (row: LogRow) => (
         <Box component="span" style={{ color: '#242429' }}>
           <Box component="span" style={{ fontFamily: LOG_MONO_FONT, fontSize: 12, lineHeight: '16px' }}>
@@ -1589,18 +1610,6 @@ function LogsDataList({
         <Box component="span" style={{ color: '#242429' }}>
           <Box component="span" style={{ fontFamily: LOG_MONO_FONT, fontSize: 12, lineHeight: '16px' }}>
             {row.source}
-          </Box>
-        </Box>
-      ),
-    },
-    {
-      type: 'custom' as const,
-      headerName: 'Event type',
-      width: 230,
-      UNSAFE_render: (row: LogRow) => (
-        <Box component="span" style={{ color: '#242429' }}>
-          <Box component="span" style={{ fontFamily: LOG_MONO_FONT, fontSize: 12, lineHeight: '16px' }}>
-            {row.eventType}
           </Box>
         </Box>
       ),

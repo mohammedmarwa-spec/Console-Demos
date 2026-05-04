@@ -10,6 +10,7 @@ import BillingInvoiceDetail from './screens/BillingInvoiceDetail'
 import OrgHomePage from './screens/OrgHomePage'
 import ServiceTypeSelectModal, { getServiceTypeDisplayName, type ServiceTypeId } from './screens/ServiceTypeSelectModal'
 import { ScenarioProvider, ScenarioPanel, ScenarioTrigger, useScenario } from './scenarios'
+import { ThemeProvider } from './theme'
 import { MysqlAcuRolloutModal } from './screens/MysqlAcuRolloutModal'
 import { UpgradeServiceModal, UPGRADE_PLAN_SERVICE_DATA, type UpgradeTier } from './screens/UpgradeServiceModal'
 import { UpgradeServiceModalV2 } from './screens/UpgradeServiceModalV2'
@@ -747,9 +748,11 @@ AppContent.displayName = 'AppContent'
 function App() {
   return (
     <ScenarioProvider>
-      <ToastProvider>
-        <AppContent />
-      </ToastProvider>
+      <ThemeProvider>
+        <ToastProvider>
+          <AppContent />
+        </ToastProvider>
+      </ThemeProvider>
     </ScenarioProvider>
   )
 }

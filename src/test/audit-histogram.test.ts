@@ -1,5 +1,9 @@
 import { describe, expect, it } from 'vitest'
-import { buildHistogramBuckets, toRangeFromSelection } from '../utils/auditHistogram'
+import {
+  buildHistogramBuckets,
+  getHistogramBucketStackFlags,
+  toRangeFromSelection,
+} from '../utils/auditHistogram'
 
 describe('buildHistogramBuckets', () => {
   it('distributes logs into expected buckets', () => {
@@ -43,6 +47,34 @@ describe('buildHistogramBuckets', () => {
     const { buckets } = buildHistogramBuckets(logs, 3, range)
 
     expect(buckets.map((b) => b.count)).toEqual([1, 0, 1])
+  })
+})
+
+describe('getHistogramBucketStackFlags', () => {
+  const ONE_HOUR_MS = 3_600_000
+  const bucket0 = { index: 0, startMs: 0, endMs: ONE_HOUR_MS }
+  const bucket1 = { index: 1, startMs: ONE_HOUR_MS, endMs: 2 * ONE_HOUR_MS }
+  const selected = { startMs: 0, endMs: ONE_HOUR_MS }
+
+  it('keeps selected bucket emphasized when hovering a different bar', () => {
+    const a = getHistogramBucketStackFlags(bucket0, selected, 1)
+    const b = getHistogramBucketStackFlags(bucket1, selected, 1)
+    expect(a).toEqual({ isEmphasized: true, isDimmed: false })
+    expect(b).toEqual({ isEmphasized: false, isDimmed: true })
+  })
+
+  it('keeps selection split after hover clears', () => {
+    const a = getHistogramBucketStackFlags(bucket0, selected, null)
+    const b = getHistogramBucketStackFlags(bucket1, selected, null)
+    expect(a).toEqual({ isEmphasized: true, isDimmed: false })
+    expect(b).toEqual({ isEmphasized: false, isDimmed: true })
+  })
+
+  it('uses hover-only emphasis when there is no selection', () => {
+    const hovered = getHistogramBucketStackFlags(bucket1, null, 1)
+    const other = getHistogramBucketStackFlags(bucket0, null, 1)
+    expect(hovered).toEqual({ isEmphasized: true, isDimmed: false })
+    expect(other).toEqual({ isEmphasized: false, isDimmed: true })
   })
 })
 

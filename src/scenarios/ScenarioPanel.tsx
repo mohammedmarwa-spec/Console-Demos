@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useTheme, type ThemePreference } from '../theme'
 import { getGroups, getScenariosByGroup, type Scenario } from './scenarioConfig'
 import { useScenario } from './ScenarioContext'
 import './scenario.css'
@@ -129,7 +130,32 @@ function ScenarioGroup({ group, scenarios, activeScenarioId, onSelect }: Scenari
 
 // ─── ScenarioPanel ────────────────────────────────────────────────────────────
 
+function ThemeOption({
+  label,
+  value,
+  current,
+  onSelect,
+}: {
+  label: string
+  value: ThemePreference
+  current: ThemePreference
+  onSelect: (v: ThemePreference) => void
+}) {
+  const active = current === value
+  return (
+    <button
+      type="button"
+      className={`scenario-panel__theme-btn${active ? ' scenario-panel__theme-btn--active' : ''}`}
+      onClick={() => onSelect(value)}
+      aria-pressed={active}
+    >
+      {label}
+    </button>
+  )
+}
+
 export function ScenarioPanel() {
+  const { preference, setPreference } = useTheme()
   const { activeScenarioId, isPanelOpen, setScenario, resetScenario, closePanel } = useScenario()
   const [query, setQuery] = useState('')
   const panelRef = useRef<HTMLDivElement>(null)
@@ -272,6 +298,22 @@ export function ScenarioPanel() {
               No scenarios match <em>"{query}"</em>
             </p>
           )}
+        </div>
+
+        {/* ── Appearance (Aquarium light/dark) ── */}
+        <div className="scenario-panel__theme">
+          <span className="scenario-panel__theme-label" id="scenario-panel-theme-label">
+            Appearance
+          </span>
+          <div
+            className="scenario-panel__theme-options"
+            role="group"
+            aria-labelledby="scenario-panel-theme-label"
+          >
+            <ThemeOption label="System" value="system" current={preference} onSelect={setPreference} />
+            <ThemeOption label="Light" value="light" current={preference} onSelect={setPreference} />
+            <ThemeOption label="Dark" value="dark" current={preference} onSelect={setPreference} />
+          </div>
         </div>
 
         {/* ── Footer ── */}

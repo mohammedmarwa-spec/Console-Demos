@@ -48,8 +48,8 @@ export function ServiceSidebar({
       style={{
         width: 280,
         flexShrink: 0,
-        borderRight: '1px solid #ededf0',
-        backgroundColor: '#fff',
+        borderRight: '1px solid var(--aquarium-border-color-muted)',
+        backgroundColor: 'var(--aquarium-background-color-layer)',
         display: 'flex',
         flexDirection: 'column',
       }}

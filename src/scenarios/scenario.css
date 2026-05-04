@@ -419,6 +419,62 @@
   line-height: 1.5;
 }
 
+/* ─── Appearance (Aquarium theme) ───────────────────────────────────────── */
+
+.scenario-panel__theme {
+  flex-shrink: 0;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  padding: 10px 16px 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.scenario-panel__theme-label {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.28);
+}
+
+.scenario-panel__theme-options {
+  display: flex;
+  gap: 6px;
+}
+
+.scenario-panel__theme-btn {
+  flex: 1;
+  min-width: 0;
+  padding: 6px 8px;
+  border-radius: 5px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.04);
+  color: rgba(255, 255, 255, 0.45);
+  font-size: 11px;
+  font-weight: 500;
+  font-family: inherit;
+  cursor: pointer;
+  transition: background 0.1s, color 0.1s, border-color 0.1s;
+  line-height: 1.2;
+}
+
+.scenario-panel__theme-btn:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: rgba(255, 255, 255, 0.75);
+}
+
+.scenario-panel__theme-btn--active {
+  border-color: rgba(99, 102, 241, 0.55);
+  background: rgba(99, 102, 241, 0.2);
+  color: rgba(199, 210, 254, 0.95);
+}
+
+.scenario-panel__theme-btn:focus-visible {
+  outline: 2px solid rgba(99, 102, 241, 0.65);
+  outline-offset: 2px;
+}
+
 /* ─── Footer ─────────────────────────────────────────────────────────────── */
 
 .scenario-panel__footer {
