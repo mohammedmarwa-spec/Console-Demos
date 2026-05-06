@@ -111,8 +111,7 @@ export default function EditService() {
     <Box
       style={{
         minHeight: '100vh',
-        background:
-          'radial-gradient(circle at top, #0b1220 0, #0b1220 40%, #05070d 100%)',
+        backgroundColor: 'var(--aquarium-background-color-body)',
         padding: 24,
         display: 'flex',
         justifyContent: 'center',
@@ -123,7 +122,7 @@ export default function EditService() {
         style={{
           width: '100%',
           maxWidth: 1376,
-          backgroundColor: '#fff',
+          backgroundColor: 'var(--aquarium-background-color-layer)',
           borderRadius: 4,
           overflow: 'hidden',
           boxShadow:
@@ -133,7 +132,7 @@ export default function EditService() {
         {/* Header */}
         <Box
           style={{
-            borderBottom: '1px solid #ededf0',
+            borderBottom: '1px solid var(--aquarium-border-color-muted)',
             padding: '24px 32px',
             display: 'flex',
             alignItems: 'center',
@@ -146,7 +145,7 @@ export default function EditService() {
               width: 42,
               height: 42,
               borderRadius: 10,
-              background: 'linear-gradient(135deg, #3545be 0%, #8b5cf6 100%)',
+              background: 'linear-gradient(135deg, var(--aquarium-background-color-primary-graphic) 0%, var(--aquarium-colors-primary-70) 100%)',
             }}
           />
           <Box style={{ flex: 1 }}>
@@ -210,8 +209,8 @@ export default function EditService() {
                       style={{
                         borderRadius: 999,
                         paddingInline: 16,
-                        backgroundColor: isActive ? '#f3f6ff' : undefined,
-                        borderColor: isActive ? '#3545be' : undefined,
+                        backgroundColor: isActive ? 'var(--aquarium-background-color-primary-muted)' : undefined,
+                        borderColor: isActive ? 'var(--aquarium-border-color-primary-default)' : undefined,
                         color: isActive ? '#292a31' : undefined,
                       }}
                     >
@@ -256,10 +255,10 @@ export default function EditService() {
                     style={{
                       padding: '8px 16px',
                       borderRadius: 6,
-                      border: '1px solid #ededf0',
+                      border: '1px solid var(--aquarium-border-color-muted)',
                       background:
-                        computeType === value ? '#3545be' : '#fff',
-                      color: computeType === value ? '#fff' : '#292a31',
+                        computeType === value ? 'var(--aquarium-background-color-primary-graphic)' : 'var(--aquarium-background-color-layer)',
+                      color: computeType === value ? 'var(--aquarium-text-color-opposite-default)' : 'var(--aquarium-text-color-default)',
                       fontWeight: 500,
                       cursor: 'pointer',
                       fontSize: 14,
@@ -285,10 +284,10 @@ export default function EditService() {
                       alignItems: 'center',
                       justifyContent: 'space-between',
                       padding: '12px 16px',
-                      border: `1px solid ${computeOption === i ? '#3545be' : '#ededf0'}`,
+                      border: `1px solid ${computeOption === i ? 'var(--aquarium-border-color-primary-default)' : 'var(--aquarium-border-color-muted)'}`,
                       borderRadius: 6,
                       backgroundColor:
-                        computeOption === i ? '#f3f6ff' : '#fff',
+                        computeOption === i ? 'var(--aquarium-background-color-primary-muted)' : 'var(--aquarium-background-color-layer)',
                       cursor: 'pointer',
                       outline: 'none',
                     }}
@@ -319,8 +318,8 @@ export default function EditService() {
           <Box
             style={{
               width: 340,
-              borderLeft: '1px solid #ededf0',
-              backgroundColor: '#fff',
+              borderLeft: '1px solid var(--aquarium-border-color-muted)',
+              backgroundColor: 'var(--aquarium-background-color-layer)',
               display: 'flex',
               flexDirection: 'column',
             }}
@@ -378,8 +377,8 @@ export default function EditService() {
                         marginLeft: 8,
                         padding: '2px 8px',
                         borderRadius: 4,
-                        backgroundColor: '#e8f5e9',
-                        color: '#2e7d32',
+                        backgroundColor: 'var(--aquarium-background-color-success-muted)',
+                        color: 'var(--aquarium-text-color-success-intense)',
                         fontSize: 12,
                         fontWeight: 600,
                       }}
@@ -484,8 +483,8 @@ function TierCard({
         if (e.key === 'Enter' || e.key === ' ') onSelect()
       }}
       style={{
-        border: `1px solid ${selected ? '#3545be' : '#ededf0'}`,
-        backgroundColor: selected ? '#f3f6ff' : '#fff',
+        border: `1px solid ${selected ? 'var(--aquarium-border-color-primary-default)' : 'var(--aquarium-border-color-muted)'}`,
+        backgroundColor: selected ? 'var(--aquarium-background-color-primary-muted)' : 'var(--aquarium-background-color-layer)',
         borderRadius: 6,
         padding: 16,
         display: 'flex',

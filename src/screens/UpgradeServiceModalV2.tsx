@@ -275,7 +275,7 @@ function TierHeader({ group }: { group: TierGroup }) {
         gap: 8,
         padding: '6px 16px',
         borderRadius: 999,
-        backgroundColor: '#f3f3f5',
+        backgroundColor: 'var(--aquarium-background-color-muted)',
       }}
     >
       <Icon icon={group.icon} color="muted" style={{ flexShrink: 0 }} />

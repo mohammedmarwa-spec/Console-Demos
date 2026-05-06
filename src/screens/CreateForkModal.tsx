@@ -118,7 +118,7 @@ export default function CreateForkModal({
           <Section icon={databaseIcon} title="Source service">
             <Box
               style={{
-                border: '1px solid #ededf0',
+                border: '1px solid var(--aquarium-border-color-muted)',
                 borderRadius: 8,
                 padding: 16,
                 display: 'flex',
@@ -230,7 +230,7 @@ export default function CreateForkModal({
           <SummaryDetail label="Plan" value={sourceService.planName} />
 
           <Box style={{ display: 'flex', flexDirection: 'column', gap: 4, marginTop: 'auto' }}>
-            <Box aria-hidden="true" style={{ borderTop: '1px solid #ededf0', marginBottom: 8 }} />
+            <Box aria-hidden="true" style={{ borderTop: '1px solid var(--aquarium-border-color-muted)', marginBottom: 8 }} />
             <Box
               style={{
                 display: 'flex',

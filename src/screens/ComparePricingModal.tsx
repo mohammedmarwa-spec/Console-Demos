@@ -49,7 +49,7 @@ export function ComparePricingModal({ open, onClose, onConfirm, service }: Compa
         <Box style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
 
           {/* Left: Fixed plan */}
-          <Box style={{ border: '1px solid #e0e0e8', borderRadius: 8, overflow: 'hidden' }}>
+          <Box style={{ border: '1px solid var(--aquarium-border-color-muted)', borderRadius: 8, overflow: 'hidden' }}>
             {/* Header */}
             <Box style={{
               display: 'flex',
@@ -57,7 +57,7 @@ export function ComparePricingModal({ open, onClose, onConfirm, service }: Compa
               justifyContent: 'space-between',
               gap: 12,
               padding: '16px 20px',
-              borderBottom: '1px solid #e0e0e8',
+              borderBottom: '1px solid var(--aquarium-border-color-muted)',
             }}>
               <span style={{ fontSize: 16, fontWeight: 600, lineHeight: '24px' }}>{spec}</span>
               <Box style={{ flexShrink: 0 }}>
@@ -79,7 +79,7 @@ export function ComparePricingModal({ open, onClose, onConfirm, service }: Compa
           </Box>
 
           {/* Right: New pricing */}
-          <Box style={{ border: '1px solid #e0e0e8', borderRadius: 8, overflow: 'hidden' }}>
+          <Box style={{ border: '1px solid var(--aquarium-border-color-muted)', borderRadius: 8, overflow: 'hidden' }}>
             {/* Header */}
             <Box style={{
               display: 'flex',
@@ -87,7 +87,7 @@ export function ComparePricingModal({ open, onClose, onConfirm, service }: Compa
               justifyContent: 'space-between',
               gap: 12,
               padding: '16px 20px',
-              borderBottom: '1px solid #e0e0e8',
+              borderBottom: '1px solid var(--aquarium-border-color-muted)',
             }}>
               <span style={{ fontSize: 16, fontWeight: 600, lineHeight: '24px' }}>{spec}</span>
               <Box style={{ flexShrink: 0 }}>

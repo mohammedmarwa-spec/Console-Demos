@@ -229,7 +229,7 @@ export function UpgradeServiceModal({
               width: 40,
               height: 40,
               borderRadius: 8,
-              backgroundColor: '#f3f3f5',
+              backgroundColor: 'var(--aquarium-background-color-muted)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
