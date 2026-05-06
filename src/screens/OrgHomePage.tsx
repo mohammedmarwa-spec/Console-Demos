@@ -37,10 +37,10 @@ function MetricCard({ icon, iconColor, iconBg, label, value, detail }: MetricCar
       style={{
         flex: 1,
         minWidth: 0,
-        border: '1px solid #ededf0',
+        border: '1px solid var(--aquarium-border-color-muted)',
         borderRadius: 8,
         padding: 24,
-        backgroundColor: '#fff',
+        backgroundColor: 'var(--aquarium-background-color-layer)',
         display: 'flex',
         flexDirection: 'column',
         gap: 16,
@@ -95,7 +95,7 @@ function ProjectRowItem({ name, serviceCount, region, onOpen }: ProjectRowProps)
         alignItems: 'center',
         justifyContent: 'space-between',
         paddingBlock: 14,
-        borderBottom: '1px solid #ededf0',
+        borderBottom: '1px solid var(--aquarium-border-color-muted)',
         gap: 16,
       }}
     >
@@ -106,7 +106,7 @@ function ProjectRowItem({ name, serviceCount, region, onOpen }: ProjectRowProps)
             width: 36,
             height: 36,
             borderRadius: 8,
-            backgroundColor: '#eef1ff',
+            backgroundColor: 'var(--aquarium-background-color-primary-muted)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
@@ -150,7 +150,7 @@ function BillingSummary({ onViewInvoice }: BillingSummaryProps) {
           gridTemplateColumns: '1fr 1fr 1fr auto',
           gap: 24,
           paddingBlock: 16,
-          borderBottom: '1px solid #ededf0',
+          borderBottom: '1px solid var(--aquarium-border-color-muted)',
           alignItems: 'center',
         }}
       >
@@ -184,7 +184,7 @@ function BillingSummary({ onViewInvoice }: BillingSummaryProps) {
           gridTemplateColumns: '1fr 1fr 1fr auto',
           gap: 24,
           paddingBlock: 16,
-          borderBottom: '1px solid #ededf0',
+          borderBottom: '1px solid var(--aquarium-border-color-muted)',
           alignItems: 'center',
         }}
       >
@@ -230,7 +230,7 @@ function MemberRow({ initials, name, email, role, avatarColor }: MemberRowProps)
         alignItems: 'center',
         justifyContent: 'space-between',
         paddingBlock: 12,
-        borderBottom: '1px solid #ededf0',
+        borderBottom: '1px solid var(--aquarium-border-color-muted)',
         gap: 16,
       }}
     >
@@ -280,7 +280,7 @@ function OrgHomePage({ onProjectsClick, onBillingClick, onInvoiceClick }: OrgHom
     <Box
       style={{
         minHeight: '100vh',
-        backgroundColor: 'var(--aquarium-colors-grey-90)',
+        backgroundColor: 'var(--aquarium-background-color-body)',
         display: 'flex',
         flexDirection: 'column',
       }}
@@ -308,7 +308,7 @@ function OrgHomePage({ onProjectsClick, onBillingClick, onInvoiceClick }: OrgHom
             minWidth: 0,
             padding: 24,
             overflow: 'auto',
-            backgroundColor: 'var(--aquarium-colors-grey-90)',
+            backgroundColor: 'var(--aquarium-background-color-body)',
           }}
         >
           {/* Page header */}
@@ -347,7 +347,7 @@ function OrgHomePage({ onProjectsClick, onBillingClick, onInvoiceClick }: OrgHom
             <MetricCard
               icon={bankAccountIcon}
               iconColor="#b45309"
-              iconBg="#fffbeb"
+              iconBg="var(--aquarium-background-color-warning-muted)"
               label="Current billing"
               value="$23.80"
               detail="USD · Feb 2026"

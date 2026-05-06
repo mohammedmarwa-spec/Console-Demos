@@ -326,8 +326,8 @@ function ChargesTableHeader() {
         gridTemplateColumns: CHARGES_GRID,
         paddingInline: 16,
         paddingBlock: 10,
-        borderBottom: '1px solid #ededf0',
-        backgroundColor: '#f9f9fb',
+        borderBottom: '1px solid var(--aquarium-border-color-muted)',
+        backgroundColor: 'var(--aquarium-background-color-muted)',
       }}
     >
       {CHARGES_HEADERS.map((col, i) => (
@@ -355,8 +355,8 @@ function ProjectRow({
         gridTemplateColumns: CHARGES_GRID,
         paddingInline: 16,
         paddingBlock: 12,
-        borderBottom: expanded ? 'none' : '1px solid #ededf0',
-        backgroundColor: expanded ? '#f5f5fa' : '#fff',
+        borderBottom: expanded ? 'none' : '1px solid var(--aquarium-border-color-muted)',
+        backgroundColor: expanded ? 'var(--aquarium-background-color-muted)' : 'var(--aquarium-background-color-layer)',
         alignItems: 'center',
         cursor: 'pointer',
       }}
@@ -407,8 +407,11 @@ function ServiceRow({
         gridTemplateColumns: CHARGES_GRID,
         paddingInline: 16,
         paddingBlock: 10,
-        borderBottom: isLast && !expanded ? '1px solid #ededf0' : '1px solid #f2f2f5',
-        backgroundColor: expanded ? '#f3f6ff' : '#fafafa',
+        borderBottom:
+          isLast && !expanded
+            ? '1px solid var(--aquarium-border-color-muted)'
+            : '1px solid var(--aquarium-border-color-default)',
+        backgroundColor: expanded ? 'var(--aquarium-background-color-primary-muted)' : 'var(--aquarium-background-color-muted)',
         alignItems: 'center',
         cursor: isExpandable ? 'pointer' : 'default',
         outline: 'none',
@@ -466,8 +469,9 @@ function BreakdownRow({ item, isLast }: { item: ChargeLineItem; isLast: boolean 
         gridTemplateColumns: CHARGES_GRID,
         paddingInline: 16,
         paddingBlock: 10,
-        borderBottom: isLast ? '1px solid #ededf0' : '1px solid #f2f2f5',
-        backgroundColor: '#fff',
+        borderBottom:
+          isLast ? '1px solid var(--aquarium-border-color-muted)' : '1px solid var(--aquarium-border-color-default)',
+        backgroundColor: 'var(--aquarium-background-color-layer)',
         alignItems: 'center',
       }}
     >
@@ -542,7 +546,7 @@ function ChargesTable({ groups }: { groups: ProjectChargeGroup[] }) {
   return (
     <Box
       style={{
-        border: '1px solid #ededf0',
+        border: '1px solid var(--aquarium-border-color-muted)',
         borderRadius: 8,
         overflow: 'hidden',
       }}
@@ -656,7 +660,7 @@ function SummaryByServiceType({ summaries }: { summaries: ServiceTypeSummary[] }
             display: 'grid',
             gridTemplateColumns: '1fr auto',
             paddingBottom: 8,
-            borderBottom: '1px solid #ededf0',
+            borderBottom: '1px solid var(--aquarium-border-color-muted)',
             marginBottom: 4,
           }}
         >
@@ -676,7 +680,7 @@ function SummaryByServiceType({ summaries }: { summaries: ServiceTypeSummary[] }
               display: 'grid',
               gridTemplateColumns: '1fr auto',
               paddingBlock: 12,
-              borderBottom: '1px solid #ededf0',
+              borderBottom: '1px solid var(--aquarium-border-color-muted)',
             }}
           >
             <Typography.Default>{s.serviceType}</Typography.Default>
@@ -774,7 +778,7 @@ function BillingInvoiceDetail({ onBack, onOrgHomeClick, onBillingClick }: Billin
   const invoicePaid = !isPlanMixed
 
   return (
-    <Box style={{ minHeight: '100vh', backgroundColor: 'var(--aquarium-colors-grey-90)', display: 'flex', flexDirection: 'column' }}>
+    <Box style={{ minHeight: '100vh', backgroundColor: 'var(--aquarium-background-color-body)', display: 'flex', flexDirection: 'column' }}>
       <ConsoleHeader
         activeNav="billing"
         onHomeClick={onOrgHomeClick}
@@ -791,7 +795,7 @@ function BillingInvoiceDetail({ onBack, onOrgHomeClick, onBillingClick }: Billin
         />
 
         {/* Main content */}
-        <Box style={{ flex: 1, minWidth: 0, padding: 24, overflow: 'auto', backgroundColor: 'var(--aquarium-colors-grey-90)' }}>
+        <Box style={{ flex: 1, minWidth: 0, padding: 24, overflow: 'auto', backgroundColor: 'var(--aquarium-background-color-body)' }}>
           {/* Page header */}
           <Box style={{ marginBottom: 24 }}>
             <PageHeader

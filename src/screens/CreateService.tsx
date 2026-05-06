@@ -539,14 +539,14 @@ function TierCard({
         if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onSelect() }
       }}
       style={{
-        border: `1px solid ${selected ? '#3545be' : '#ededf0'}`,
+        border: `1px solid ${selected ? 'var(--aquarium-border-color-primary-default)' : 'var(--aquarium-border-color-muted)'}`,
         borderRadius: 6,
         display: 'flex',
         flexDirection: 'column',
         gap: 16,
         cursor: 'pointer',
         outline: 'none',
-        backgroundColor: selected ? '#f3f6ff' : '#fff',
+        backgroundColor: selected ? 'var(--aquarium-background-color-primary-muted)' : 'var(--aquarium-background-color-layer)',
         flex: 1,
         minWidth: 0,
         overflow: 'hidden',
@@ -606,8 +606,8 @@ const CHIP_BADGE_STYLE: React.CSSProperties = {
   display: 'inline-flex',
   alignItems: 'center',
   justifyContent: 'center',
-  backgroundColor: '#e8faea',
-  color: '#006f00',
+  backgroundColor: 'var(--aquarium-background-color-success-muted)',
+  color: 'var(--aquarium-text-color-success-intense)',
   fontFamily: '"Roboto Mono", monospace',
   fontWeight: 400,
   fontSize: 10,
@@ -933,7 +933,7 @@ function CreateService({
     <Box
       style={{
         minHeight: embedded ? undefined : '100vh',
-        backgroundColor: 'var(--aquarium-colors-grey-90)',
+        backgroundColor: 'var(--aquarium-background-color-body)',
         width: '100%',
       }}
     >
@@ -1018,12 +1018,12 @@ function CreateService({
                 const fp = config.fixedTierPlans[tier as 'free' | 'developer']
                 if (!fp) return null
                 return (
-                  <Box style={{ border: '1px solid #ededf0', borderRadius: 8, overflow: 'hidden' }}>
+                  <Box style={{ border: '1px solid var(--aquarium-border-color-muted)', borderRadius: 8, overflow: 'hidden' }}>
                     <Box
                       style={{
                         display: 'flex', alignItems: 'center',
-                        padding: '8px 16px', borderBottom: '1px solid #ededf0',
-                        backgroundColor: '#f9f9fb',
+                        padding: '8px 16px', borderBottom: '1px solid var(--aquarium-border-color-muted)',
+                        backgroundColor: 'var(--aquarium-background-color-muted)',
                       }}
                     >
                       <Box style={{ width: 32, flexShrink: 0 }} />
@@ -1035,7 +1035,7 @@ function CreateService({
                     <Box
                       style={{
                         display: 'flex', alignItems: 'center',
-                        padding: '10px 16px', backgroundColor: '#f3f6ff',
+                        padding: '10px 16px', backgroundColor: 'var(--aquarium-background-color-primary-muted)',
                       }}
                     >
                       <Box style={{ width: 32, flexShrink: 0 }}>
@@ -1070,7 +1070,7 @@ function CreateService({
                       {/* Tier description panel */}
                       <Box
                         style={{
-                          border: '1px solid #ededf0', borderRadius: 8, padding: '12px 16px',
+                          border: '1px solid var(--aquarium-border-color-muted)', borderRadius: 8, padding: '12px 16px',
                           display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start',
                           gap: 16, marginBottom: 16, fontSize: 14,
                         }}
@@ -1092,12 +1092,12 @@ function CreateService({
                       </Box>
 
                       {/* Plans table */}
-                      <Box style={{ border: '1px solid #ededf0', borderRadius: 8, overflow: 'hidden' }}>
+                      <Box style={{ border: '1px solid var(--aquarium-border-color-muted)', borderRadius: 8, overflow: 'hidden' }}>
                         <Box
                           style={{
                             display: 'flex', alignItems: 'center',
-                            padding: '8px 16px', borderBottom: '1px solid #ededf0',
-                            backgroundColor: '#f9f9fb',
+                            padding: '8px 16px', borderBottom: '1px solid var(--aquarium-border-color-muted)',
+                            backgroundColor: 'var(--aquarium-background-color-muted)',
                           }}
                         >
                           <Box style={{ width: 32, flexShrink: 0 }} />
@@ -1122,8 +1122,8 @@ function CreateService({
                               style={{
                                 display: 'flex', alignItems: 'center',
                                 padding: '10px 16px',
-                                backgroundColor: isSelected ? '#f3f6ff' : '#fff',
-                                borderTop: idx === 0 ? 'none' : '1px solid #ededf0',
+                                backgroundColor: isSelected ? 'var(--aquarium-background-color-primary-muted)' : 'var(--aquarium-background-color-layer)',
+                                borderTop: idx === 0 ? 'none' : '1px solid var(--aquarium-border-color-muted)',
                                 cursor: 'pointer', outline: 'none',
                               }}
                             >
@@ -1160,12 +1160,12 @@ function CreateService({
           ) : activePlans ? (
             /* ── Flat plan table for non-legacy services (Kafka, Valkey, etc.) ── */
             <Section icon={proPlansIcon} title="Plan">
-              <Box style={{ border: '1px solid #ededf0', borderRadius: 8, overflow: 'hidden' }}>
+              <Box style={{ border: '1px solid var(--aquarium-border-color-muted)', borderRadius: 8, overflow: 'hidden' }}>
                 <Box
                   style={{
                     display: 'flex', alignItems: 'center',
-                    padding: '8px 16px', borderBottom: '1px solid #ededf0',
-                    backgroundColor: '#f9f9fb',
+                    padding: '8px 16px', borderBottom: '1px solid var(--aquarium-border-color-muted)',
+                    backgroundColor: 'var(--aquarium-background-color-muted)',
                   }}
                 >
                   <Box style={{ width: 32, flexShrink: 0 }} />
@@ -1190,8 +1190,8 @@ function CreateService({
                       style={{
                         display: 'flex', alignItems: 'center',
                         padding: '10px 16px',
-                        backgroundColor: isSelected ? '#f3f6ff' : '#fff',
-                        borderTop: idx === 0 ? 'none' : '1px solid #ededf0',
+                        backgroundColor: isSelected ? 'var(--aquarium-background-color-primary-muted)' : 'var(--aquarium-background-color-layer)',
+                        borderTop: idx === 0 ? 'none' : '1px solid var(--aquarium-border-color-muted)',
                         cursor: 'pointer', outline: 'none',
                       }}
                     >
@@ -1261,7 +1261,7 @@ function CreateService({
                 <Box style={{ color: '#4a4b57', marginBottom: 16 }}>
                   <Typography.Small>{selectedComputeProfileInfo?.description}</Typography.Small>
                 </Box>
-                <Box style={{ display: 'flex', flexDirection: 'column', border: '1px solid #ededf0', borderRadius: 8, overflow: 'hidden' }}>
+                <Box style={{ display: 'flex', flexDirection: 'column', border: '1px solid var(--aquarium-border-color-muted)', borderRadius: 8, overflow: 'hidden' }}>
                   {visibleComputeOptions.map((opt, idx) => {
                     const isSelected = computeId === opt.id
                     return (
@@ -1275,8 +1275,8 @@ function CreateService({
                         }}
                         style={{
                           display: 'flex', alignItems: 'center', gap: 12, padding: '10px 12px',
-                          backgroundColor: isSelected ? '#f3f6ff' : '#fff',
-                          borderTop: idx === 0 ? 'none' : '1px solid #ededf0',
+                          backgroundColor: isSelected ? 'var(--aquarium-background-color-primary-muted)' : 'var(--aquarium-background-color-layer)',
+                          borderTop: idx === 0 ? 'none' : '1px solid var(--aquarium-border-color-muted)',
                           cursor: 'pointer', outline: 'none',
                         }}
                       >
@@ -1333,7 +1333,7 @@ function CreateService({
 
                 {/* Disk size card */}
                 <Box style={{ borderRadius: 8, overflow: 'hidden' }}>
-                  <Box style={{ backgroundColor: '#f3f6ff', padding: '12px 16px', display: 'flex', flexDirection: 'column', gap: 0 }}>
+                  <Box style={{ backgroundColor: 'var(--aquarium-background-color-primary-muted)', padding: '12px 16px', display: 'flex', flexDirection: 'column', gap: 0 }}>
                     <Box style={{ display: 'flex', gap: 4, alignItems: 'center' }}>
                       <Typography.SmallStrong>Disk size</Typography.SmallStrong>
                       <Box aria-hidden="true" style={{ color: '#787885', width: 16, height: 16, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12 }}>ⓘ</Box>
@@ -1375,7 +1375,7 @@ function CreateService({
                   </Box>
                   <Box
                     style={{
-                      border: '1px solid #ededf0', borderTop: 'none',
+                      border: '1px solid var(--aquarium-border-color-muted)', borderTop: 'none',
                       borderRadius: '0 0 8px 8px', padding: '12px 16px', color: '#4a4b57',
                     }}
                   >
@@ -1430,9 +1430,9 @@ function CreateService({
           style={{
             width: SIDEBAR_WIDTH,
             flexShrink: 0,
-            border: '1px solid #ededf0',
+            border: '1px solid var(--aquarium-border-color-muted)',
             borderRadius: 8,
-            backgroundColor: '#fff',
+            backgroundColor: 'var(--aquarium-background-color-layer)',
             display: 'flex',
             flexDirection: 'column',
             position: 'sticky',
@@ -1471,7 +1471,7 @@ function CreateService({
                 })()}
 
                 <Box style={{ display: 'flex', flexDirection: 'column', gap: 4, marginTop: 'auto' }}>
-                  <Box aria-hidden="true" style={{ borderTop: '1px solid #ededf0', marginBottom: 8 }} />
+                  <Box aria-hidden="true" style={{ borderTop: '1px solid var(--aquarium-border-color-muted)', marginBottom: 8 }} />
                   <Box style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
                     <Box style={{ color: '#16171a' }}>
                       <Typography.SmallStrong>Est. monthly*</Typography.SmallStrong>
@@ -1492,7 +1492,7 @@ function CreateService({
                 {config.legacyPlans != null && (
                   <Box
                     style={{
-                      backgroundColor: '#ebfbee', borderRadius: 8, padding: '0 16px',
+                      backgroundColor: 'var(--aquarium-background-color-success-muted)', borderRadius: 8, padding: '0 16px',
                       display: 'flex', gap: 0, alignItems: 'center', minHeight: 64,
                       overflow: 'hidden', position: 'relative',
                     }}
@@ -1574,7 +1574,7 @@ function CreateService({
 
                 {/* Pricing breakdown */}
                 <Box style={{ display: 'flex', flexDirection: 'column', gap: 4, marginTop: 'auto' }}>
-                  <Box aria-hidden="true" style={{ borderTop: '1px solid #ededf0', marginBottom: 8 }} />
+                  <Box aria-hidden="true" style={{ borderTop: '1px solid var(--aquarium-border-color-muted)', marginBottom: 8 }} />
                   <Box style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
                     <Box style={{ color: '#16171a' }}>
                       <Typography.SmallStrong>Est. monthly*</Typography.SmallStrong>

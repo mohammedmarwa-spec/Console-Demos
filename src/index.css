@@ -23,14 +23,14 @@ body {
 }
 
 body {
-  background-color: var(--aquarium-colors-grey-90);
+  background-color: var(--aquarium-background-color-body);
   color: var(--aquarium-text-color-default);
 }
 
 #root {
   width: 100%;
   min-height: 100vh;
-  background-color: var(--aquarium-colors-grey-90);
+  background-color: var(--aquarium-background-color-body);
 }
 
 /* Sidebar chrome: single 1px rule - outer shell no longer stacks a second border on Navigation border-r. */
@@ -59,8 +59,16 @@ tr.logs-row-warning td {
   background-color: var(--aquarium-background-color-warning-muted) !important;
 }
 
+.service-logs-data-list [role='cell'].logs-row-warning {
+  background-color: var(--aquarium-background-color-warning-muted) !important;
+}
+
 tr td.logs-row-warning:first-child,
 tr.logs-row-warning td:first-child {
+  box-shadow: inset 3px 0 0 0 var(--aquarium-background-color-warning-graphic);
+}
+
+.service-logs-data-list [role='row'] > [role='cell'].logs-row-warning:first-of-type {
   box-shadow: inset 3px 0 0 0 var(--aquarium-background-color-warning-graphic);
 }
 
@@ -69,9 +77,50 @@ tr.logs-row-error td {
   background-color: var(--aquarium-background-color-danger-muted) !important;
 }
 
+.service-logs-data-list [role='cell'].logs-row-error {
+  background-color: var(--aquarium-background-color-danger-muted) !important;
+}
+
 tr td.logs-row-error:first-child,
 tr.logs-row-error td:first-child {
   box-shadow: inset 3px 0 0 0 var(--aquarium-background-color-danger-graphic);
+}
+
+.service-logs-data-list [role='row'] > [role='cell'].logs-row-error:first-of-type {
+  box-shadow: inset 3px 0 0 0 var(--aquarium-background-color-danger-graphic);
+}
+
+.logs-severity-chip {
+  border-radius: 6px;
+  padding: 2px 6px;
+  font-weight: 500;
+  display: inline-block;
+}
+
+.logs-severity-chip--warning {
+  color: var(--aquarium-text-color-warning-intense);
+  background-color: var(--aquarium-background-color-warning-muted);
+}
+
+.logs-severity-chip--error {
+  color: var(--aquarium-text-color-danger-intense);
+  background-color: var(--aquarium-background-color-danger-muted);
+}
+
+.logs-severity-chip--info {
+  color: var(--aquarium-text-color-default);
+  background-color: transparent;
+}
+
+/* In selected DataList rows we need stronger inversion for severity chips. */
+.service-logs-data-list [role='row'][aria-selected='true'] .logs-severity-chip--warning {
+  color: var(--aquarium-text-color-opposite-default) !important;
+  background-color: var(--aquarium-background-color-warning-graphic) !important;
+}
+
+.service-logs-data-list [role='row'][aria-selected='true'] .logs-severity-chip--error {
+  color: var(--aquarium-text-color-opposite-default) !important;
+  background-color: var(--aquarium-background-color-danger-graphic) !important;
 }
 
 /* Sticky logs header must stay above body rows.
@@ -79,7 +128,7 @@ tr.logs-row-error td:first-child {
 .service-logs-data-table table.Aquarium-DataTable thead th,
 .service-logs-data-list .Aquarium-DataList [role='columnheader'] {
   z-index: 30 !important;
-  background-color: var(--aquarium-colors-grey-90) !important;
+  background-color: var(--aquarium-background-color-body) !important;
   background-clip: padding-box;
   box-shadow: inset 0 -1px 0 0 var(--aquarium-border-color-muted);
 }
@@ -115,7 +164,7 @@ tr.logs-row-error td:first-child {
 
 /* Aquarium PageHeader: explicit fill + trim extra bottom padding. */
 .Aquarium-PageHeader {
-  background-color: var(--aquarium-colors-grey-90);
+  background-color: var(--aquarium-background-color-body);
   padding-bottom: 0 !important;
 }
 

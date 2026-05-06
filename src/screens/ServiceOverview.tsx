@@ -179,23 +179,10 @@ function formatSeverityOption(severity: LogSeverity): string {
   return severity.charAt(0).toUpperCase() + severity.slice(1)
 }
 
-function logMessageHighlightStyle(severity: LogSeverity): React.CSSProperties {
-  const chip = { borderRadius: 6, padding: '2px 6px', fontWeight: 500 as const }
-  if (severity === 'warning') {
-    return {
-      ...chip,
-      color: 'var(--aquarium-text-color-warning-intense)',
-      backgroundColor: 'var(--aquarium-background-color-warning-muted)',
-    }
-  }
-  if (severity === 'error') {
-    return {
-      ...chip,
-      color: 'var(--aquarium-text-color-danger-intense)',
-      backgroundColor: 'var(--aquarium-background-color-danger-muted)',
-    }
-  }
-  return { color: 'var(--aquarium-text-color-default)' }
+function getLogMessageHighlightClassName(severity: LogSeverity): string {
+  if (severity === 'warning') return 'logs-severity-chip logs-severity-chip--warning'
+  if (severity === 'error') return 'logs-severity-chip logs-severity-chip--error'
+  return 'logs-severity-chip logs-severity-chip--info'
 }
 
 function utcDateToCalendarDateTime(date: Date): CalendarDateTime {
@@ -913,7 +900,7 @@ function ServiceOverview({
     <Box
       style={{
         height: '100vh',
-        backgroundColor: 'var(--aquarium-colors-grey-90)',
+        backgroundColor: 'var(--aquarium-background-color-body)',
         display: 'flex',
         flexDirection: 'column',
       }}
@@ -942,7 +929,7 @@ function ServiceOverview({
                 : MAIN_CONTENT_SCROLL_PAD,
             overflow: 'auto',
             overflowAnchor: 'none',
-            backgroundColor: 'var(--aquarium-colors-grey-90)',
+            backgroundColor: 'var(--aquarium-background-color-body)',
           }}
         >
           {sidebarItem === 'logs' ? (
@@ -1592,8 +1579,8 @@ function LogsDataList({
         <Box component="span" style={{ color: 'var(--aquarium-text-color-default)' }}>
           <Box
             component="span"
+            className={getLogMessageHighlightClassName(row.severity)}
             style={{
-              ...logMessageHighlightStyle(row.severity),
               fontFamily: LOG_MONO_FONT,
               fontSize: 12,
               lineHeight: '16px',
@@ -1623,8 +1610,8 @@ function LogsDataList({
         <Box component="span">
           <Box
             component="span"
+            className={getLogMessageHighlightClassName(row.severity)}
             style={{
-              ...logMessageHighlightStyle(row.severity),
               fontFamily: LOG_MONO_FONT,
               fontSize: 12,
               lineHeight: '16px',
@@ -1642,6 +1629,11 @@ function LogsDataList({
         sticky
         rows={rows}
         columns={columns}
+        rowClassName={(row) => {
+          if (row.severity === 'warning') return 'logs-row-warning'
+          if (row.severity === 'error') return 'logs-row-error'
+          return undefined
+        }}
         rowDetails={(row) => (
           <LogsRowDetails row={row} onExploreWithAi={onExploreWithAi} onExploreWindow={onExploreWindow} />
         )}

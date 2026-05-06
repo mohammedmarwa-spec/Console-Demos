@@ -143,11 +143,11 @@ function Avatar({ initials }: AvatarProps) {
         width: 35,
         height: 35,
         borderRadius: '50%',
-        backgroundColor: '#222f95',
+        backgroundColor: 'var(--aquarium-background-color-primary-graphic)',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        color: '#fff',
+        color: 'var(--aquarium-text-color-opposite-default)',
         fontSize: 13,
         fontWeight: 600,
         flexShrink: 0,
@@ -188,7 +188,7 @@ export function ConsoleHeader({
       component="header"
       style={{
         height: 66,
-        backgroundColor: 'var(--aquarium-colors-grey-90)',
+        backgroundColor: 'var(--aquarium-background-color-body)',
         borderBottom: '1px solid var(--aquarium-border-color-muted)',
         display: 'flex',
         alignItems: 'center',

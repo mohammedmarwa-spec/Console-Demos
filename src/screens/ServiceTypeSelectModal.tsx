@@ -91,18 +91,18 @@ function ServiceTypeSelectModal({
                 alignItems: 'flex-start',
                 textAlign: 'left',
                 padding: 24,
-                border: '1px solid #e5e7eb',
+                border: '1px solid var(--aquarium-border-color-muted)',
                 borderRadius: 8,
-                backgroundColor: '#fff',
+                backgroundColor: 'var(--aquarium-background-color-layer)',
                 cursor: 'pointer',
                 transition: 'border-color 0.2s, box-shadow 0.2s',
               }}
               onMouseEnter={(e) => {
-                e.currentTarget.style.borderColor = '#3545be'
+                e.currentTarget.style.borderColor = 'var(--aquarium-border-color-primary-default)'
                 e.currentTarget.style.boxShadow = '0 2px 8px rgba(53, 69, 190, 0.12)'
               }}
               onMouseLeave={(e) => {
-                e.currentTarget.style.borderColor = '#e5e7eb'
+                e.currentTarget.style.borderColor = 'var(--aquarium-border-color-muted)'
                 e.currentTarget.style.boxShadow = 'none'
               }}
             >
@@ -122,7 +122,7 @@ function ServiceTypeSelectModal({
           ))}
         </Box>
       </Box>
-      <Box style={{ paddingTop: 24, borderTop: '1px solid #e5e7eb' }}>
+      <Box style={{ paddingTop: 24, borderTop: '1px solid var(--aquarium-border-color-muted)' }}>
         <Box style={{ color: '#787885' }}>
           <Typography.Caption>{LEGAL_FOOTER}</Typography.Caption>
         </Box>

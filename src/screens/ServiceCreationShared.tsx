@@ -71,7 +71,7 @@ export function Section({
           style={{
             width: SECTION_LINE_WIDTH,
             minWidth: SECTION_LINE_WIDTH,
-            backgroundColor: '#ededf0',
+            backgroundColor: 'var(--aquarium-border-color-muted)',
             alignSelf: 'stretch',
             minHeight: 40,
           }}
@@ -125,9 +125,9 @@ export function ServiceSummarySidebar({
       style={{
         width: SIDEBAR_WIDTH,
         flexShrink: 0,
-        border: '1px solid #ededf0',
+        border: '1px solid var(--aquarium-border-color-muted)',
         borderRadius: 8,
-        backgroundColor: '#fff',
+        backgroundColor: 'var(--aquarium-background-color-layer)',
         display: 'flex',
         flexDirection: 'column',
         alignSelf: 'flex-start',
@@ -174,7 +174,7 @@ export function PricingBanner({
   return (
     <Box
       style={{
-        backgroundColor: '#ebfbee',
+        backgroundColor: 'var(--aquarium-background-color-success-muted)',
         borderRadius: 8,
         padding: '0 16px',
         display: 'flex',

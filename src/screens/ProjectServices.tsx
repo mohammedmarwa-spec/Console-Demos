@@ -535,8 +535,8 @@ function AuditLogsSection() {
                   top: 'calc(100% + 8px)',
                   left: 0,
                   zIndex: 200,
-                  backgroundColor: '#fff',
-                  border: '1px solid #e0e0e8',
+                  backgroundColor: 'var(--aquarium-background-color-layer)',
+                  border: '1px solid var(--aquarium-border-color-muted)',
                   borderRadius: 8,
                   boxShadow: '0 4px 24px rgba(0, 0, 0, 0.12)',
                   padding: 16,
@@ -655,7 +655,7 @@ function AuditLogsSection() {
                 </Table.Row>
                 {expanded && (
                   <Table.Row>
-                    <Table.Cell colSpan={4} style={{ backgroundColor: '#f9f9fb', borderBottom: '1px solid #ededf0' }}>
+                    <Table.Cell colSpan={4} style={{ backgroundColor: 'var(--aquarium-background-color-muted)', borderBottom: '1px solid var(--aquarium-border-color-muted)' }}>
                       <Box style={{ padding: '8px 8px 16px' }}>
                         <Box style={{ marginBottom: 12 }}>
                           <Typography.SmallStrong>Metadata</Typography.SmallStrong>
@@ -849,7 +849,7 @@ function EmptyState({ onCreateServiceClick }: { onCreateServiceClick: () => void
           width: 80,
           height: 80,
           borderRadius: 20,
-          background: 'linear-gradient(135deg, #eef1ff 0%, #f5f0ff 100%)',
+          background: 'linear-gradient(135deg, var(--aquarium-background-color-primary-muted) 0%, var(--aquarium-background-color-muted) 100%)',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
@@ -963,7 +963,7 @@ function ProjectServices({ services, onCreateServiceClick, onServiceClick, onDel
     <Box
       style={{
         minHeight: '100vh',
-        backgroundColor: 'var(--aquarium-colors-grey-90)',
+        backgroundColor: 'var(--aquarium-background-color-body)',
         display: 'flex',
         flexDirection: 'column',
       }}
@@ -985,7 +985,7 @@ function ProjectServices({ services, onCreateServiceClick, onServiceClick, onDel
             minWidth: 0,
             padding: 24,
             overflow: 'auto',
-            backgroundColor: 'var(--aquarium-colors-grey-90)',
+            backgroundColor: 'var(--aquarium-background-color-body)',
           }}
         >
           {/* Page header */}
@@ -1028,11 +1028,11 @@ function ProjectServices({ services, onCreateServiceClick, onServiceClick, onDel
             activeProjectPage === 'observability' ? (
               <Box
                 style={{
-                  border: '1px solid #e7e8ed',
+                  border: '1px solid var(--aquarium-border-color-muted)',
                   borderRadius: 12,
                   padding: 24,
                   maxWidth: 760,
-                  backgroundColor: '#fff',
+                  backgroundColor: 'var(--aquarium-background-color-layer)',
                 }}
               >
                 <Box style={{ marginBottom: 8 }}>
@@ -1075,8 +1075,8 @@ function ProjectServices({ services, onCreateServiceClick, onServiceClick, onDel
                         top: 'calc(100% + 8px)',
                         left: 0,
                         zIndex: 200,
-                        backgroundColor: '#fff',
-                        border: '1px solid #e0e0e8',
+                        backgroundColor: 'var(--aquarium-background-color-layer)',
+                        border: '1px solid var(--aquarium-border-color-muted)',
                         borderRadius: 8,
                         boxShadow: '0 4px 24px rgba(0, 0, 0, 0.12)',
                         padding: 24,
