@@ -1146,13 +1146,6 @@ function ServiceOverview({
             <>
             {/* Page header */}
           <Box style={{ marginBottom: 32 }}>
-            <CompactServiceHeader
-              serviceName={serviceName}
-              iconUrl={getServiceIconUrl(serviceTypeId ?? null)}
-              version={serviceVersion}
-              statusText="Running"
-              nodeCount={nodeCount}
-            />
             <PageHeader
               title={serviceName}
               image={getServiceIconUrl(serviceTypeId ?? null)}
