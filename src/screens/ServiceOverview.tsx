@@ -27,13 +27,12 @@ import duplicateIcon from '@aivenio/aquarium/icons/duplicate'
 import exportIcon from '@aivenio/aquarium/icons/export'
 import filterIcon from '@aivenio/aquarium/icons/filter'
 import infoSignIcon from '@aivenio/aquarium/icons/infoSign'
-import cpuChipIcon from '@aivenio/aquarium/icons/cpuChip'
-import nodesIcon from '@aivenio/aquarium/icons/nodes'
 import proPlansIcon from '@aivenio/aquarium/icons/proPlans'
 import sendIcon from '@aivenio/aquarium/icons/send'
-import tickCircleIcon from '@aivenio/aquarium/icons/tickCircle'
 import { AuditLogsHistogram } from '../components/AuditLogsHistogram'
+import { CompactServiceHeader } from '../components/CompactServiceHeader'
 import { ConsoleHeader } from '../components/ConsoleHeader'
+import { ServiceMetricsBody } from '../components/ServiceMetricsBody'
 import { ServiceSidebar } from '../components/ServiceSidebar'
 import { getServiceIconUrl } from '../components/ServiceIcon'
 import type { HistogramRange } from '../utils/auditHistogram'
@@ -350,53 +349,6 @@ function DateRangeFilterTrigger({ onClear }: { onClear?: () => void }) {
       onClear={onClear}
       onClick={() => dateRangeState?.setOpen?.(true)}
     />
-  )
-}
-
-type CompactServiceHeaderProps = {
-  serviceName: string
-  iconUrl: string
-  version: string
-  statusText: string
-  nodeCount: number
-}
-
-function CompactServiceHeader({
-  serviceName,
-  iconUrl,
-  version,
-  statusText,
-  nodeCount,
-}: CompactServiceHeaderProps) {
-  return (
-    <Box
-      style={{
-        display: 'flex',
-        alignItems: 'center',
-        gap: 16,
-        paddingBottom: 12,
-        marginBottom: 12,
-        borderBottom: '1px solid var(--aquarium-border-color-muted)',
-      }}
-    >
-      <Box style={{ display: 'inline-flex', alignItems: 'center', gap: 12, minWidth: 0 }}>
-        <img
-          src={iconUrl}
-          alt={serviceName}
-          width={32}
-          height={32}
-          style={{ borderRadius: 999, display: 'block' }}
-        />
-        <Box style={{ fontWeight: 600 }}>
-          <Typography.Default>{serviceName}</Typography.Default>
-        </Box>
-        <Box style={{ display: 'inline-flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-          <StatusChip text={version} status="neutral" icon={cpuChipIcon} dense />
-          <StatusChip text={statusText} status="success" icon={tickCircleIcon} dense />
-          <StatusChip text="Nodes" status="success" icon={nodesIcon} badge={nodeCount} dense />
-        </Box>
-      </Box>
-    </Box>
   )
 }
 
@@ -1142,6 +1094,17 @@ function ServiceOverview({
                 )}
               </Box>
             </>
+          ) : sidebarItem === 'metrics' ? (
+            <ServiceMetricsBody
+              serviceName={serviceName}
+              serviceTypeId={serviceTypeId}
+              serviceVersion={serviceVersion}
+              nodeCount={nodeCount}
+              onBackToProject={onBackToProject}
+              onDeleteService={onDeleteService}
+              onOpenAiAssistant={() => setAiAssistantOpen(true)}
+              onSeeAllLogs={() => setSidebarItem('logs')}
+            />
           ) : (
             <>
             {/* Page header */}

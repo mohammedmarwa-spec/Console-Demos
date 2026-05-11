@@ -16,7 +16,7 @@ import type { IconifyIcon } from '@iconify/react'
 const NAV_ITEMS: { label: string; icon: IconifyIcon; id: string }[] = [
   { id: 'overview', label: 'Overview', icon: dashboardIcon },
   { id: 'integrations', label: 'Integrations', icon: integrationsIcon },
-  { id: 'metrics', label: 'Metrics', icon: chartIcon },
+  { id: 'metrics', label: 'Observability', icon: chartIcon },
   { id: 'ai-insights', label: 'AI insights', icon: pulseIcon },
   { id: 'logs', label: 'Logs', icon: listIcon },
   { id: 'query-statistics', label: 'Query statistics', icon: queriesStatisticsIcon },
