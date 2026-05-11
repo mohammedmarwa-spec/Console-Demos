@@ -53,7 +53,7 @@ tr.plan-row-selected {
   background-color: var(--aquarium-background-color-primary-muted);
 }
 
-/* Service Overview — Logs: severity row tint + left accent. */
+/* Service Overview — Logs: severity row background tint. */
 td.logs-row-warning,
 tr.logs-row-warning td {
   background-color: var(--aquarium-background-color-warning-muted) !important;
@@ -64,16 +64,9 @@ tr.logs-row-warning td {
 }
 
 /* DataList does not pass rowClassName onto the expand-toggle cell (first column).
-   Tint that cell when any sibling data cell carries the severity row class.
-   Left inset accent lives on this first cell so it aligns with the row’s left edge (not after Time). */
+   Tint that cell when any sibling data cell carries the severity row class. */
 .service-logs-data-list .Aquarium-DataList [role='row']:has(> [role='cell'].logs-row-warning) > [role='cell']:first-child {
   background-color: var(--aquarium-background-color-warning-muted) !important;
-  box-shadow: inset 3px 0 0 0 var(--aquarium-background-color-warning-graphic);
-}
-
-tr td.logs-row-warning:first-child,
-tr.logs-row-warning td:first-child {
-  box-shadow: inset 3px 0 0 0 var(--aquarium-background-color-warning-graphic);
 }
 
 td.logs-row-error,
@@ -87,12 +80,6 @@ tr.logs-row-error td {
 
 .service-logs-data-list .Aquarium-DataList [role='row']:has(> [role='cell'].logs-row-error) > [role='cell']:first-child {
   background-color: var(--aquarium-background-color-danger-muted) !important;
-  box-shadow: inset 3px 0 0 0 var(--aquarium-background-color-danger-graphic);
-}
-
-tr td.logs-row-error:first-child,
-tr.logs-row-error td:first-child {
-  box-shadow: inset 3px 0 0 0 var(--aquarium-background-color-danger-graphic);
 }
 
 .logs-severity-chip {
@@ -142,14 +129,46 @@ tr.logs-row-error td:first-child {
 .service-logs-data-list .Aquarium-DataList [role='cell'] {
   position: relative;
   z-index: 0;
+  /* Override Aquarium default row padding for log tables. */
+  padding-top: 12px !important;
+  padding-bottom: 12px !important;
+  min-height: 0 !important;
 }
 
-/* Aquarium DataList body cells use py-5 + min-h-[48px]; that reads as “stripes” of body
-   color next to dense log rows — tighten vertical rhythm for this table only. */
-.service-logs-data-list .Aquarium-DataList [role='cell'] {
-  padding-top: 8px !important;
-  padding-bottom: 8px !important;
-  min-height: 0 !important;
+/*
+ * Audit rows: inactive copy throughout (nested severity chips / chips override cell `color`).
+ */
+.service-logs-data-list .Aquarium-DataList [role='row'] > [role='cell'].logs-row-audit {
+  color: var(--aquarium-text-color-inactive);
+}
+
+.service-logs-data-list .Aquarium-DataList [role='row'] > [role='cell'].logs-row-audit *,
+.service-logs-data-list .Aquarium-DataList [role='row'] > [role='cell'].logs-row-audit .logs-severity-chip,
+.service-logs-data-list .Aquarium-DataList [role='row'] > [role='cell'].logs-row-audit .logs-severity-chip--warning,
+.service-logs-data-list .Aquarium-DataList [role='row'] > [role='cell'].logs-row-audit .logs-severity-chip--error,
+.service-logs-data-list .Aquarium-DataList [role='row'] > [role='cell'].logs-row-audit .logs-severity-chip--info {
+  color: var(--aquarium-text-color-inactive) !important;
+}
+
+.service-logs-data-list .Aquarium-DataList [role='row'] > [role='cell'].logs-row-audit .logs-severity-chip {
+  background-color: transparent !important;
+}
+
+.service-logs-data-list .Aquarium-DataList [role='row'][inert] > [role='cell'].logs-row-audit {
+  pointer-events: none;
+}
+
+/* Expand column: first cell carries the same row classes as other cells. */
+.service-logs-data-list .Aquarium-DataList [role='row'] > [role='cell']:first-child.logs-row-audit {
+  width: 0 !important;
+  min-width: 0 !important;
+  max-width: 0 !important;
+  padding: 0 !important;
+  overflow: hidden !important;
+  border: none !important;
+  visibility: hidden !important;
+  pointer-events: none !important;
+  opacity: 0 !important;
 }
 
 /* Continuation day blocks: hide duplicate thead row (header labels shown only on first block). */

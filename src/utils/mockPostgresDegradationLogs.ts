@@ -19,6 +19,7 @@ export type PostgresServiceEventLog = {
     | 'replication'
     | 'monitoring'
     | 'service_health'
+    | 'audit'
   project: 'payments-prod'
   region: 'aws-eu-west-1'
   host?: string
@@ -182,8 +183,147 @@ function getRandomizedIntervalMs(hourIndex: number, sequenceInHour: number): num
   return Math.max(15_000, base + jitterSeconds * 1_000)
 }
 
-function alignToMinute(ms: number): number {
+/** Aligns to UTC minute boundary; matches log generator `endMs` so scenarios line up with the 24h window. */
+export function alignToMinute(ms: number): number {
   return Math.floor(ms / 60_000) * 60_000
+}
+
+/** Maintenance audit + post-maintenance surge start this many minutes before the aligned window end. */
+export const MAINTENANCE_SCENARIO_MINUTES_BEFORE_END = 3
+
+export function getMaintenanceScenarioAppliedMs(anchor: Date): number {
+  const endMs = alignToMinute(anchor.getTime())
+  return endMs - MAINTENANCE_SCENARIO_MINUTES_BEFORE_END * 60 * 1000
+}
+
+type PostMaintTemplate = {
+  eventType: string
+  message: string
+  component: PostgresServiceEventLog['component']
+  host?: string
+  severity: PostgresLogSeverity
+  metadata?: Record<string, unknown>
+}
+
+const POST_MAINTENANCE_TEMPLATES: PostMaintTemplate[] = [
+  {
+    severity: 'warning',
+    eventType: 'service.post_maintenance_slow_start',
+    message: 'Primary node slow to accept connections after maintenance restart',
+    component: 'postgres',
+    metadata: { phase: 'post_maintenance', warmUpSeconds: 42 },
+  },
+  {
+    severity: 'error',
+    eventType: 'connection.rejected',
+    message: 'Client connection rejected: no pool slots available (post-maintenance surge)',
+    component: 'connection_pool',
+    host: 'checkout-api-1',
+    metadata: { phase: 'post_maintenance' },
+  },
+  {
+    severity: 'warning',
+    eventType: 'replication.lag_high',
+    message: 'Standby replication lag exceeded warning threshold while catching up after maintenance',
+    component: 'replication',
+    metadata: { lagMb: 512, phase: 'post_maintenance' },
+  },
+  {
+    severity: 'error',
+    eventType: 'postgres.too_many_connections',
+    message: 'FATAL: sorry, too many clients already (observed after maintenance recycle)',
+    component: 'postgres',
+    metadata: { sqlState: '53300', phase: 'post_maintenance' },
+  },
+  {
+    severity: 'warning',
+    eventType: 'pgbouncer.pool_wait_timeout',
+    message: 'PgBouncer pool wait timeout exceeded following maintenance traffic spike',
+    component: 'pgbouncer',
+    metadata: { waitTimeoutMs: 5000, phase: 'post_maintenance' },
+  },
+  {
+    severity: 'warning',
+    eventType: 'connection.pool_saturation',
+    message: 'Connection pool utilization sustained above 95% after maintenance window',
+    component: 'connection_pool',
+    metadata: { utilizationPercent: 97, phase: 'post_maintenance' },
+  },
+  {
+    severity: 'error',
+    eventType: 'pgbouncer.client_login_failed',
+    message: 'PgBouncer client login failed due to backend exhaustion after node restart',
+    component: 'pgbouncer',
+    metadata: { phase: 'post_maintenance' },
+  },
+  {
+    severity: 'warning',
+    eventType: 'query.slow',
+    message: 'Observed sustained slow queries above 1.8s p95 after maintenance',
+    component: 'monitoring',
+    metadata: { p95Ms: 2100, phase: 'post_maintenance' },
+  },
+  {
+    severity: 'error',
+    eventType: 'connection.timeout',
+    message: 'Connection attempt timed out after retry budget exhausted (post-maintenance)',
+    component: 'monitoring',
+    metadata: { retryAttempts: 3, phase: 'post_maintenance' },
+  },
+  {
+    severity: 'warning',
+    eventType: 'service.degraded',
+    message: 'Service health state changed from healthy to degraded after maintenance completed',
+    component: 'service_health',
+    metadata: { healthState: 'degraded', phase: 'post_maintenance' },
+  },
+  {
+    severity: 'info',
+    eventType: 'service.health_check_passed',
+    message: 'Intermittent health check passed (recovery in progress)',
+    component: 'service_health',
+    metadata: { phase: 'post_maintenance' },
+  },
+]
+
+/**
+ * Dense warning/error service events from shortly after maintenance through "now",
+ * for the "maintenance applied → degradation" demo when merged into the log table.
+ */
+export function createPostMaintenanceDegradationSurge(anchor: Date): PostgresServiceEventLog[] {
+  const maintenanceAppliedMs = getMaintenanceScenarioAppliedMs(anchor)
+  const surgeStartMs = maintenanceAppliedMs + 2 * 60 * 1000
+  const surgeEndMs = anchor.getTime() - 8_000
+  if (surgeEndMs <= surgeStartMs) return []
+
+  const logs: PostgresServiceEventLog[] = []
+  let t = surgeStartMs
+  let i = 0
+  while (t < surgeEndMs && i < 90) {
+    const tmpl = POST_MAINTENANCE_TEMPLATES[i % POST_MAINTENANCE_TEMPLATES.length]
+    const jitter = ((i * 37) % 11) * 3_000
+    logs.push({
+      id: `checkout-pg-prod-post-maint-${String(i + 1).padStart(4, '0')}`,
+      timestamp: new Date(t + jitter).toISOString(),
+      service: 'checkout-pg-prod',
+      serviceType: 'postgresql',
+      severity: tmpl.severity,
+      eventType: tmpl.eventType,
+      message: tmpl.message,
+      component: tmpl.component,
+      project: 'payments-prod',
+      region: 'aws-eu-west-1',
+      host: tmpl.host,
+      metadata: {
+        postMaintenanceSurge: true,
+        ...tmpl.metadata,
+      },
+    })
+    const step = 42_000 + (i % 8) * 9_000
+    t += step
+    i += 1
+  }
+  return logs
 }
 
 function pickTemplate(

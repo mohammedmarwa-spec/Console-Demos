@@ -19,6 +19,7 @@ import {
   PageHeader,
   Section,
   StatusChip,
+  Switch,
   Tabs,
   Tooltip,
   Typography,
@@ -39,6 +40,8 @@ import type { HistogramRange } from '../utils/auditHistogram'
 import {
   buildLogHistogramBuckets,
   createMockPostgresDegradationLogs,
+  createPostMaintenanceDegradationSurge,
+  getMaintenanceScenarioAppliedMs,
   type PostgresServiceEventLog,
 } from '../utils/mockPostgresDegradationLogs'
 import type { ServiceRow } from './ProjectServices'
@@ -66,6 +69,8 @@ type LogRow = {
   region: string
   metadata: { label: string; value: string }[]
   keyValues: Record<string, string>
+  /** Service logs support expandable metadata; audit rows are flat. */
+  logKind?: 'service' | 'audit'
 }
 
 type AiRole = 'assistant' | 'user'
@@ -138,11 +143,119 @@ function mapServiceEventToLogRow(log: PostgresServiceEventLog): LogRow {
     region: log.region,
     metadata,
     keyValues,
+    logKind: 'service',
   }
 }
 
-/** Canonical mocked incident dataset for the log table and histogram. */
-const MOCK_LOG_ROWS: LogRow[] = createMockPostgresDegradationLogs().map(mapServiceEventToLogRow)
+type AuditSupplement = {
+  /** Minutes before aligned window end; keep ≤ 60 so rows stay in the last hour. */
+  minutesBeforeWindowEnd: number
+  message: string
+  event: string
+  actor: string
+  severity: LogSeverity
+}
+
+/** Extra platform audit lines near window end (minutes before `endMs`; clamped into range). */
+const AUDIT_LOG_SUPPLEMENTS: AuditSupplement[] = [
+  {
+    minutesBeforeWindowEnd: 1,
+    message: 'Service user "app_reader" password rotated',
+    event: 'service_user.password_rotated',
+    actor: 'admin@corp.com',
+    severity: 'info',
+  },
+  {
+    minutesBeforeWindowEnd: 2,
+    message: 'Point-in-time recovery verified successfully',
+    event: 'backup.pitr_verified',
+    actor: 'system',
+    severity: 'info',
+  },
+  {
+    minutesBeforeWindowEnd: 4,
+    message: 'Organization billing contact changed',
+    event: 'billing.contact_updated',
+    actor: 'finance@corp.com',
+    severity: 'info',
+  },
+]
+
+function buildAuditLogRow(params: {
+  id: string
+  timestampMs: number
+  message: string
+  event: string
+  actor: string
+  severity: LogSeverity
+}): LogRow {
+  const time = new Date(params.timestampMs).toISOString()
+  const displayTime = formatLogTimestampIso8601Utc(time)
+  const source = 'Audit log'
+  const keyValues: Record<string, string> = {
+    audit_event: params.event,
+    actor: params.actor,
+  }
+  const searchableText = [
+    displayTime,
+    source,
+    'audit log',
+    'audit',
+    'aiven.platform',
+    params.message,
+    params.severity,
+    ...Object.entries(keyValues).map(([k, v]) => `${k} ${v}`),
+  ]
+    .join(' ')
+    .toLowerCase()
+  return {
+    id: params.id,
+    timestampMs: params.timestampMs,
+    time,
+    displayTime,
+    searchableText,
+    source,
+    message: params.message,
+    severity: params.severity,
+    component: 'audit',
+    service: 'checkout-pg-prod',
+    project: 'payments-prod',
+    region: 'aws-eu-west-1',
+    metadata: [],
+    keyValues,
+    logKind: 'audit',
+  }
+}
+
+function clampTimestampMs(value: number, startMs: number, endMs: number): number {
+  return Math.max(startMs + 1_000, Math.min(endMs - 1_000, value))
+}
+
+/** Audit rows anchored to the active log range so they always fall inside [startMs, endMs]. */
+function buildMockAuditLogRows(startMs: number, endMs: number): LogRow[] {
+  const maintenanceCandidate = getMaintenanceScenarioAppliedMs(new Date(endMs))
+  const maintenanceAppliedMs = clampTimestampMs(maintenanceCandidate, startMs, endMs)
+  const primary = buildAuditLogRow({
+    id: 'audit-mock-maintenance',
+    timestampMs: maintenanceAppliedMs,
+    message:
+      'Applied scheduled maintenance updates to the service (PostgreSQL nodes recycled; user-initiated apply)',
+    event: 'maintenance.updates_applied',
+    actor: 'you@payments.corp',
+    severity: 'info',
+  })
+  const supplements = AUDIT_LOG_SUPPLEMENTS.map((t, index) =>
+    buildAuditLogRow({
+      id: `audit-mock-${String(index + 1).padStart(3, '0')}`,
+      timestampMs: clampTimestampMs(endMs - t.minutesBeforeWindowEnd * 60 * 1000, startMs, endMs),
+      message: t.message,
+      event: t.event,
+      actor: t.actor,
+      severity: t.severity,
+    }),
+  )
+  return [primary, ...supplements]
+}
 
 const AI_SUGGESTIONS = [
   'Summarize unusual log entries',
@@ -314,15 +427,23 @@ function logRowToJson(row: LogRow) {
     region: row.region,
     metadata: row.metadata,
     keyValues: row.keyValues,
+    ...(row.logKind ? { logKind: row.logKind } : {}),
   }
 }
 
-/** Full filtered log set for export (same filters as the table, not load-more limited). */
-function downloadServiceLogsJson(rows: LogRow[], filename = 'service-logs.json') {
+/** Export service log rows and optional platform audit rows (audits are not part of log volume). */
+function downloadServiceLogsJson(
+  serviceRows: LogRow[],
+  auditOverlayRows: LogRow[],
+  filename = 'service-logs.json',
+) {
   const payload = {
     exportedAt: new Date().toISOString(),
-    count: rows.length,
-    logs: rows.map(logRowToJson),
+    serviceLogCount: serviceRows.length,
+    serviceLogs: serviceRows.map(logRowToJson),
+    ...(auditOverlayRows.length > 0
+      ? { auditOverlayCount: auditOverlayRows.length, auditOverlay: auditOverlayRows.map(logRowToJson) }
+      : {}),
   }
   const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json;charset=utf-8' })
   const a = document.createElement('a')
@@ -463,6 +584,8 @@ function ServiceOverview({
   const [severityFilterOpen, setSeverityFilterOpen] = useState(false)
   const [selectedSeverities, setSelectedSeverities] = useState<LogSeverity[]>([])
   const [visibleLogsCount, setVisibleLogsCount] = useState(LOGS_PAGE_SIZE)
+  /** Post-maintenance surge + extra audit rows merged into the log table (audits excluded from histogram). */
+  const [includeAuditLogs, setIncludeAuditLogs] = useState(false)
   const [logsTopPadCollapsed, setLogsTopPadCollapsed] = useState(false)
   const [aiAssistantOpen, setAiAssistantOpen] = useState(false)
   const [aiDraft, setAiDraft] = useState('')
@@ -482,17 +605,55 @@ function ServiceOverview({
     return createRelativeLogRange(rollingNow, DEFAULT_HISTOGRAM_HOURS * 60)
   }, [logTimeRangeMode, customLogDateRange, rollingNow])
 
-  const filteredLogRows = useMemo(() => {
+  const mockAuditLogRows = useMemo(() => {
     const startMs = calendarDateTimeToUtcMs(activeLogRange.start)
     const endMs = calendarDateTimeToUtcMs(activeLogRange.end)
-    return MOCK_LOG_ROWS.filter((row) => {
+    return buildMockAuditLogRows(startMs, endMs)
+  }, [activeLogRange])
+
+  const baseServiceLogRows = useMemo(
+    () => createMockPostgresDegradationLogs(rollingNow).map(mapServiceEventToLogRow),
+    [rollingNow],
+  )
+  const postMaintenanceSurgeLogRows = useMemo(
+    () => createPostMaintenanceDegradationSurge(rollingNow).map(mapServiceEventToLogRow),
+    [rollingNow],
+  )
+  const mergedServiceLogRows = useMemo(
+    () =>
+      includeAuditLogs ? [...baseServiceLogRows, ...postMaintenanceSurgeLogRows] : baseServiceLogRows,
+    [baseServiceLogRows, postMaintenanceSurgeLogRows, includeAuditLogs],
+  )
+
+  const filteredServiceLogRows = useMemo(() => {
+    const startMs = calendarDateTimeToUtcMs(activeLogRange.start)
+    const endMs = calendarDateTimeToUtcMs(activeLogRange.end)
+    const inWindow = (row: LogRow) => {
       const ts = row.timestampMs
       if (ts < startMs || ts > endMs) return false
       if (!matchesLogSearch(row, searchQuery)) return false
       if (selectedSeverities.length > 0 && !selectedSeverities.includes(row.severity)) return false
       return true
+    }
+    return mergedServiceLogRows.filter(inWindow)
+  }, [activeLogRange, searchQuery, selectedSeverities, mergedServiceLogRows])
+
+  /** Audit rows for the table: same time window + search; severity filter does not apply. */
+  const filteredAuditTableRows = useMemo(() => {
+    if (!includeAuditLogs) return []
+    const startMs = calendarDateTimeToUtcMs(activeLogRange.start)
+    const endMs = calendarDateTimeToUtcMs(activeLogRange.end)
+    return mockAuditLogRows.filter((row) => {
+      const ts = row.timestampMs
+      if (ts < startMs || ts > endMs) return false
+      return matchesLogSearch(row, searchQuery)
     })
-  }, [activeLogRange, searchQuery, selectedSeverities])
+  }, [includeAuditLogs, activeLogRange, searchQuery, mockAuditLogRows])
+
+  const filteredTableLogRows = useMemo(() => {
+    if (!includeAuditLogs) return filteredServiceLogRows
+    return [...filteredServiceLogRows, ...filteredAuditTableRows]
+  }, [includeAuditLogs, filteredServiceLogRows, filteredAuditTableRows])
   const clampedHistogramRange = useMemo<HistogramRange>(() => {
     const alignedStartMs = Math.floor(histogramWindowRange.startMs / ONE_HOUR_MS) * ONE_HOUR_MS
     const alignedEndMs = Math.max(
@@ -511,12 +672,13 @@ function ServiceOverview({
       endMs: alignedRange.endMs,
     }
   }, [histogramWindowRange])
+  /** Log volume timeline: service events only (audit table rows are never counted). */
   const histogramLogRows = useMemo(() => {
-    return MOCK_LOG_ROWS.filter((row) => {
+    return mergedServiceLogRows.filter((row) => {
       const ts = row.timestampMs
       return ts >= clampedHistogramRange.startMs && ts <= clampedHistogramRange.endMs
     })
-  }, [clampedHistogramRange])
+  }, [clampedHistogramRange, mergedServiceLogRows])
   const histogramFilteredRows = useMemo(() => {
     return histogramLogRows.filter((row) => {
       if (!matchesLogSearch(row, searchQuery)) return false
@@ -576,8 +738,8 @@ function ServiceOverview({
     return out
   }, [histogramBucketsData.buckets])
   const sortedLogRows = useMemo(() => {
-    return [...filteredLogRows].sort((a, b) => b.timestampMs - a.timestampMs)
-  }, [filteredLogRows])
+    return [...filteredTableLogRows].sort((a, b) => b.timestampMs - a.timestampMs)
+  }, [filteredTableLogRows])
 
   const hasExplicitLogTimeRange =
     logTimeRangeMode === 'custom' &&
@@ -609,6 +771,7 @@ function ServiceOverview({
     setHistogramBarSelection(null)
     setSearchQuery('')
     setSelectedSeverities([])
+    setIncludeAuditLogs(false)
     setVisibleLogsCount(LOGS_PAGE_SIZE)
     setSeverityFilterOpen(false)
     setAiAssistantOpen(false)
@@ -681,7 +844,7 @@ function ServiceOverview({
 
   useEffect(() => {
     setVisibleLogsCount(LOGS_PAGE_SIZE)
-  }, [activeLogRange, searchQuery, selectedSeverities])
+  }, [activeLogRange, searchQuery, selectedSeverities, includeAuditLogs])
 
   useEffect(() => {
     if (!hasMoreLogRows || !loadMoreSentinelRef.current || !contentRef.current) return
@@ -1043,7 +1206,12 @@ function ServiceOverview({
                         dense
                         type="button"
                         icon={exportIcon}
-                        onClick={() => downloadServiceLogsJson(sortedLogRows)}
+                        onClick={() =>
+                          downloadServiceLogsJson(
+                            sortedLogRows.filter((r) => r.logKind !== 'audit'),
+                            sortedLogRows.filter((r) => r.logKind === 'audit'),
+                          )
+                        }
                       >
                         Export JSON
                       </Button.Secondary>
@@ -1073,6 +1241,22 @@ function ServiceOverview({
                       })
                     }}
                   />
+                </Box>
+
+                <Box
+                  style={{
+                    display: 'flex',
+                    justifyContent: 'flex-start',
+                    alignItems: 'center',
+                    marginBottom: 12,
+                  }}
+                >
+                  <Switch
+                    checked={includeAuditLogs}
+                    onChange={() => setIncludeAuditLogs((prev) => !prev)}
+                  >
+                    Include audit logs in table
+                  </Switch>
                 </Box>
 
                 {visibleLogRows.length === 0 ? (
@@ -1551,13 +1735,16 @@ function LogsDataList({
       type: 'custom' as const,
       headerName: 'Source',
       width: 160,
-      UNSAFE_render: (row: LogRow) => (
-        <Box component="span" style={{ color: 'var(--aquarium-text-color-default)' }}>
-          <Box component="span" style={{ fontFamily: LOG_MONO_FONT, fontSize: 12, lineHeight: '16px' }}>
-            {row.source}
+      UNSAFE_render: (row: LogRow) =>
+        row.logKind === 'audit' ? (
+          <StatusChip text="Audit log" status="neutral" dense />
+        ) : (
+          <Box component="span" style={{ color: 'var(--aquarium-text-color-default)' }}>
+            <Box component="span" style={{ fontFamily: LOG_MONO_FONT, fontSize: 12, lineHeight: '16px' }}>
+              {row.source}
+            </Box>
           </Box>
-        </Box>
-      ),
+        ),
     },
     {
       type: 'custom' as const,
@@ -1585,14 +1772,19 @@ function LogsDataList({
         sticky
         rows={rows}
         columns={columns}
+        disabled={(row) => row.logKind === 'audit'}
         rowClassName={(row) => {
-          if (row.severity === 'warning') return 'logs-row-warning'
-          if (row.severity === 'error') return 'logs-row-error'
-          return undefined
+          const bits: string[] = []
+          if (row.logKind === 'audit') bits.push('logs-row-audit')
+          if (row.severity === 'warning') bits.push('logs-row-warning')
+          if (row.severity === 'error') bits.push('logs-row-error')
+          return bits.length > 0 ? bits.join(' ') : undefined
         }}
-        rowDetails={(row) => (
-          <LogsRowDetails row={row} onExploreWithAi={onExploreWithAi} onExploreWindow={onExploreWindow} />
-        )}
+        rowDetails={(row) =>
+          row.logKind === 'audit' ? undefined : (
+            <LogsRowDetails row={row} onExploreWithAi={onExploreWithAi} onExploreWindow={onExploreWindow} />
+          )
+        }
       />
     </div>
   )
