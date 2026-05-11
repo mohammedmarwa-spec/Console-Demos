@@ -29,7 +29,7 @@ function readStoredPreference(): ThemePreference {
   } catch {
     /* private mode or blocked storage */
   }
-  return 'system'
+  return 'dark'
 }
 
 export function ThemeProvider({ children }: { children: ReactNode }) {
