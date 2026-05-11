@@ -24,6 +24,7 @@ import {
   Tooltip,
   Typography,
 } from '@aivenio/aquarium'
+import chevronDownIcon from '@aivenio/aquarium/icons/chevronDown'
 import duplicateIcon from '@aivenio/aquarium/icons/duplicate'
 import exportIcon from '@aivenio/aquarium/icons/export'
 import filterIcon from '@aivenio/aquarium/icons/filter'
@@ -446,6 +447,39 @@ function downloadServiceLogsJson(
       : {}),
   }
   const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json;charset=utf-8' })
+  const a = document.createElement('a')
+  a.href = URL.createObjectURL(blob)
+  a.download = filename
+  a.click()
+  URL.revokeObjectURL(a.href)
+}
+
+function csvEscapeCell(value: string): string {
+  if (/[",\n\r]/.test(value)) return `"${value.replace(/"/g, '""')}"`
+  return value
+}
+
+/** Tabular export for the same row sets as JSON export. */
+function downloadServiceLogsCsv(
+  serviceRows: LogRow[],
+  auditOverlayRows: LogRow[],
+  filename = 'service-logs.csv',
+) {
+  const header = ['displayTime', 'severity', 'source', 'message', 'kind'].map(csvEscapeCell).join(',')
+  const lines = [header]
+  for (const row of serviceRows) {
+    lines.push(
+      [row.displayTime, row.severity, row.source, row.message, row.logKind ?? 'service']
+        .map((c) => csvEscapeCell(String(c)))
+        .join(','),
+    )
+  }
+  for (const row of auditOverlayRows) {
+    lines.push(
+      [row.displayTime, row.severity, row.source, row.message, 'audit'].map((c) => csvEscapeCell(String(c))).join(','),
+    )
+  }
+  const blob = new Blob([lines.join('\n')], { type: 'text/csv;charset=utf-8' })
   const a = document.createElement('a')
   a.href = URL.createObjectURL(blob)
   a.download = filename
@@ -1202,19 +1236,32 @@ function ServiceOverview({
 
                   {hasExplicitLogTimeRange ? (
                     <Box style={{ marginLeft: 'auto', flexShrink: 0 }}>
-                      <Button.Secondary
-                        dense
-                        type="button"
-                        icon={exportIcon}
-                        onClick={() =>
-                          downloadServiceLogsJson(
-                            sortedLogRows.filter((r) => r.logKind !== 'audit'),
-                            sortedLogRows.filter((r) => r.logKind === 'audit'),
-                          )
-                        }
+                      <DropdownMenu
+                        placement="bottom-right"
+                        minWidth={200}
+                        onAction={(key) => {
+                          const serviceRows = sortedLogRows.filter((r) => r.logKind !== 'audit')
+                          const auditRows = sortedLogRows.filter((r) => r.logKind === 'audit')
+                          if (key === 'export-json') {
+                            downloadServiceLogsJson(serviceRows, auditRows)
+                          } else if (key === 'export') {
+                            downloadServiceLogsCsv(serviceRows, auditRows)
+                          }
+                        }}
                       >
-                        Export JSON
-                      </Button.Secondary>
+                        <DropdownMenu.Trigger>
+                          <Button.Secondary dense type="button" icon={exportIcon}>
+                            <Box style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                              <span>Export logs</span>
+                              <Icon icon={chevronDownIcon} style={{ width: 12, height: 12, flexShrink: 0 }} />
+                            </Box>
+                          </Button.Secondary>
+                        </DropdownMenu.Trigger>
+                        <DropdownMenu.Items>
+                          <DropdownMenu.Item id="export-json">Export JSON</DropdownMenu.Item>
+                          <DropdownMenu.Item id="export">Export CSV</DropdownMenu.Item>
+                        </DropdownMenu.Items>
+                      </DropdownMenu>
                     </Box>
                   ) : null}
                 </Box>
@@ -1773,13 +1820,7 @@ function LogsDataList({
         rows={rows}
         columns={columns}
         disabled={(row) => row.logKind === 'audit'}
-        rowClassName={(row) => {
-          const bits: string[] = []
-          if (row.logKind === 'audit') bits.push('logs-row-audit')
-          if (row.severity === 'warning') bits.push('logs-row-warning')
-          if (row.severity === 'error') bits.push('logs-row-error')
-          return bits.length > 0 ? bits.join(' ') : undefined
-        }}
+        rowClassName={(row) => (row.logKind === 'audit' ? 'logs-row-audit' : undefined)}
         rowDetails={(row) =>
           row.logKind === 'audit' ? undefined : (
             <LogsRowDetails row={row} onExploreWithAi={onExploreWithAi} onExploreWindow={onExploreWindow} />

@@ -53,34 +53,7 @@ tr.plan-row-selected {
   background-color: var(--aquarium-background-color-primary-muted);
 }
 
-/* Service Overview — Logs: severity row background tint. */
-td.logs-row-warning,
-tr.logs-row-warning td {
-  background-color: var(--aquarium-background-color-warning-muted) !important;
-}
-
-.service-logs-data-list [role='cell'].logs-row-warning {
-  background-color: var(--aquarium-background-color-warning-muted) !important;
-}
-
-/* DataList does not pass rowClassName onto the expand-toggle cell (first column).
-   Tint that cell when any sibling data cell carries the severity row class. */
-.service-logs-data-list .Aquarium-DataList [role='row']:has(> [role='cell'].logs-row-warning) > [role='cell']:first-child {
-  background-color: var(--aquarium-background-color-warning-muted) !important;
-}
-
-td.logs-row-error,
-tr.logs-row-error td {
-  background-color: var(--aquarium-background-color-danger-muted) !important;
-}
-
-.service-logs-data-list [role='cell'].logs-row-error {
-  background-color: var(--aquarium-background-color-danger-muted) !important;
-}
-
-.service-logs-data-list .Aquarium-DataList [role='row']:has(> [role='cell'].logs-row-error) > [role='cell']:first-child {
-  background-color: var(--aquarium-background-color-danger-muted) !important;
-}
+/* Severity row backgrounds removed; severity/message coloring uses .logs-severity-chip only. */
 
 .logs-severity-chip {
   border-radius: 6px;
@@ -91,12 +64,12 @@ tr.logs-row-error td {
 
 .logs-severity-chip--warning {
   color: var(--aquarium-text-color-warning-intense);
-  background-color: var(--aquarium-background-color-warning-muted);
+  background-color: transparent;
 }
 
 .logs-severity-chip--error {
   color: var(--aquarium-text-color-danger-intense);
-  background-color: var(--aquarium-background-color-danger-muted);
+  background-color: transparent;
 }
 
 .logs-severity-chip--info {
