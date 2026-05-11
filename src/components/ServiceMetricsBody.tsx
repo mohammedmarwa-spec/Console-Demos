@@ -17,6 +17,13 @@ import type { ServiceTypeId } from '../screens/ServiceTypeSelectModal'
 
 const PROJECT_NAME = 'UI-TESTS'
 
+/** Softer fills / strokes on dark UI than `text-color-danger-default` (see `logs-severity-chip--error` in index.css). */
+const DANGER_GRAPHIC = 'var(--aquarium-background-color-danger-graphic)'
+const DANGER_MUTED = 'var(--aquarium-background-color-danger-muted)'
+const DANGER_TEXT_ON_MUTED = 'var(--aquarium-text-color-danger-intense)'
+const SUCCESS_GRAPHIC = 'var(--aquarium-background-color-success-graphic)'
+const SUCCESS_MUTED = 'var(--aquarium-background-color-success-muted)'
+
 type ServiceMetricsBodyProps = {
   serviceName: string
   serviceTypeId?: ServiceTypeId | null
@@ -34,7 +41,7 @@ type MetricValueTone = 'default' | 'success' | 'warning' | 'danger'
 function metricValueColor(tone: MetricValueTone): string {
   if (tone === 'success') return 'var(--aquarium-text-color-success-default)'
   if (tone === 'warning') return 'var(--aquarium-text-color-warning-default)'
-  if (tone === 'danger') return 'var(--aquarium-text-color-danger-default)'
+  if (tone === 'danger') return DANGER_TEXT_ON_MUTED
   return 'var(--aquarium-text-color-default)'
 }
 
@@ -45,14 +52,17 @@ function AreaSparkline({
   fillVar,
   thresholdY,
   gradId,
+  /** Wider viewBox for full-row tiles so the SVG is not upscaled ~2× (which thickens strokes & dashes). */
+  plotWidth = 330,
 }: {
   series: number[]
   strokeVar: string
   fillVar: string
   thresholdY: number | null
   gradId: string
+  plotWidth?: number
 }) {
-  const w = 330
+  const w = plotWidth
   const h = 56
   const n = Math.max(2, series.length)
   const pts = series.map((v, i) => {
@@ -72,16 +82,25 @@ function AreaSparkline({
         </linearGradient>
       </defs>
       <path d={areaD} fill={`url(#${gradId})`} />
-      <path d={lineD} fill="none" stroke={strokeVar} strokeWidth="1.5" strokeLinejoin="round" strokeLinecap="round" />
+      <path
+        d={lineD}
+        fill="none"
+        stroke={strokeVar}
+        strokeWidth="1.5"
+        strokeLinejoin="round"
+        strokeLinecap="round"
+        vectorEffect="non-scaling-stroke"
+      />
       {thresholdY != null && (
         <line
           x1={0}
           x2={w}
           y1={thresholdY}
           y2={thresholdY}
-          stroke="var(--aquarium-text-color-danger-default)"
+          stroke={DANGER_GRAPHIC}
           strokeWidth="1"
           strokeDasharray="4 3"
+          vectorEffect="non-scaling-stroke"
         />
       )}
     </svg>
@@ -146,6 +165,7 @@ function MetricTile({
           fillVar={fillVar}
           thresholdY={thresholdY}
           gradId={gradId}
+          plotWidth={wide ? 660 : 330}
         />
       </Box>
     </Box>
@@ -169,6 +189,67 @@ const LOG_TIMELINE = [
   },
 ] as const
 
+/** Figma 1:2383 — healthy node (2 / 3): routine logs, no fatals. */
+const LOG_TIMELINE_HEALTHY = [
+  {
+    time: '2026-03-04T11:21:52Z',
+    body: 'INFO: checkpoint complete: wrote 42 buffers (0.4%); WAL file(s) added, 0000000100000000000000D1',
+  },
+  {
+    time: '2026-03-04T11:18:10Z',
+    body: 'INFO: autovacuum launcher started',
+  },
+  {
+    time: '2026-03-04T11:05:00Z',
+    body: 'NOTICE: CPU usage normalized to 68% after traffic dip',
+  },
+] as const
+
+/** Mock: unresolved errors on the primary replica (node id "1"). */
+const NODE_1_ERROR_COUNT = 4
+
+function nodeReplicaChipLabel(nodeId: string): string {
+  if (nodeId === '1') return 'Primary'
+  return 'Standby'
+}
+
+function NodeFilterLabel({ nodeId, errorCount }: { nodeId: string; errorCount: number }) {
+  const showBadge = nodeId === '1' && errorCount > 0
+  const roleLabel = nodeReplicaChipLabel(nodeId)
+  return (
+    <Box
+      style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}
+      title={nodeId === '1' ? undefined : `Cluster node ${nodeId}`}
+    >
+      <span>{roleLabel}</span>
+      {showBadge ? (
+        <Box
+          component="span"
+          role="img"
+          aria-label={`${errorCount} errors on ${roleLabel}`}
+          style={{
+            minWidth: 18,
+            height: 18,
+            padding: '0 6px',
+            borderRadius: 999,
+            backgroundColor: DANGER_MUTED,
+            color: DANGER_TEXT_ON_MUTED,
+            fontSize: 11,
+            fontWeight: 600,
+            lineHeight: '18px',
+            textAlign: 'center',
+            flexShrink: 0,
+          }}
+        >
+          {errorCount > 99 ? '99+' : errorCount}
+        </Box>
+      ) : null}
+    </Box>
+  )
+}
+
+NodeFilterLabel.displayName = 'NodeFilterLabel'
+
 export function ServiceMetricsBody({
   serviceName,
   serviceTypeId = null,
@@ -185,6 +266,8 @@ export function ServiceMetricsBody({
   const [selectedNode, setSelectedNode] = useState('1')
   const [timeRange, setTimeRange] = useState<'1h' | '6h' | '24h'>('6h')
 
+  const isHealthyNodeView = selectedNode === '2' || selectedNode === '3'
+
   const nodeOptions = useMemo(
     () => Array.from({ length: Math.max(1, Math.min(nodeCount, 4)) }, (_, i) => String(i + 1)),
     [nodeCount],
@@ -192,20 +275,28 @@ export function ServiceMetricsBody({
 
   const cpuSeries = useMemo(() => {
     const shift = timeRange === '1h' ? 0.05 : timeRange === '24h' ? -0.04 : 0
-    return [0.55, 0.62, 0.58, 0.7, 0.68, 0.72, 0.66, 0.74, 0.7, 0.72].map((v) => Math.min(0.95, v + shift))
-  }, [timeRange])
+    const base = [0.55, 0.62, 0.58, 0.7, 0.68, 0.72, 0.66, 0.74, 0.7, 0.72].map((v) => Math.min(0.95, v + shift))
+    if (!isHealthyNodeView) return base
+    return base.map((v) => Math.min(0.88, v * 0.92))
+  }, [timeRange, isHealthyNodeView])
 
   const seriesPack = useMemo(() => {
     const mem = cpuSeries.map((v) => Math.min(0.92, v * 0.78 + 0.08))
-    const disk = cpuSeries.map((v) => Math.min(1, 0.72 + v * 0.38))
+    const diskCritical = cpuSeries.map((v) => Math.min(1, 0.72 + v * 0.38))
+    const diskHealthy = cpuSeries.map((v) => Math.min(0.52, 0.32 + v * 0.14))
+    const disk = isHealthyNodeView ? diskHealthy : diskCritical
     const connErr = cpuSeries.map((v) => 0.15 + v * 0.25)
-    const totalConn = cpuSeries.map((v) => 0.62 + v * 0.22)
+    const totalConnCritical = cpuSeries.map((v) => 0.62 + v * 0.22)
+    const totalConnHealthy = cpuSeries.map((v) => 0.38 + v * 0.12)
+    const totalConn = isHealthyNodeView ? totalConnHealthy : totalConnCritical
     const avgMs = cpuSeries.map((v) => 0.22 + v * 0.35)
     const qps = cpuSeries.map((v) => 0.4 + v * 0.45)
     const replag = cpuSeries.map((v) => 0.12 + v * 0.2)
-    const slow = cpuSeries.map((v, i) => (i === 6 || i === 8 ? 0.75 : 0.28 + v * 0.15))
+    const slowCritical = cpuSeries.map((v, i) => (i === 6 || i === 8 ? 0.75 : 0.28 + v * 0.15))
+    const slowHealthy = cpuSeries.map((v) => 0.18 + v * 0.1)
+    const slow = isHealthyNodeView ? slowHealthy : slowCritical
     return { mem, disk, connErr, totalConn, avgMs, qps, replag, slow }
-  }, [cpuSeries])
+  }, [cpuSeries, isHealthyNodeView])
 
   const infoStroke = 'var(--aquarium-text-color-info-graphic)'
   const infoFill = 'var(--aquarium-text-color-info-graphic)'
@@ -245,7 +336,7 @@ export function ServiceMetricsBody({
               </Link>
             </Breadcrumbs.Crumb>,
             <Breadcrumbs.Crumb key="service">{serviceName}</Breadcrumbs.Crumb>,
-            <Breadcrumbs.Crumb key="obs">Observability</Breadcrumbs.Crumb>,
+            <Breadcrumbs.Crumb key="svc-metrics">Service metrics</Breadcrumbs.Crumb>,
           ]}
           secondaryActions={onOpenAiAssistant ? { text: 'AI assistant', onClick: onOpenAiAssistant } : undefined}
           menu={
@@ -256,7 +347,7 @@ export function ServiceMetricsBody({
           onAction={(key) => { if (key === 'delete') onDeleteService?.() }}
         />
         <Box style={{ marginTop: 8 }}>
-          <Typography.Heading>Observability</Typography.Heading>
+          <Typography.Heading>Service metrics</Typography.Heading>
         </Box>
       </Box>
 
@@ -276,26 +367,32 @@ export function ServiceMetricsBody({
           boxShadow: '0 1px 2px color-mix(in srgb, var(--aquarium-colors-black) 8%, transparent), 0 2px 4px color-mix(in srgb, var(--aquarium-colors-black) 6%, transparent)',
         }}
       >
-        <Box style={{ display: 'flex', alignItems: 'center', gap: 16, minWidth: 0 }}>
+        <Box style={{ display: 'flex', alignItems: 'center', gap: 12, minWidth: 0 }}>
           <Box
             style={{
-              width: 56,
-              height: 56,
+              width: 28,
+              height: 28,
               borderRadius: '50%',
               flexShrink: 0,
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              background: 'radial-gradient(circle at 35% 30%, color-mix(in srgb, var(--aquarium-text-color-danger-default) 55%, transparent), var(--aquarium-text-color-danger-default))',
-              boxShadow: '0 0 0 8px color-mix(in srgb, var(--aquarium-text-color-danger-default) 18%, transparent)',
+              background: isHealthyNodeView
+                ? `radial-gradient(circle at 35% 30%, color-mix(in srgb, ${SUCCESS_GRAPHIC} 50%, transparent), ${SUCCESS_GRAPHIC})`
+                : 'radial-gradient(circle at 35% 30%, color-mix(in srgb, var(--aquarium-background-color-danger-graphic) 50%, transparent), var(--aquarium-background-color-danger-graphic))',
+              boxShadow: isHealthyNodeView
+                ? `0 0 0 4px color-mix(in srgb, ${SUCCESS_MUTED} 75%, transparent)`
+                : '0 0 0 4px color-mix(in srgb, var(--aquarium-background-color-danger-muted) 75%, transparent)',
             }}
           >
             <Box
               style={{
-                width: 36,
-                height: 36,
+                width: 18,
+                height: 18,
                 borderRadius: '50%',
-                backgroundColor: 'color-mix(in srgb, var(--aquarium-text-color-danger-default) 85%, var(--aquarium-colors-white))',
+                backgroundColor: isHealthyNodeView
+                  ? `color-mix(in srgb, ${SUCCESS_MUTED} 55%, ${SUCCESS_GRAPHIC})`
+                  : 'color-mix(in srgb, var(--aquarium-background-color-danger-muted) 55%, var(--aquarium-background-color-danger-graphic))',
               }}
             />
           </Box>
@@ -303,7 +400,9 @@ export function ServiceMetricsBody({
             <Typography.LargeStrong>{serviceName}</Typography.LargeStrong>
             <Box style={{ marginTop: 4 }}>
               <Typography.Small color="muted">
-                Service is in critical state | Last checked: 2 min ago
+                {isHealthyNodeView
+                  ? 'Service is healthy | Last checked: 2 min ago'
+                  : 'Service is in critical state | Last checked: 2 min ago'}
               </Typography.Small>
             </Box>
           </Box>
@@ -317,7 +416,7 @@ export function ServiceMetricsBody({
           >
             {nodeOptions.map((id) => (
               <ChoiceChip key={id} value={id}>
-                Node {id}
+                <NodeFilterLabel nodeId={id} errorCount={id === '1' ? NODE_1_ERROR_COUNT : 0} />
               </ChoiceChip>
             ))}
           </ChoiceChipGroup>
@@ -358,64 +457,88 @@ export function ServiceMetricsBody({
         >
           <Box>
             <Box style={{ marginBottom: 16 }}>
-              <Typography.Heading>Active alerts</Typography.Heading>
+              <Typography.DefaultStrong>Active alerts</Typography.DefaultStrong>
             </Box>
             <Box style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-              <Box
-                style={{
-                  padding: 16,
-                  borderRadius: 8,
-                  border: '1px solid var(--aquarium-border-color-muted)',
-                  backgroundColor: 'var(--aquarium-background-color-layer)',
-                }}
-              >
-                <Typography.DefaultStrong>Connection pool exhausted</Typography.DefaultStrong>
-                <Box style={{ marginTop: 8, display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-                  <StatusChip text="Critical" status="danger" dense />
-                  <Typography.Caption color="muted">3 min ago · Errors spiked to 47/min</Typography.Caption>
+              {isHealthyNodeView ? (
+                <Box
+                  style={{
+                    padding: 16,
+                    borderRadius: 8,
+                    border: '1px solid var(--aquarium-border-color-muted)',
+                    backgroundColor: 'var(--aquarium-background-color-layer)',
+                  }}
+                >
+                  <Typography.DefaultStrong>CPU usage above 70%</Typography.DefaultStrong>
+                  <Box style={{ marginTop: 8, display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                    <StatusChip text="Warning" status="warning" dense />
+                    <Typography.Caption color="muted">22 min ago · Peak 74% for 3 min</Typography.Caption>
+                  </Box>
+                  <Box style={{ marginTop: 12 }}>
+                    <Button.Secondary type="button" dense onClick={() => {}}>
+                      Upgrade
+                    </Button.Secondary>
+                  </Box>
                 </Box>
-                <Box style={{ marginTop: 12 }}>
-                  <Button.Secondary type="button" dense onClick={() => {}}>
-                    Upgrade
-                  </Button.Secondary>
-                </Box>
-              </Box>
-              <Box
-                style={{
-                  padding: 16,
-                  borderRadius: 8,
-                  border: '1px solid var(--aquarium-border-color-muted)',
-                  backgroundColor: 'var(--aquarium-background-color-layer)',
-                }}
-              >
-                <Typography.DefaultStrong>CPU usage above 90%</Typography.DefaultStrong>
-                <Box style={{ marginTop: 8, display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-                  <StatusChip text="Critical" status="danger" dense />
-                  <Typography.Caption color="muted">15 min ago · Sustained at 92% for 10 min</Typography.Caption>
-                </Box>
-                <Box style={{ marginTop: 12 }}>
-                  <Button.Secondary type="button" dense onClick={() => {}}>
-                    Upgrade
-                  </Button.Secondary>
-                </Box>
-              </Box>
+              ) : (
+                <>
+                  <Box
+                    style={{
+                      padding: 16,
+                      borderRadius: 8,
+                      border: '1px solid var(--aquarium-border-color-muted)',
+                      backgroundColor: 'var(--aquarium-background-color-layer)',
+                    }}
+                  >
+                    <Typography.DefaultStrong>Connection pool exhausted</Typography.DefaultStrong>
+                    <Box style={{ marginTop: 8, display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                      <StatusChip text="Critical" status="danger" dense />
+                      <Typography.Caption color="muted">3 min ago · Errors spiked to 47/min</Typography.Caption>
+                    </Box>
+                    <Box style={{ marginTop: 12 }}>
+                      <Button.Secondary type="button" dense onClick={() => {}}>
+                        Upgrade
+                      </Button.Secondary>
+                    </Box>
+                  </Box>
+                  <Box
+                    style={{
+                      padding: 16,
+                      borderRadius: 8,
+                      border: '1px solid var(--aquarium-border-color-muted)',
+                      backgroundColor: 'var(--aquarium-background-color-layer)',
+                    }}
+                  >
+                    <Typography.DefaultStrong>CPU usage above 90%</Typography.DefaultStrong>
+                    <Box style={{ marginTop: 8, display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                      <StatusChip text="Critical" status="danger" dense />
+                      <Typography.Caption color="muted">15 min ago · Sustained at 92% for 10 min</Typography.Caption>
+                    </Box>
+                    <Box style={{ marginTop: 12 }}>
+                      <Button.Secondary type="button" dense onClick={() => {}}>
+                        Upgrade
+                      </Button.Secondary>
+                    </Box>
+                  </Box>
+                </>
+              )}
             </Box>
           </Box>
 
           <Box>
             <Box style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap', marginBottom: 12 }}>
-              <Typography.Heading>Recent events (logs)</Typography.Heading>
+              <Typography.DefaultStrong>Recent events (logs)</Typography.DefaultStrong>
               <StatusChip text="Live data" status="success" dense />
             </Box>
             <Box style={{ display: 'flex', flexDirection: 'column', gap: 0, position: 'relative' }}>
-              {LOG_TIMELINE.map((entry, index) => (
+              {(isHealthyNodeView ? LOG_TIMELINE_HEALTHY : LOG_TIMELINE).map((entry, index, arr) => (
                 <Box
                   key={entry.time}
                   style={{
                     display: 'grid',
                     gridTemplateColumns: '12px 1fr',
                     gap: 12,
-                    paddingBottom: index < LOG_TIMELINE.length - 1 ? 16 : 0,
+                    paddingBottom: index < arr.length - 1 ? 16 : 0,
                   }}
                 >
                   <Box style={{ position: 'relative', width: 12 }}>
@@ -424,7 +547,7 @@ export function ServiceMetricsBody({
                         position: 'absolute',
                         left: 4,
                         top: 6,
-                        bottom: index < LOG_TIMELINE.length - 1 ? -16 : 0,
+                        bottom: index < arr.length - 1 ? -16 : 0,
                         width: 2,
                         backgroundColor: 'var(--aquarium-border-color-muted)',
                         borderRadius: 1,
@@ -469,9 +592,6 @@ export function ServiceMetricsBody({
         </Box>
 
         <Box style={{ flex: '1 1 400px', minWidth: 0, paddingLeft: 24 }}>
-          <Box style={{ marginBottom: 16 }}>
-            <Typography.Heading>Service metrics</Typography.Heading>
-          </Box>
           <Box
             style={{
               display: 'grid',
@@ -504,8 +624,8 @@ export function ServiceMetricsBody({
             <MetricTile
               title="Disk usage"
               thresholdText="threshold 80%"
-              value="99.99%"
-              valueTone="danger"
+              value={isHealthyNodeView ? '45%' : '99.99%'}
+              valueTone={isHealthyNodeView ? 'success' : 'danger'}
               series={seriesPack.disk}
               strokeVar={mutedStroke}
               fillVar={mutedFill}
@@ -518,16 +638,16 @@ export function ServiceMetricsBody({
               value="12"
               valueTone="success"
               series={seriesPack.connErr}
-              strokeVar="var(--aquarium-text-color-danger-default)"
-              fillVar="var(--aquarium-text-color-danger-default)"
+              strokeVar={isHealthyNodeView ? successStroke : DANGER_GRAPHIC}
+              fillVar={isHealthyNodeView ? successFill : DANGER_GRAPHIC}
               thresholdY={56 - 6 - (12 / 50) * (56 - 14)}
               gradId={`${baseId}-cerr`}
             />
             <MetricTile
               title="Total connections"
               thresholdText="max 100"
-              value="84 / 100"
-              valueTone="danger"
+              value={isHealthyNodeView ? '58 / 100' : '84 / 100'}
+              valueTone={isHealthyNodeView ? 'success' : 'danger'}
               series={seriesPack.totalConn}
               strokeVar={infoStroke}
               fillVar={infoFill}
@@ -569,11 +689,11 @@ export function ServiceMetricsBody({
             <MetricTile
               title="Slow queries"
               thresholdText="threshold 10/day"
-              value="7"
+              value={isHealthyNodeView ? '3' : '7'}
               valueTone="default"
               series={seriesPack.slow}
-              strokeVar="var(--aquarium-text-color-danger-default)"
-              fillVar="var(--aquarium-text-color-danger-default)"
+              strokeVar={isHealthyNodeView ? warnStroke : DANGER_GRAPHIC}
+              fillVar={isHealthyNodeView ? warnFill : DANGER_GRAPHIC}
               thresholdY={56 - 6 - (10 / 12) * (56 - 14)}
               gradId={`${baseId}-slow`}
               wide
