@@ -18,7 +18,7 @@ const NAV_ITEMS: { label: string; icon: IconifyIcon; id: string }[] = [
   { id: 'integrations', label: 'Integrations', icon: integrationsIcon },
   { id: 'metrics', label: 'Service metrics', icon: chartIcon },
   { id: 'ai-insights', label: 'AI insights', icon: pulseIcon },
-  { id: 'logs', label: 'Logs', icon: listIcon },
+  { id: 'logs', label: 'Event logs', icon: listIcon },
   { id: 'query-statistics', label: 'Query statistics', icon: queriesStatisticsIcon },
   { id: 'current-queries', label: 'Current queries', icon: queriesEditorIcon },
   { id: 'users', label: 'Users', icon: userIcon },

@@ -8,6 +8,7 @@ import {
   Button,
   Checkbox,
   CheckboxGroup,
+  Chip,
   DataList,
   DateTimeRangePicker,
   Drawer,
@@ -351,7 +352,7 @@ function histogramRangesAlignLoose(a: HistogramRange, b: HistogramRange, epsMs: 
 
 /**
  * When there is no active `histogramBarSelection`, infers bar highlight from the custom time filter alone.
- * Uses generous edge tolerance + midpoint for float bucket boundaries and minute-level picker values.
+ * Uses generous edge tolerance + midpoint for float bucket boundaries and time-picker values.
  */
 /** Maps a clicked or inferred window to canonical bucket `{ startMs, endMs }` for chart selection styling. */
 function snapRangeToHistogramBucket(
@@ -489,7 +490,7 @@ function downloadServiceLogsCsv(
 
 /**
  * Opens the range calendar. Omit `value` on `Filter.Trigger` so only Aquarium’s locale
- * preview (`DateDisplay`, e.g. `03/05/2026, 11:23`) is shown — passing `value` would duplicate it.
+ * preview (`DateDisplay`, e.g. `03/05/2026, 11:23:45`) is shown — passing `value` would duplicate it.
  */
 function DateRangeFilterTrigger({ onClear }: { onClear?: () => void }) {
   const dateRangeState = useContext(AriaDateRangePickerStateContext) as
@@ -1110,7 +1111,7 @@ function ServiceOverview({
                       </Link>
                     </Breadcrumbs.Crumb>,
                     <Breadcrumbs.Crumb key="service">{serviceName}</Breadcrumbs.Crumb>,
-                    <Breadcrumbs.Crumb key="logs">Service logs</Breadcrumbs.Crumb>,
+                    <Breadcrumbs.Crumb key="logs">Event logs</Breadcrumbs.Crumb>,
                   ]}
                   secondaryActions={{ text: 'AI assistant', onClick: () => setAiAssistantOpen(true) }}
                   menu={
@@ -1121,11 +1122,11 @@ function ServiceOverview({
                   onAction={(key) => { if (key === 'delete') onDeleteService?.() }}
                 />
                 <Box style={{ display: 'inline-flex', alignItems: 'center', gap: 8, marginTop: 8 }}>
-                  <Typography.Heading>Service logs</Typography.Heading>
+                  <Typography.Heading>Event logs</Typography.Heading>
                 </Box>
               </Box>
 
-              <Box style={{ marginTop: 0 }} role="region" aria-label="Service logs">
+              <Box style={{ marginTop: 0 }} role="region" aria-label="Event logs">
                 <Box
                   style={{
                     display: 'flex',
@@ -1147,7 +1148,7 @@ function ServiceOverview({
                     </Box>
                     <DateTimeRangePicker
                       aria-label="Date and time range"
-                      granularity="minute"
+                      granularity="second"
                       value={activeLogRange}
                       reserveSpaceForError={false}
                       onChange={(value) => {
@@ -1188,7 +1189,7 @@ function ServiceOverview({
                           />
                         </Box>
                       </Box>
-                      <DateTimeRangePicker.Calendar />
+                      <DateTimeRangePicker.Calendar granularity="second" />
                     </DateTimeRangePicker>
 
                     <div ref={severityFilterRef} style={{ position: 'relative' }}>
@@ -1221,6 +1222,7 @@ function ServiceOverview({
                           <CheckboxGroup
                             labelText="Severity"
                             value={selectedSeverities}
+                            reserveSpaceForError={false}
                             onChange={(value) => setSelectedSeverities((value as LogSeverity[] | undefined) ?? [])}
                           >
                             {LOG_SEVERITY_OPTIONS.map((option) => (
@@ -1761,56 +1763,76 @@ function LogsDataList({
     {
       type: 'custom' as const,
       headerName: 'Severity',
-      width: 110,
-      UNSAFE_render: (row: LogRow) => (
-        <Box component="span" style={{ color: 'var(--aquarium-text-color-default)' }}>
-          <Box
-            component="span"
-            className={getLogMessageHighlightClassName(row.severity)}
-            style={{
-              fontFamily: LOG_MONO_FONT,
-              fontSize: 12,
-              lineHeight: '16px',
-            }}
-          >
-            {formatSeverityOption(row.severity)}
-          </Box>
-        </Box>
-      ),
-    },
-    {
-      type: 'custom' as const,
-      headerName: 'Source',
-      width: 160,
+      width: 168,
       UNSAFE_render: (row: LogRow) =>
         row.logKind === 'audit' ? (
-          <StatusChip text="Audit log" status="neutral" dense />
+          <Box
+            component="span"
+            style={{ display: 'inline-flex', alignItems: 'center', whiteSpace: 'nowrap' }}
+          >
+            <Chip.Inverse text="System event" status="primary" dense />
+          </Box>
         ) : (
           <Box component="span" style={{ color: 'var(--aquarium-text-color-default)' }}>
-            <Box component="span" style={{ fontFamily: LOG_MONO_FONT, fontSize: 12, lineHeight: '16px' }}>
-              {row.source}
+            <Box
+              component="span"
+              className={getLogMessageHighlightClassName(row.severity)}
+              style={{
+                fontFamily: LOG_MONO_FONT,
+                fontSize: 12,
+                lineHeight: '16px',
+              }}
+            >
+              {formatSeverityOption(row.severity)}
             </Box>
           </Box>
         ),
     },
     {
       type: 'custom' as const,
-      headerName: 'Message',
+      headerName: 'Source',
+      width: 160,
       UNSAFE_render: (row: LogRow) => (
-        <Box component="span">
-          <Box
-            component="span"
-            className={getLogMessageHighlightClassName(row.severity)}
-            style={{
-              fontFamily: LOG_MONO_FONT,
-              fontSize: 12,
-              lineHeight: '16px',
-            }}
-          >
-            {row.message}
+        <Box component="span" style={{ color: 'var(--aquarium-text-color-default)' }}>
+          <Box component="span" style={{ fontFamily: LOG_MONO_FONT, fontSize: 12, lineHeight: '16px' }}>
+            {row.source}
           </Box>
         </Box>
       ),
+    },
+    {
+      type: 'custom' as const,
+      headerName: 'Message',
+      UNSAFE_render: (row: LogRow) =>
+        row.logKind === 'audit' ? (
+          <Box component="span" style={{ color: 'var(--aquarium-text-color-default)' }}>
+            <Box
+              component="span"
+              style={{
+                fontFamily: LOG_MONO_FONT,
+                fontSize: 12,
+                lineHeight: '16px',
+                fontWeight: 600,
+              }}
+            >
+              {row.message}
+            </Box>
+          </Box>
+        ) : (
+          <Box component="span">
+            <Box
+              component="span"
+              className={getLogMessageHighlightClassName(row.severity)}
+              style={{
+                fontFamily: LOG_MONO_FONT,
+                fontSize: 12,
+                lineHeight: '16px',
+              }}
+            >
+              {row.message}
+            </Box>
+          </Box>
+        ),
     },
   ]
   return (
@@ -1819,8 +1841,7 @@ function LogsDataList({
         sticky
         rows={rows}
         columns={columns}
-        disabled={(row) => row.logKind === 'audit'}
-        rowClassName={(row) => (row.logKind === 'audit' ? 'logs-row-audit' : undefined)}
+        rowClassName={(row) => (row.logKind === 'audit' ? 'logs-row-milestone' : undefined)}
         rowDetails={(row) =>
           row.logKind === 'audit' ? undefined : (
             <LogsRowDetails row={row} onExploreWithAi={onExploreWithAi} onExploreWindow={onExploreWindow} />

@@ -109,39 +109,46 @@ tr.plan-row-selected {
 }
 
 /*
- * Audit rows: inactive copy throughout (nested severity chips / chips override cell `color`).
+ * Audit / milestone rows: primary-muted band; severity uses Chip.Inverse primary (Aquarium).
  */
-.service-logs-data-list .Aquarium-DataList [role='row'] > [role='cell'].logs-row-audit {
-  color: var(--aquarium-text-color-inactive);
+.service-logs-data-list .Aquarium-DataList [role='row'] > [role='cell'].logs-row-milestone {
+  background-color: var(--aquarium-background-color-primary-muted);
+  color: var(--aquarium-text-color-default);
 }
 
-.service-logs-data-list .Aquarium-DataList [role='row'] > [role='cell'].logs-row-audit *,
-.service-logs-data-list .Aquarium-DataList [role='row'] > [role='cell'].logs-row-audit .logs-severity-chip,
-.service-logs-data-list .Aquarium-DataList [role='row'] > [role='cell'].logs-row-audit .logs-severity-chip--warning,
-.service-logs-data-list .Aquarium-DataList [role='row'] > [role='cell'].logs-row-audit .logs-severity-chip--error,
-.service-logs-data-list .Aquarium-DataList [role='row'] > [role='cell'].logs-row-audit .logs-severity-chip--info {
-  color: var(--aquarium-text-color-inactive) !important;
-}
-
-.service-logs-data-list .Aquarium-DataList [role='row'] > [role='cell'].logs-row-audit .logs-severity-chip {
-  background-color: transparent !important;
-}
-
-.service-logs-data-list .Aquarium-DataList [role='row'][inert] > [role='cell'].logs-row-audit {
+.service-logs-data-list .Aquarium-DataList [role='row'][inert] > [role='cell'].logs-row-milestone {
   pointer-events: none;
 }
 
-/* Expand column: first cell carries the same row classes as other cells. */
-.service-logs-data-list .Aquarium-DataList [role='row'] > [role='cell']:first-child.logs-row-audit {
-  width: 0 !important;
-  min-width: 0 !important;
-  max-width: 0 !important;
-  padding: 0 !important;
+/*
+ * Leading expand column: Aquarium does not apply `rowClassName` to that <DataList.Cell>,
+ * only to data columns. Tint the expand cell when this row has milestone data cells.
+ *
+ * Do NOT set width:0 on this cell — the grid track stays ~50px wide and the unused track
+ * area shows the body background (the dark strip). Fill the track with the same tint and
+ * hide only the expand control subtree (opacity on children, not on the cell).
+ */
+.service-logs-data-list .Aquarium-DataList [role='row']:has([role='cell'].logs-row-milestone) > [role='cell']:first-child {
+  background-color: var(--aquarium-background-color-primary-muted) !important;
+  color: var(--aquarium-text-color-default);
   overflow: hidden !important;
-  border: none !important;
-  visibility: hidden !important;
   pointer-events: none !important;
+}
+
+.service-logs-data-list .Aquarium-DataList [role='row']:has([role='cell'].logs-row-milestone) > [role='cell']:first-child > * {
   opacity: 0 !important;
+}
+
+/* Clip any stray shadows/paint to the logs table wrapper (milestone rows must not paint past this box). */
+.service-logs-data-list {
+  overflow-x: clip;
+  max-width: 100%;
+}
+
+@supports not (overflow: clip) {
+  .service-logs-data-list {
+    overflow-x: hidden;
+  }
 }
 
 /* Continuation day blocks: hide duplicate thead row (header labels shown only on first block). */
