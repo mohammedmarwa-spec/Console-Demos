@@ -1244,7 +1244,7 @@ function ServiceOverview({
                           const auditRows = sortedLogRows.filter((r) => r.logKind === 'audit')
                           if (key === 'export-json') {
                             downloadServiceLogsJson(serviceRows, auditRows)
-                          } else if (key === 'export') {
+                          } else if (key === 'export-csv') {
                             downloadServiceLogsCsv(serviceRows, auditRows)
                           }
                         }}
@@ -1259,7 +1259,7 @@ function ServiceOverview({
                         </DropdownMenu.Trigger>
                         <DropdownMenu.Items>
                           <DropdownMenu.Item id="export-json">Export JSON</DropdownMenu.Item>
-                          <DropdownMenu.Item id="export">Export CSV</DropdownMenu.Item>
+                          <DropdownMenu.Item id="export-csv">Export CSV</DropdownMenu.Item>
                         </DropdownMenu.Items>
                       </DropdownMenu>
                     </Box>
