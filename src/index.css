@@ -57,7 +57,9 @@ tr.plan-row-selected {
 
 .logs-severity-chip {
   border-radius: 6px;
-  padding: 2px 6px;
+  /* Horizontal padding was skipped on audit message rows (no chip class), so Message column
+     text misaligned vs service rows. Keep only vertical inset for line rhythm. */
+  padding: 2px 0;
   font-weight: 500;
   display: inline-block;
 }
@@ -106,6 +108,12 @@ tr.plan-row-selected {
   padding-top: 12px !important;
   padding-bottom: 12px !important;
   min-height: 0 !important;
+}
+
+/* Message column (last cell per row — LogsDataList has no trailing menu column). */
+.service-logs-data-list .Aquarium-DataList [role='row'] > [role='cell']:last-child,
+.service-logs-data-list .Aquarium-DataList [role='row'] > [role='columnheader']:last-child {
+  padding-left: 0 !important;
 }
 
 /*
