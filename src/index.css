@@ -94,6 +94,8 @@ tr.plan-row-selected {
    DataList is a CSS grid of divs (role=table/columnheader/cell), not <table>. */
 .service-logs-data-table table.Aquarium-DataTable thead th,
 .service-logs-data-list .Aquarium-DataList [role='columnheader'] {
+  position: sticky;
+  top: 0;
   z-index: 30 !important;
   background-color: var(--aquarium-background-color-body) !important;
   background-clip: padding-box;

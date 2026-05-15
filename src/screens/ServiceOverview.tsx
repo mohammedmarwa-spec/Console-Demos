@@ -289,6 +289,57 @@ type ServiceLogTimeMode = 'relative-last-24h' | 'custom'
 
 const LOG_SEVERITY_OPTIONS: readonly LogSeverity[] = ['info', 'warning', 'error']
 
+type LogsSortState = {
+  headerName: 'Time' | 'Severity' | 'Source' | 'Message'
+  direction: 'ascending' | 'descending'
+}
+
+const DEFAULT_LOGS_SORT: LogsSortState = { headerName: 'Time', direction: 'descending' }
+
+const SEVERITY_SORT_RANK: Record<LogSeverity, number> = {
+  error: 0,
+  warning: 1,
+  info: 2,
+}
+
+function severitySortRank(row: LogRow): number {
+  if (row.logKind === 'audit') return -1
+  return SEVERITY_SORT_RANK[row.severity]
+}
+
+function applyLogsSortDirection(diff: number, direction: LogsSortState['direction']): number {
+  return direction === 'descending' ? -diff : diff
+}
+
+function compareLogRows(
+  a: LogRow,
+  b: LogRow,
+  headerName: LogsSortState['headerName'],
+  direction: LogsSortState['direction'],
+): number {
+  switch (headerName) {
+    case 'Time':
+      return applyLogsSortDirection(a.timestampMs - b.timestampMs, direction)
+    case 'Severity':
+      return applyLogsSortDirection(severitySortRank(a) - severitySortRank(b), direction)
+    case 'Source':
+      return applyLogsSortDirection(a.source.localeCompare(b.source), direction)
+    case 'Message':
+      return applyLogsSortDirection(a.message.localeCompare(b.message), direction)
+    default:
+      return 0
+  }
+}
+
+function sortLogRows(rows: LogRow[], sort: LogsSortState): LogRow[] {
+  return [...rows].sort((a, b) => compareLogRows(a, b, sort.headerName, sort.direction))
+}
+
+function logRowSortForColumn(headerName: LogsSortState['headerName']) {
+  return (a: LogRow, b: LogRow, direction: 'ascending' | 'descending' | 'none' | 'other' | null | undefined) =>
+    compareLogRows(a, b, headerName, direction === 'ascending' ? 'ascending' : 'descending')
+}
+
 function formatSeverityOption(severity: LogSeverity): string {
   return severity.charAt(0).toUpperCase() + severity.slice(1)
 }
@@ -618,6 +669,7 @@ function ServiceOverview({
   const [searchQuery, setSearchQuery] = useState('')
   const [severityFilterOpen, setSeverityFilterOpen] = useState(false)
   const [selectedSeverities, setSelectedSeverities] = useState<LogSeverity[]>([])
+  const [logsSort, setLogsSort] = useState<LogsSortState>(DEFAULT_LOGS_SORT)
   const [visibleLogsCount, setVisibleLogsCount] = useState(LOGS_PAGE_SIZE)
   /** Post-maintenance surge + extra audit rows merged into the log table (audits excluded from histogram). */
   const [includeAuditLogs, setIncludeAuditLogs] = useState(false)
@@ -772,9 +824,20 @@ function ServiceOverview({
     }
     return out
   }, [histogramBucketsData.buckets])
-  const sortedLogRows = useMemo(() => {
-    return [...filteredTableLogRows].sort((a, b) => b.timestampMs - a.timestampMs)
-  }, [filteredTableLogRows])
+  const sortedLogRows = useMemo(() => sortLogRows(filteredTableLogRows, logsSort), [filteredTableLogRows, logsSort])
+
+  const handleLogsSortChanged = (args: { key: string | undefined; direction: 'ascending' | 'descending' | undefined } | null) => {
+    if (!args?.key) {
+      setLogsSort(DEFAULT_LOGS_SORT)
+    } else {
+      const headerName = args.key as LogsSortState['headerName']
+      setLogsSort({
+        headerName,
+        direction: args.direction === 'ascending' ? 'ascending' : 'descending',
+      })
+    }
+    setVisibleLogsCount(LOGS_PAGE_SIZE)
+  }
 
   const hasExplicitLogTimeRange =
     logTimeRangeMode === 'custom' &&
@@ -1319,6 +1382,8 @@ function ServiceOverview({
                     />
                     <LogsDataList
                       rows={visibleLogRows}
+                      sort={logsSort}
+                      onSortChanged={handleLogsSortChanged}
                       onExploreWithAi={handleExploreLogWithAi}
                       onExploreWindow={handleExploreLogWindow}
                     />
@@ -1739,10 +1804,14 @@ export default ServiceOverview
 
 function LogsDataList({
   rows,
+  sort,
+  onSortChanged,
   onExploreWithAi,
   onExploreWindow,
 }: {
   rows: LogRow[]
+  sort: LogsSortState
+  onSortChanged: (args: { key: string | undefined; direction: 'ascending' | 'descending' | undefined } | null) => void
   onExploreWithAi: (row: LogRow) => void
   onExploreWindow: (row: LogRow) => void
 }) {
@@ -1750,8 +1819,10 @@ function LogsDataList({
   const columns = [
     {
       type: 'custom' as const,
+      key: 'Time',
       headerName: 'Time',
       width: 248,
+      sort: logRowSortForColumn('Time'),
       UNSAFE_render: (row: LogRow) => (
         <Box component="span" style={{ color: 'var(--aquarium-text-color-default)' }}>
           <Box component="span" style={{ fontFamily: LOG_MONO_FONT, fontSize: 12, lineHeight: '16px' }}>
@@ -1762,8 +1833,10 @@ function LogsDataList({
     },
     {
       type: 'custom' as const,
+      key: 'Severity',
       headerName: 'Severity',
       width: 168,
+      sort: logRowSortForColumn('Severity'),
       UNSAFE_render: (row: LogRow) =>
         row.logKind === 'audit' ? (
           <Box
@@ -1790,8 +1863,10 @@ function LogsDataList({
     },
     {
       type: 'custom' as const,
+      key: 'Source',
       headerName: 'Source',
       width: 160,
+      sort: logRowSortForColumn('Source'),
       UNSAFE_render: (row: LogRow) => (
         <Box component="span" style={{ color: 'var(--aquarium-text-color-default)' }}>
           <Box component="span" style={{ fontFamily: LOG_MONO_FONT, fontSize: 12, lineHeight: '16px' }}>
@@ -1802,7 +1877,9 @@ function LogsDataList({
     },
     {
       type: 'custom' as const,
+      key: 'Message',
       headerName: 'Message',
+      sort: logRowSortForColumn('Message'),
       UNSAFE_render: (row: LogRow) =>
         row.logKind === 'audit' ? (
           <Box component="span" style={{ color: 'var(--aquarium-text-color-default)' }}>
@@ -1838,9 +1915,11 @@ function LogsDataList({
   return (
     <div className="service-logs-data-list">
       <DataList
-        sticky
+        sticky={false}
         rows={rows}
         columns={columns}
+        defaultSort={{ headerName: sort.headerName, direction: sort.direction }}
+        onSortChanged={onSortChanged}
         rowClassName={(row) => (row.logKind === 'audit' ? 'logs-row-milestone' : undefined)}
         rowDetails={(row) =>
           row.logKind === 'audit' ? undefined : (
