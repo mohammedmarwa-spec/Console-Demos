@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Box, Card, Icon, Modal, Typography } from '@aivenio/aquarium'
-import settingsIcon from '@aivenio/aquarium/icons/settings'
+import layersIcon from '@aivenio/aquarium/icons/layers'
 import { useTheme } from '../theme/ThemeProvider'
 import { UPGRADE_PLAN_SERVICE_DATA, type UpgradeTier } from './UpgradeServiceModal'
 import { getPlanIllustrationUrl } from './upgradePlanIllustrations'
@@ -123,7 +123,7 @@ export function UpgradeServiceModalV2({
       onClose={onClose}
       size="md"
       title="Quick upgrade"
-      subtitle="Recommended options based on your current plan and region. You can scale up or down later anytime."
+      subtitle="Recommended shortcuts based on your current plan and region. You can scale up or down later anytime."
       primaryAction={{ text: 'Upgrade', onClick: handleUpgrade }}
       secondaryActions={{ text: 'Cancel', onClick: onClose }}
     >
@@ -149,6 +149,16 @@ export function UpgradeServiceModalV2({
           --tw-ring-width: 0 !important;
           --tw-ring-offset-width: 0 !important;
           box-shadow: inset 0 0 0 2px var(--aquarium-border-color-primary-default) !important;
+        }
+        .upgrade-v2-tier-bar--professional {
+          background-color: color-mix(
+            in srgb,
+            var(--aquarium-chart-colors-primary-categorical-4) 22%,
+            var(--aquarium-background-color-muted)
+          );
+        }
+        .upgrade-v2-tier-bar--professional .upgrade-v2-tier-bar-label {
+          color: var(--aquarium-chart-colors-primary-categorical-4) !important;
         }
       `}</style>
 
@@ -269,7 +279,7 @@ function FullConfigurationCard({ onClick }: { onClick: () => void }) {
                 backgroundColor: 'var(--aquarium-background-color-default)',
               }}
             >
-              <Icon icon={settingsIcon} color="muted" style={{ width: 22, height: 22 }} />
+              <Icon icon={layersIcon} color="muted" style={{ width: 22, height: 22 }} />
             </Box>
           </Box>
         </Card.Title>
@@ -283,18 +293,18 @@ function FullConfigurationCard({ onClick }: { onClick: () => void }) {
 function TierHeader({ group, planCount }: { group: TierGroup; planCount: number }) {
   return (
     <Box
+      className="upgrade-v2-tier-bar--professional"
       style={{
         gridColumn: `span ${planCount}`,
         width: '100%',
         display: 'flex',
         alignItems: 'center',
-        justifyContent: 'center',
+        justifyContent: 'flex-start',
         padding: '4px 16px',
         borderRadius: 999,
-        backgroundColor: 'var(--aquarium-background-color-muted)',
       }}
     >
-      <Typography.CodeSmall htmlTag="span" color="muted">
+      <Typography.CodeSmall htmlTag="span" color="muted" className="upgrade-v2-tier-bar-label">
         {group.label}
       </Typography.CodeSmall>
     </Box>
