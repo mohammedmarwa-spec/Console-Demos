@@ -18,7 +18,7 @@ type PlanV2 = {
 
 const DEVELOPER_V2: PlanV2 = {
   id: 'developer-plan',
-  label: 'Next step up',
+  label: '1 step up',
   name: 'Developer',
   description: 'For learning, side projects, and small workloads',
   features: [
@@ -31,7 +31,7 @@ const DEVELOPER_V2: PlanV2 = {
 
 const STARTUP_V2: PlanV2 = {
   id: 'startup',
-  label: 'Ready to scale',
+  label: 'Entry Startup plan',
   name: 'Startup',
   description: 'For growing apps and staging environments',
   features: [
@@ -45,7 +45,7 @@ const STARTUP_V2: PlanV2 = {
 
 const BUSINESS_V2: PlanV2 = {
   id: 'business',
-  label: 'Production-ready',
+  label: 'Entry Business plan',
   name: 'Business',
   description: 'For critical workloads and live applications',
   features: [
