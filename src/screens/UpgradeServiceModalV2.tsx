@@ -115,8 +115,7 @@ export function UpgradeServiceModalV2({
     onUpgrade(selectedPlanId)
   }
 
-  const tierHeaderColumns = tierGroups.length === 2 ? '1fr 2fr' : '1fr'
-  const planCardColumns = `repeat(${allPlans.length}, 1fr)`
+  const planCardColumns = `repeat(${allPlans.length}, minmax(0, 1fr))`
 
   return (
     <Modal
@@ -131,19 +130,54 @@ export function UpgradeServiceModalV2({
       {/* Hide DS Card checkbox indicators */}
       <style>{`
         .upgrade-v2-cards label > div:first-child > *:last-child { display: none !important; }
+        /* Fit cards in modal: DS sets min-w-[280px] per card; allow grid columns to shrink */
+        .upgrade-v2-cards {
+          width: 100%;
+          min-width: 0;
+        }
+        .upgrade-v2-cards label.Aquarium-Card.Label {
+          box-sizing: border-box;
+          min-width: 0 !important;
+          max-width: 100%;
+          width: 100%;
+          overflow: hidden;
+        }
+        /* DS checkable cards use an outer ring when selected; use inset border so edges align with modal content */
+        .upgrade-v2-cards label.Aquarium-Card.Label.ring-2 {
+          --tw-ring-offset-shadow: 0 0 #0000 !important;
+          --tw-ring-shadow: 0 0 #0000 !important;
+          --tw-ring-width: 0 !important;
+          --tw-ring-offset-width: 0 !important;
+          box-shadow: inset 0 0 0 2px var(--aquarium-border-color-primary-default) !important;
+        }
       `}</style>
 
-      <Box style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-        <Box style={{ display: 'grid', gridTemplateColumns: tierHeaderColumns, gap: 24 }}>
-          {tierGroups.map((group) => (
-            <TierHeader key={group.label} group={group} />
-          ))}
-        </Box>
+      <Box style={{ display: 'flex', flexDirection: 'column', width: '100%', minWidth: 0 }}>
+        <Box style={{ display: 'flex', flexDirection: 'column', gap: 16, width: '100%', minWidth: 0 }}>
+          <Box
+            style={{
+              display: 'grid',
+              gridTemplateColumns: planCardColumns,
+              gap: 24,
+              width: '100%',
+              minWidth: 0,
+            }}
+          >
+            {tierGroups.map((group) => (
+              <TierHeader key={group.label} group={group} planCount={group.plans.length} />
+            ))}
+          </Box>
 
-        <Box
-          className="upgrade-v2-cards"
-          style={{ display: 'grid', gridTemplateColumns: planCardColumns, gap: 24 }}
-        >
+          <Box
+            className="upgrade-v2-cards"
+            style={{
+              display: 'grid',
+              gridTemplateColumns: planCardColumns,
+              gap: 24,
+              width: '100%',
+              minWidth: 0,
+            }}
+          >
           {allPlans.map((plan) => (
             <Card
               key={plan.id}
@@ -165,7 +199,7 @@ export function UpgradeServiceModalV2({
               {/* height: 100% fills the Card's flex-auto children wrapper */}
               <Box style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
                 {/* Top: description + features — grows to fill available space */}
-                <Box style={{ display: 'flex', flexDirection: 'column', gap: 8, flex: 1 }}>
+                <Box style={{ display: 'flex', flexDirection: 'column', gap: 16, flex: 1 }}>
                   <Typography.Small color="muted">{plan.description}</Typography.Small>
 
                   <Box style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
@@ -190,9 +224,12 @@ export function UpgradeServiceModalV2({
               </Box>
             </Card>
           ))}
+          </Box>
         </Box>
 
-        <FullConfigurationCard onClick={onCustomize} />
+        <Box style={{ marginTop: 32 }}>
+          <FullConfigurationCard onClick={onCustomize} />
+        </Box>
       </Box>
     </Modal>
   )
@@ -211,11 +248,15 @@ function FullConfigurationCard({ onClick }: { onClick: () => void }) {
             style={{
               display: 'flex',
               alignItems: 'center',
-              justifyContent: 'flex-start',
+              justifyContent: 'space-between',
               gap: 12,
               width: '100%',
             }}
           >
+            <Box style={{ display: 'flex', flex: 1, flexDirection: 'column', alignItems: 'flex-start', minWidth: 0 }}>
+              <Typography.Default color="primary-default">View all clouds and plans</Typography.Default>
+              <Typography.Small color="muted">Select cloud, region, CPU, RAM, disk and scaling options</Typography.Small>
+            </Box>
             <Box
               aria-hidden
               style={{
@@ -224,15 +265,11 @@ function FullConfigurationCard({ onClick }: { onClick: () => void }) {
                 alignItems: 'center',
                 justifyContent: 'center',
                 padding: 8,
-                borderRadius: 8,
-                backgroundColor: 'var(--aquarium-background-color-muted)',
+                borderRadius: 4,
+                backgroundColor: 'var(--aquarium-background-color-default)',
               }}
             >
-              <Icon icon={settingsIcon} color="muted" style={{ width: 32, height: 32 }} />
-            </Box>
-            <Box style={{ display: 'flex', flex: 1, flexDirection: 'column', alignItems: 'flex-start', minWidth: 0 }}>
-              <Typography.Default color="primary-default">Full configuration</Typography.Default>
-              <Typography.Small color="muted">Region, cloud and plan selection</Typography.Small>
+              <Icon icon={settingsIcon} color="muted" style={{ width: 22, height: 22 }} />
             </Box>
           </Box>
         </Card.Title>
@@ -243,19 +280,21 @@ function FullConfigurationCard({ onClick }: { onClick: () => void }) {
 
 // ─── Tier header ─────────────────────────────────────────────────────────────
 
-function TierHeader({ group }: { group: TierGroup }) {
+function TierHeader({ group, planCount }: { group: TierGroup; planCount: number }) {
   return (
     <Box
       style={{
+        gridColumn: `span ${planCount}`,
+        width: '100%',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        padding: '6px 16px',
+        padding: '4px 16px',
         borderRadius: 999,
         backgroundColor: 'var(--aquarium-background-color-muted)',
       }}
     >
-      <Typography.CodeSmall htmlTag="span" color="default">
+      <Typography.CodeSmall htmlTag="span" color="muted">
         {group.label}
       </Typography.CodeSmall>
     </Box>
