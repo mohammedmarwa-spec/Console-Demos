@@ -110,10 +110,9 @@ const BUSINESS: UpgradePlan = {
   name: 'Business',
   description: 'For critical workloads and live applications',
   features: [
-    '4 CPU/16 GB RAM/120 GB Disk',
+    '2 nodes x (4 CPU/16 GB RAM/120 GB Disk)',
     'High availability and failover support',
     'Automated backups and replication',
-    'Standby node for reliability and failover',
   ],
   price: '$180/month',
 }
@@ -203,7 +202,7 @@ export function UpgradeServiceModal({
       onClose={onClose}
       size="md"
       title="Quick upgrade"
-      subtitle="Recommended plans based on your current usage. You can scale up or down later."
+      subtitle="Recommended options based on your current plan and region. You can scale up or down later anytime."
       primaryAction={{
         text: 'Upgrade',
         onClick: () => onUpgrade(selectedPlanId),
@@ -269,7 +268,11 @@ export function UpgradeServiceModal({
                   ? [{ text: plan.badgeText, status: 'success' as const, icon: plan.badgeIcon }]
                   : []),
               ]}
-              title={<Card.Title color="intense">{plan.name}</Card.Title>}
+              title={
+                <Card.Title>
+                  <Typography.DefaultStrong color="intense">{plan.name}</Typography.DefaultStrong>
+                </Card.Title>
+              }
             >
               <Box style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                 <Typography.Caption color="default">

@@ -666,7 +666,6 @@ function AppContent() {
         onCustomize={() => {
           setEditModalOpen(true)
         }}
-        customizeResetKey={upgradeCustomizeResetKey}
       />
 
       {/* Edit / Upgrade plan modal — opened from ServiceOverview "Change" / "Upgrade" button */}

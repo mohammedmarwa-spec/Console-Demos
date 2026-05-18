@@ -6,9 +6,8 @@
   </defs>
   <rect width="285" height="100" fill="#f3f6ff"/>
   <g clip-path="url(#clip-dev)">
-    <!-- brackets-slash icon: original viewBox 137.5x112.5, scaled to 150x150, at (132.5,-56) -->
-    <g transform="translate(132.5,-56) scale(1.091,1.333)" fill="none">
-      <path d="M109.818 106.25C117.705 106.25 124.105 99.8563 124.105 91.9625V63.3937L131.249 56.25L124.105 49.1063V20.5375C124.105 12.6437 117.711 6.25 109.818 6.25M27.6812 6.25C19.7875 6.25 13.3937 12.6437 13.3937 20.5375V49.1063L6.25 56.25L13.3937 63.3937V91.9625C13.3937 99.8563 19.7875 106.25 27.6812 106.25M50 87.5L87.5 25" stroke="#E3E9FF" stroke-width="12.5" stroke-linecap="round" stroke-linejoin="round"/>
+    <g transform="translate(132.5,-56) scale(1.091,1.333)" fill="none" stroke="#b8c8f0" stroke-opacity="0.1" stroke-width="12.5" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M109.818 106.25C117.705 106.25 124.105 99.8563 124.105 91.9625V63.3937L131.249 56.25L124.105 49.1063V20.5375C124.105 12.6437 117.711 6.25 109.818 6.25M27.6812 6.25C19.7875 6.25 13.3937 12.6437 13.3937 20.5375V49.1063L6.25 56.25L13.3937 63.3937V91.9625C13.3937 99.8563 19.7875 106.25 27.6812 106.25M50 87.5L87.5 25"/>
     </g>
   </g>
 </svg>
