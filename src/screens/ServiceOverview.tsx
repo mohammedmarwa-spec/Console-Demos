@@ -38,6 +38,7 @@ import { ConsoleHeader } from '../components/ConsoleHeader'
 import { ServiceMetricsBody } from '../components/ServiceMetricsBody'
 import { ServiceSidebar } from '../components/ServiceSidebar'
 import { NodesCountChip } from '../components/NodesCountChip'
+import { ServiceStatusChip } from '../components/ServiceStatusChip'
 import { getServiceIconUrl, ServiceIcon } from '../components/ServiceIcon'
 import { useResolvedTheme } from '../theme/ThemeProvider'
 import type { HistogramRange } from '../utils/auditHistogram'
@@ -1442,7 +1443,7 @@ function ServiceOverview({
                 <Box component="span" style={{ display: 'inline-flex', flexDirection: 'column', gap: 6 }}>
                   <Box component="span" style={{ display: 'inline-flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
                     <StatusChip text={serviceVersion} status="neutral" dense />
-                    <StatusChip text="Running" status="success" dense />
+                    <ServiceStatusChip status={currentService?.status ?? 'Running'} />
                     {isReplica && <StatusChip text="Read Replica" status="neutral" dense />}
                     {isFork && <StatusChip text="Fork" status="neutral" dense />}
                     <NodesCountChip

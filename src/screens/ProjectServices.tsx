@@ -34,6 +34,7 @@ import exportIcon from '@aivenio/aquarium/icons/export'
 import { ConsoleHeader } from '../components/ConsoleHeader'
 import { ProjectSidebar } from '../components/ProjectSidebar'
 import { NodesCountChip } from '../components/NodesCountChip'
+import { ServiceStatusChip } from '../components/ServiceStatusChip'
 import { ServiceIcon } from '../components/ServiceIcon'
 import type { ServiceTypeId } from './ServiceTypeSelectModal'
 
@@ -111,12 +112,16 @@ export const INITIAL_SERVICES: ServiceRow[] = [
 /** Services list for Free & Dev quick-upgrade scenarios (v2, v3, v4). */
 // prettier-ignore
 export const FREE_DEV_UPGRADE_SERVICES: ServiceRow[] = [
-  { id: 'pg-free-01',      serviceName: 'pg-free-01',      serviceType: 'PostgreSQL', serviceTypeId: 'postgresql', status: 'Running', nodes: 'Nodes 1', nodeCount: 1, planName: 'Free',      planDetails: '1 CPU / 1 GB RAM / 1 GB storage',  cloudRegion: 'AWS: eu-west-1', location: 'Europe, Ireland', created: '2 days ago',  iconLetter: 'P', cpuCount: 1, ramCapacity: '1 GB',  storageCapacity: '1 GB'  },
-  { id: 'mysql-free-01',   serviceName: 'mysql-free-01',   serviceType: 'MySQL',      serviceTypeId: 'mysql',      status: 'Running', nodes: 'Nodes 1', nodeCount: 1, planName: 'Free',      planDetails: '1 CPU / 1 GB RAM / 1 GB storage',  cloudRegion: 'AWS: eu-west-1', location: 'Europe, Ireland', created: '3 days ago',  iconLetter: 'M', cpuCount: 1, ramCapacity: '1 GB',  storageCapacity: '1 GB'  },
-  { id: 'valkey-free-01',  serviceName: 'valkey-free-01',  serviceType: 'Valkey',     serviceTypeId: 'valkey',     status: 'Running', nodes: 'Nodes 1', nodeCount: 1, planName: 'Free',      planDetails: '1 CPU / 1 GB RAM',                 cloudRegion: 'AWS: eu-west-1', location: 'Europe, Ireland', created: '4 days ago',  iconLetter: 'V', cpuCount: 1, ramCapacity: '1 GB' },
-  { id: 'os-free-01',      serviceName: 'os-free-01',      serviceType: 'OpenSearch', serviceTypeId: 'opensearch', status: 'Running', nodes: 'Nodes 1', nodeCount: 1, planName: 'Free',      planDetails: '2 CPU / 4 GB RAM / 20 GB storage', cloudRegion: 'AWS: eu-west-1', location: 'Europe, Ireland', created: '5 days ago',  iconLetter: 'O', cpuCount: 2, ramCapacity: '4 GB',  storageCapacity: '20 GB' },
-  { id: 'pg-dev-01',       serviceName: 'pg-dev-01',       serviceType: 'PostgreSQL', serviceTypeId: 'postgresql', status: 'Running', nodes: 'Nodes 1', nodeCount: 1, planName: 'Developer', planDetails: '1 CPU / 1 GB RAM / 8 GB storage',  cloudRegion: 'AWS: eu-west-1', location: 'Europe, Ireland', created: '1 week ago',  iconLetter: 'P', cpuCount: 1, ramCapacity: '1 GB',  storageCapacity: '8 GB'  },
-  { id: 'mysql-dev-01',    serviceName: 'mysql-dev-01',    serviceType: 'MySQL',      serviceTypeId: 'mysql',      status: 'Running', nodes: 'Nodes 1', nodeCount: 1, planName: 'Developer', planDetails: '1 CPU / 1 GB RAM / 8 GB storage',  cloudRegion: 'AWS: eu-west-1', location: 'Europe, Ireland', created: '2 weeks ago', iconLetter: 'M', cpuCount: 1, ramCapacity: '1 GB',  storageCapacity: '8 GB'  },
+  // PostgreSQL
+  { id: 'pg-free-01',     serviceName: 'pg-free-01',     serviceType: 'PostgreSQL', serviceTypeId: 'postgresql', status: 'Running', nodes: 'Nodes 1', nodeCount: 1, planName: 'Free',      planDetails: '1 CPU / 1 GB RAM / 1 GB storage',  cloudRegion: 'AWS: eu-west-1', location: 'Europe, Ireland', created: '2 days ago',  iconLetter: 'P', cpuCount: 1, ramCapacity: '1 GB', storageCapacity: '1 GB'  },
+  { id: 'pg-dev-01',      serviceName: 'pg-dev-01',      serviceType: 'PostgreSQL', serviceTypeId: 'postgresql', status: 'Running', nodes: 'Nodes 1', nodeCount: 1, planName: 'Developer', planDetails: '1 CPU / 1 GB RAM / 8 GB storage',  cloudRegion: 'AWS: eu-west-1', location: 'Europe, Ireland', created: '1 week ago',  iconLetter: 'P', cpuCount: 1, ramCapacity: '1 GB', storageCapacity: '8 GB'  },
+  // MySQL
+  { id: 'mysql-free-01',  serviceName: 'mysql-free-01',  serviceType: 'MySQL',      serviceTypeId: 'mysql',      status: 'Running', nodes: 'Nodes 1', nodeCount: 1, planName: 'Free',      planDetails: '1 CPU / 1 GB RAM / 1 GB storage',  cloudRegion: 'AWS: eu-west-1', location: 'Europe, Ireland', created: '3 days ago',  iconLetter: 'M', cpuCount: 1, ramCapacity: '1 GB', storageCapacity: '1 GB'  },
+  { id: 'mysql-dev-01',   serviceName: 'mysql-dev-01',   serviceType: 'MySQL',      serviceTypeId: 'mysql',      status: 'Running', nodes: 'Nodes 1', nodeCount: 1, planName: 'Developer', planDetails: '1 CPU / 1 GB RAM / 8 GB storage',  cloudRegion: 'AWS: eu-west-1', location: 'Europe, Ireland', created: '2 weeks ago', iconLetter: 'M', cpuCount: 1, ramCapacity: '1 GB', storageCapacity: '8 GB'  },
+  // Valkey (Free only — Developer tier not available in Aiven)
+  { id: 'valkey-free-01', serviceName: 'valkey-free-01', serviceType: 'Valkey',     serviceTypeId: 'valkey',     status: 'Running', nodes: 'Nodes 1', nodeCount: 1, planName: 'Free',      planDetails: '1 CPU / 1 GB RAM',                 cloudRegion: 'AWS: eu-west-1', location: 'Europe, Ireland', created: '4 days ago',  iconLetter: 'V', cpuCount: 1, ramCapacity: '1 GB' },
+  // OpenSearch
+  { id: 'os-free-01',     serviceName: 'os-free-01',     serviceType: 'OpenSearch', serviceTypeId: 'opensearch', status: 'Running', nodes: 'Nodes 1', nodeCount: 1, planName: 'Free',      planDetails: '2 CPU / 4 GB RAM / 20 GB storage', cloudRegion: 'AWS: eu-west-1', location: 'Europe, Ireland', created: '5 days ago',  iconLetter: 'O', cpuCount: 2, ramCapacity: '4 GB', storageCapacity: '20 GB' },
 ]
 
 // ─── Filter options ────────────────────────────────────────────────────────────
@@ -736,31 +741,6 @@ function AuditLogsSection() {
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
-const STATUS_COLORS: Record<string, string> = {
-  'Running':     '#16a34a',
-  'Powered off': '#787885',
-  'Rebuilding':  '#2E90FA',
-  'Rebalancing': '#2E90FA',
-}
-
-function ServiceStatusBadge({ status }: { status: string }) {
-  const color = STATUS_COLORS[status] ?? '#787885'
-  return (
-    <Box style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}>
-      <Box
-        style={{
-          width: 6,
-          height: 6,
-          borderRadius: '50%',
-          backgroundColor: color,
-          flexShrink: 0,
-        }}
-      />
-      <span style={{ color, fontSize: 12, lineHeight: '16px' }}>{status}</span>
-    </Box>
-  )
-}
-
 function extractProvider(cloudRegion: string): string {
   return cloudRegion.split(':')[0].trim()
 }
@@ -1227,7 +1207,7 @@ function ProjectServices({ services, onCreateServiceClick, onServiceClick, onDel
                               <Box style={{ color: '#787885' }}>
                                 <Typography.Caption>{row.serviceType}</Typography.Caption>
                               </Box>
-                              <ServiceStatusBadge status={row.status ?? 'Running'} />
+                              <ServiceStatusChip status={row.status ?? 'Running'} />
                               {(isReplica || isFork) && (
                                 <Box style={{ color: '#787885' }}>
                                   <Typography.Caption>
