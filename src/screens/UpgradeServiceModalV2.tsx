@@ -1,15 +1,19 @@
 import { useEffect, useMemo, useState } from 'react'
-import { Box, Card, Icon, Modal, Typography } from '@aivenio/aquarium'
+import { Box, Card, Icon, Modal, Typography, type IconProps } from '@aivenio/aquarium'
 import layersIcon from '@aivenio/aquarium/icons/layers'
+import { getAivenIcon } from '../assets/icons/aivenIcon'
+import digitalOceanIcon from '../assets/icons/digitalOceanIcon'
 import { useTheme } from '../theme/ThemeProvider'
 import { UPGRADE_PLAN_SERVICE_DATA, type UpgradeTier } from './UpgradeServiceModal'
 import { getPlanIllustrationUrl } from './upgradePlanIllustrations'
 
 // ─── Plan definitions ────────────────────────────────────────────────────────
 
+type PlanChip = { text: string; status: 'neutral'; icon?: IconProps['icon'] }
+
 type PlanV2 = {
   id: string
-  label: string
+  chips: PlanChip[]
   name: string
   description: string
   features: string[]
@@ -18,24 +22,24 @@ type PlanV2 = {
 
 const DEVELOPER_V2: PlanV2 = {
   id: 'developer-plan',
-  label: '1 step up',
+  chips: [{ text: 'Europe', status: 'neutral' }],
   name: 'Developer',
   description: 'For learning, side projects, and small workloads',
   features: [
-    '1 CPU/1 GB RAM/8 GB Disk',
-    'Smooth performance for small apps',
-    'Easy upgrade as you grow',
+    '1 vCPU · 1 GB RAM · 8 GB Disk',
+    "Inactive services aren't powered off",
+    'Basic support tier',
   ],
   price: '$5/month',
 }
 
 const STARTUP_V2: PlanV2 = {
   id: 'startup',
-  label: 'Entry Startup plan',
+  chips: [{ text: 'eu-central-1, Frankfurt', status: 'neutral', icon: digitalOceanIcon }],
   name: 'Startup',
   description: 'For growing apps and staging environments',
   features: [
-    '2 CPU/4 GB RAM/80 GB disk',
+    '2 vCPU · 4 GB RAM · 80 GB Disk',
     'Handles increasing traffic and data',
     'Integrations and scaling support',
     'Ideal for staging or early production',
@@ -45,11 +49,11 @@ const STARTUP_V2: PlanV2 = {
 
 const BUSINESS_V2: PlanV2 = {
   id: 'business',
-  label: 'Entry Business plan',
+  chips: [{ text: 'eu-central-1, Frankfurt', status: 'neutral', icon: digitalOceanIcon }],
   name: 'Business',
   description: 'For critical workloads and live applications',
   features: [
-    '2 nodes x (4 CPU/16 GB RAM/120 GB Disk)',
+    '2 nodes × (4 vCPU · 16 GB RAM · 120 GB Disk)',
     'High availability and failover support',
     'Automated backups and replication',
   ],
@@ -93,7 +97,21 @@ export function UpgradeServiceModalV2({
   onCustomize,
 }: UpgradeServiceModalV2Props) {
   const { resolved: theme } = useTheme()
-  const tierGroups = TIER_GROUPS_BY_TIER[currentTier]
+  const tierGroups = useMemo(
+    () =>
+      TIER_GROUPS_BY_TIER[currentTier].map((group) => ({
+        ...group,
+        plans: group.plans.map((plan) =>
+          plan.id === 'developer-plan'
+            ? {
+                ...plan,
+                chips: [{ text: 'Europe', status: 'neutral' as const, icon: getAivenIcon(theme) }],
+              }
+            : plan,
+        ),
+      })),
+    [currentTier, theme],
+  )
   const allPlans = tierGroups.flatMap((g) => g.plans)
   const defaultPlanId = allPlans[0].id
 
@@ -143,6 +161,11 @@ export function UpgradeServiceModalV2({
           overflow: hidden;
         }
         /* DS checkable cards use an outer ring when selected; use inset border so edges align with modal content */
+        .upgrade-v2-cards .Aquarium-StatusChip .Aquarium-InlineIcon svg {
+          width: 18px;
+          height: 16px;
+          flex-shrink: 0;
+        }
         .upgrade-v2-cards label.Aquarium-Card.Label.ring-2 {
           --tw-ring-offset-shadow: 0 0 #0000 !important;
           --tw-ring-shadow: 0 0 #0000 !important;
@@ -199,7 +222,7 @@ export function UpgradeServiceModalV2({
               image={planImageUrls[plan.id] ?? getPlanIllustrationUrl('developer-plan', theme)}
               imageAlt=""
               imageHeight={100}
-              chips={plan.label ? [{ text: plan.label, status: 'neutral' as const }] : []}
+              chips={plan.chips}
               title={
                 <Card.Title>
                   <Typography.DefaultStrong color="intense">{plan.name}</Typography.DefaultStrong>
@@ -301,7 +324,7 @@ function TierHeader({ group, planCount }: { group: TierGroup; planCount: number 
         alignItems: 'center',
         justifyContent: 'flex-start',
         padding: '4px 16px',
-        borderRadius: 999,
+        borderRadius: 6,
       }}
     >
       <Typography.CodeSmall htmlTag="span" color="muted" className="upgrade-v2-tier-bar-label">

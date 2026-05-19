@@ -536,6 +536,9 @@ function AppContent() {
           serviceId={overviewServiceId}
           serviceTypeId={overviewServiceType}
           initialSidebarItem={activeScenarioId === 'deeptrace-demo' ? 'logs' : undefined}
+          hideSwitchToNewPricingAlert={
+            activeScenarioId === 'free-dev-upgrade' || activeScenarioId === 'free-dev-upgrade-v2'
+          }
           services={services}
           onBackToProject={() => setView('project-services')}
           onDeleteService={handleDeleteService}

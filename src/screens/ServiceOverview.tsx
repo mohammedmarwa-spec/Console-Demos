@@ -584,6 +584,8 @@ export type ServiceOverviewProps = {
   onOrgHomeClick?: () => void
   /** Optional scenario hook to open a specific sidebar item by default. */
   initialSidebarItem?: string
+  /** Hide the "Switch to new pricing" alert in Service plan usage (e.g. quick-upgrade scenarios). */
+  hideSwitchToNewPricingAlert?: boolean
   /**
    * When set (shared link, saved search, etc.), loads this absolute window and keeps it until the user changes it.
    * Omit to use the rolling **Last 24 hours** preset anchored to the current instant.
@@ -605,6 +607,7 @@ function ServiceOverview({
   onOrgHomeClick,
   initialSidebarItem,
   initialServiceLogsTimeRange,
+  hideSwitchToNewPricingAlert = false,
 }: ServiceOverviewProps) {
   const isMySQL = serviceTypeId === 'mysql'
   const isPostgres = serviceTypeId === 'postgresql'
@@ -1512,7 +1515,7 @@ function ServiceOverview({
                       <StatusChip text="ACU" status="neutral" />
                     </Box>
                   )}
-                  {hasAcuCapability && !isAcuPricing && (
+                  {hasAcuCapability && !isAcuPricing && !hideSwitchToNewPricingAlert && (
                     <Box style={{ marginBottom: 16 }}>
                       <Alert type="success">
                         <Box style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
