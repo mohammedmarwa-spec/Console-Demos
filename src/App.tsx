@@ -353,6 +353,19 @@ function AppContent() {
     }
   }
 
+  function handlePlanActionFromList(serviceId: string) {
+    const service = services.find((s) => s.id === serviceId)
+    if (!service) return
+    setOverviewServiceId(service.id)
+    setOverviewServiceType(service.serviceTypeId ?? 'mysql')
+    const isSimple = ['free', 'developer'].includes((service.planName ?? '').toLowerCase())
+    if (isSimple) {
+      setUpgradeV2ModalOpen(true)
+    } else {
+      setEditModalOpen(true)
+    }
+  }
+
   function handleEditSuccess(data?: CreatedServicePayload) {
     setEditModalOpen(false)
     if (!data || !overviewServiceId) return
@@ -559,6 +572,7 @@ function AppContent() {
             }
           }}
           onDeleteService={handleDeleteServiceFromList}
+          onPlanAction={handlePlanActionFromList}
           onBillingClick={() => setView('billing-invoice')}
           onOrgHomeClick={() => setView('org-home')}
         />

@@ -53,6 +53,19 @@ tr.plan-row-selected {
   background-color: var(--aquarium-background-color-primary-muted);
 }
 
+/* Services table: plan title + inline Upgrade/Change action */
+.services-table .services-plan-title-row {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.services-table .services-plan-action-btn {
+  flex-shrink: 0;
+  transition: opacity 0.12s ease;
+}
+
 /* Severity row backgrounds removed; severity/message coloring uses .logs-severity-chip only. */
 
 .logs-severity-chip {

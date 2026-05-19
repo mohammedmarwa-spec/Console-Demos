@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect, useRef, useCallback, Fragment, useContext } from 'react'
+import { useState, useMemo, useEffect, useRef, useCallback, Fragment, useContext, type MouseEvent } from 'react'
 import { CalendarDateTime } from '@internationalized/date'
 import { DateRangePickerStateContext as AriaDateRangePickerStateContext } from 'react-aria-components'
 import {
@@ -757,6 +757,65 @@ function getPlanCaption(row: ServiceRow): string {
   return row.planDetails
 }
 
+function isSimpleTierPlan(planName: string): boolean {
+  return ['free', 'developer'].includes(planName.toLowerCase())
+}
+
+type PlanCellProps = {
+  row: ServiceRow
+  isRowHovered: boolean
+  onPlanAction?: (serviceId: string) => void
+}
+
+function PlanCell({ row, isRowHovered, onPlanAction }: PlanCellProps) {
+  const planTitle = row.pricingType === 'ACU' && row.serviceTier ? row.serviceTier : row.planName
+  const actionLabel = isSimpleTierPlan(row.planName) ? 'Upgrade' : 'Change'
+
+  return (
+    <Box className="services-plan-cell">
+      <Box className="services-plan-title-row">
+        <Box component="span" style={{ fontSize: 14, fontWeight: 600, lineHeight: '20px' }}>
+          {planTitle}
+        </Box>
+        <Box
+          className="services-plan-action-btn"
+          style={{
+            opacity: isRowHovered ? 1 : 0,
+            visibility: isRowHovered ? 'visible' : 'hidden',
+            pointerEvents: isRowHovered ? 'auto' : 'none',
+          }}
+        >
+          <Button.Ghost
+            type="button"
+            dense
+            tabIndex={isRowHovered ? 0 : -1}
+            onClick={(e) => {
+              e.stopPropagation()
+              onPlanAction?.(row.id)
+            }}
+          >
+            {actionLabel}
+          </Button.Ghost>
+        </Box>
+      </Box>
+      <Box
+        component="span"
+        style={{
+          display: 'block',
+          marginTop: 2,
+          fontSize: 14,
+          lineHeight: '20px',
+          color: 'var(--aquarium-text-color-muted)',
+        }}
+      >
+        {getPlanCaption(row)}
+      </Box>
+    </Box>
+  )
+}
+
+PlanCell.displayName = 'PlanCell'
+
 const CREATED_WITH_MCP_TOOLTIP = 'Aiven MCP'
 
 /** 24px circular avatar (Ant Design Avatar–style): initials or Aquarium icon fallback. */
@@ -878,6 +937,8 @@ type ProjectServicesProps = {
   onServiceClick?: (serviceId: string) => void
   /** Called when the user chooses "Delete service" from a row's context menu. */
   onDeleteService?: (serviceId: string) => void
+  /** Called when the user clicks "Upgrade" or "Change" on a plan row. */
+  onPlanAction?: (serviceId: string) => void
   /** Called when the user navigates to Billing (sidebar or header). */
   onBillingClick?: () => void
   /** Called when the user clicks the org root breadcrumb or Home nav. */
@@ -886,8 +947,9 @@ type ProjectServicesProps = {
 
 type ProjectPageId = 'services' | 'observability' | 'audit-logs'
 
-function ProjectServices({ services, onCreateServiceClick, onServiceClick, onDeleteService, onBillingClick, onOrgHomeClick }: ProjectServicesProps) {
+function ProjectServices({ services, onCreateServiceClick, onServiceClick, onDeleteService, onPlanAction, onBillingClick, onOrgHomeClick }: ProjectServicesProps) {
   const [activeProjectPage, setActiveProjectPage] = useState<ProjectPageId>('services')
+  const [hoveredServiceId, setHoveredServiceId] = useState<string | null>(null)
   const [filterOpen, setFilterOpen] = useState(false)
   const [selectedServices, setSelectedServices] = useState<string[]>([])
   const [selectedStatuses, setSelectedStatuses] = useState<string[]>([])
@@ -945,6 +1007,23 @@ function ProjectServices({ services, onCreateServiceClick, onServiceClick, onDel
 
   const isEmpty = services.length === 0
   const isServicesPage = activeProjectPage === 'services'
+
+  const handleServicesTableMouseOver = useCallback(
+    (event: MouseEvent<HTMLDivElement>) => {
+      const rowEl = (event.target as HTMLElement).closest('tbody tr')
+      if (!rowEl?.parentElement) return
+      const rowIndex = Array.from(rowEl.parentElement.children).indexOf(rowEl)
+      const row = filteredServices[rowIndex]
+      if (row) setHoveredServiceId(row.id)
+    },
+    [filteredServices],
+  )
+
+  const handleServicesTableMouseLeave = useCallback((event: MouseEvent<HTMLDivElement>) => {
+    const nextTarget = event.relatedTarget
+    if (nextTarget instanceof Node && event.currentTarget.contains(nextTarget)) return
+    setHoveredServiceId(null)
+  }, [])
 
   function handleProjectSidebarItemClick(itemId: string) {
     if (itemId === 'services' || itemId === 'observability' || itemId === 'audit-logs') {
@@ -1147,6 +1226,11 @@ function ProjectServices({ services, onCreateServiceClick, onServiceClick, onDel
               </Box>
 
               {/* Services table */}
+              <Box
+                className="services-table"
+                onMouseOver={handleServicesTableMouseOver}
+                onMouseLeave={handleServicesTableMouseLeave}
+              >
               <DataTable
                 ariaLabel="Services"
                 rows={filteredServices}
@@ -1248,20 +1332,15 @@ function ProjectServices({ services, onCreateServiceClick, onServiceClick, onDel
                       ) : null,
                   },
                   {
-                    type: 'item',
+                    type: 'custom',
                     headerName: 'Plan',
-                    item: (row) => ({
-                      title: (
-                        <Box component="span" style={{ fontSize: 14, fontWeight: 600 }}>
-                          {row.pricingType === 'ACU' && row.serviceTier ? row.serviceTier : row.planName}
-                        </Box>
-                      ),
-                      caption: (
-                        <Box component="span" style={{ color: 'var(--aquarium-text-color-muted)' }}>
-                          {getPlanCaption(row)}
-                        </Box>
-                      ),
-                    }),
+                    UNSAFE_render: (row) => (
+                      <PlanCell
+                        row={row}
+                        isRowHovered={hoveredServiceId === row.id}
+                        onPlanAction={onPlanAction}
+                      />
+                    ),
                   },
                   {
                     type: 'item',
@@ -1321,6 +1400,7 @@ function ProjectServices({ services, onCreateServiceClick, onServiceClick, onDel
                   if (action === 'delete') onDeleteService?.(row.id)
                 }}
               />
+              </Box>
             </>
           )}
         </Box>
