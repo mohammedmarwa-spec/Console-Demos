@@ -18,6 +18,14 @@ const PLAN_ICON_PATHS: Record<string, { transform: string; d: string; strokeWidt
     transform: 'translate(132.5,-56) scale(1.091,1.333)',
     d: 'M109.818 106.25C117.705 106.25 124.105 99.8563 124.105 91.9625V63.3937L131.249 56.25L124.105 49.1063V20.5375C124.105 12.6437 117.711 6.25 109.818 6.25M27.6812 6.25C19.7875 6.25 13.3937 12.6437 13.3937 20.5375V49.1063L6.25 56.25L13.3937 63.3937V91.9625C13.3937 99.8563 19.7875 106.25 27.6812 106.25M50 87.5L87.5 25',
   },
+  'hobbyist-aws': {
+    transform: 'translate(132.5,-56) scale(1.091,1.333)',
+    d: 'M109.818 106.25C117.705 106.25 124.105 99.8563 124.105 91.9625V63.3937L131.249 56.25L124.105 49.1063V20.5375C124.105 12.6437 117.711 6.25 109.818 6.25M27.6812 6.25C19.7875 6.25 13.3937 12.6437 13.3937 20.5375V49.1063L6.25 56.25L13.3937 63.3937V91.9625C13.3937 99.8563 19.7875 106.25 27.6812 106.25M50 87.5L87.5 25',
+  },
+  'hobbyist-gcp': {
+    transform: 'translate(132.5,-56) scale(1.091,1.333)',
+    d: 'M109.818 106.25C117.705 106.25 124.105 99.8563 124.105 91.9625V63.3937L131.249 56.25L124.105 49.1063V20.5375C124.105 12.6437 117.711 6.25 109.818 6.25M27.6812 6.25C19.7875 6.25 13.3937 12.6437 13.3937 20.5375V49.1063L6.25 56.25L13.3937 63.3937V91.9625C13.3937 99.8563 19.7875 106.25 27.6812 106.25M50 87.5L87.5 25',
+  },
   startup: {
     transform: 'translate(132.5,-56) scale(1.118)',
     d: 'M73.7117 60.985L14.3367 120.36M80.0769 14.3505C87.6895 19.4017 95.0065 25.3569 101.844 32.1943C108.74 39.0908 114.739 46.4751 119.818 54.1585M50.3053 41.5859L32.3373 35.5966C30.268 34.9068 27.9889 35.3458 26.3238 36.7547L8.46652 51.8647C4.81073 54.958 5.84935 60.8449 10.343 62.5005L27.263 68.7342M65.4683 106.938L71.702 123.858C73.3575 128.352 79.2444 129.391 82.3378 125.735L97.4477 107.878C98.8567 106.212 99.2956 103.933 98.6058 101.864L92.6165 83.896M113.39 6.42707L82.7249 11.538C79.4137 12.0899 76.3765 13.7174 74.0832 16.1689L32.7515 60.351C22.038 71.8034 22.336 89.6882 33.4251 100.777C44.5142 111.866 62.399 112.164 73.8514 101.451L118.033 60.1192C120.485 57.8259 122.113 54.7887 122.664 51.4774L127.775 20.812C129.185 12.3517 121.851 5.01703 113.39 6.42707Z',
@@ -34,23 +42,32 @@ const PLAN_ICON_PATHS: Record<string, { transform: string; d: string; strokeWidt
   },
 }
 
-function buildPlanIllustrationSvg(planId: string, theme: ResolvedTheme): string {
+function buildPlanIllustrationSvg(planId: string, theme: ResolvedTheme, includeIcon: boolean): string {
   const { bg, stroke } = ILLUSTRATION_COLORS[theme]
-  const icon = PLAN_ICON_PATHS[planId] ?? PLAN_ICON_PATHS['developer-plan']
-  const strokeWidth = icon.strokeWidth ?? 12.5
+  const iconMarkup = (() => {
+    if (!includeIcon) return ''
+    const icon = PLAN_ICON_PATHS[planId] ?? PLAN_ICON_PATHS['developer-plan']
+    const strokeWidth = icon.strokeWidth ?? 12.5
+    return `<g transform="${icon.transform}" fill="none" stroke="${stroke}" stroke-opacity="${ICON_STROKE_OPACITY}" stroke-width="${strokeWidth}" stroke-linecap="round" stroke-linejoin="round">
+      <path d="${icon.d}"/>
+    </g>`
+  })()
 
   return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${VIEWBOX}" width="285" height="100">
   <defs><clipPath id="clip"><rect width="285" height="100"/></clipPath></defs>
   <rect width="285" height="100" fill="${bg}"/>
   <g clip-path="url(#clip)">
-    <g transform="${icon.transform}" fill="none" stroke="${stroke}" stroke-opacity="${ICON_STROKE_OPACITY}" stroke-width="${strokeWidth}" stroke-linecap="round" stroke-linejoin="round">
-      <path d="${icon.d}"/>
-    </g>
+    ${iconMarkup}
   </g>
 </svg>`
 }
 
-export function getPlanIllustrationUrl(planId: string, theme: ResolvedTheme): string {
-  const svg = buildPlanIllustrationSvg(planId, theme)
+export function getPlanIllustrationUrl(
+  planId: string,
+  theme: ResolvedTheme,
+  options?: { includeIcon?: boolean },
+): string {
+  const includeIcon = options?.includeIcon ?? true
+  const svg = buildPlanIllustrationSvg(planId, theme, includeIcon)
   return `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`
 }

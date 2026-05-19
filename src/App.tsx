@@ -12,7 +12,7 @@ import ServiceTypeSelectModal, { getServiceTypeDisplayName, type ServiceTypeId }
 import { ScenarioProvider, ScenarioPanel, ScenarioTrigger, useScenario } from './scenarios'
 import { ThemeProvider } from './theme'
 import { MysqlAcuRolloutModal } from './screens/MysqlAcuRolloutModal'
-import { UpgradeServiceModal, UPGRADE_PLAN_SERVICE_DATA, type UpgradeTier } from './screens/UpgradeServiceModal'
+import { UPGRADE_PLAN_SERVICE_DATA, type UpgradeTier } from './screens/UpgradeServiceModal'
 import { UpgradeServiceModalV2 } from './screens/UpgradeServiceModalV2'
 import { enrichServicesWithRandomCreatedBy } from './utils/serviceCreatedByDataset'
 
@@ -192,9 +192,9 @@ function getInitialServicesForScenario(scenarioId: string | null): ServiceRow[] 
       return withRandomCreatedByAvatars([...MYSQL_ACU_ROLLOUT_SERVICES])
     case 'replica-mixed-pricing':
       return withRandomCreatedByAvatars([...REPLICA_MIXED_SERVICES])
-    case 'free-dev-upgrade':
     case 'free-dev-upgrade-v2':
     case 'free-dev-upgrade-v3':
+    case 'free-dev-upgrade-v4':
       return withRandomCreatedByAvatars([...FREE_DEV_UPGRADE_SERVICES])
     case 'deeptrace-demo':
       return DEEPTRACE_DEMO_SERVICES
@@ -277,12 +277,8 @@ function AppContent() {
   const [createReplicaModalOpen, setCreateReplicaModalOpen] = useState(false)
   /** Controls visibility of the Create fork modal. */
   const [createForkModalOpen, setCreateForkModalOpen] = useState(false)
-  /** Controls visibility of the Upgrade service modal (Free / Dev tiers only). */
-  const [upgradeModalOpen, setUpgradeModalOpen] = useState(false)
   /** Controls visibility of the Edit / Change plan modal. */
   const [editModalOpen, setEditModalOpen] = useState(false)
-  /** Incremented when the edit modal is cancelled from the upgrade flow, to reset the customize toggle. */
-  const [upgradeCustomizeResetKey, setUpgradeCustomizeResetKey] = useState(0)
   /** Controls visibility of the Upgrade V2 modal. */
   const [upgradeV2ModalOpen, setUpgradeV2ModalOpen] = useState(false)
   /** Holds the current submit function exposed by CreateService (edit mode). */
@@ -358,11 +354,7 @@ function AppContent() {
     const currentService = services.find((s) => s.id === overviewServiceId)
     const isSimple = ['free', 'developer'].includes((currentService?.planName ?? '').toLowerCase())
     if (isSimple) {
-      if (activeScenarioId === 'free-dev-upgrade-v2' || activeScenarioId === 'free-dev-upgrade-v3') {
-        setUpgradeV2ModalOpen(true)
-      } else {
-        setUpgradeModalOpen(true)
-      }
+      setUpgradeV2ModalOpen(true)
     } else {
       setEditModalOpen(true)
     }
@@ -538,9 +530,9 @@ function AppContent() {
           serviceTypeId={overviewServiceType}
           initialSidebarItem={activeScenarioId === 'deeptrace-demo' ? 'logs' : undefined}
           hideSwitchToNewPricingAlert={
-            activeScenarioId === 'free-dev-upgrade' ||
             activeScenarioId === 'free-dev-upgrade-v2' ||
-            activeScenarioId === 'free-dev-upgrade-v3'
+            activeScenarioId === 'free-dev-upgrade-v3' ||
+            activeScenarioId === 'free-dev-upgrade-v4'
           }
           services={services}
           onBackToProject={() => setView('project-services')}
@@ -597,52 +589,17 @@ function AppContent() {
         onCreateReplica={handleCreateReplica}
       />
 
-      {/* Upgrade service modal — opened from ServiceOverview "Upgrade" for Free / Dev tier services */}
-      <UpgradeServiceModal
-        open={upgradeModalOpen}
-        onClose={() => setUpgradeModalOpen(false)}
-        currentTier={((editOverviewService?.planName ?? '').toLowerCase() === 'free' ? 'free' : 'developer') as UpgradeTier}
-        onUpgrade={(planId) => {
-          setUpgradeModalOpen(false)
-          const planData = UPGRADE_PLAN_SERVICE_DATA[planId]
-          if (planData && overviewServiceId) {
-            setServices((prev) =>
-              prev.map((s) =>
-                s.id === overviewServiceId
-                  ? {
-                      ...s,
-                      planName: planData.planName,
-                      planDetails: planData.planDetails,
-                      nodeCount: planData.nodeCount,
-                      nodes: `Nodes ${planData.nodeCount}`,
-                      cpuCount: planData.cpuCount,
-                      ramCapacity: planData.ramCapacity,
-                      storageCapacity: planData.storageCapacity,
-                    }
-                  : s,
-              ),
-            )
-          }
-          addToast({
-            message: `Service upgraded to ${planData?.planName ?? planId} plan`,
-            icon: tickIcon,
-            duration: 4000,
-            position: 'top-right',
-          })
-        }}
-        onCustomize={() => {
-          setEditModalOpen(true)
-        }}
-        customizeResetKey={upgradeCustomizeResetKey}
-      />
-
-      {/* Upgrade V2 modal — triggered by free-dev-upgrade-v2 / v3 scenarios */}
+      {/* Quick upgrade modal — Free / Dev tier services */}
       <UpgradeServiceModalV2
         open={upgradeV2ModalOpen}
         onClose={() => setUpgradeV2ModalOpen(false)}
         currentTier={((editOverviewService?.planName ?? '').toLowerCase() === 'free' ? 'free' : 'developer') as UpgradeTier}
         planVariant={
-          activeScenarioId === 'free-dev-upgrade-v3' ? 'hobbyist-startup-4' : 'startup-business'
+          activeScenarioId === 'free-dev-upgrade-v3'
+            ? 'hobbyist-startup-4'
+            : activeScenarioId === 'free-dev-upgrade-v4'
+              ? 'dual-hobbyist-clouds'
+              : 'startup-business'
         }
         onUpgrade={(planId) => {
           setUpgradeV2ModalOpen(false)
@@ -682,10 +639,7 @@ function AppContent() {
         title={editModalTitle}
         subtitle={SUBTITLE}
         open={editModalOpen}
-        onClose={() => {
-          setEditModalOpen(false)
-          if (upgradeModalOpen) setUpgradeCustomizeResetKey((k) => k + 1)
-        }}
+        onClose={() => setEditModalOpen(false)}
         size="full"
         primaryAction={{
           text: isSimpleTierEdit ? 'Upgrade plan' : 'Apply changes',
@@ -693,10 +647,7 @@ function AppContent() {
         }}
         secondaryActions={{
           text: 'Cancel',
-          onClick: () => {
-            setEditModalOpen(false)
-            if (upgradeModalOpen) setUpgradeCustomizeResetKey((k) => k + 1)
-          },
+          onClick: () => setEditModalOpen(false),
         }}
       >
         {editModalOpen && overviewServiceId && (

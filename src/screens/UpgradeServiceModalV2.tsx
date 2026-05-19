@@ -3,7 +3,9 @@ import { Box, Button, Card, Icon, Modal, Typography, type IconProps } from '@aiv
 import layersIcon from '@aivenio/aquarium/icons/layers'
 import settingsIcon from '@aivenio/aquarium/icons/settings'
 import { getAivenIcon } from '../assets/icons/aivenIcon'
+import { getAwsIcon } from '../assets/icons/awsIcon'
 import digitalOceanIcon from '../assets/icons/digitalOceanIcon'
+import gcpIcon from '../assets/icons/gcpIcon'
 import { useTheme } from '../theme/ThemeProvider'
 import { UPGRADE_PLAN_SERVICE_DATA, type UpgradeTier } from './UpgradeServiceModal'
 import { getPlanIllustrationUrl } from './upgradePlanIllustrations'
@@ -74,6 +76,32 @@ const HOBBYIST_V2: PlanV2 = {
   price: '$12/month',
 }
 
+const HOBBYIST_AWS_V4: PlanV2 = {
+  id: 'hobbyist-aws',
+  chips: [{ text: 'Europe West 1', status: 'neutral' }],
+  name: 'Hobbyist',
+  description: 'For learning, side projects, and small workloads',
+  features: [
+    '1 vCPU · 2 GB RAM · 8 GB Disk',
+    'Region selection',
+    'Backups for disaster recovery',
+  ],
+  price: '$12/month',
+}
+
+const HOBBYIST_GCP_V4: PlanV2 = {
+  id: 'hobbyist-gcp',
+  chips: [{ text: 'Europe West 1', status: 'neutral', icon: gcpIcon }],
+  name: 'Hobbyist',
+  description: 'For learning, side projects, and small workloads',
+  features: [
+    '1 vCPU · 2 GB RAM · 8 GB Disk',
+    'Region selection',
+    'Backups for disaster recovery',
+  ],
+  price: '$12/month',
+}
+
 const STARTUP_4_V2: PlanV2 = {
   id: 'startup-4',
   chips: [{ text: 'eu-central-1, Frankfurt', status: 'neutral', icon: digitalOceanIcon }],
@@ -82,8 +110,8 @@ const STARTUP_4_V2: PlanV2 = {
   features: [
     '1 vCPU · 4 GB RAM · 80 GB Disk',
     'Handles increasing traffic and data',
-    'Integrations and scaling support',
-    'Ideal for staging or early production',
+    'Backup up to 2 days with point-in-time recovery',
+    '99.99% uptime SLA',
   ],
   price: '$75/month',
 }
@@ -95,7 +123,7 @@ type TierGroup = {
   plans: PlanV2[]
 }
 
-export type UpgradeModalPlanVariant = 'startup-business' | 'hobbyist-startup-4'
+export type UpgradeModalPlanVariant = 'startup-business' | 'hobbyist-startup-4' | 'dual-hobbyist-clouds'
 
 const TIER_GROUPS_BY_TIER: Record<UpgradeModalPlanVariant, Record<UpgradeTier, TierGroup[]>> = {
   'startup-business': {
@@ -115,6 +143,14 @@ const TIER_GROUPS_BY_TIER: Record<UpgradeModalPlanVariant, Record<UpgradeTier, T
     developer: [
       { label: 'Hobby tier',        plans: [HOBBYIST_V2] },
       { label: 'Professional tier', plans: [STARTUP_4_V2] },
+    ],
+  },
+  'dual-hobbyist-clouds': {
+    free: [
+      { label: 'Hobby tier', plans: [DEVELOPER_V2, HOBBYIST_AWS_V4, HOBBYIST_GCP_V4] },
+    ],
+    developer: [
+      { label: 'Hobby tier', plans: [HOBBYIST_AWS_V4, HOBBYIST_GCP_V4] },
     ],
   },
 }
@@ -146,14 +182,21 @@ export function UpgradeServiceModalV2({
     () =>
       TIER_GROUPS_BY_TIER[planVariant][currentTier].map((group) => ({
         ...group,
-        plans: group.plans.map((plan) =>
-          plan.id === 'developer-plan'
-            ? {
-                ...plan,
-                chips: [{ text: 'Europe', status: 'neutral' as const, icon: getAivenIcon(theme) }],
-              }
-            : plan,
-        ),
+        plans: group.plans.map((plan) => {
+          if (plan.id === 'developer-plan') {
+            return {
+              ...plan,
+              chips: [{ text: 'Europe', status: 'neutral' as const, icon: getAivenIcon(theme) }],
+            }
+          }
+          if (plan.id === 'hobbyist-aws') {
+            return {
+              ...plan,
+              chips: [{ text: 'Europe West 1', status: 'neutral' as const, icon: getAwsIcon(theme) }],
+            }
+          }
+          return plan
+        }),
       })),
     [currentTier, planVariant, theme],
   )
@@ -161,7 +204,10 @@ export function UpgradeServiceModalV2({
   const defaultPlanId = allPlans[0].id
 
   const planImageUrls = useMemo(
-    () => Object.fromEntries(allPlans.map((p) => [p.id, getPlanIllustrationUrl(p.id, theme)])),
+    () =>
+      Object.fromEntries(
+        allPlans.map((p) => [p.id, getPlanIllustrationUrl(p.id, theme, { includeIcon: false })]),
+      ),
     [allPlans, theme],
   )
 
@@ -250,19 +296,21 @@ export function UpgradeServiceModalV2({
 
       <Box style={{ display: 'flex', flexDirection: 'column', width: '100%', minWidth: 0 }}>
         <Box style={{ display: 'flex', flexDirection: 'column', gap: 16, width: '100%', minWidth: 0 }}>
-          <Box
-            style={{
-              display: 'grid',
-              gridTemplateColumns: planCardColumns,
-              gap: 24,
-              width: '100%',
-              minWidth: 0,
-            }}
-          >
-            {tierGroups.map((group) => (
-              <TierHeader key={group.label} group={group} planCount={group.plans.length} />
-            ))}
-          </Box>
+          {planVariant !== 'dual-hobbyist-clouds' && (
+            <Box
+              style={{
+                display: 'grid',
+                gridTemplateColumns: planCardColumns,
+                gap: 24,
+                width: '100%',
+                minWidth: 0,
+              }}
+            >
+              {tierGroups.map((group) => (
+                <TierHeader key={group.label} group={group} planCount={group.plans.length} />
+              ))}
+            </Box>
+          )}
 
           <Box
             className="upgrade-v2-cards"
@@ -282,7 +330,10 @@ export function UpgradeServiceModalV2({
               value={plan.id}
               checked={selectedPlanId === plan.id}
               onCheckedChange={({ value }) => setSelectedPlanId(value)}
-              image={planImageUrls[plan.id] ?? getPlanIllustrationUrl('developer-plan', theme)}
+              image={
+                planImageUrls[plan.id] ??
+                getPlanIllustrationUrl('developer-plan', theme, { includeIcon: false })
+              }
               imageAlt=""
               imageHeight={100}
               chips={plan.chips}
@@ -324,7 +375,7 @@ export function UpgradeServiceModalV2({
         </Box>
 
         <Box style={{ marginTop: 32 }}>
-          {planVariant === 'hobbyist-startup-4' ? (
+          {planVariant === 'hobbyist-startup-4' || planVariant === 'dual-hobbyist-clouds' ? (
             <CustomizeCompactCard onCustomize={onCustomize} />
           ) : (
             <FullConfigurationCard onClick={onCustomize} />

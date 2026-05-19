@@ -32,6 +32,22 @@ export const UPGRADE_PLAN_SERVICE_DATA: Record<string, UpgradePlanServiceData> =
     ramCapacity: '2 GB',
     storageCapacity: '8 GB',
   },
+  'hobbyist-aws': {
+    planName: 'Hobbyist',
+    planDetails: '1 CPU / 2 GB RAM / 8 GB storage · AWS eu-west-1',
+    nodeCount: 1,
+    cpuCount: 1,
+    ramCapacity: '2 GB',
+    storageCapacity: '8 GB',
+  },
+  'hobbyist-gcp': {
+    planName: 'Hobbyist',
+    planDetails: '1 CPU / 2 GB RAM / 8 GB storage · GCP europe-west-1',
+    nodeCount: 1,
+    cpuCount: 1,
+    ramCapacity: '2 GB',
+    storageCapacity: '8 GB',
+  },
   startup: {
     planName: 'Startup',
     planDetails: '2 CPU / 4 GB RAM / 80 GB storage',
