@@ -37,7 +37,9 @@ import { CompactServiceHeader } from '../components/CompactServiceHeader'
 import { ConsoleHeader } from '../components/ConsoleHeader'
 import { ServiceMetricsBody } from '../components/ServiceMetricsBody'
 import { ServiceSidebar } from '../components/ServiceSidebar'
-import { getServiceIconUrl } from '../components/ServiceIcon'
+import { NodesCountChip } from '../components/NodesCountChip'
+import { getServiceIconUrl, ServiceIcon } from '../components/ServiceIcon'
+import { useResolvedTheme } from '../theme/ThemeProvider'
 import type { HistogramRange } from '../utils/auditHistogram'
 import {
   buildLogHistogramBuckets,
@@ -609,6 +611,7 @@ function ServiceOverview({
   initialServiceLogsTimeRange,
   hideSwitchToNewPricingAlert = false,
 }: ServiceOverviewProps) {
+  const theme = useResolvedTheme()
   const isMySQL = serviceTypeId === 'mysql'
   const isPostgres = serviceTypeId === 'postgresql'
   /** True for service types that support the ACU / legacy pricing toggle. */
@@ -1153,10 +1156,11 @@ function ServiceOverview({
               <Box style={{ marginBottom: 16 }}>
                 <CompactServiceHeader
                   serviceName={serviceName}
-                  iconUrl={getServiceIconUrl(serviceTypeId ?? null)}
+                  iconUrl={getServiceIconUrl(serviceTypeId ?? null, theme)}
                   version={serviceVersion}
-                  statusText="Running"
+                  statusText={currentService?.status ?? 'Running'}
                   nodeCount={nodeCount}
+                  serviceStatus={currentService?.status ?? 'Running'}
                 />
                 <PageHeader
                   title=""
@@ -1401,6 +1405,7 @@ function ServiceOverview({
               serviceTypeId={serviceTypeId}
               serviceVersion={serviceVersion}
               nodeCount={nodeCount}
+              serviceStatus={currentService?.status ?? 'Running'}
               onBackToProject={onBackToProject}
               onDeleteService={onDeleteService}
               onOpenAiAssistant={() => setAiAssistantOpen(true)}
@@ -1412,7 +1417,7 @@ function ServiceOverview({
           <Box style={{ marginBottom: 32 }}>
             <PageHeader
               title={serviceName}
-              image={getServiceIconUrl(serviceTypeId ?? null)}
+              image={getServiceIconUrl(serviceTypeId ?? null, theme)}
               imageAlt={serviceTypeId ?? 'service'}
               breadcrumbs={[
                 <Breadcrumbs.Crumb key="org">
@@ -1440,7 +1445,10 @@ function ServiceOverview({
                     <StatusChip text="Running" status="success" dense />
                     {isReplica && <StatusChip text="Read Replica" status="neutral" dense />}
                     {isFork && <StatusChip text="Fork" status="neutral" dense />}
-                    <StatusChip text="Nodes" status="success" badge={nodeCount} dense />
+                    <NodesCountChip
+                      count={nodeCount}
+                      serviceStatus={currentService?.status ?? 'Running'}
+                    />
                     {currentService?.pricingType && (
                       <StatusChip
                         text={currentService.pricingType}
@@ -1647,13 +1655,10 @@ function ServiceOverview({
                       }}
                     >
                       {/* Service type icon */}
-                      <img
-                        aria-hidden
-                        src={getServiceIconUrl(replica.serviceTypeId ?? null)}
-                        width={24}
-                        height={24}
+                      <ServiceIcon
+                        serviceTypeId={replica.serviceTypeId ?? null}
+                        size={24}
                         alt=""
-                        style={{ borderRadius: '50%', flexShrink: 0 }}
                       />
                       {/* Replica name as a navigable link */}
                       <Box style={{ flex: 1, minWidth: 0 }}>

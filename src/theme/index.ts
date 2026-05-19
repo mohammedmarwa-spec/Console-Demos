@@ -1,1 +1,1 @@
-export { ThemeProvider, useTheme, type ThemePreference, type ResolvedTheme } from './ThemeProvider'
+export { ThemeProvider, useTheme, useResolvedTheme, type ThemePreference, type ResolvedTheme } from './ThemeProvider'

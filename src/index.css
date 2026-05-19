@@ -177,12 +177,26 @@ tr.plan-row-selected {
   flex: 1;
 }
 
-/* Nodes chip: status-driven badge indicator color.
-   Badge uses bg-current (background-color: currentColor), so setting color
-   on .Aquarium-Badge directly recolors only the indicator, not the chip text. */
-.nodes-chip--running .Aquarium-Badge    { color: var(--aquarium-background-color-success-graphic) !important; }
-.nodes-chip--rebuilding .Aquarium-Badge { color: var(--aquarium-background-color-info-graphic) !important; }
-.nodes-chip--muted .Aquarium-Badge      { color: var(--aquarium-colors-grey-50) !important; }
+/* Nodes chip counter — Aquarium DS Chip + Counter (Figma 25343:2370 light, 25343:2360 dark).
+   StatusChip badge uses bg-current: fill = parent wrapper `color`. Count is in child span with text-default. */
+.nodes-chip--running .Aquarium-StatusChip div:has(.Aquarium-Badge) {
+  color: var(--aquarium-text-color-success-default) !important;
+}
+.nodes-chip--running .Aquarium-Badge > span {
+  color: var(--aquarium-text-color-opposite-default) !important;
+}
+.nodes-chip--rebuilding .Aquarium-StatusChip div:has(.Aquarium-Badge) {
+  color: var(--aquarium-text-color-info-default) !important;
+}
+.nodes-chip--rebuilding .Aquarium-Badge > span {
+  color: var(--aquarium-text-color-opposite-default) !important;
+}
+.nodes-chip--muted .Aquarium-StatusChip div:has(.Aquarium-Badge) {
+  color: var(--aquarium-colors-grey-50) !important;
+}
+.nodes-chip--muted .Aquarium-Badge > span {
+  color: var(--aquarium-text-color-opposite-default) !important;
+}
 
 /* Aquarium PageHeader: explicit fill + trim extra bottom padding. */
 .Aquarium-PageHeader {

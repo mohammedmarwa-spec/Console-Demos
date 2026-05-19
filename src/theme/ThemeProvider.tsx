@@ -75,3 +75,11 @@ export function useTheme(): ThemeContextValue {
   if (!ctx) throw new Error('useTheme must be used within ThemeProvider')
   return ctx
 }
+
+/** Resolved theme; falls back to `html.aquarium-theme-dark` when outside ThemeProvider (e.g. tests). */
+export function useResolvedTheme(): ResolvedTheme {
+  const ctx = useContext(ThemeContext)
+  if (ctx) return ctx.resolved
+  if (typeof document === 'undefined') return 'dark'
+  return document.documentElement.classList.contains('aquarium-theme-dark') ? 'dark' : 'light'
+}

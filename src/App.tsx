@@ -4,7 +4,7 @@ import tickIcon from '@aivenio/aquarium/icons/tick'
 import CreateService, { type CreatedServicePayload } from './screens/CreateService'
 import CreateReadReplicaModal from './screens/CreateReadReplicaModal'
 import CreateForkModal from './screens/CreateForkModal'
-import ProjectServices, { INITIAL_SERVICES, type ServiceRow } from './screens/ProjectServices'
+import ProjectServices, { FREE_DEV_UPGRADE_SERVICES, INITIAL_SERVICES, type ServiceRow } from './screens/ProjectServices'
 import ServiceOverview from './screens/ServiceOverview'
 import BillingInvoiceDetail from './screens/BillingInvoiceDetail'
 import OrgHomePage from './screens/OrgHomePage'
@@ -109,13 +109,6 @@ const MYSQL_ACU_ROLLOUT_SERVICES: ServiceRow[] = [
   { id: 'pg-prod-01',       serviceName: 'pg-prod-01',       serviceType: 'PostgreSQL', serviceTypeId: 'postgresql', status: 'Running', nodes: 'Nodes 3', nodeCount: 3, planName: 'Business-4',  planDetails: '4 CPU / 16 GB RAM / 480 GB storage',  cloudRegion: 'AWS: eu-west-1',            location: 'Europe, Ireland',         created: '5 months ago',  iconLetter: 'P', cpuCount: 4, ramCapacity: '16 GB', storageCapacity: '480 GB' },
   { id: 'redis-sessions',   serviceName: 'redis-sessions',   serviceType: 'Caching & ValkeyDB', serviceTypeId: 'redis', status: 'Running', nodes: 'Nodes 1', nodeCount: 1, planName: 'Startup-4', planDetails: '2 CPU / 4 GB RAM',                   cloudRegion: 'AWS: eu-west-1',            location: 'Europe, Ireland',         created: '4 months ago',  iconLetter: 'R' },
   { id: 'pg-dev-01',        serviceName: 'pg-dev-01',        serviceType: 'PostgreSQL',         serviceTypeId: 'postgresql', status: 'Running', nodes: 'Nodes 1', nodeCount: 1, planName: 'Developer',  planDetails: '1 CPU / 1 GB RAM / 8 GB storage',    cloudRegion: 'AWS: eu-west-1',            location: 'Europe, Ireland',         created: '1 week ago',    iconLetter: 'P', cpuCount: 1, ramCapacity: '1 GB',  storageCapacity: '8 GB'   },
-]
-
-// ─── Free & Developer quick-upgrade scenario ─────────────────────────────────
-// prettier-ignore
-const FREE_DEV_UPGRADE_SERVICES: ServiceRow[] = [
-  { id: 'pg-free-01', serviceName: 'pg-free-01', serviceType: 'PostgreSQL', serviceTypeId: 'postgresql', status: 'Running', nodes: 'Nodes 1', nodeCount: 1, planName: 'Free',      planDetails: '1 CPU / 1 GB RAM / 1 GB storage', cloudRegion: 'AWS: eu-west-1', location: 'Europe, Ireland', created: '2 days ago',  iconLetter: 'P', cpuCount: 1, ramCapacity: '1 GB', storageCapacity: '1 GB' },
-  { id: 'pg-dev-02',  serviceName: 'pg-dev-02',  serviceType: 'PostgreSQL', serviceTypeId: 'postgresql', status: 'Running', nodes: 'Nodes 1', nodeCount: 1, planName: 'Developer', planDetails: '1 CPU / 1 GB RAM / 8 GB storage', cloudRegion: 'AWS: eu-west-1', location: 'Europe, Ireland', created: '1 week ago', iconLetter: 'P', cpuCount: 1, ramCapacity: '1 GB', storageCapacity: '8 GB'  },
 ]
 
 // ─── Read-replica mixed-pricing fixtures ─────────────────────────────────────

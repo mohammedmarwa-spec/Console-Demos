@@ -13,6 +13,7 @@ import {
 } from '@aivenio/aquarium'
 import { CompactServiceHeader } from './CompactServiceHeader'
 import { getServiceIconUrl } from './ServiceIcon'
+import { useResolvedTheme } from '../theme/ThemeProvider'
 import type { ServiceTypeId } from '../screens/ServiceTypeSelectModal'
 
 const PROJECT_NAME = 'UI-TESTS'
@@ -29,6 +30,7 @@ type ServiceMetricsBodyProps = {
   serviceTypeId?: ServiceTypeId | null
   serviceVersion: string
   nodeCount: number
+  serviceStatus?: string
   onBackToProject?: () => void
   onDeleteService?: () => void
   onOpenAiAssistant?: () => void
@@ -255,11 +257,13 @@ export function ServiceMetricsBody({
   serviceTypeId = null,
   serviceVersion,
   nodeCount,
+  serviceStatus = 'Running',
   onBackToProject,
   onDeleteService,
   onOpenAiAssistant,
   onSeeAllLogs,
 }: ServiceMetricsBodyProps) {
+  const theme = useResolvedTheme()
   const baseId = useId().replace(/:/g, '')
   const nodeGroupName = `${baseId}-node`
   const timeGroupName = `${baseId}-time`
@@ -312,10 +316,11 @@ export function ServiceMetricsBody({
       <Box style={{ marginBottom: 24 }}>
         <CompactServiceHeader
           serviceName={serviceName}
-          iconUrl={getServiceIconUrl(serviceTypeId ?? null)}
+          iconUrl={getServiceIconUrl(serviceTypeId ?? null, theme)}
           version={serviceVersion}
-          statusText="Running"
+          statusText={serviceStatus}
           nodeCount={nodeCount}
+          serviceStatus={serviceStatus}
         />
         <PageHeader
           title=""

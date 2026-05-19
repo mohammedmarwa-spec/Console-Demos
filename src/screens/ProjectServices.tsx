@@ -33,7 +33,8 @@ import proPlansIcon from '@aivenio/aquarium/icons/proPlans'
 import exportIcon from '@aivenio/aquarium/icons/export'
 import { ConsoleHeader } from '../components/ConsoleHeader'
 import { ProjectSidebar } from '../components/ProjectSidebar'
-import { getServiceIconUrl } from '../components/ServiceIcon'
+import { NodesCountChip } from '../components/NodesCountChip'
+import { ServiceIcon } from '../components/ServiceIcon'
 import type { ServiceTypeId } from './ServiceTypeSelectModal'
 
 const PROJECT_NAME = 'ux-tests'
@@ -105,6 +106,17 @@ export const INITIAL_SERVICES: ServiceRow[] = [
     serviceTier: 'Professional',
     computeType: 'Standard',
   },
+]
+
+/** Services list for Free & Dev quick-upgrade scenarios (v2, v3, v4). */
+// prettier-ignore
+export const FREE_DEV_UPGRADE_SERVICES: ServiceRow[] = [
+  { id: 'pg-free-01',      serviceName: 'pg-free-01',      serviceType: 'PostgreSQL', serviceTypeId: 'postgresql', status: 'Running', nodes: 'Nodes 1', nodeCount: 1, planName: 'Free',      planDetails: '1 CPU / 1 GB RAM / 1 GB storage',  cloudRegion: 'AWS: eu-west-1', location: 'Europe, Ireland', created: '2 days ago',  iconLetter: 'P', cpuCount: 1, ramCapacity: '1 GB',  storageCapacity: '1 GB'  },
+  { id: 'mysql-free-01',   serviceName: 'mysql-free-01',   serviceType: 'MySQL',      serviceTypeId: 'mysql',      status: 'Running', nodes: 'Nodes 1', nodeCount: 1, planName: 'Free',      planDetails: '1 CPU / 1 GB RAM / 1 GB storage',  cloudRegion: 'AWS: eu-west-1', location: 'Europe, Ireland', created: '3 days ago',  iconLetter: 'M', cpuCount: 1, ramCapacity: '1 GB',  storageCapacity: '1 GB'  },
+  { id: 'valkey-free-01',  serviceName: 'valkey-free-01',  serviceType: 'Valkey',     serviceTypeId: 'valkey',     status: 'Running', nodes: 'Nodes 1', nodeCount: 1, planName: 'Free',      planDetails: '1 CPU / 1 GB RAM',                 cloudRegion: 'AWS: eu-west-1', location: 'Europe, Ireland', created: '4 days ago',  iconLetter: 'V', cpuCount: 1, ramCapacity: '1 GB' },
+  { id: 'os-free-01',      serviceName: 'os-free-01',      serviceType: 'OpenSearch', serviceTypeId: 'opensearch', status: 'Running', nodes: 'Nodes 1', nodeCount: 1, planName: 'Free',      planDetails: '2 CPU / 4 GB RAM / 20 GB storage', cloudRegion: 'AWS: eu-west-1', location: 'Europe, Ireland', created: '5 days ago',  iconLetter: 'O', cpuCount: 2, ramCapacity: '4 GB',  storageCapacity: '20 GB' },
+  { id: 'pg-dev-01',       serviceName: 'pg-dev-01',       serviceType: 'PostgreSQL', serviceTypeId: 'postgresql', status: 'Running', nodes: 'Nodes 1', nodeCount: 1, planName: 'Developer', planDetails: '1 CPU / 1 GB RAM / 8 GB storage',  cloudRegion: 'AWS: eu-west-1', location: 'Europe, Ireland', created: '1 week ago',  iconLetter: 'P', cpuCount: 1, ramCapacity: '1 GB',  storageCapacity: '8 GB'  },
+  { id: 'mysql-dev-01',    serviceName: 'mysql-dev-01',    serviceType: 'MySQL',      serviceTypeId: 'mysql',      status: 'Running', nodes: 'Nodes 1', nodeCount: 1, planName: 'Developer', planDetails: '1 CPU / 1 GB RAM / 8 GB storage',  cloudRegion: 'AWS: eu-west-1', location: 'Europe, Ireland', created: '2 weeks ago', iconLetter: 'M', cpuCount: 1, ramCapacity: '1 GB',  storageCapacity: '8 GB'  },
 ]
 
 // ─── Filter options ────────────────────────────────────────────────────────────
@@ -782,7 +794,6 @@ function UserAvatar24({
   const letters = raw.slice(0, 3).toUpperCase()
   const showLetters = letters.length > 0
   const icon = isMcp ? proPlansIcon : variant === 'automation' ? containerIcon : appUsersIcon
-  const mcpBg = 'linear-gradient(135deg, rgba(53, 69, 190, 0.14) 0%, rgba(139, 92, 246, 0.12) 100%)'
 
   const avatar = (
     <Box
@@ -795,10 +806,12 @@ function UserAvatar24({
         display: 'inline-flex',
         alignItems: 'center',
         justifyContent: 'center',
-        background: isMcp ? mcpBg : 'var(--aquarium-background-color-inactive, #f5f5f7)',
+        backgroundColor: isMcp
+          ? 'var(--aquarium-background-color-primary-muted, var(--aquarium-background-color-primary-default))'
+          : 'var(--aquarium-background-color-muted)',
         color: isMcp
-          ? 'var(--aquarium-background-color-primary-default, #3545be)'
-          : 'var(--aquarium-colors-grey-70, #5c5c6f)',
+          ? 'var(--aquarium-text-color-primary-graphic)'
+          : 'var(--aquarium-text-color-default)',
         fontSize: letters.length >= 3 ? 9 : letters.length === 2 ? 10 : 11,
         fontWeight: 400,
         letterSpacing: letters.length >= 3 ? '-0.02em' : undefined,
@@ -1164,8 +1177,6 @@ function ProjectServices({ services, onCreateServiceClick, onServiceClick, onDel
                     UNSAFE_render: (row) => {
                       const isReplica = row.replicationRole === 'read_replica'
                       const isFork = row.replicationRole === 'fork'
-                      const iconUrl = getServiceIconUrl(row.serviceTypeId ?? null)
-
                       return (
                         <Box style={{ display: 'flex', alignItems: 'center' }}>
                           {/* Dashed tree connector — replicas only */}
@@ -1192,9 +1203,9 @@ function ProjectServices({ services, onCreateServiceClick, onServiceClick, onDel
                           )}
 
                           {/* Service icon */}
-                          <Box style={{ width: 40, height: 40, flexShrink: 0, marginRight: 12 }}>
-                            {iconUrl ? (
-                              <img src={iconUrl} alt="" style={{ width: 40, height: 40, objectFit: 'contain' }} />
+                          <Box style={{ flexShrink: 0, marginRight: 12 }}>
+                            {row.serviceTypeId ? (
+                              <ServiceIcon serviceTypeId={row.serviceTypeId} size={34} alt="" />
                             ) : (
                               <Typography.SmallStrong>
                                 {row.iconLetter ?? row.serviceType.charAt(0)}
@@ -1204,12 +1215,14 @@ function ProjectServices({ services, onCreateServiceClick, onServiceClick, onDel
 
                           {/* Name + caption */}
                           <Box>
-                            <Link
-                              href="#"
-                              onClick={(e) => { e.preventDefault(); onServiceClick?.(row.id) }}
-                            >
-                              {row.serviceName}
-                            </Link>
+                            <Box style={{ color: 'var(--aquarium-text-color-muted)' }}>
+                              <Link
+                                href="#"
+                                onClick={(e) => { e.preventDefault(); onServiceClick?.(row.id) }}
+                              >
+                                {row.serviceName}
+                              </Link>
+                            </Box>
                             <Box style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 2 }}>
                               <Box style={{ color: '#787885' }}>
                                 <Typography.Caption>{row.serviceType}</Typography.Caption>
@@ -1231,19 +1244,12 @@ function ProjectServices({ services, onCreateServiceClick, onServiceClick, onDel
                   {
                     type: 'custom',
                     headerName: 'Nodes',
-                    UNSAFE_render: (row) => {
-                      const statusClass =
-                        row.status === 'Running'
-                          ? 'nodes-chip--running'
-                          : row.status === 'Rebuilding' || row.status === 'Rebalancing'
-                          ? 'nodes-chip--rebuilding'
-                          : 'nodes-chip--muted'
-                      return (
-                        <span className={`nodes-chip ${statusClass}`}>
-                          <StatusChip text="Nodes" status="neutral" dense badge={row.nodeCount ?? 1} />
-                        </span>
-                      )
-                    },
+                    UNSAFE_render: (row) => (
+                      <NodesCountChip
+                        count={row.nodeCount ?? 1}
+                        serviceStatus={row.status ?? 'Running'}
+                      />
+                    ),
                   },
                   {
                     type: 'custom',
@@ -1270,15 +1276,27 @@ function ProjectServices({ services, onCreateServiceClick, onServiceClick, onDel
                           {row.pricingType === 'ACU' && row.serviceTier ? row.serviceTier : row.planName}
                         </Box>
                       ),
-                      caption: getPlanCaption(row),
+                      caption: (
+                        <Box component="span" style={{ color: 'var(--aquarium-text-color-muted)' }}>
+                          {getPlanCaption(row)}
+                        </Box>
+                      ),
                     }),
                   },
                   {
                     type: 'item',
                     headerName: 'Cloud',
                     item: (row) => ({
-                      title: row.cloudRegion,
-                      caption: row.location,
+                      title: (
+                        <Box component="span" style={{ color: 'var(--aquarium-text-color-muted)' }}>
+                          {row.cloudRegion}
+                        </Box>
+                      ),
+                      caption: (
+                        <Box component="span" style={{ color: 'var(--aquarium-text-color-muted)' }}>
+                          {row.location}
+                        </Box>
+                      ),
                     }),
                   },
                   {
@@ -1297,7 +1315,14 @@ function ProjectServices({ services, onCreateServiceClick, onServiceClick, onDel
                               : undefined
                           }
                         />
-                        <Box component="span" style={{ fontSize: 14, lineHeight: '20px' }}>
+                        <Box
+                          component="span"
+                          style={{
+                            fontSize: 14,
+                            lineHeight: '20px',
+                            color: 'var(--aquarium-text-color-muted)',
+                          }}
+                        >
                           {row.created}
                         </Box>
                       </Box>

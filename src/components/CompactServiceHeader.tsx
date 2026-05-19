@@ -1,7 +1,8 @@
 import { Box, StatusChip, Typography } from '@aivenio/aquarium'
+import { SERVICE_ICON_BACKGROUND } from './ServiceIcon'
 import cpuChipIcon from '@aivenio/aquarium/icons/cpuChip'
-import nodesIcon from '@aivenio/aquarium/icons/nodes'
 import tickCircleIcon from '@aivenio/aquarium/icons/tickCircle'
+import { NodesCountChip } from './NodesCountChip'
 
 export type CompactServiceHeaderProps = {
   serviceName: string
@@ -9,6 +10,8 @@ export type CompactServiceHeaderProps = {
   version: string
   statusText: string
   nodeCount: number
+  /** Service status — drives nodes badge fill token. */
+  serviceStatus?: string
 }
 
 export function CompactServiceHeader({
@@ -17,6 +20,7 @@ export function CompactServiceHeader({
   version,
   statusText,
   nodeCount,
+  serviceStatus = 'Running',
 }: CompactServiceHeaderProps) {
   return (
     <Box
@@ -30,20 +34,31 @@ export function CompactServiceHeader({
       }}
     >
       <Box style={{ display: 'inline-flex', alignItems: 'center', gap: 12, minWidth: 0 }}>
-        <img
-          src={iconUrl}
-          alt={serviceName}
-          width={32}
-          height={32}
-          style={{ borderRadius: 999, display: 'block' }}
-        />
+        <Box
+          style={{
+            width: 32,
+            height: 32,
+            borderRadius: '50%',
+            backgroundColor: SERVICE_ICON_BACKGROUND,
+            overflow: 'hidden',
+            flexShrink: 0,
+          }}
+        >
+          <img
+            src={iconUrl}
+            alt={serviceName}
+            width={32}
+            height={32}
+            style={{ display: 'block' }}
+          />
+        </Box>
         <Box style={{ fontWeight: 600 }}>
           <Typography.Default>{serviceName}</Typography.Default>
         </Box>
         <Box style={{ display: 'inline-flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
           <StatusChip text={version} status="neutral" icon={cpuChipIcon} dense />
           <StatusChip text={statusText} status="success" icon={tickCircleIcon} dense />
-          <StatusChip text="Nodes" status="success" icon={nodesIcon} badge={nodeCount} dense />
+          <NodesCountChip count={nodeCount} serviceStatus={serviceStatus} />
         </Box>
       </Box>
     </Box>
