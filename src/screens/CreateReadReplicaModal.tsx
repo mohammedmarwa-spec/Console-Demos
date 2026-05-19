@@ -6,11 +6,12 @@ import tagIcon from '@aivenio/aquarium/icons/tag'
 import type { ServiceRow } from './ProjectServices'
 import { getServiceTypeDisplayName } from './ServiceTypeSelectModal'
 import {
+  CreationFlowSection,
+  DetailField,
+  FORK_REPLICA_PRICING_BANNER,
   LAYOUT_GAP,
   PricingBanner,
-  Section,
   ServiceSummarySidebar,
-  SummaryDetail,
 } from './ServiceCreationShared'
 
 type ReplicaConfig = 'same-as-primary' | 'different'
@@ -72,7 +73,7 @@ export default function CreateReadReplicaModal({
         <Box style={{ flex: 1, minWidth: 0 }}>
 
           {/* Section 1 — Primary service */}
-          <Section icon={databaseIcon} title="Primary service for the replica">
+          <CreationFlowSection icon={databaseIcon} title="Primary service for the replica">
             <Box
               style={{
                 border: '1px solid var(--aquarium-border-color-muted)',
@@ -85,17 +86,17 @@ export default function CreateReadReplicaModal({
             >
               <Typography.DefaultStrong>{sourceService.serviceName}</Typography.DefaultStrong>
               <Box style={{ display: 'flex', gap: 32, flexWrap: 'wrap' }}>
-                <PrimaryDetail label="Region" value={sourceService.location} />
-                <PrimaryDetail label="Cloud provider" value={cloudLabel} />
-                <PrimaryDetail label="Current plan" value={sourceService.planName} />
-                <PrimaryDetail label="Resources" value={sourceService.planDetails} />
-                <PrimaryDetail label="Monthly price" value={sourceService.monthlyPrice ?? '—'} />
+                <DetailField label="Region" value={sourceService.location} valueTypography="defaultStrong" />
+                <DetailField label="Cloud provider" value={cloudLabel} valueTypography="defaultStrong" />
+                <DetailField label="Current plan" value={sourceService.planName} valueTypography="defaultStrong" />
+                <DetailField label="Resources" value={sourceService.planDetails} valueTypography="defaultStrong" />
+                <DetailField label="Monthly price" value={sourceService.monthlyPrice ?? '—'} valueTypography="defaultStrong" />
               </Box>
             </Box>
-          </Section>
+          </CreationFlowSection>
 
           {/* Section 2 — Read-replica configuration */}
-          <Section icon={database02Icon} title="Read-replica configuration">
+          <CreationFlowSection icon={database02Icon} title="Read-replica configuration">
             <Box style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
               <Alert type="information">
                 Read replicas are single-node by design. They offload read traffic from the primary
@@ -122,10 +123,10 @@ export default function CreateReadReplicaModal({
                 </RadioButton>
               </Box>
             </Box>
-          </Section>
+          </CreationFlowSection>
 
           {/* Section 3 — Basics */}
-          <Section icon={tagIcon} title="Basics">
+          <CreationFlowSection icon={tagIcon} title="Basics">
             <Box style={{ maxWidth: 400 }}>
               <Input
                 labelText="Read-replica name *"
@@ -134,24 +135,24 @@ export default function CreateReadReplicaModal({
                 onChange={(e) => setReplicaName(e.target.value)}
               />
             </Box>
-          </Section>
+          </CreationFlowSection>
 
         </Box>
 
         {/* ── Service summary sidebar ── */}
         <ServiceSummarySidebar>
           <PricingBanner
-            title="Flexible configuration & pricing"
             checked={useAcuPricing}
             onChange={setUseAcuPricing}
+            {...FORK_REPLICA_PRICING_BANNER}
           />
           <Typography.DefaultStrong>Service summary</Typography.DefaultStrong>
 
-          <SummaryDetail label="Service" value={`${serviceDisplayName} 17`} />
-          <SummaryDetail label="Name" value={replicaName || '—'} />
-          <SummaryDetail label="Service tier" value="Business" />
-          <SummaryDetail label="Cloud" value={sourceService.cloudRegion} />
-          <SummaryDetail label="Plan" value={sourceService.planName} />
+          <DetailField label="Service" value={`${serviceDisplayName} 17`} />
+          <DetailField label="Name" value={replicaName || '—'} />
+          <DetailField label="Service tier" value="Business" />
+          <DetailField label="Cloud" value={sourceService.cloudRegion} />
+          <DetailField label="Plan" value={sourceService.planName} />
 
           <Box style={{ display: 'flex', flexDirection: 'column', gap: 4, marginTop: 'auto' }}>
             <Box aria-hidden="true" style={{ borderTop: '1px solid var(--aquarium-border-color-muted)', marginBottom: 8 }} />
@@ -163,14 +164,10 @@ export default function CreateReadReplicaModal({
                 marginBottom: 4,
               }}
             >
-              <Box style={{ color: '#16171a' }}>
-                <Typography.SmallStrong>Est. monthly*</Typography.SmallStrong>
-              </Box>
+              <Typography.SmallStrong color="intense">Est. monthly*</Typography.SmallStrong>
               <Typography.Heading>{sourceService.monthlyPrice ?? '—'}</Typography.Heading>
             </Box>
-            <Box style={{ color: '#68696b' }}>
-              <Typography.Caption>*Based on 730 hours of being powered on</Typography.Caption>
-            </Box>
+            <Typography.Caption color="muted">*Based on 730 hours of being powered on</Typography.Caption>
           </Box>
         </ServiceSummarySidebar>
       </Box>
@@ -179,16 +176,3 @@ export default function CreateReadReplicaModal({
 }
 
 CreateReadReplicaModal.displayName = 'CreateReadReplicaModal'
-
-// ─── Local sub-components ─────────────────────────────────────────────────────
-
-function PrimaryDetail({ label, value }: { label: string; value: string }) {
-  return (
-    <Box style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-      <Box style={{ color: '#787885' }}>
-        <Typography.Caption>{label}</Typography.Caption>
-      </Box>
-      <Typography.DefaultStrong>{value}</Typography.DefaultStrong>
-    </Box>
-  )
-}

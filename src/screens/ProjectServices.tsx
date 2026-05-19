@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect, useRef, useCallback, Fragment, useContext, type MouseEvent } from 'react'
+import { useState, useMemo, useEffect, useRef, useCallback, Fragment, useContext, type MouseEvent as ReactMouseEvent } from 'react'
 import { CalendarDateTime } from '@internationalized/date'
 import { DateRangePickerStateContext as AriaDateRangePickerStateContext } from 'react-aria-components'
 import {
@@ -1009,7 +1009,7 @@ function ProjectServices({ services, onCreateServiceClick, onServiceClick, onDel
   const isServicesPage = activeProjectPage === 'services'
 
   const handleServicesTableMouseOver = useCallback(
-    (event: MouseEvent<HTMLDivElement>) => {
+    (event: ReactMouseEvent<HTMLDivElement>) => {
       const rowEl = (event.target as HTMLElement).closest('tbody tr')
       if (!rowEl?.parentElement) return
       const rowIndex = Array.from(rowEl.parentElement.children).indexOf(rowEl)
@@ -1019,7 +1019,7 @@ function ProjectServices({ services, onCreateServiceClick, onServiceClick, onDel
     [filteredServices],
   )
 
-  const handleServicesTableMouseLeave = useCallback((event: MouseEvent<HTMLDivElement>) => {
+  const handleServicesTableMouseLeave = useCallback((event: ReactMouseEvent<HTMLDivElement>) => {
     const nextTarget = event.relatedTarget
     if (nextTarget instanceof Node && event.currentTarget.contains(nextTarget)) return
     setHoveredServiceId(null)

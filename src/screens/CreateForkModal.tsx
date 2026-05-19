@@ -5,11 +5,12 @@ import database02Icon from '@aivenio/aquarium/icons/database02'
 import type { ServiceRow } from './ProjectServices'
 import { getServiceTypeDisplayName } from './ServiceTypeSelectModal'
 import {
+  CreationFlowSection,
+  DetailField,
+  FORK_REPLICA_PRICING_BANNER,
   LAYOUT_GAP,
   PricingBanner,
-  Section,
   ServiceSummarySidebar,
-  SummaryDetail,
 } from './ServiceCreationShared'
 
 type BackupType = 'latest' | 'specific'
@@ -115,7 +116,7 @@ export default function CreateForkModal({
         <Box style={{ flex: 1, minWidth: 0 }}>
 
           {/* Section 1 — Source service */}
-          <Section icon={databaseIcon} title="Source service">
+          <CreationFlowSection icon={databaseIcon} title="Source service">
             <Box
               style={{
                 border: '1px solid var(--aquarium-border-color-muted)',
@@ -129,11 +130,11 @@ export default function CreateForkModal({
             >
               <Typography.DefaultStrong>{sourceService.serviceName}</Typography.DefaultStrong>
               <Box style={{ display: 'flex', gap: 32, flexWrap: 'wrap' }}>
-                <SourceDetail label="Region" value={sourceService.location} />
-                <SourceDetail label="Cloud provider" value={cloudLabel} />
-                <SourceDetail label="Current plan" value={planLabel} />
-                <SourceDetail label="Resources" value={resourcesLabel} />
-                <SourceDetail label="Monthly price" value={sourceService.monthlyPrice ?? '—'} />
+                <DetailField label="Region" value={sourceService.location} valueTypography="defaultStrong" />
+                <DetailField label="Cloud provider" value={cloudLabel} valueTypography="defaultStrong" />
+                <DetailField label="Current plan" value={planLabel} valueTypography="defaultStrong" />
+                <DetailField label="Resources" value={resourcesLabel} valueTypography="defaultStrong" />
+                <DetailField label="Monthly price" value={sourceService.monthlyPrice ?? '—'} valueTypography="defaultStrong" />
               </Box>
             </Box>
 
@@ -159,10 +160,10 @@ export default function CreateForkModal({
                 Specific point in time
               </RadioButton>
             </Box>
-          </Section>
+          </CreationFlowSection>
 
           {/* Section 2 — Fork configuration */}
-          <Section icon={database02Icon} title="Fork configuration">
+          <CreationFlowSection icon={database02Icon} title="Fork configuration">
             <Box style={{ display: 'flex', gap: 24, marginBottom: 16, flexWrap: 'wrap' }}>
               <Box style={{ flex: '1 1 200px', minWidth: 0 }}>
                 <Input
@@ -201,33 +202,31 @@ export default function CreateForkModal({
                 Different configuration
               </RadioButton>
             </Box>
-          </Section>
+          </CreationFlowSection>
 
         </Box>
 
         {/* ── Service summary sidebar ── */}
         <ServiceSummarySidebar>
           <PricingBanner
-            title="Flexible configuration & pricing"
             checked={useAcuPricing}
             onChange={setUseAcuPricing}
+            {...FORK_REPLICA_PRICING_BANNER}
           />
           <Typography.DefaultStrong>Service summary</Typography.DefaultStrong>
 
-          <SummaryDetail label="Service" value={`${serviceDisplayName} 17`} />
-          <SummaryDetail
+          <DetailField label="Service" value={`${serviceDisplayName} 17`} />
+          <DetailField
             label="Name"
             value={
               <Box style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                <Box style={{ color: '#16171a' }}>
-                  <Typography.Small>{forkName || '—'}</Typography.Small>
-                </Box>
+                <Typography.Small color="intense">{forkName || '—'}</Typography.Small>
               </Box>
             }
           />
-          <SummaryDetail label="Service tier" value="Business" />
-          <SummaryDetail label="Cloud" value={sourceService.cloudRegion} />
-          <SummaryDetail label="Plan" value={sourceService.planName} />
+          <DetailField label="Service tier" value="Business" />
+          <DetailField label="Cloud" value={sourceService.cloudRegion} />
+          <DetailField label="Plan" value={sourceService.planName} />
 
           <Box style={{ display: 'flex', flexDirection: 'column', gap: 4, marginTop: 'auto' }}>
             <Box aria-hidden="true" style={{ borderTop: '1px solid var(--aquarium-border-color-muted)', marginBottom: 8 }} />
@@ -239,14 +238,10 @@ export default function CreateForkModal({
                 marginBottom: 4,
               }}
             >
-              <Box style={{ color: '#16171a' }}>
-                <Typography.SmallStrong>Est. monthly*</Typography.SmallStrong>
-              </Box>
+              <Typography.SmallStrong color="intense">Est. monthly*</Typography.SmallStrong>
               <Typography.Heading>{sourceService.monthlyPrice ?? '—'}</Typography.Heading>
             </Box>
-            <Box style={{ color: '#68696b' }}>
-              <Typography.Caption>*Based on 730 hours of being powered on</Typography.Caption>
-            </Box>
+            <Typography.Caption color="muted">*Based on 730 hours of being powered on</Typography.Caption>
           </Box>
         </ServiceSummarySidebar>
       </Box>
@@ -255,16 +250,3 @@ export default function CreateForkModal({
 }
 
 CreateForkModal.displayName = 'CreateForkModal'
-
-// ─── Local sub-components ─────────────────────────────────────────────────────
-
-function SourceDetail({ label, value }: { label: string; value: string }) {
-  return (
-    <Box style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-      <Box style={{ color: '#787885' }}>
-        <Typography.Caption>{label}</Typography.Caption>
-      </Box>
-      <Typography.DefaultStrong>{value}</Typography.DefaultStrong>
-    </Box>
-  )
-}

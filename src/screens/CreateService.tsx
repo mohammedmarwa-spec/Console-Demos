@@ -3,18 +3,29 @@ import type { ServiceRow } from './ProjectServices'
 import {
   Box,
   Button,
+  Card,
   ChoiceChip,
   ChoiceChipGroup,
+  Icon,
   InlineIcon,
   Input,
   Link,
   RadioButton,
   Select,
-  Switch,
   Tabs,
   Typography,
 } from '@aivenio/aquarium'
-import { LAYOUT_GAP, PADDING, SIDEBAR_WIDTH, Section, SummaryDetail } from './ServiceCreationShared'
+import infoSignIcon from '@aivenio/aquarium/icons/infoSign'
+import tickIcon from '@aivenio/aquarium/icons/tick'
+import {
+  CreationFlowSection,
+  DetailField,
+  FixedPlanTable,
+  LAYOUT_GAP,
+  PADDING,
+  PricingBanner,
+  ServiceSummarySidebar,
+} from './ServiceCreationShared'
 import chevronDownIcon from '@aivenio/aquarium/icons/chevronDown'
 import chevronUpIcon from '@aivenio/aquarium/icons/chevronUp'
 import containerIcon from '@aivenio/aquarium/icons/container'
@@ -90,7 +101,14 @@ type StorageSpec = {
   pricePerGbMonth: number
 }
 
-type FixedTierPlan = { cpu: number; ram: string; storage: string; price: string }
+type FixedTierPlan = {
+  label: string
+  nodes: number
+  cpu: number
+  ram: string
+  storage: string
+  price: string
+}
 
 type Plan = {
   id: string
@@ -203,8 +221,22 @@ const STANDARD_STORAGE_SPECS: StorageSpec[] = [
 ]
 
 const STANDARD_FIXED_TIER_PLANS: Partial<Record<ServiceTier, FixedTierPlan>> = {
-  free:      { cpu: 1, ram: '1 GB', storage: '1 GB', price: 'Free' },
-  developer: { cpu: 1, ram: '1 GB', storage: '8 GB', price: '$5' },
+  free: {
+    label: 'Free-1-1gb',
+    nodes: 1,
+    cpu: 1,
+    ram: '1 GB',
+    storage: '1 GB',
+    price: 'Free',
+  },
+  developer: {
+    label: 'Developer-1-8gb',
+    nodes: 1,
+    cpu: 1,
+    ram: '1 GB',
+    storage: '8 GB',
+    price: '$5',
+  },
 }
 
 // ─── Shared tier option definitions ───────────────────────────────────────────
@@ -214,7 +246,7 @@ const TIER_FREE: TierOption = {
   features: [
     { text: 'Free forever', icon: 'tick' },
     { text: 'Automatically powered off when inactive', icon: 'info' },
-    { text: 'Autopauses when inactive, no support', icon: 'info' },
+    { text: 'No integrations or connection pooling', icon: 'info' },
   ],
   price: '$0',
 }
@@ -448,7 +480,14 @@ const SERVICE_CONFIGS: Record<ServiceTypeId, ServiceConfig> = {
       },
     ],
     fixedTierPlans: {
-      developer: { cpu: 2, ram: '4 GB', storage: '30 GB', price: '$5' },
+      developer: {
+        label: 'Developer-2-30gb',
+        nodes: 1,
+        cpu: 2,
+        ram: '4 GB',
+        storage: '30 GB',
+        price: '$5',
+      },
     },
     haEnabled: false,
     plans: KAFKA_PLANS,
@@ -521,80 +560,36 @@ const LEFT_COL_MAX = 984
 
 // ─── TierCard ─────────────────────────────────────────────────────────────────
 
-function TierCard({
-  option,
-  selected,
-  onSelect,
-}: {
-  option: TierOption
-  selected: boolean
-  onSelect: () => void
-}) {
+function TierCard({ option }: { option: TierOption }) {
   return (
-    <Box
-      role="button"
-      tabIndex={0}
-      onClick={onSelect}
-      onKeyDown={(e) => {
-        if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onSelect() }
-      }}
-      style={{
-        border: `1px solid ${selected ? 'var(--aquarium-border-color-primary-default)' : 'var(--aquarium-border-color-muted)'}`,
-        borderRadius: 6,
-        display: 'flex',
-        flexDirection: 'column',
-        gap: 16,
-        cursor: 'pointer',
-        outline: 'none',
-        backgroundColor: selected ? 'var(--aquarium-background-color-primary-muted)' : 'var(--aquarium-background-color-layer)',
-        flex: 1,
-        minWidth: 0,
-        overflow: 'hidden',
-        paddingTop: 16,
-        paddingBottom: 0,
-      }}
+    <Card
+      fullWidth
+      checkable
+      value={option.id}
+      title={
+        <Card.Title>
+          <Typography.DefaultStrong color="intense">{option.title}</Typography.DefaultStrong>
+        </Card.Title>
+      }
     >
-      <Box style={{ display: 'flex', gap: 16, alignItems: 'flex-start', padding: '0 16px' }}>
-        <Box style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 4 }}>
-          <Typography.DefaultStrong>{option.title}</Typography.DefaultStrong>
-          <Typography.Caption>{option.description}</Typography.Caption>
-        </Box>
-        <RadioButton
-          aria-label={`${option.title} tier`}
-          name="serviceTier"
-          value={option.id}
-          checked={selected}
-          onChange={onSelect}
-        />
-      </Box>
-      <Box style={{ display: 'flex', flexDirection: 'column', gap: 4, flex: 1 }}>
-        {option.features.map((f) => (
-          <Box key={f.text} style={{ display: 'flex', gap: 8, alignItems: 'flex-start', padding: '0 16px' }}>
-            <Box
-              component="span"
-              aria-hidden="true"
-              style={{
-                flexShrink: 0,
-                width: 16,
-                height: 16,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                color: f.icon === 'tick' ? '#22c55e' : '#787885',
-                fontSize: 12,
-                marginTop: 1,
-              }}
-            >
-              {f.icon === 'tick' ? '✓' : 'ⓘ'}
+      <Box style={{ display: 'flex', flexDirection: 'column', gap: 16, flex: 1, minHeight: 0 }}>
+        <Typography.Caption color="muted">{option.description}</Typography.Caption>
+        <Box style={{ display: 'flex', flexDirection: 'column', gap: 4, flex: 1 }}>
+          {option.features.map((f) => (
+            <Box key={f.text} style={{ display: 'flex', gap: 8, alignItems: 'flex-start' }}>
+              <Icon
+                aria-hidden
+                icon={f.icon === 'tick' ? tickIcon : infoSignIcon}
+                color={f.icon === 'tick' ? 'success-intense' : 'muted'}
+                style={{ width: 16, height: 16, flexShrink: 0, marginTop: 1 }}
+              />
+              <Typography.Caption color="muted">{f.text}</Typography.Caption>
             </Box>
-            <Box style={{ color: '#787885' }}><Typography.Caption>{f.text}</Typography.Caption></Box>
-          </Box>
-        ))}
+          ))}
+        </Box>
+        <Typography.SmallStrong color="intense">{option.price}</Typography.SmallStrong>
       </Box>
-      <Box style={{ padding: '8px 16px' }}>
-        <Typography.SmallStrong>{option.price}</Typography.SmallStrong>
-      </Box>
-    </Box>
+    </Card>
   )
 }
 
@@ -834,6 +829,11 @@ function CreateService({
     () => Math.ceil(diskSizeGb * (selectedStorageSpec?.pricePerGbMonth ?? 0)),
     [diskSizeGb, selectedStorageSpec],
   )
+  const diskSliderFillPct = useMemo(() => {
+    const span = config.diskSizeMax - config.diskSizeMin
+    if (span <= 0) return 0
+    return ((diskSizeGb - config.diskSizeMin) / span) * 100
+  }, [diskSizeGb, config.diskSizeMin, config.diskSizeMax])
   const estimatedMonthly = useMemo(
     () => nodeCount * ((selectedCompute?.pricePerMonth ?? 0) + storageCost),
     [nodeCount, selectedCompute, storageCost],
@@ -937,6 +937,34 @@ function CreateService({
         width: '100%',
       }}
     >
+      <style>{`
+        .create-service-tier-cards {
+          display: flex;
+          flex-direction: row;
+          flex-wrap: nowrap;
+          gap: 16px;
+          width: 100%;
+          min-width: 0;
+          align-items: stretch;
+        }
+        .create-service-tier-cards label.Aquarium-Card.Label {
+          flex: 1 1 0;
+          min-width: 0;
+          display: flex;
+          box-sizing: border-box;
+        }
+        /* Selected checkable cards stack ring-2 on top of the card border — use one inset border */
+        .create-service-tier-cards label.Aquarium-Card.Label.ring-2 {
+          --tw-ring-offset-shadow: 0 0 #0000 !important;
+          --tw-ring-shadow: 0 0 #0000 !important;
+          --tw-ring-width: 0 !important;
+          --tw-ring-offset-width: 0 !important;
+          box-shadow: inset 0 0 0 2px var(--aquarium-border-color-primary-default) !important;
+        }
+        .create-service-tier-cards label.Aquarium-Card.Label > div {
+          flex: 1;
+        }
+      `}</style>
       {embedded && onClose && !editMode && (
         <Box style={{ padding: `0 ${PADDING}px`, height: 24, display: 'flex', alignItems: 'center' }}>
           <Button.Ghost dense type="button" onClick={onClose}>← Back</Button.Ghost>
@@ -958,34 +986,33 @@ function CreateService({
         <Box style={{ flex: 1, minWidth: 0, maxWidth: embedded ? undefined : LEFT_COL_MAX }}>
 
           {/* Service tier */}
-          <Section icon={containerIcon} title="Service tier">
-            <Box style={{ color: '#787885', marginBottom: 16 }}>
-              <Typography.Small>
+          <CreationFlowSection icon={containerIcon} title="Service tier">
+            <Box style={{ marginBottom: 16 }}>
+              <Typography.Small color="muted">
                 Service tiers are structured to help you scale as your project grows.{' '}
                 <Link href="#">Compare</Link>
               </Typography.Small>
             </Box>
-            <Box style={{ display: 'flex', gap: 16, flexWrap: 'wrap', minWidth: 0 }}>
-              {config.tiers.map((opt) => (
-                <TierCard
-                  key={opt.id}
-                  option={opt}
-                  selected={tier === opt.id}
-                  onSelect={() => setTier(opt.id)}
-                />
-              ))}
-            </Box>
-          </Section>
+            <Card.Group
+              name="serviceTier"
+              checked={tier}
+              onCheckedChange={({ value }) => setTier(value as ServiceTier)}
+            >
+              <Box className="create-service-tier-cards">
+                {config.tiers.map((opt) => (
+                  <TierCard key={opt.id} option={opt} />
+                ))}
+              </Box>
+            </Card.Group>
+          </CreationFlowSection>
 
           {/* Cloud */}
-          <Section icon={cloudIcon} title="Cloud">
+          <CreationFlowSection icon={cloudIcon} title="Cloud">
             {isSimpleTier ? (
               <Box style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-                <Box style={{ color: '#787885' }}>
-                  <Typography.Small>
-                    You can select a specific cloud provider and region on Professional tier
-                  </Typography.Small>
-                </Box>
+                <Typography.Small color="muted">
+                  You can select a specific cloud provider and region on Professional tier
+                </Typography.Small>
                 <ChoiceChipGroup
                   name="regionArea"
                   selectionMode="radio"
@@ -1009,50 +1036,31 @@ function CreateService({
                 regionsByCloud={config.regionsByCloud}
               />
             )}
-          </Section>
+          </CreationFlowSection>
 
           {isSimpleTier ? (
-            /* Fixed compute plan for Free / Developer */
-            <Section icon={cpuChipIcon} title="Compute and storage">
+            /* Fixed plan table for Free / Developer */
+            <CreationFlowSection icon={listIcon} title="Plan">
               {(() => {
                 const fp = config.fixedTierPlans[tier as 'free' | 'developer']
                 if (!fp) return null
                 return (
-                  <Box style={{ border: '1px solid var(--aquarium-border-color-muted)', borderRadius: 8, overflow: 'hidden' }}>
-                    <Box
-                      style={{
-                        display: 'flex', alignItems: 'center',
-                        padding: '8px 16px', borderBottom: '1px solid var(--aquarium-border-color-muted)',
-                        backgroundColor: 'var(--aquarium-background-color-muted)',
-                      }}
-                    >
-                      <Box style={{ width: 32, flexShrink: 0 }} />
-                      <Box style={{ flex: 1 }}><Box style={{ color: '#787885' }}><Typography.Caption>CPU</Typography.Caption></Box></Box>
-                      <Box style={{ flex: 1 }}><Box style={{ color: '#787885' }}><Typography.Caption>RAM</Typography.Caption></Box></Box>
-                      <Box style={{ flex: 1 }}><Box style={{ color: '#787885' }}><Typography.Caption>Storage</Typography.Caption></Box></Box>
-                      <Box style={{ flex: 1, textAlign: 'right' }}><Box style={{ color: '#787885' }}><Typography.Caption>Est. monthly price</Typography.Caption></Box></Box>
-                    </Box>
-                    <Box
-                      style={{
-                        display: 'flex', alignItems: 'center',
-                        padding: '10px 16px', backgroundColor: 'var(--aquarium-background-color-primary-muted)',
-                      }}
-                    >
-                      <Box style={{ width: 32, flexShrink: 0 }}>
-                        <RadioButton aria-label="Fixed plan" name="fixedPlan" value="fixed" checked onChange={() => {}} />
-                      </Box>
-                      <Box style={{ flex: 1 }}><Typography.Default>{fp.cpu}</Typography.Default></Box>
-                      <Box style={{ flex: 1 }}><Typography.Default>{fp.ram}</Typography.Default></Box>
-                      <Box style={{ flex: 1 }}><Typography.Default>{fp.storage}</Typography.Default></Box>
-                      <Box style={{ flex: 1, textAlign: 'right' }}><Typography.DefaultStrong>{fp.price}</Typography.DefaultStrong></Box>
-                    </Box>
-                  </Box>
+                  <FixedPlanTable
+                    plan={{
+                      label: fp.label,
+                      nodes: fp.nodes,
+                      cpu: fp.cpu,
+                      ram: fp.ram,
+                      storage: fp.storage,
+                      monthlyPrice: fp.price,
+                    }}
+                  />
                 )
               })()}
-            </Section>
+            </CreationFlowSection>
           ) : isLegacyMode ? (
             /* ── Legacy plan groups: tabbed tier selector + description + plan table ── */
-            <Section icon={listIcon} title="Plan">
+            <CreationFlowSection icon={listIcon} title="Plan">
               <Tabs
                 value={activeLegacyGroup?.id ?? config.legacyPlans![0].id}
                 onChange={(id) => {
@@ -1072,16 +1080,18 @@ function CreateService({
                         style={{
                           border: '1px solid var(--aquarium-border-color-muted)', borderRadius: 8, padding: '12px 16px',
                           display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start',
-                          gap: 16, marginBottom: 16, fontSize: 14,
+                          gap: 16, marginBottom: 16,
                         }}
                       >
                         <Box>
-                          <Box style={{ marginBottom: 8, fontWeight: 600 }}>{group.description}</Box>
+                          <Box style={{ marginBottom: 8 }}>
+                            <Typography.SmallStrong color="intense">{group.description}</Typography.SmallStrong>
+                          </Box>
                           <Box style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
                             {group.features.map((feature) => (
                               <Box key={feature} style={{ display: 'flex', alignItems: 'flex-start', gap: 8 }}>
-                                <Box style={{ color: '#00875a', flexShrink: 0, lineHeight: '20px' }}>✓</Box>
-                                <span>{feature}</span>
+                                <Icon aria-hidden icon={tickIcon} color="success-intense" style={{ width: 16, height: 16, flexShrink: 0 }} />
+                                <Typography.Small color="muted">{feature}</Typography.Small>
                               </Box>
                             ))}
                           </Box>
@@ -1101,12 +1111,12 @@ function CreateService({
                           }}
                         >
                           <Box style={{ width: 32, flexShrink: 0 }} />
-                          <Box style={{ flex: 2 }}><Box style={{ color: '#787885' }}><Typography.Caption>Plan</Typography.Caption></Box></Box>
-                          <Box style={{ flex: 1 }}><Box style={{ color: '#787885' }}><Typography.Caption>VMs</Typography.Caption></Box></Box>
-                          <Box style={{ flex: 1 }}><Box style={{ color: '#787885' }}><Typography.Caption>CPUs per VM</Typography.Caption></Box></Box>
-                          <Box style={{ flex: 1 }}><Box style={{ color: '#787885' }}><Typography.Caption>RAM per VM</Typography.Caption></Box></Box>
-                          <Box style={{ flex: 2 }}><Box style={{ color: '#787885' }}><Typography.Caption>Storage</Typography.Caption></Box></Box>
-                          <Box style={{ flex: 1, textAlign: 'right' }}><Box style={{ color: '#787885' }}><Typography.Caption>Monthly price</Typography.Caption></Box></Box>
+                          <Box style={{ flex: 2 }}><Typography.Caption color="muted">Plan</Typography.Caption></Box>
+                          <Box style={{ flex: 1 }}><Typography.Caption color="muted">VMs</Typography.Caption></Box>
+                          <Box style={{ flex: 1 }}><Typography.Caption color="muted">CPUs per VM</Typography.Caption></Box>
+                          <Box style={{ flex: 1 }}><Typography.Caption color="muted">RAM per VM</Typography.Caption></Box>
+                          <Box style={{ flex: 2 }}><Typography.Caption color="muted">Storage</Typography.Caption></Box>
+                          <Box style={{ flex: 1, textAlign: 'right' }}><Typography.Caption color="muted">Monthly price</Typography.Caption></Box>
                         </Box>
                         {visPlans.map((plan, idx) => {
                           const isSelected = selectedLegacyPlanId === plan.id
@@ -1156,10 +1166,10 @@ function CreateService({
                   )
                 })}
               </Tabs>
-            </Section>
+            </CreationFlowSection>
           ) : activePlans ? (
             /* ── Flat plan table for non-legacy services (Kafka, Valkey, etc.) ── */
-            <Section icon={proPlansIcon} title="Plan">
+            <CreationFlowSection icon={proPlansIcon} title="Plan">
               <Box style={{ border: '1px solid var(--aquarium-border-color-muted)', borderRadius: 8, overflow: 'hidden' }}>
                 <Box
                   style={{
@@ -1169,12 +1179,12 @@ function CreateService({
                   }}
                 >
                   <Box style={{ width: 32, flexShrink: 0 }} />
-                  <Box style={{ flex: 2 }}><Box style={{ color: '#787885' }}><Typography.Caption>Plan</Typography.Caption></Box></Box>
-                  <Box style={{ flex: 1 }}><Box style={{ color: '#787885' }}><Typography.Caption>Nodes</Typography.Caption></Box></Box>
-                  <Box style={{ flex: 1 }}><Box style={{ color: '#787885' }}><Typography.Caption>vCPU</Typography.Caption></Box></Box>
-                  <Box style={{ flex: 1 }}><Box style={{ color: '#787885' }}><Typography.Caption>RAM</Typography.Caption></Box></Box>
-                  <Box style={{ flex: 2 }}><Box style={{ color: '#787885' }}><Typography.Caption>Storage</Typography.Caption></Box></Box>
-                  <Box style={{ flex: 1, textAlign: 'right' }}><Box style={{ color: '#787885' }}><Typography.Caption>Monthly price</Typography.Caption></Box></Box>
+                  <Box style={{ flex: 2 }}><Typography.Caption color="muted">Plan</Typography.Caption></Box>
+                  <Box style={{ flex: 1 }}><Typography.Caption color="muted">Nodes</Typography.Caption></Box>
+                  <Box style={{ flex: 1 }}><Typography.Caption color="muted">vCPU</Typography.Caption></Box>
+                  <Box style={{ flex: 1 }}><Typography.Caption color="muted">RAM</Typography.Caption></Box>
+                  <Box style={{ flex: 2 }}><Typography.Caption color="muted">Storage</Typography.Caption></Box>
+                  <Box style={{ flex: 1, textAlign: 'right' }}><Typography.Caption color="muted">Monthly price</Typography.Caption></Box>
                 </Box>
                 {activePlans.map((plan, idx) => {
                   const isSelected = activeSelectedPlanId === plan.id
@@ -1208,15 +1218,15 @@ function CreateService({
                   )
                 })}
               </Box>
-            </Section>
+            </CreationFlowSection>
           ) : (
             /* ── HA + Compute + Storage (postgresql / mysql) ── */
             <>
               {config.haEnabled && (
-                <Section icon={nodesIcon} title="High-availability">
+                <CreationFlowSection icon={nodesIcon} title="High-availability">
                   <Box style={{ minWidth: 0 }}>
-                    <Box style={{ color: '#4a4b57', marginBottom: 16 }}>
-                      <Typography.Small>
+                    <Box style={{ marginBottom: 16 }}>
+                      <Typography.Small color="muted">
                         Multi-node setups with primary/standby nodes across availability zones, offering automatic failover.{' '}
                         <Link href="#">Learn more</Link>
                       </Typography.Small>
@@ -1237,11 +1247,11 @@ function CreateService({
                       ))}
                     </ChoiceChipGroup>
                   </Box>
-                </Section>
+                </CreationFlowSection>
               )}
 
               {/* Compute */}
-              <Section icon={cpuChipIcon} title="Compute">
+              <CreationFlowSection icon={cpuChipIcon} title="Compute">
                 <Box style={{ marginBottom: 12 }}>
                   <ChoiceChipGroup
                     name="computeProfile"
@@ -1258,8 +1268,8 @@ function CreateService({
                     ))}
                   </ChoiceChipGroup>
                 </Box>
-                <Box style={{ color: '#4a4b57', marginBottom: 16 }}>
-                  <Typography.Small>{selectedComputeProfileInfo?.description}</Typography.Small>
+                <Box style={{ marginBottom: 16 }}>
+                  <Typography.Small color="muted">{selectedComputeProfileInfo?.description}</Typography.Small>
                 </Box>
                 <Box style={{ display: 'flex', flexDirection: 'column', border: '1px solid var(--aquarium-border-color-muted)', borderRadius: 8, overflow: 'hidden' }}>
                   {visibleComputeOptions.map((opt, idx) => {
@@ -1269,13 +1279,17 @@ function CreateService({
                         key={opt.id}
                         role="button"
                         tabIndex={0}
+                        className={
+                          isSelected
+                            ? 'create-service-compute-option create-service-compute-option--selected'
+                            : 'create-service-compute-option'
+                        }
                         onClick={() => setComputeId(opt.id)}
                         onKeyDown={(e) => {
                           if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setComputeId(opt.id) }
                         }}
                         style={{
                           display: 'flex', alignItems: 'center', gap: 12, padding: '10px 12px',
-                          backgroundColor: isSelected ? 'var(--aquarium-background-color-primary-muted)' : 'var(--aquarium-background-color-layer)',
                           borderTop: idx === 0 ? 'none' : '1px solid var(--aquarium-border-color-muted)',
                           cursor: 'pointer', outline: 'none',
                         }}
@@ -1287,11 +1301,11 @@ function CreateService({
                           checked={isSelected}
                           onChange={() => setComputeId(opt.id)}
                         />
-                        <Box style={{ flex: 1, display: 'flex', gap: 32, fontSize: 14 }}>
-                          <span>{opt.label}</span>
-                          <span>{opt.ram}</span>
+                        <Box style={{ flex: 1, display: 'flex', gap: 32 }}>
+                          <Typography.Small color="intense">{opt.label}</Typography.Small>
+                          <Typography.Small color="intense">{opt.ram}</Typography.Small>
                         </Box>
-                        <span style={{ fontSize: 14, fontWeight: 600 }}>${opt.pricePerMonth}</span>
+                        <Typography.SmallStrong color="intense">${opt.pricePerMonth}</Typography.SmallStrong>
                       </Box>
                     )
                   })}
@@ -1306,10 +1320,10 @@ function CreateService({
                     </Button.Ghost>
                   </Box>
                 )}
-              </Section>
+              </CreationFlowSection>
 
               {/* Storage */}
-              <Section icon={serverHddIcon} title="Storage">
+              <CreationFlowSection icon={serverHddIcon} title="Storage">
                 <Box style={{ display: 'flex', flexDirection: 'column', gap: 12, marginBottom: 16 }}>
                   <ChoiceChipGroup
                     name="storageType"
@@ -1326,34 +1340,46 @@ function CreateService({
                       </ChoiceChip>
                     ))}
                   </ChoiceChipGroup>
-                  <Box style={{ color: '#4a4b57' }}>
-                    <Typography.Small>{selectedStorageSpec?.description}</Typography.Small>
-                  </Box>
+                  <Typography.Small color="muted">{selectedStorageSpec?.description}</Typography.Small>
                 </Box>
 
                 {/* Disk size card */}
-                <Box style={{ borderRadius: 8, overflow: 'hidden' }}>
-                  <Box style={{ backgroundColor: 'var(--aquarium-background-color-primary-muted)', padding: '12px 16px', display: 'flex', flexDirection: 'column', gap: 0 }}>
+                <Box
+                  style={{
+                    border: '1px solid var(--aquarium-border-color-muted)',
+                    borderRadius: 8,
+                    overflow: 'hidden',
+                  }}
+                >
+                  <Box
+                    style={{
+                      padding: '12px 16px',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      gap: 0,
+                    }}
+                  >
                     <Box style={{ display: 'flex', gap: 4, alignItems: 'center' }}>
                       <Typography.SmallStrong>Disk size</Typography.SmallStrong>
-                      <Box aria-hidden="true" style={{ color: '#787885', width: 16, height: 16, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12 }}>ⓘ</Box>
+                      <Icon aria-hidden icon={infoSignIcon} color="muted" style={{ width: 16, height: 16, flexShrink: 0 }} />
                     </Box>
                     <Box style={{ display: 'flex', gap: 16, alignItems: 'center' }}>
                       <Box style={{ flex: 1, position: 'relative', paddingBottom: 20 }}>
                         <input
                           type="range"
+                          className="create-service-disk-slider"
                           min={config.diskSizeMin}
                           max={config.diskSizeMax}
                           value={diskSizeGb}
                           onChange={(e) => setDiskSizeGb(Number(e.target.value))}
-                          style={{ width: '100%', accentColor: 'var(--aquarium-background-color-primary-default, #3545be)' }}
+                          style={{ ['--slider-fill' as string]: `${diskSliderFillPct}%` }}
                           aria-label="Disk size in GB"
                         />
-                        <Box style={{ position: 'absolute', bottom: 0, left: 0, color: '#787885' }}>
-                          <Typography.Small>{config.diskSizeMin}</Typography.Small>
+                        <Box style={{ position: 'absolute', bottom: 0, left: 0 }}>
+                          <Typography.Small color="muted">{config.diskSizeMin}</Typography.Small>
                         </Box>
-                        <Box style={{ position: 'absolute', bottom: 0, right: 0, color: '#787885' }}>
-                          <Typography.Small>{config.diskSizeMax}</Typography.Small>
+                        <Box style={{ position: 'absolute', bottom: 0, right: 0 }}>
+                          <Typography.Small color="muted">{config.diskSizeMax}</Typography.Small>
                         </Box>
                       </Box>
                       <Box style={{ display: 'flex', gap: 8, alignItems: 'center', flexShrink: 0 }}>
@@ -1366,7 +1392,7 @@ function CreateService({
                           }}
                           style={{ width: 80 }}
                         />
-                        <Box style={{ color: '#4a4b57' }}><Typography.Small>GB</Typography.Small></Box>
+                        <Typography.Small color="muted">GB</Typography.Small>
                       </Box>
                       <Box style={{ width: 120, flexShrink: 0, textAlign: 'right' }}>
                         <Typography.DefaultStrong>${storageCost}</Typography.DefaultStrong>
@@ -1375,8 +1401,8 @@ function CreateService({
                   </Box>
                   <Box
                     style={{
-                      border: '1px solid var(--aquarium-border-color-muted)', borderTop: 'none',
-                      borderRadius: '0 0 8px 8px', padding: '12px 16px', color: '#4a4b57',
+                      borderTop: '1px solid var(--aquarium-border-color-muted)',
+                      padding: '12px 16px',
                     }}
                   >
                     <Box style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
@@ -1393,12 +1419,12 @@ function CreateService({
                     </Box>
                   </Box>
                 </Box>
-              </Section>
+              </CreationFlowSection>
             </>
           )}
 
           {/* Service details */}
-          <Section icon={tagIcon} title="Service details">
+          <CreationFlowSection icon={tagIcon} title="Service details">
             <Box style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 24 }}>
               <Input
                 labelText="Service name*"
@@ -1422,39 +1448,45 @@ function CreateService({
                 </Box>
               </Button.Ghost>
             </Box>
-          </Section>
+          </CreationFlowSection>
         </Box>
 
         {/* ── Right sidebar ── */}
-        <Box
-          style={{
-            width: SIDEBAR_WIDTH,
-            flexShrink: 0,
-            border: '1px solid var(--aquarium-border-color-muted)',
-            borderRadius: 8,
-            backgroundColor: 'var(--aquarium-background-color-layer)',
-            display: 'flex',
-            flexDirection: 'column',
-            position: 'sticky',
-            top: 0,
-            height: embedded ? 'calc(100vh - 360px)' : '100vh',
-            overflow: 'hidden',
-          }}
+        <ServiceSummarySidebar
+          top={0}
+          style={{ height: embedded ? 'calc(100vh - 360px)' : '100vh' }}
+          footer={
+            !submitRef ? (
+              <Box style={{ display: 'flex', gap: 12, justifyContent: 'flex-end' }}>
+                {embedded && onClose && (
+                  <Button.Secondary type="button" onClick={onClose}>
+                    Cancel
+                  </Button.Secondary>
+                )}
+                <Button.Primary type="button" onClick={handleCreate}>
+                  {editMode
+                    ? 'Apply changes'
+                    : serviceDisplayName
+                      ? `Create ${serviceDisplayName} service`
+                      : 'Create service'}
+                </Button.Primary>
+              </Box>
+            ) : undefined
+          }
         >
-          <Box style={{ padding: 24, display: 'flex', flexDirection: 'column', gap: 16, flex: 1, overflowY: 'auto' }}>
             {isSimpleTier ? (
               /* ── Simplified summary for Free / Developer ── */
               <>
                 <Typography.DefaultStrong>{version}</Typography.DefaultStrong>
 
-                <SummaryDetail label="Name" value={serviceName} />
+                <DetailField label="Name" value={serviceName} />
 
-                <SummaryDetail
+                <DetailField
                   label="Region"
                   value={REGION_AREAS.find((a) => a.id === regionArea)?.label ?? regionArea}
                 />
 
-                <SummaryDetail
+                <DetailField
                   label="Service tier"
                   value={config.tiers.find((t) => t.id === tier)?.title ?? tier}
                 />
@@ -1463,97 +1495,75 @@ function CreateService({
                   const fp = config.fixedTierPlans[tier as 'free' | 'developer']
                   if (!fp) return null
                   return (
-                    <SummaryDetail
-                      label="Compute and storage"
-                      value={`${fp.cpu} CPU · ${fp.ram} · ${fp.storage}`}
-                    />
+                    <DetailField label="Plan" value={fp.label} />
                   )
                 })()}
 
                 <Box style={{ display: 'flex', flexDirection: 'column', gap: 4, marginTop: 'auto' }}>
                   <Box aria-hidden="true" style={{ borderTop: '1px solid var(--aquarium-border-color-muted)', marginBottom: 8 }} />
                   <Box style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
-                    <Box style={{ color: '#16171a' }}>
-                      <Typography.SmallStrong>Est. monthly*</Typography.SmallStrong>
-                    </Box>
+                    <Typography.SmallStrong color="intense">Est. monthly*</Typography.SmallStrong>
                     <Typography.Heading>
                       {tier === 'free' ? 'Free' : `${config.fixedTierPlans.developer?.price ?? '$5'} USD`}
                     </Typography.Heading>
                   </Box>
                 </Box>
 
-                <Box style={{ color: '#68696b' }}>
-                  <Typography.Caption>*Based on 730 hours of usage.</Typography.Caption>
-                </Box>
+                <Typography.Caption color="muted">*Based on 730 hours of usage.</Typography.Caption>
               </>
             ) : (
               /* ── Full summary for Professional ── */
               <>
                 {config.legacyPlans != null && (
-                  <Box
-                    style={{
-                      backgroundColor: 'var(--aquarium-background-color-success-muted)', borderRadius: 8, padding: '0 16px',
-                      display: 'flex', gap: 0, alignItems: 'center', minHeight: 64,
-                      overflow: 'hidden', position: 'relative',
+                  <PricingBanner
+                    checked={pricingModel === 'acu'}
+                    onChange={(checked) => setPricingModel(checked ? 'acu' : 'legacy')}
+                    acu={{
+                      title: 'Flexible configuration & pricing',
+                      description: (
+                        <>
+                          Fine-tune CPU, RAM and disk. <Link href="#">Details</Link>
+                        </>
+                      ),
                     }}
-                  >
-                    <Switch
-                      checked={pricingModel === 'acu'}
-                      onChange={() => setPricingModel((m) => m === 'acu' ? 'legacy' : 'acu')}
-                    />
-                    <Box style={{ minWidth: 0 }}>
-                      {pricingModel === 'acu' ? (
-                        <>
-                          <Typography.SmallStrong>Flexible configuration & pricing</Typography.SmallStrong>
-                          <Box style={{ color: '#4a4b57', marginTop: 2 }}>
-                            <Typography.Caption>Fine-tune CPU, RAM and disk. <Link href="#">Details</Link></Typography.Caption>
-                          </Box>
-                        </>
-                      ) : (
-                        <>
-                          <Typography.SmallStrong>Legacy pricing plans</Typography.SmallStrong>
-                          <Box style={{ color: '#4a4b57', marginTop: 2 }}>
-                            <Typography.Caption>Node count included in plan</Typography.Caption>
-                          </Box>
-                        </>
-                      )}
-                    </Box>
-                  </Box>
+                    legacy={{
+                      title: 'Legacy pricing plans',
+                      description: 'Node count included in plan',
+                    }}
+                  />
                 )}
 
                 <Typography.DefaultStrong>{version}</Typography.DefaultStrong>
 
-                <SummaryDetail label="Name" value={serviceName} />
+                <DetailField label="Name" value={serviceName} />
 
-                <SummaryDetail
+                <DetailField
                   label="Cloud"
                   value={
                     <Box style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                      <Box style={{ color: '#16171a' }}><Typography.Small>{cloud.toUpperCase()}</Typography.Small></Box>
-                      <Box style={{ color: '#787885' }}><Typography.Small>·</Typography.Small></Box>
-                      <Box style={{ color: '#16171a' }}>
-                        <Typography.Small>
-                          {selectedRegion?.flag} {selectedRegion?.location ?? selectedRegion?.label}
-                        </Typography.Small>
-                      </Box>
+                      <Typography.Small color="intense">{cloud.toUpperCase()}</Typography.Small>
+                      <Typography.Small color="muted">·</Typography.Small>
+                      <Typography.Small color="intense">
+                        {selectedRegion?.flag} {selectedRegion?.location ?? selectedRegion?.label}
+                      </Typography.Small>
                     </Box>
                   }
                 />
 
                 {config.haEnabled && !isLegacyMode && (
-                  <SummaryDetail
+                  <DetailField
                     label="High-availability"
                     value={HA_OPTIONS.find((o) => o.id === haOption)?.label ?? haOption}
                   />
                 )}
 
-                <SummaryDetail
+                <DetailField
                   label="Service tier"
                   value={config.tiers.find((t) => t.id === tier)?.title ?? tier}
                 />
 
                 {(config.plans != null || isLegacyMode) ? (
-                  <SummaryDetail
+                  <DetailField
                     label="Plan"
                     value={(() => {
                       const plan = isLegacyMode ? selectedLegacyPlan : selectedPlan
@@ -1564,11 +1574,11 @@ function CreateService({
                   />
                 ) : (
                   <>
-                    <SummaryDetail
+                    <DetailField
                       label="Compute"
                       value={`${selectedComputeProfileInfo?.label}: 1 node · ${selectedCompute?.vCPU ?? ''} vCPU · ${selectedCompute?.ram ?? ''}`}
                     />
-                    <SummaryDetail label="Total storage" value={`${diskSizeGb} GB`} />
+                    <DetailField label="Total storage" value={`${diskSizeGb} GB`} />
                   </>
                 )}
 
@@ -1576,9 +1586,7 @@ function CreateService({
                 <Box style={{ display: 'flex', flexDirection: 'column', gap: 4, marginTop: 'auto' }}>
                   <Box aria-hidden="true" style={{ borderTop: '1px solid var(--aquarium-border-color-muted)', marginBottom: 8 }} />
                   <Box style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
-                    <Box style={{ color: '#16171a' }}>
-                      <Typography.SmallStrong>Est. monthly*</Typography.SmallStrong>
-                    </Box>
+                    <Typography.SmallStrong color="intense">Est. monthly*</Typography.SmallStrong>
                   {(config.plans != null || isLegacyMode) ? (
                     <Typography.Heading>
                       {(isLegacyMode ? selectedLegacyPlan : selectedPlan)?.monthlyPrice ?? '—'} USD
@@ -1590,54 +1598,39 @@ function CreateService({
                   {!config.plans && !isLegacyMode && (
                     <>
                       <Box style={{ display: 'flex', justifyContent: 'space-between' }}>
-                        <Box style={{ color: '#787885' }}>
-                          <Typography.Caption>Compute · {nodeCount} {nodeCount === 1 ? 'node' : 'nodes'}</Typography.Caption>
-                        </Box>
-                        <Typography.Caption>${(selectedCompute?.pricePerMonth ?? 0) * nodeCount}</Typography.Caption>
+                        <Typography.Caption color="muted">
+                          Compute · {nodeCount} {nodeCount === 1 ? 'node' : 'nodes'}
+                        </Typography.Caption>
+                        <Typography.Caption color="muted">${(selectedCompute?.pricePerMonth ?? 0) * nodeCount}</Typography.Caption>
                       </Box>
                       <Box style={{ display: 'flex', justifyContent: 'space-between' }}>
-                        <Box style={{ color: '#787885' }}>
-                          <Typography.Caption>Storage · {nodeCount} {nodeCount === 1 ? 'node' : 'nodes'}</Typography.Caption>
-                        </Box>
-                        <Typography.Caption>${storageCost * nodeCount}</Typography.Caption>
+                        <Typography.Caption color="muted">
+                          Storage · {nodeCount} {nodeCount === 1 ? 'node' : 'nodes'}
+                        </Typography.Caption>
+                        <Typography.Caption color="muted">${storageCost * nodeCount}</Typography.Caption>
                       </Box>
                       <Box style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                         <Box style={{ display: 'flex', alignItems: 'center', gap: 3 }}>
-                          <Box style={{ color: '#787885' }}><Typography.Caption>Network</Typography.Caption></Box>
-                          <Box aria-hidden="true" style={{ color: '#787885', fontSize: 10 }}>ⓘ</Box>
+                          <Typography.Caption color="muted">Network</Typography.Caption>
+                          <Icon aria-hidden icon={infoSignIcon} color="muted" style={{ width: 12, height: 12 }} />
                         </Box>
-                        <Typography.Caption>Usage-based · $0.02/GB</Typography.Caption>
+                        <Typography.Caption color="muted">Usage-based · $0.02/GB</Typography.Caption>
                       </Box>
                       <Box style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                         <Box style={{ display: 'flex', alignItems: 'center', gap: 3 }}>
-                          <Box style={{ color: '#787885' }}><Typography.Caption>Backups</Typography.Caption></Box>
-                          <Box aria-hidden="true" style={{ color: '#787885', fontSize: 10 }}>ⓘ</Box>
+                          <Typography.Caption color="muted">Backups</Typography.Caption>
+                          <Icon aria-hidden icon={infoSignIcon} color="muted" style={{ width: 12, height: 12 }} />
                         </Box>
-                        <Typography.Caption>Every 24h · 24h retention</Typography.Caption>
+                        <Typography.Caption color="muted">Every 24h · 24h retention</Typography.Caption>
                       </Box>
                     </>
                   )}
                 </Box>
 
-                <Box style={{ color: '#68696b' }}>
-                  <Typography.Caption>*Based on 730 hours of usage.</Typography.Caption>
-                </Box>
+                <Typography.Caption color="muted">*Based on 730 hours of usage.</Typography.Caption>
               </>
             )}
-          </Box>
-
-          {/* Footer buttons — only when parent is not supplying its own footer (submitRef) */}
-          {!submitRef && (
-            <Box style={{ padding: '0 24px 24px', display: 'flex', gap: 12, justifyContent: 'flex-end' }}>
-              {embedded && onClose && (
-                <Button.Secondary type="button" onClick={onClose}>Cancel</Button.Secondary>
-              )}
-              <Button.Primary type="button" onClick={handleCreate}>
-                {editMode ? 'Apply changes' : serviceDisplayName ? `Create ${serviceDisplayName} service` : 'Create service'}
-              </Button.Primary>
-            </Box>
-          )}
-        </Box>
+        </ServiceSummarySidebar>
       </Box>
     </Box>
   )

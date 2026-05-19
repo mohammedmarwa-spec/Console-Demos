@@ -2,7 +2,7 @@
  * Shared primitives for every "Create / Fork / Replica" service modal.
  * All layout constants follow the 8px base-unit grid.
  */
-import { Box, Icon, Link, Switch, Typography } from '@aivenio/aquarium'
+import { Box, Divider, Icon, Link, RadioButton, Switch, Table, Typography } from '@aivenio/aquarium'
 
 // ─── Layout constants ─────────────────────────────────────────────────────────
 
@@ -10,13 +10,13 @@ export const LAYOUT_GAP = 60
 export const SIDEBAR_WIDTH = 360
 export const PADDING = 24
 
-// ─── Section ─────────────────────────────────────────────────────────────────
+// ─── CreationFlowSection ──────────────────────────────────────────────────────
 // Icon + title header with a vertical connector line above the content body.
 
 const SECTION_ICON_WIDTH = 32
 const SECTION_LINE_WIDTH = 1
 
-export function Section({
+export function CreationFlowSection({
   icon,
   title,
   children,
@@ -47,13 +47,13 @@ export function Section({
           flexShrink: 0,
         }}
       >
-        <Icon aria-hidden icon={icon} style={{ width: 20, height: 20, color: '#c4c4cf' }} />
+        <Icon aria-hidden icon={icon} color="muted" style={{ width: 20, height: 20 }} />
       </Box>
 
       <Box style={{ minWidth: 0, display: 'flex', alignItems: 'center' }}>
-        <Box component="h3" className="typography-large text-intense" style={{ margin: 0 }}>
+        <Typography.Large color="intense" htmlTag="h3">
           {title}
-        </Box>
+        </Typography.Large>
       </Box>
 
       <Box
@@ -85,21 +85,30 @@ export function Section({
   )
 }
 
-Section.displayName = 'Section'
+CreationFlowSection.displayName = 'CreationFlowSection'
 
-// ─── SummaryDetail ────────────────────────────────────────────────────────────
-// Label + value pair used inside the service summary sidebar.
+// ─── DetailField ──────────────────────────────────────────────────────────────
+// Label + value pair used in summary sidebars and source-service cards.
 
-export function SummaryDetail({ label, value }: { label: string; value: React.ReactNode }) {
+export function DetailField({
+  label,
+  value,
+  valueTypography = 'small',
+}: {
+  label: string
+  value: React.ReactNode
+  /** `defaultStrong` for source-service card rows; `small` for summary sidebar. */
+  valueTypography?: 'small' | 'defaultStrong'
+}) {
   return (
     <Box style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-      <Box style={{ color: '#787885' }}>
-        <Typography.Caption>{label}</Typography.Caption>
-      </Box>
+      <Typography.Caption color="muted">{label}</Typography.Caption>
       {typeof value === 'string' ? (
-        <Box style={{ color: '#16171a' }}>
-          <Typography.Small>{value}</Typography.Small>
-        </Box>
+        valueTypography === 'defaultStrong' ? (
+          <Typography.DefaultStrong>{value}</Typography.DefaultStrong>
+        ) : (
+          <Typography.Small color="intense">{value}</Typography.Small>
+        )
       ) : (
         value
       )}
@@ -107,7 +116,88 @@ export function SummaryDetail({ label, value }: { label: string; value: React.Re
   )
 }
 
-SummaryDetail.displayName = 'SummaryDetail'
+DetailField.displayName = 'DetailField'
+
+// ─── FixedPlanTable ─────────────────────────────────────────────────────────────
+// Single-row plan table for Free / Developer tiers (Plan, VMs, CPUs, RAM, Storage, price).
+
+export type FixedPlanRow = {
+  label: string
+  nodes: number
+  cpu: number
+  ram: string
+  storage: string
+  monthlyPrice: string
+}
+
+export function FixedPlanTable({ plan }: { plan: FixedPlanRow }) {
+  return (
+    <Box
+      style={{
+        border: '1px solid var(--aquarium-border-color-muted)',
+        borderRadius: 8,
+        overflow: 'hidden',
+      }}
+    >
+      <Table ariaLabel="Plan" style={{ tableLayout: 'fixed', width: '100%' }}>
+        <Table.Head>
+          <Table.Cell style={{ width: 40 }} />
+          <Table.Cell style={{ width: '22%' }}>
+            <Typography.Caption color="muted">Plan</Typography.Caption>
+          </Table.Cell>
+          <Table.Cell style={{ width: '10%' }}>
+            <Typography.Caption color="muted">VMs</Typography.Caption>
+          </Table.Cell>
+          <Table.Cell style={{ width: '14%' }}>
+            <Typography.Caption color="muted">CPUs per VM</Typography.Caption>
+          </Table.Cell>
+          <Table.Cell style={{ width: '14%' }}>
+            <Typography.Caption color="muted">RAM per VM</Typography.Caption>
+          </Table.Cell>
+          <Table.Cell>
+            <Typography.Caption color="muted">Storage</Typography.Caption>
+          </Table.Cell>
+          <Table.Cell style={{ width: '16%', textAlign: 'right' }}>
+            <Typography.Caption color="muted">Monthly price</Typography.Caption>
+          </Table.Cell>
+        </Table.Head>
+        <Table.Body>
+          <Table.Row className="plan-row-selected">
+            <Table.Cell>
+              <RadioButton
+                aria-label={`Plan ${plan.label}`}
+                name="fixedPlan"
+                value={plan.label}
+                checked
+                onChange={() => {}}
+              />
+            </Table.Cell>
+            <Table.Cell>
+              <Typography.DefaultStrong color="intense">{plan.label}</Typography.DefaultStrong>
+            </Table.Cell>
+            <Table.Cell>
+              <Typography.Small color="intense">{plan.nodes}</Typography.Small>
+            </Table.Cell>
+            <Table.Cell>
+              <Typography.Small color="intense">{plan.cpu}</Typography.Small>
+            </Table.Cell>
+            <Table.Cell>
+              <Typography.Small color="intense">{plan.ram}</Typography.Small>
+            </Table.Cell>
+            <Table.Cell>
+              <Typography.Small color="intense">{plan.storage}</Typography.Small>
+            </Table.Cell>
+            <Table.Cell style={{ textAlign: 'right' }}>
+              <Typography.DefaultStrong color="intense">{plan.monthlyPrice}</Typography.DefaultStrong>
+            </Table.Cell>
+          </Table.Row>
+        </Table.Body>
+      </Table>
+    </Box>
+  )
+}
+
+FixedPlanTable.displayName = 'FixedPlanTable'
 
 // ─── ServiceSummarySidebar ────────────────────────────────────────────────────
 // Right-side sticky sidebar wrapper shared by all service creation flows.
@@ -115,10 +205,14 @@ SummaryDetail.displayName = 'SummaryDetail'
 export function ServiceSummarySidebar({
   children,
   footer,
+  style,
+  top = PADDING,
 }: {
   children: React.ReactNode
   /** Content rendered below the scrollable area (e.g. a CTA button). */
   footer?: React.ReactNode
+  style?: React.CSSProperties
+  top?: number
 }) {
   return (
     <Box
@@ -132,7 +226,9 @@ export function ServiceSummarySidebar({
         flexDirection: 'column',
         alignSelf: 'flex-start',
         position: 'sticky',
-        top: PADDING,
+        top,
+        overflow: 'hidden',
+        ...style,
       }}
     >
       <Box
@@ -142,15 +238,18 @@ export function ServiceSummarySidebar({
           flexDirection: 'column',
           gap: 16,
           flex: 1,
+          overflowY: 'auto',
+          minHeight: 0,
         }}
       >
         {children}
       </Box>
 
       {footer && (
-        <Box style={{ padding: `0 ${PADDING}px ${PADDING}px` }}>
-          {footer}
-        </Box>
+        <>
+          <Divider />
+          <Box style={{ padding: `0 ${PADDING}px ${PADDING}px` }}>{footer}</Box>
+        </>
       )}
     </Box>
   )
@@ -159,18 +258,26 @@ export function ServiceSummarySidebar({
 ServiceSummarySidebar.displayName = 'ServiceSummarySidebar'
 
 // ─── PricingBanner ────────────────────────────────────────────────────────────
-// Toggle card shown in Fork / Read-replica modals to let users choose the
-// pricing mode for the new service being created.
+// Toggle card for ACU vs legacy pricing in service creation flows.
+
+export type PricingBannerCopy = {
+  title: string
+  description: React.ReactNode
+}
 
 export function PricingBanner({
-  title,
   checked,
   onChange,
+  acu,
+  legacy,
 }: {
-  title: string
   checked: boolean
   onChange: (checked: boolean) => void
+  acu: PricingBannerCopy
+  legacy: PricingBannerCopy
 }) {
+  const copy = checked ? acu : legacy
+
   return (
     <Box
       style={{
@@ -187,12 +294,9 @@ export function PricingBanner({
     >
       <Switch checked={checked} onChange={() => onChange(!checked)} />
       <Box style={{ minWidth: 0 }}>
-        <Typography.SmallStrong>{title}</Typography.SmallStrong>
-        <Box style={{ color: '#4a4b57', marginTop: 2 }}>
-          <Typography.Caption>
-            Fine-tune CPU, RAM and disk.{' '}
-            <Link href="#" onClick={(e) => e.preventDefault()}>Details</Link>
-          </Typography.Caption>
+        <Typography.SmallStrong>{copy.title}</Typography.SmallStrong>
+        <Box style={{ marginTop: 2 }}>
+          <Typography.Caption color="muted">{copy.description}</Typography.Caption>
         </Box>
       </Box>
     </Box>
@@ -200,3 +304,27 @@ export function PricingBanner({
 }
 
 PricingBanner.displayName = 'PricingBanner'
+
+const PRICING_BANNER_ACU_DESCRIPTION = (
+  <>
+    Fine-tune CPU, RAM and disk.{' '}
+    <Link href="#" onClick={(e) => e.preventDefault()}>
+      Details
+    </Link>
+  </>
+)
+
+/** Default ACU / legacy copy used by fork and read-replica modals. */
+export const FORK_REPLICA_PRICING_BANNER: {
+  acu: PricingBannerCopy
+  legacy: PricingBannerCopy
+} = {
+  acu: {
+    title: 'Flexible configuration & pricing',
+    description: PRICING_BANNER_ACU_DESCRIPTION,
+  },
+  legacy: {
+    title: 'Flexible configuration & pricing',
+    description: PRICING_BANNER_ACU_DESCRIPTION,
+  },
+}
