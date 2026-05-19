@@ -25,6 +25,7 @@ export const SCENARIOS: Scenario[] = [
   // Pricing upgrade
   { id: 'free-dev-upgrade',    label: 'Free & Dev: Quick upgrade',    group: 'Pricing upgrade', description: '1 Free + 1 Developer tier service to test the Quick upgrade flow' },
   { id: 'free-dev-upgrade-v2', label: 'Free & Dev: Quick Upgrade V2', group: 'Pricing upgrade', description: 'Same services, V2 modal with tier headers' },
+  { id: 'free-dev-upgrade-v3', label: 'Free & Dev: Quick Upgrade V3', group: 'Pricing upgrade', description: 'Same services, V2 modal with Hobbyist and Startup-4 plans' },
 
   // Platform observability
   { id: 'deeptrace-demo',      label: 'Service event logs',             group: 'Platform observability', description: 'PostgreSQL service, Logs view' },

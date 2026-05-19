@@ -194,6 +194,7 @@ function getInitialServicesForScenario(scenarioId: string | null): ServiceRow[] 
       return withRandomCreatedByAvatars([...REPLICA_MIXED_SERVICES])
     case 'free-dev-upgrade':
     case 'free-dev-upgrade-v2':
+    case 'free-dev-upgrade-v3':
       return withRandomCreatedByAvatars([...FREE_DEV_UPGRADE_SERVICES])
     case 'deeptrace-demo':
       return DEEPTRACE_DEMO_SERVICES
@@ -357,7 +358,7 @@ function AppContent() {
     const currentService = services.find((s) => s.id === overviewServiceId)
     const isSimple = ['free', 'developer'].includes((currentService?.planName ?? '').toLowerCase())
     if (isSimple) {
-      if (activeScenarioId === 'free-dev-upgrade-v2') {
+      if (activeScenarioId === 'free-dev-upgrade-v2' || activeScenarioId === 'free-dev-upgrade-v3') {
         setUpgradeV2ModalOpen(true)
       } else {
         setUpgradeModalOpen(true)
@@ -537,7 +538,9 @@ function AppContent() {
           serviceTypeId={overviewServiceType}
           initialSidebarItem={activeScenarioId === 'deeptrace-demo' ? 'logs' : undefined}
           hideSwitchToNewPricingAlert={
-            activeScenarioId === 'free-dev-upgrade' || activeScenarioId === 'free-dev-upgrade-v2'
+            activeScenarioId === 'free-dev-upgrade' ||
+            activeScenarioId === 'free-dev-upgrade-v2' ||
+            activeScenarioId === 'free-dev-upgrade-v3'
           }
           services={services}
           onBackToProject={() => setView('project-services')}
@@ -633,11 +636,14 @@ function AppContent() {
         customizeResetKey={upgradeCustomizeResetKey}
       />
 
-      {/* Upgrade V2 modal — triggered by free-dev-upgrade-v2 scenario */}
+      {/* Upgrade V2 modal — triggered by free-dev-upgrade-v2 / v3 scenarios */}
       <UpgradeServiceModalV2
         open={upgradeV2ModalOpen}
         onClose={() => setUpgradeV2ModalOpen(false)}
         currentTier={((editOverviewService?.planName ?? '').toLowerCase() === 'free' ? 'free' : 'developer') as UpgradeTier}
+        planVariant={
+          activeScenarioId === 'free-dev-upgrade-v3' ? 'hobbyist-startup-4' : 'startup-business'
+        }
         onUpgrade={(planId) => {
           setUpgradeV2ModalOpen(false)
           const planData = UPGRADE_PLAN_SERVICE_DATA[planId]

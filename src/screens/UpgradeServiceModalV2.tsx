@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
-import { Box, Card, Icon, Modal, Typography, type IconProps } from '@aivenio/aquarium'
+import { Box, Button, Card, Icon, Modal, Typography, type IconProps } from '@aivenio/aquarium'
 import layersIcon from '@aivenio/aquarium/icons/layers'
+import settingsIcon from '@aivenio/aquarium/icons/settings'
 import { getAivenIcon } from '../assets/icons/aivenIcon'
 import digitalOceanIcon from '../assets/icons/digitalOceanIcon'
 import { useTheme } from '../theme/ThemeProvider'
@@ -60,6 +61,33 @@ const BUSINESS_V2: PlanV2 = {
   price: '$180/month',
 }
 
+const HOBBYIST_V2: PlanV2 = {
+  id: 'hobbyist',
+  chips: [{ text: 'eu-central-1, Frankfurt', status: 'neutral', icon: digitalOceanIcon }],
+  name: 'Hobbyist',
+  description: 'For learning, side projects, and small workloads',
+  features: [
+    '1 vCPU · 2 GB RAM · 8 GB Disk',
+    'Region selection',
+    'Backups for disaster recovery',
+  ],
+  price: '$12/month',
+}
+
+const STARTUP_4_V2: PlanV2 = {
+  id: 'startup-4',
+  chips: [{ text: 'eu-central-1, Frankfurt', status: 'neutral', icon: digitalOceanIcon }],
+  name: 'Startup-4',
+  description: 'For growing apps and staging environments',
+  features: [
+    '1 vCPU · 4 GB RAM · 80 GB Disk',
+    'Handles increasing traffic and data',
+    'Integrations and scaling support',
+    'Ideal for staging or early production',
+  ],
+  price: '$75/month',
+}
+
 // ─── Tier groups ─────────────────────────────────────────────────────────────
 
 type TierGroup = {
@@ -67,14 +95,28 @@ type TierGroup = {
   plans: PlanV2[]
 }
 
-const TIER_GROUPS_BY_TIER: Record<UpgradeTier, TierGroup[]> = {
-  free: [
-    { label: 'Hobby tier',        plans: [DEVELOPER_V2] },
-    { label: 'Professional tier', plans: [STARTUP_V2, BUSINESS_V2] },
-  ],
-  developer: [
-    { label: 'Professional tier', plans: [STARTUP_V2, BUSINESS_V2] },
-  ],
+export type UpgradeModalPlanVariant = 'startup-business' | 'hobbyist-startup-4'
+
+const TIER_GROUPS_BY_TIER: Record<UpgradeModalPlanVariant, Record<UpgradeTier, TierGroup[]>> = {
+  'startup-business': {
+    free: [
+      { label: 'Hobby tier',        plans: [DEVELOPER_V2] },
+      { label: 'Professional tier', plans: [STARTUP_V2, BUSINESS_V2] },
+    ],
+    developer: [
+      { label: 'Professional tier', plans: [STARTUP_V2, BUSINESS_V2] },
+    ],
+  },
+  'hobbyist-startup-4': {
+    free: [
+      { label: 'Hobby tier',        plans: [DEVELOPER_V2, HOBBYIST_V2] },
+      { label: 'Professional tier', plans: [STARTUP_4_V2] },
+    ],
+    developer: [
+      { label: 'Hobby tier',        plans: [HOBBYIST_V2] },
+      { label: 'Professional tier', plans: [STARTUP_4_V2] },
+    ],
+  },
 }
 
 // ─── Props ───────────────────────────────────────────────────────────────────
@@ -83,6 +125,8 @@ type UpgradeServiceModalV2Props = {
   open: boolean
   onClose: () => void
   currentTier: UpgradeTier
+  /** Which recommended plans appear in the Professional tier. */
+  planVariant?: UpgradeModalPlanVariant
   onUpgrade: (planId: string) => void
   onCustomize: () => void
 }
@@ -93,13 +137,14 @@ export function UpgradeServiceModalV2({
   open,
   onClose,
   currentTier,
+  planVariant = 'startup-business',
   onUpgrade,
   onCustomize,
 }: UpgradeServiceModalV2Props) {
   const { resolved: theme } = useTheme()
   const tierGroups = useMemo(
     () =>
-      TIER_GROUPS_BY_TIER[currentTier].map((group) => ({
+      TIER_GROUPS_BY_TIER[planVariant][currentTier].map((group) => ({
         ...group,
         plans: group.plans.map((plan) =>
           plan.id === 'developer-plan'
@@ -110,23 +155,23 @@ export function UpgradeServiceModalV2({
             : plan,
         ),
       })),
-    [currentTier, theme],
+    [currentTier, planVariant, theme],
   )
   const allPlans = tierGroups.flatMap((g) => g.plans)
   const defaultPlanId = allPlans[0].id
 
   const planImageUrls = useMemo(
     () => Object.fromEntries(allPlans.map((p) => [p.id, getPlanIllustrationUrl(p.id, theme)])),
-    [currentTier, theme],
+    [allPlans, theme],
   )
 
   const [selectedPlanId, setSelectedPlanId] = useState(defaultPlanId)
 
   useEffect(() => {
     if (open) {
-      setSelectedPlanId(TIER_GROUPS_BY_TIER[currentTier].flatMap((g) => g.plans)[0].id)
+      setSelectedPlanId(TIER_GROUPS_BY_TIER[planVariant][currentTier].flatMap((g) => g.plans)[0].id)
     }
-  }, [open, currentTier])
+  }, [open, currentTier, planVariant])
 
   // Export the plan data via the shared UPGRADE_PLAN_SERVICE_DATA map (same IDs)
   function handleUpgrade() {
@@ -173,6 +218,20 @@ export function UpgradeServiceModalV2({
           --tw-ring-offset-width: 0 !important;
           box-shadow: inset 0 0 0 2px var(--aquarium-border-color-primary-default) !important;
         }
+        .upgrade-v2-tier-bar--hobby {
+          background-color: color-mix(
+            in srgb,
+            var(--aquarium-background-color-success-graphic) 20%,
+            var(--aquarium-background-color-muted)
+          );
+        }
+        .upgrade-v2-tier-bar--hobby .upgrade-v2-tier-bar-label {
+          color: color-mix(
+            in srgb,
+            var(--aquarium-background-color-success-graphic) 55%,
+            var(--aquarium-text-color-default)
+          ) !important;
+        }
         .upgrade-v2-tier-bar--professional {
           background-color: color-mix(
             in srgb,
@@ -182,6 +241,10 @@ export function UpgradeServiceModalV2({
         }
         .upgrade-v2-tier-bar--professional .upgrade-v2-tier-bar-label {
           color: var(--aquarium-chart-colors-primary-categorical-4) !important;
+        }
+        .upgrade-v3-customize-compact-wrap .Aquarium-Card.Compact {
+          background-color: var(--aquarium-background-color-primary-muted);
+          border-left: 4px solid var(--aquarium-background-color-primary-graphic);
         }
       `}</style>
 
@@ -261,10 +324,70 @@ export function UpgradeServiceModalV2({
         </Box>
 
         <Box style={{ marginTop: 32 }}>
-          <FullConfigurationCard onClick={onCustomize} />
+          {planVariant === 'hobbyist-startup-4' ? (
+            <CustomizeCompactCard onCustomize={onCustomize} />
+          ) : (
+            <FullConfigurationCard onClick={onCustomize} />
+          )}
         </Box>
       </Box>
     </Modal>
+  )
+}
+
+// ─── Customize CTA (V3: Card.Compact) ────────────────────────────────────────
+
+function CustomizeCompactCard({ onCustomize }: { onCustomize: () => void }) {
+  return (
+    <Box className="upgrade-v3-customize-compact-wrap">
+      <Card.Compact
+        fullWidth
+        title={
+          <Card.Title>
+            <Box
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                gap: 16,
+                width: '100%',
+              }}
+            >
+              <Box style={{ display: 'flex', alignItems: 'center', gap: 12, flex: 1, minWidth: 0 }}>
+                <Box
+                  aria-hidden
+                  style={{
+                    flexShrink: 0,
+                    width: 40,
+                    height: 40,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    borderRadius: '50%',
+                    backgroundColor:
+                      'color-mix(in srgb, var(--aquarium-background-color-primary-graphic) 18%, var(--aquarium-background-color-layer))',
+                    border: '1px solid var(--aquarium-border-color-primary-muted)',
+                  }}
+                >
+                  <Icon icon={settingsIcon} color="primary-default" style={{ width: 20, height: 20 }} />
+                </Box>
+                <Box style={{ display: 'flex', flexDirection: 'column', gap: 4, minWidth: 0 }}>
+                  <Typography.DefaultStrong color="intense">Customize instead</Typography.DefaultStrong>
+                  <Typography.Small color="muted">
+                    View all clouds, regions, plans, CPU, RAM, disk, and scaling options.
+                  </Typography.Small>
+                </Box>
+              </Box>
+              <Box style={{ flexShrink: 0 }}>
+                <Button.Ghost dense type="button" onClick={onCustomize}>
+                  Configure manually
+                </Button.Ghost>
+              </Box>
+            </Box>
+          </Card.Title>
+        }
+      />
+    </Box>
   )
 }
 
@@ -314,9 +437,12 @@ function FullConfigurationCard({ onClick }: { onClick: () => void }) {
 // ─── Tier header ─────────────────────────────────────────────────────────────
 
 function TierHeader({ group, planCount }: { group: TierGroup; planCount: number }) {
+  const tierBarClass =
+    group.label === 'Hobby tier' ? 'upgrade-v2-tier-bar--hobby' : 'upgrade-v2-tier-bar--professional'
+
   return (
     <Box
-      className="upgrade-v2-tier-bar--professional"
+      className={tierBarClass}
       style={{
         gridColumn: `span ${planCount}`,
         width: '100%',

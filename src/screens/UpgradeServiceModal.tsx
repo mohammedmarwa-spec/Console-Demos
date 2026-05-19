@@ -26,10 +26,10 @@ export const UPGRADE_PLAN_SERVICE_DATA: Record<string, UpgradePlanServiceData> =
   },
   hobbyist: {
     planName: 'Hobbyist',
-    planDetails: '1 CPU / 1 GB RAM / 8 GB storage',
+    planDetails: '1 CPU / 2 GB RAM / 8 GB storage',
     nodeCount: 1,
     cpuCount: 1,
-    ramCapacity: '1 GB',
+    ramCapacity: '2 GB',
     storageCapacity: '8 GB',
   },
   startup: {
@@ -37,6 +37,14 @@ export const UPGRADE_PLAN_SERVICE_DATA: Record<string, UpgradePlanServiceData> =
     planDetails: '2 CPU / 4 GB RAM / 80 GB storage',
     nodeCount: 1,
     cpuCount: 2,
+    ramCapacity: '4 GB',
+    storageCapacity: '80 GB',
+  },
+  'startup-4': {
+    planName: 'Startup-4',
+    planDetails: '1 CPU / 4 GB RAM / 80 GB storage',
+    nodeCount: 1,
+    cpuCount: 1,
     ramCapacity: '4 GB',
     storageCapacity: '80 GB',
   },
