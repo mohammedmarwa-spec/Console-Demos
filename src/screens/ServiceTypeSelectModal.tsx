@@ -1,6 +1,5 @@
 import type { ReactNode } from 'react'
-import { Box, Modal, StatusChip, Typography } from '@aivenio/aquarium'
-import applicationsIcon from '@aivenio/aquarium/icons/applications'
+import { Box, Modal, Typography } from '@aivenio/aquarium'
 import { ServiceIcon } from '../components/ServiceIcon'
 
 export type ServiceTypeId =
@@ -38,12 +37,6 @@ const SERVICE_TYPES: ServiceTypeOption[] = [
 export function getServiceTypeDisplayName(id: ServiceTypeId): string {
   return SERVICE_TYPES.find((s) => s.id === id)?.name ?? id
 }
-
-/**
- * Service types that support ACU (flexible) pricing mode.
- * Update this set when more services gain ACU support — no other changes needed.
- */
-const ACU_CAPABLE_SERVICE_IDS = new Set<ServiceTypeId>(['postgresql', 'mysql'])
 
 const LEGAL_FOOTER =
   'Apache, Apache Kafka, Kafka, Apache Flink, Flink, Apache Cassandra, and Cassandra are either registered trademarks or trademarks of the Apache Software Foundation in the United States and/or other countries. ClickHouse, OpenSearch, AlloyDB Omni, PostgreSQL, MySQL, Grafana, Dragonfly, Valkey, Terraform, and Kubernetes are trademarks and property of their respective owners. All product and service names used in this website are for identification purposes only and do not imply endorsement.'
@@ -114,12 +107,7 @@ function ServiceTypeSelectModal({
             >
               <ServiceIcon serviceTypeId={service.id} size={48} alt="" />
               <Box style={{ flex: 1, minWidth: 0 }}>
-                <Box style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-                  <Typography.DefaultStrong>{service.name}</Typography.DefaultStrong>
-                  {ACU_CAPABLE_SERVICE_IDS.has(service.id) && (
-                    <StatusChip text="New pricing" status="success" icon={applicationsIcon} />
-                  )}
-                </Box>
+                <Typography.DefaultStrong>{service.name}</Typography.DefaultStrong>
                 <Box style={{ color: '#787885', marginTop: 4 }}>
                   <Typography.Caption>{service.description}</Typography.Caption>
                 </Box>
