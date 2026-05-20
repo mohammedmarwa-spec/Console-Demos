@@ -83,6 +83,10 @@ export type ServiceRow = {
   computeType?: string
   /** Estimated monthly price string, e.g. "~$75", "$5", "Free". */
   monthlyPrice?: string
+  /** True when the service was created in this session via the create-service flow. */
+  userCreated?: boolean
+  /** Onboarding playground loaded ecommerce sample — PG Studio shows preloaded schema + AI prompts. */
+  playgroundSampleLoaded?: boolean
 }
 
 export const INITIAL_SERVICES: ServiceRow[] = [

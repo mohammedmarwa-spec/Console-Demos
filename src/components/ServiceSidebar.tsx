@@ -13,7 +13,9 @@ import dbBackupIcon from '@aivenio/aquarium/icons/dbBackup'
 import cogIcon from '@aivenio/aquarium/icons/cog'
 import type { IconifyIcon } from '@iconify/react'
 
-const NAV_ITEMS: { label: string; icon: IconifyIcon; id: string }[] = [
+const PG_STUDIO_NAV_ITEM = { id: 'pg-studio', label: 'PG Studio', icon: queriesEditorIcon } as const
+
+const BASE_NAV_ITEMS: { label: string; icon: IconifyIcon; id: string }[] = [
   { id: 'overview', label: 'Overview', icon: dashboardIcon },
   { id: 'integrations', label: 'Integrations', icon: integrationsIcon },
   { id: 'metrics', label: 'Service metrics', icon: chartIcon },
@@ -31,6 +33,8 @@ export type ServiceSidebarProps = {
   projectName: string
   serviceName: string
   activeItem?: string
+  /** Show PG Studio nav item (PostgreSQL and MySQL services). */
+  showPgStudio?: boolean
   onBackToProject?: () => void
   /** Called when the user selects a service sub-page (Overview, Logs, etc). */
   onNavigate?: (id: string) => void
@@ -40,9 +44,14 @@ export function ServiceSidebar({
   projectName,
   serviceName,
   activeItem = 'overview',
+  showPgStudio = false,
   onBackToProject,
   onNavigate,
 }: ServiceSidebarProps) {
+  const navItems = showPgStudio
+    ? [BASE_NAV_ITEMS[0], PG_STUDIO_NAV_ITEM, ...BASE_NAV_ITEMS.slice(1)]
+    : BASE_NAV_ITEMS
+
   return (
     <Box
       style={{
@@ -70,7 +79,7 @@ export function ServiceSidebar({
           </Navigation.Item>
         )}
         <Navigation.Divider />
-        {NAV_ITEMS.map(({ id, label, icon }) => (
+        {navItems.map(({ id, label, icon }) => (
           <Navigation.Item
             key={id}
             icon={icon}

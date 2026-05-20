@@ -5,86 +5,58 @@ import {
   CategoryPill,
   CodeSnippet,
   PLAYGROUND_DEMOS,
+  OnboardingPanelPage,
+  OnboardingPanelTitle,
   PlaygroundPanelShadow,
   type PlaygroundDemo,
 } from './playgroundShared'
 
 export type PlaygroundHubProps = {
   onBackToSetup: () => void
-  onSetUpProject: () => void
   onDemoClick: (demo: PlaygroundDemo) => void
+  onSkipToProjectDashboard: () => void
 }
 
 function DemoCard({ demo, onClick }: { demo: PlaygroundDemo; onClick: () => void }) {
   return (
-    <Card
-      fullWidth
-      onClick={onClick}
-      title={
-        <Card.Title>
-          <Box style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 8, width: '100%' }}>
-            <ServiceIcon serviceTypeId={demo.serviceTypeId} size={28} alt="" />
-            <Typography.DefaultStrong color="intense">{demo.title}</Typography.DefaultStrong>
-            <CategoryPill label={demo.categoryLabel} />
+    <Box style={{ height: '100%', display: 'flex' }}>
+      <Card
+        fullWidth
+        onClick={onClick}
+        title={
+          <Card.Title>
+            <Box style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 8, width: '100%' }}>
+              <ServiceIcon serviceTypeId={demo.serviceTypeId} size={28} alt="" />
+              <Typography.DefaultStrong color="intense">{demo.title}</Typography.DefaultStrong>
+              <CategoryPill label={demo.categoryLabel} />
+            </Box>
+          </Card.Title>
+        }
+      >
+        <Box
+          style={{
+            display: 'flex',
+            flexDirection: 'column',
+            gap: 8,
+            flex: 1,
+            minHeight: 0,
+          }}
+        >
+          <Typography.Small color="muted">{demo.description}</Typography.Small>
+          <Box style={{ marginTop: 'auto', paddingTop: 4 }}>
+            <CodeSnippet>{demo.codeSnippet}</CodeSnippet>
           </Box>
-        </Card.Title>
-      }
-    >
-      <Box style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-        <Typography.Small color="muted">{demo.description}</Typography.Small>
-        <CodeSnippet>{demo.codeSnippet}</CodeSnippet>
-      </Box>
-    </Card>
+        </Box>
+      </Card>
+    </Box>
   )
 }
 
 DemoCard.displayName = 'DemoCard'
 
-function SetUpProjectCard({ onSetUpProject }: { onSetUpProject: () => void }) {
+export function PlaygroundHub({ onBackToSetup, onDemoClick, onSkipToProjectDashboard }: PlaygroundHubProps) {
   return (
-    <Card.Compact
-      fullWidth
-      color="primary-10"
-      title={
-        <Card.Title>
-          <Box component="span" style={{ color: 'var(--aquarium-text-color-success-intense)', fontWeight: 600 }}>
-            Ready to build something real?
-          </Box>
-        </Card.Title>
-      }
-    >
-      <Box
-        style={{
-          display: 'flex',
-          flexDirection: 'column',
-          gap: 12,
-          alignItems: 'flex-start',
-          minHeight: 72,
-        }}
-      >
-        <Typography.Small>
-          Create a project and we&apos;ll spin up your own services with your data.
-        </Typography.Small>
-        <Button.Primary type="button" onClick={onSetUpProject} style={{ marginTop: 'auto' }}>
-          Set up my project →
-        </Button.Primary>
-      </Box>
-    </Card.Compact>
-  )
-}
-
-SetUpProjectCard.displayName = 'SetUpProjectCard'
-
-export function PlaygroundHub({ onBackToSetup, onSetUpProject, onDemoClick }: PlaygroundHubProps) {
-  return (
-    <Box
-      style={{
-        display: 'flex',
-        justifyContent: 'center',
-        padding: '20px 24px',
-        minHeight: '100%',
-      }}
-    >
+    <OnboardingPanelPage>
       <PlaygroundPanelShadow>
         <Box
           style={{
@@ -97,7 +69,7 @@ export function PlaygroundHub({ onBackToSetup, onSetUpProject, onDemoClick }: Pl
           }}
         >
           <Box style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-            <Typography.LargeHeading>Playground</Typography.LargeHeading>
+            <OnboardingPanelTitle>Playground</OnboardingPanelTitle>
             <Typography.Small color="muted">
               Sandboxed demos with sample data · nothing provisioned, nothing billed.
             </Typography.Small>
@@ -114,21 +86,23 @@ export function PlaygroundHub({ onBackToSetup, onSetUpProject, onDemoClick }: Pl
           <Box
             style={{
               display: 'grid',
-              gridTemplateColumns: 'repeat(3, minmax(0, 1fr))',
+              gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
               gap: 12,
+              alignItems: 'stretch',
             }}
           >
             {PLAYGROUND_DEMOS.map((demo) => (
               <DemoCard key={demo.id} demo={demo} onClick={() => onDemoClick(demo)} />
             ))}
           </Box>
-
           <Box style={{ marginTop: 16 }}>
-            <SetUpProjectCard onSetUpProject={onSetUpProject} />
+            <Button.Ghost dense type="button" onClick={onSkipToProjectDashboard}>
+              Skip to project dashboard
+            </Button.Ghost>
           </Box>
         </Box>
       </PlaygroundPanelShadow>
-    </Box>
+    </OnboardingPanelPage>
   )
 }
 

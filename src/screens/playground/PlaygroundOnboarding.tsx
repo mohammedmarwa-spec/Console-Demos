@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useToast } from '@aivenio/aquarium'
 import tickIcon from '@aivenio/aquarium/icons/tick'
-import { OnboardingWelcome } from './OnboardingWelcome'
+import { OnboardingWelcome, type OnboardingStartChoice } from './OnboardingWelcome'
 import { PlaygroundHub } from './PlaygroundHub'
 import { PlaygroundLoading } from './PlaygroundLoading'
 import { PlaygroundSandboxModal, type SandboxDataChoice } from './PlaygroundSandboxModal'
@@ -11,13 +11,18 @@ import type { PlaygroundDemo } from './playgroundShared'
 export type PlaygroundOnboardingProps = {
   onBackToSetup: () => void
   onSetUpProject: () => void
-  /** After loading completes — e.g. open demo or project services. */
-  onPlaygroundReady: () => void
+  onSkipToProjectDashboard: () => void
+  /** After sample data finishes loading — open PG Studio with preloaded ecommerce schema. */
+  onPlaygroundSampleReady: () => void
 }
 
 type Phase = 'welcome' | 'hub' | 'loading'
 
-export function PlaygroundOnboarding({ onSetUpProject, onPlaygroundReady }: PlaygroundOnboardingProps) {
+export function PlaygroundOnboarding({
+  onSetUpProject,
+  onSkipToProjectDashboard,
+  onPlaygroundSampleReady,
+}: PlaygroundOnboardingProps) {
   const addToast = useToast()
   const [phase, setPhase] = useState<Phase>('welcome')
   const [sandboxModalOpen, setSandboxModalOpen] = useState(false)
@@ -34,6 +39,14 @@ export function PlaygroundOnboarding({ onSetUpProject, onPlaygroundReady }: Play
     })
   }
 
+  function handleWelcomeContinue(choice: OnboardingStartChoice, _config: { projectName: string; region: string }) {
+    if (choice === 'playground') {
+      setPhase('hub')
+      return
+    }
+    onSetUpProject()
+  }
+
   function handleSandboxConfirm(choice: SandboxDataChoice) {
     setSandboxModalOpen(false)
     if (choice === 'sample') {
@@ -41,7 +54,7 @@ export function PlaygroundOnboarding({ onSetUpProject, onPlaygroundReady }: Play
       return
     }
     addToast({
-      message: 'Load your data will be available in a future release',
+      message: 'Migrate your data will be available in a future release',
       icon: tickIcon,
       duration: 4000,
       position: 'top-right',
@@ -51,17 +64,14 @@ export function PlaygroundOnboarding({ onSetUpProject, onPlaygroundReady }: Play
   return (
     <PlaygroundShell>
       {phase === 'welcome' ? (
-        <OnboardingWelcome
-          onOpenPlayground={() => setPhase('hub')}
-          onBrowseServices={onSetUpProject}
-        />
+        <OnboardingWelcome onContinue={handleWelcomeContinue} />
       ) : phase === 'loading' ? (
-        <PlaygroundLoading onComplete={onPlaygroundReady} />
+        <PlaygroundLoading onComplete={onPlaygroundSampleReady} />
       ) : (
         <PlaygroundHub
           onBackToSetup={() => setPhase('welcome')}
-          onSetUpProject={onSetUpProject}
           onDemoClick={handleDemoClick}
+          onSkipToProjectDashboard={onSkipToProjectDashboard}
         />
       )}
       <PlaygroundSandboxModal

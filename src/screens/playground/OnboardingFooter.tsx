@@ -61,7 +61,7 @@ export function OnboardingFooter() {
         paddingTop: 12,
       }}
     >
-      <Box style={{ textAlign: 'center', maxWidth: 338, padding: '0 8px' }}>
+      <Box style={{ textAlign: 'center', padding: '0 8px', whiteSpace: 'nowrap' }}>
         <Typography.Small color="muted">
           Start with Console, manage with Aiven developer tools later
         </Typography.Small>

@@ -1,81 +1,97 @@
-import { Box, Card, Link, Typography } from '@aivenio/aquarium'
+import { useState } from 'react'
+import { Box, Button, Card, Divider, Input, Select, Typography } from '@aivenio/aquarium'
 import gridIcon from '@aivenio/aquarium/icons/grid'
 import lightbulbIcon from '@aivenio/aquarium/icons/lightbulb'
+import { ONBOARDING_PLAYGROUND_CONTEXT } from '../../scenarios/consoleContext'
 import { OnboardingStepIndicator } from './OnboardingStepIndicator'
-import { PlaygroundPanelShadow, OnboardingIconTile } from './playgroundShared'
+import {
+  ONBOARDING_CHECKABLE_CARD_CSS,
+  OnboardingIconTile,
+  OnboardingPanelPage,
+  OnboardingPanelTitle,
+  PlaygroundPanelShadow,
+} from './playgroundShared'
 
-export type OnboardingWelcomeProps = {
-  onOpenPlayground: () => void
-  onBrowseServices: () => void
+export type OnboardingStartChoice = 'playground' | 'catalog'
+
+export type OnboardingWelcomeConfig = {
+  projectName: string
+  region: string
 }
 
+export type OnboardingWelcomeProps = {
+  onContinue: (choice: OnboardingStartChoice, config: OnboardingWelcomeConfig) => void
+}
+
+const CARD_RING_CSS = `
+  .onboarding-welcome-cards label.Aquarium-Card\\.Label.ring-2 {
+    --tw-ring-offset-shadow: 0 0 #0000 !important;
+    --tw-ring-shadow: 0 0 #0000 !important;
+    --tw-ring-width: 0 !important;
+    --tw-ring-offset-width: 0 !important;
+    box-shadow: inset 0 0 0 2px var(--aquarium-border-color-primary-default) !important;
+  }
+  .onboarding-welcome-cards label.Aquarium-Card\\.Label {
+    min-width: 0 !important;
+    width: 100%;
+  }
+`
+
+const DEFAULT_PROJECT_NAME = ONBOARDING_PLAYGROUND_CONTEXT.projectName
+
+const REGION_OPTIONS = [
+  { label: 'Europe — Ireland (AWS eu-west-1)', value: 'aws:eu-west-1' },
+  { label: 'US East — N. Virginia (AWS us-east-1)', value: 'aws:us-east-1' },
+  { label: 'Europe — Belgium (GCP europe-west1)', value: 'gcp:europe-west1' },
+] as const
+
 function WelcomeChoiceCard({
+  value,
   icon,
   iconVariant,
   title,
   description,
-  linkLabel,
-  onClick,
 }: {
+  value: OnboardingStartChoice
   icon: typeof lightbulbIcon
   iconVariant: 'recommended' | 'default'
   title: string
   description: string
-  linkLabel: string
-  onClick: () => void
 }) {
   return (
-    <Box style={{ display: 'flex', flexDirection: 'column', height: '100%', minHeight: 0 }}>
-      <Card
-        fullWidth
-        onClick={onClick}
-        title={
-          <Card.Title>
-            <Box style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 12 }}>
-              <OnboardingIconTile icon={icon} variant={iconVariant} />
+    <Card
+      fullWidth
+      checkable
+      value={value}
+      title={
+        <Card.Title>
+          <Box style={{ display: 'flex', alignItems: 'flex-start', gap: 12, minWidth: 0 }}>
+            <OnboardingIconTile icon={icon} variant={iconVariant} />
+            <Box style={{ display: 'flex', flexDirection: 'column', gap: 8, flex: 1, minWidth: 0 }}>
               <Typography.DefaultStrong color="intense">{title}</Typography.DefaultStrong>
+              <Typography.Small color="muted">{description}</Typography.Small>
             </Box>
-          </Card.Title>
-        }
-      >
-        <Box
-          style={{
-            display: 'flex',
-            flexDirection: 'column',
-            gap: 12,
-            flex: 1,
-            minHeight: 120,
-          }}
-        >
-          <Typography.Small color="muted">{description}</Typography.Small>
-          <Link
-            href="#"
-            style={{ marginTop: 'auto', alignSelf: 'flex-start' }}
-            onClick={(e) => {
-              e.preventDefault()
-              onClick()
-            }}
-          >
-            {linkLabel}
-          </Link>
-        </Box>
-      </Card>
-    </Box>
+          </Box>
+        </Card.Title>
+      }
+    />
   )
 }
 
 WelcomeChoiceCard.displayName = 'WelcomeChoiceCard'
 
-export function OnboardingWelcome({ onOpenPlayground, onBrowseServices }: OnboardingWelcomeProps) {
+export function OnboardingWelcome({ onContinue }: OnboardingWelcomeProps) {
+  const [choice, setChoice] = useState<OnboardingStartChoice>('playground')
+  const [projectName, setProjectName] = useState(DEFAULT_PROJECT_NAME)
+  const [region, setRegion] = useState<string>(REGION_OPTIONS[0].value)
+
+  function handleContinue() {
+    onContinue(choice, { projectName: projectName.trim() || DEFAULT_PROJECT_NAME, region })
+  }
+
   return (
-    <Box
-      style={{
-        display: 'flex',
-        justifyContent: 'center',
-        padding: '20px 24px',
-        minHeight: '100%',
-      }}
-    >
+    <OnboardingPanelPage>
+      <style>{`${CARD_RING_CSS}\n${ONBOARDING_CHECKABLE_CARD_CSS}`}</style>
       <PlaygroundPanelShadow>
         <Box
           style={{
@@ -83,13 +99,13 @@ export function OnboardingWelcome({ onOpenPlayground, onBrowseServices }: Onboar
             flexWrap: 'wrap',
             alignItems: 'flex-start',
             justifyContent: 'space-between',
-            gap: 20,
-            padding: '24px 24px 20px',
+            gap: 16,
+            padding: '18px 24px 17px',
             borderBottom: '1px solid var(--aquarium-border-color-muted)',
           }}
         >
           <Box style={{ display: 'flex', flexDirection: 'column', gap: 6, flex: 1, minWidth: 240 }}>
-            <Typography.LargeHeading>Welcome to Aiven</Typography.LargeHeading>
+            <OnboardingPanelTitle>Welcome to Aiven</OnboardingPanelTitle>
             <Typography.Small color="muted">
               How would you like to start? You can change your mind any time.
             </Typography.Small>
@@ -98,34 +114,72 @@ export function OnboardingWelcome({ onOpenPlayground, onBrowseServices }: Onboar
         </Box>
 
         <Box style={{ padding: '20px 24px 24px' }}>
+          <Box className="onboarding-welcome-cards onboarding-checkable-cards">
+            <Card.Group
+              checked={choice}
+              onCheckedChange={({ value }) => setChoice((value as OnboardingStartChoice) ?? 'playground')}
+            >
+              <Box
+                style={{
+                  display: 'grid',
+                  gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
+                  gap: 16,
+                  alignItems: 'stretch',
+                }}
+              >
+                <WelcomeChoiceCard
+                  value="playground"
+                  icon={lightbulbIcon}
+                  iconVariant="recommended"
+                  title="I'm new to managed services"
+                  description="Open a sandboxed playground with sample data and AI guidance. Poke around real services — nothing to provision, nothing billed."
+                />
+                <WelcomeChoiceCard
+                  value="catalog"
+                  icon={gridIcon}
+                  iconVariant="default"
+                  title="I'll choose myself"
+                  description="Browse the full catalog and create a service directly. Best if you already know what you need."
+                />
+              </Box>
+            </Card.Group>
+          </Box>
+
+          <Box style={{ margin: '24px 0' }}>
+            <Divider />
+          </Box>
+
           <Box
             style={{
               display: 'grid',
               gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
               gap: 16,
-              alignItems: 'stretch',
+              marginBottom: 24,
             }}
           >
-            <WelcomeChoiceCard
-              icon={lightbulbIcon}
-              iconVariant="recommended"
-              title="I'm new to managed services"
-              description="Open a sandboxed playground with sample data and AI guidance. Poke around real services — nothing to provision, nothing billed."
-              linkLabel="Open the playground →"
-              onClick={onOpenPlayground}
+            <Input
+              labelText="Project name"
+              description="Name for your first project in this organization"
+              value={projectName}
+              onChange={(e) => setProjectName(e.target.value)}
             />
-            <WelcomeChoiceCard
-              icon={gridIcon}
-              iconVariant="default"
-              title="I'll choose myself"
-              description="Browse the full catalog and create a service directly. Best if you already know what you need."
-              linkLabel="Browse services →"
-              onClick={onBrowseServices}
+            <Select
+              labelText="Region"
+              description="Default region for services in this project"
+              options={[...REGION_OPTIONS]}
+              value={region}
+              onChange={(val) => setRegion(String(val ?? REGION_OPTIONS[0].value))}
             />
+          </Box>
+
+          <Box style={{ display: 'flex', justifyContent: 'flex-end' }}>
+            <Button.Primary type="button" onClick={handleContinue}>
+              {choice === 'playground' ? 'Open the playground' : 'Browse services'}
+            </Button.Primary>
           </Box>
         </Box>
       </PlaygroundPanelShadow>
-    </Box>
+    </OnboardingPanelPage>
   )
 }
 

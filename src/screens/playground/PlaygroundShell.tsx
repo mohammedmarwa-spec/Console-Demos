@@ -28,7 +28,6 @@ export function PlaygroundShell({ children }: PlaygroundShellProps) {
           alignItems: 'center',
           padding: '14px 24px 15px',
           borderBottom: '1px solid var(--aquarium-border-color-muted)',
-          backgroundColor: 'var(--aquarium-background-color-layer)',
         }}
       >
         <AivenConsoleLogo />

@@ -1,7 +1,14 @@
 import { useEffect, useState, type CSSProperties } from 'react'
 import { Box, ProgressBar, Typography } from '@aivenio/aquarium'
 import { ServiceIcon } from '../../components/ServiceIcon'
-import { PG_LOADING_STEPS, type LoadingStep, type LoadingStepStatus } from './playgroundShared'
+import {
+  OnboardingPanelPage,
+  OnboardingPanelTitle,
+  PG_LOADING_STEPS,
+  PlaygroundPanelShadow,
+  type LoadingStep,
+  type LoadingStepStatus,
+} from './playgroundShared'
 
 export type PlaygroundLoadingProps = {
   onComplete: () => void
@@ -111,25 +118,18 @@ export function PlaygroundLoading({ onComplete }: PlaygroundLoadingProps) {
   }, [progress, onComplete])
 
   return (
-    <Box
-      style={{
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        padding: 40,
-        minHeight: '100%',
-      }}
-    >
-      <Box
-        style={{
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          gap: 18,
-          width: '100%',
-          maxWidth: 520,
-        }}
-      >
+    <OnboardingPanelPage>
+      <PlaygroundPanelShadow>
+        <Box
+          style={{
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            gap: 18,
+            width: '100%',
+            padding: '40px 24px',
+          }}
+        >
         <Box style={{ position: 'relative', width: 88, height: 88 }}>
           <Box
             aria-hidden
@@ -158,7 +158,7 @@ export function PlaygroundLoading({ onComplete }: PlaygroundLoadingProps) {
         </Box>
 
         <Box style={{ textAlign: 'center', display: 'flex', flexDirection: 'column', gap: 4 }}>
-          <Typography.LargeHeading>Loading PostgreSQL sample dataset</Typography.LargeHeading>
+          <OnboardingPanelTitle>Loading PostgreSQL sample dataset</OnboardingPanelTitle>
           <Typography.Small color="muted">
             Seeding a realistic dataset so the service is ready to query in seconds.
           </Typography.Small>
@@ -178,8 +178,9 @@ export function PlaygroundLoading({ onComplete }: PlaygroundLoadingProps) {
             <LoadingStepRow key={step.id} step={step} index={index} />
           ))}
         </Box>
-      </Box>
-    </Box>
+        </Box>
+      </PlaygroundPanelShadow>
+    </OnboardingPanelPage>
   )
 }
 

@@ -16,6 +16,7 @@ import { MysqlAcuRolloutModal } from './screens/MysqlAcuRolloutModal'
 import { UPGRADE_PLAN_SERVICE_DATA, type UpgradeTier } from './screens/UpgradeServiceModal'
 import { UpgradeServiceModalV2 } from './screens/UpgradeServiceModalV2'
 import { enrichServicesWithRandomCreatedBy } from './utils/serviceCreatedByDataset'
+import { PLAYGROUND_SAMPLE_SERVICE_ID } from './utils/pgStudioPlaygroundSample'
 
 type View = 'org-home' | 'project-services' | 'service-overview' | 'billing-invoice' | 'playground'
 
@@ -236,6 +237,8 @@ function AppContent() {
   const [overviewServiceId, setOverviewServiceId] = useState<string | null>(() =>
     initialOverviewServiceIdForScenario(activeScenarioId),
   )
+  /** Optional sidebar tab when opening service overview (e.g. PG Studio from playground). */
+  const [overviewInitialSidebarItem, setOverviewInitialSidebarItem] = useState<string | undefined>()
   /** List of services shown on the Services page (newly created ones are appended). */
   const [services, setServices] = useState<ServiceRow[]>(() => getInitialServicesForScenario(activeScenarioId))
 
@@ -262,6 +265,7 @@ function AppContent() {
     } else if (isOnboardingPlaygroundScenario(activeScenarioId)) {
       setOverviewServiceId(null)
       setOverviewServiceType(null)
+      setOverviewInitialSidebarItem(undefined)
       setView('playground')
     } else {
       setOverviewServiceId(null)
@@ -306,6 +310,47 @@ function AppContent() {
     setServiceTypeModalOpen(true)
   }
 
+  function handlePlaygroundSampleReady() {
+    const serviceName = PLAYGROUND_SAMPLE_SERVICE_ID
+    setServices((prev) => {
+      if (prev.some((s) => s.id === serviceName)) return prev
+      return [
+        ...prev,
+        {
+          id: serviceName,
+          serviceName,
+          serviceType: 'PostgreSQL',
+          serviceTypeId: 'postgresql',
+          status: 'Running',
+          nodes: 'Nodes 1',
+          nodeCount: 1,
+          planName: 'Free',
+          planDetails: '1 CPU / 1 GB RAM / 1 GB storage',
+          cloudRegion: 'AWS: eu-west-1',
+          location: 'Europe, Ireland',
+          created: 'Just now',
+          createdByInitials: 'ME',
+          createdByFullName: 'You',
+          iconLetter: 'P',
+          playgroundSampleLoaded: true,
+          cpuCount: 1,
+          ramCapacity: '1 GB',
+          storageCapacity: '1 GB',
+        },
+      ]
+    })
+    setOverviewServiceId(serviceName)
+    setOverviewServiceType('postgresql')
+    setOverviewInitialSidebarItem('pg-studio')
+    setView('service-overview')
+    addToast({
+      message: 'Ecommerce sample loaded — explore your data in PG Studio',
+      icon: tickIcon,
+      duration: 4000,
+      position: 'top-right',
+    })
+  }
+
   function handleCreateSuccess(data?: CreatedServicePayload) {
     setCreationModalOpen(false)
     if (data) {
@@ -342,12 +387,15 @@ function AppContent() {
           serviceTier: data.serviceTier,
           computeType: data.computeType,
           monthlyPrice: data.monthlyPrice,
+          userCreated: true,
         },
       ])
       setOverviewServiceId(data.serviceName)
       setOverviewServiceType(data.serviceTypeId)
+      setOverviewInitialSidebarItem(undefined)
     } else {
       setOverviewServiceType(selectedServiceType)
+      setOverviewInitialSidebarItem(undefined)
     }
     setView('service-overview')
   }
@@ -543,14 +591,21 @@ function AppContent() {
           key={`overview:${overviewServiceId ?? ''}`}
           serviceId={overviewServiceId}
           serviceTypeId={overviewServiceType}
-          initialSidebarItem={activeScenarioId === 'deeptrace-demo' ? 'logs' : undefined}
+          initialSidebarItem={
+            activeScenarioId === 'deeptrace-demo'
+              ? 'logs'
+              : overviewInitialSidebarItem
+          }
           hideSwitchToNewPricingAlert={
             activeScenarioId === 'free-dev-upgrade-v2' ||
             activeScenarioId === 'free-dev-upgrade-v3' ||
             activeScenarioId === 'free-dev-upgrade-v4'
           }
           services={services}
-          onBackToProject={() => setView('project-services')}
+          onBackToProject={() => {
+            setOverviewInitialSidebarItem(undefined)
+            setView('project-services')
+          }}
           onDeleteService={handleDeleteService}
           onChangePlan={handleChangePlan}
           onCreateReplica={() => setCreateReplicaModalOpen(true)}
@@ -575,15 +630,8 @@ function AppContent() {
             setView('project-services')
             openServiceTypeModal()
           }}
-          onPlaygroundReady={() => {
-            setView('project-services')
-            addToast({
-              message: 'PostgreSQL playground is ready — create a service to continue',
-              icon: tickIcon,
-              duration: 4000,
-              position: 'top-right',
-            })
-          }}
+          onSkipToProjectDashboard={() => setView('project-services')}
+          onPlaygroundSampleReady={handlePlaygroundSampleReady}
         />
       )}
 

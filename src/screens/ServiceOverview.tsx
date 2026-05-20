@@ -36,6 +36,7 @@ import { AuditLogsHistogram } from '../components/AuditLogsHistogram'
 import { CompactServiceHeader } from '../components/CompactServiceHeader'
 import { ConsoleHeader } from '../components/ConsoleHeader'
 import { ServiceMetricsBody } from '../components/ServiceMetricsBody'
+import { ServicePgStudioBody } from '../components/ServicePgStudioBody'
 import { ServiceSidebar } from '../components/ServiceSidebar'
 import { NodesCountChip } from '../components/NodesCountChip'
 import { ServiceStatusChip } from '../components/ServiceStatusChip'
@@ -615,6 +616,7 @@ function ServiceOverview({
   const theme = useResolvedTheme()
   const isMySQL = serviceTypeId === 'mysql'
   const isPostgres = serviceTypeId === 'postgresql'
+  const showPgStudio = isMySQL || isPostgres
   /** True for service types that support the ACU / legacy pricing toggle. */
   const hasAcuCapability = isMySQL || isPostgres
   const replicas = services.filter((s) => s.sourceServiceId === (serviceIdProp ?? undefined) && s.replicationRole === 'read_replica')
@@ -684,6 +686,15 @@ function ServiceOverview({
   const [aiAssistantOpen, setAiAssistantOpen] = useState(false)
   const [aiDraft, setAiDraft] = useState('')
   const [aiMessages, setAiMessages] = useState<AiMessage[]>(INITIAL_AI_MESSAGES)
+  /** User-created PG/MySQL services that finished PG Studio setup (leave getting-started). */
+  const [pgStudioSetupCompleteIds, setPgStudioSetupCompleteIds] = useState<Set<string>>(() => new Set())
+  const showPgStudioPlaygroundSample =
+    showPgStudio && Boolean(currentService?.playgroundSampleLoaded)
+  const showPgStudioGettingStarted =
+    showPgStudio &&
+    !showPgStudioPlaygroundSample &&
+    Boolean(currentService?.userCreated) &&
+    !pgStudioSetupCompleteIds.has(serviceIdProp ?? '')
   const aiResponseTimerRef = useRef<number | null>(null)
   const histogramRefreshTimerRef = useRef<number | null>(null)
   const hasMountedRef = useRef(false)
@@ -887,6 +898,12 @@ function ServiceOverview({
       aiResponseTimerRef.current = null
     }
   }, [serviceIdProp, initialSidebarItem])
+
+  useEffect(() => {
+    if (sidebarItem === 'pg-studio' && !showPgStudio) {
+      setSidebarItem('overview')
+    }
+  }, [sidebarItem, showPgStudio])
 
   useEffect(() => {
     if (logTimeRangeMode === 'relative-last-24h') {
@@ -1132,6 +1149,7 @@ function ServiceOverview({
           projectName={PROJECT_NAME}
           serviceName={serviceName}
           activeItem={sidebarItem}
+          showPgStudio={showPgStudio}
           onBackToProject={onBackToProject}
           onNavigate={setSidebarItem}
         />
@@ -1144,15 +1162,36 @@ function ServiceOverview({
             minWidth: 0,
             minHeight: 0,
             padding:
-              sidebarItem === 'logs' && logsTopPadCollapsed
-                ? `0 ${MAIN_CONTENT_SCROLL_PAD}px ${MAIN_CONTENT_SCROLL_PAD}px ${MAIN_CONTENT_SCROLL_PAD}px`
-                : MAIN_CONTENT_SCROLL_PAD,
-            overflow: 'auto',
+              sidebarItem === 'pg-studio'
+                ? 0
+                : sidebarItem === 'logs' && logsTopPadCollapsed
+                  ? `0 ${MAIN_CONTENT_SCROLL_PAD}px ${MAIN_CONTENT_SCROLL_PAD}px ${MAIN_CONTENT_SCROLL_PAD}px`
+                  : MAIN_CONTENT_SCROLL_PAD,
+            overflow: sidebarItem === 'pg-studio' ? 'hidden' : 'auto',
+            display: sidebarItem === 'pg-studio' ? 'flex' : undefined,
+            flexDirection: sidebarItem === 'pg-studio' ? 'column' : undefined,
             overflowAnchor: 'none',
             backgroundColor: 'var(--aquarium-background-color-body)',
           }}
         >
-          {sidebarItem === 'logs' ? (
+          {sidebarItem === 'pg-studio' ? (
+            <ServicePgStudioBody
+              serviceName={serviceName}
+              serviceTypeId={serviceTypeId}
+              serviceVersion={serviceVersion}
+              nodeCount={nodeCount}
+              serviceStatus={currentService?.status ?? 'Running'}
+              showPlaygroundSample={showPgStudioPlaygroundSample}
+              showGettingStarted={showPgStudioGettingStarted}
+              onCompleteGettingStarted={() => {
+                if (serviceIdProp) {
+                  setPgStudioSetupCompleteIds((prev) => new Set(prev).add(serviceIdProp))
+                }
+              }}
+              onBackToProject={onBackToProject}
+              onDeleteService={onDeleteService}
+            />
+          ) : sidebarItem === 'logs' ? (
             <>
               <Box style={{ marginBottom: 16 }}>
                 <CompactServiceHeader
