@@ -1,26 +1,24 @@
-import { Box, Icon } from '@aivenio/aquarium'
-import helpIcon from '@aivenio/aquarium/icons/help'
-import settingsIcon from '@aivenio/aquarium/icons/settings'
+import { Box, Icon, Typography } from '@aivenio/aquarium'
+import containerIcon from '@aivenio/aquarium/icons/container'
+import terraformIcon from '@aivenio/aquarium/icons/terraform'
+import type lightbulbIcon from '@aivenio/aquarium/icons/lightbulb'
 
-function FooterIconButton({ icon, label }: { icon: typeof helpIcon; label: string }) {
+const FOOTER_BUTTON_STYLE = {
+  width: 36,
+  height: 36,
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  border: '1px solid var(--aquarium-border-color-muted)',
+  borderRadius: 4,
+  backgroundColor: 'var(--aquarium-background-color-layer)',
+  cursor: 'default',
+  color: 'var(--aquarium-text-color-muted)',
+} as const
+
+function FooterIconButton({ icon, label }: { icon: typeof lightbulbIcon; label: string }) {
   return (
-    <Box
-      component="button"
-      type="button"
-      aria-label={label}
-      style={{
-        width: 36,
-        height: 36,
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        border: '1px solid var(--aquarium-border-color-muted)',
-        borderRadius: 4,
-        backgroundColor: 'var(--aquarium-background-color-layer)',
-        cursor: 'pointer',
-        color: 'var(--aquarium-text-color-muted)',
-      }}
-    >
+    <Box component="button" type="button" aria-label={label} style={FOOTER_BUTTON_STYLE}>
       <Icon icon={icon} style={{ width: 16, height: 16 }} />
     </Box>
   )
@@ -28,22 +26,26 @@ function FooterIconButton({ icon, label }: { icon: typeof helpIcon; label: strin
 
 FooterIconButton.displayName = 'FooterIconButton'
 
-function FooterPlaceholderButton() {
+function FooterTextButton({ label }: { label: string }) {
   return (
     <Box
-      aria-hidden
+      component="button"
+      type="button"
+      aria-label={label}
       style={{
-        width: 36,
-        height: 36,
-        border: '1px solid var(--aquarium-border-color-muted)',
-        borderRadius: 4,
-        backgroundColor: 'var(--aquarium-background-color-layer)',
+        ...FOOTER_BUTTON_STYLE,
+        fontFamily: '"Roboto Mono", monospace',
+        fontSize: 10,
+        fontWeight: 600,
+        letterSpacing: '0.4px',
       }}
-    />
+    >
+      {label}
+    </Box>
   )
 }
 
-FooterPlaceholderButton.displayName = 'FooterPlaceholderButton'
+FooterTextButton.displayName = 'FooterTextButton'
 
 /** Shared footer for all onboarding / playground shell screens. */
 export function OnboardingFooter() {
@@ -59,22 +61,16 @@ export function OnboardingFooter() {
         paddingTop: 12,
       }}
     >
-      <Box
-        aria-hidden
-        style={{
-          height: 14,
-          width: 338,
-          maxWidth: '100%',
-          borderRadius: 4,
-          backgroundColor: 'var(--aquarium-background-color-muted)',
-          opacity: 0.6,
-        }}
-      />
+      <Box style={{ textAlign: 'center', maxWidth: 338, padding: '0 8px' }}>
+        <Typography.Small color="muted">
+          Start with Console, manage with Aiven developer tools later
+        </Typography.Small>
+      </Box>
       <Box style={{ display: 'flex', gap: 10 }}>
-        <FooterIconButton icon={helpIcon} label="Help" />
-        <FooterIconButton icon={settingsIcon} label="Settings" />
-        <FooterPlaceholderButton />
-        <FooterPlaceholderButton />
+        <FooterIconButton icon={containerIcon} label="Kubernetes" />
+        <FooterIconButton icon={terraformIcon} label="Terraform" />
+        <FooterTextButton label="API" />
+        <FooterTextButton label="MCP" />
       </Box>
     </Box>
   )

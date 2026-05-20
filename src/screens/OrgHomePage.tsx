@@ -20,18 +20,43 @@ import { OrgSidebar } from '../components/OrgSidebar'
 
 const ORG_NAME = 'My Organization'
 
+/** Semantic icon tile tones — token pairs adapt to light/dark via Aquarium CSS variables. */
+type MetricIconTone = 'primary' | 'success' | 'info' | 'warning'
+
+const METRIC_ICON_TONE: Record<
+  MetricIconTone,
+  { iconColor: string; iconBg: string }
+> = {
+  primary: {
+    iconColor: 'var(--aquarium-text-color-primary-graphic)',
+    iconBg: 'var(--aquarium-background-color-primary-muted)',
+  },
+  success: {
+    iconColor: 'var(--aquarium-text-color-success-intense)',
+    iconBg: 'var(--aquarium-background-color-success-muted)',
+  },
+  info: {
+    iconColor: 'var(--aquarium-text-color-info-intense)',
+    iconBg: 'var(--aquarium-background-color-info-muted)',
+  },
+  warning: {
+    iconColor: 'var(--aquarium-text-color-warning-intense)',
+    iconBg: 'var(--aquarium-background-color-warning-muted)',
+  },
+}
+
 // ─── Metric card ─────────────────────────────────────────────────────────────
 
 type MetricCardProps = {
   icon: IconifyIcon
-  iconColor: string
-  iconBg: string
+  tone: MetricIconTone
   label: string
   value: string | number
   detail?: string
 }
 
-function MetricCard({ icon, iconColor, iconBg, label, value, detail }: MetricCardProps) {
+function MetricCard({ icon, tone, label, value, detail }: MetricCardProps) {
+  const { iconColor, iconBg } = METRIC_ICON_TONE[tone]
   return (
     <Box
       style={{
@@ -113,7 +138,14 @@ function ProjectRowItem({ name, serviceCount, region, onOpen }: ProjectRowProps)
             flexShrink: 0,
           }}
         >
-          <Icon icon={applicationsIcon} style={{ width: 18, height: 18, color: '#4e4fce' }} />
+          <Icon
+            icon={applicationsIcon}
+            style={{
+              width: 18,
+              height: 18,
+              color: 'var(--aquarium-text-color-primary-graphic)',
+            }}
+          />
         </Box>
         <Box style={{ minWidth: 0 }}>
           <Link href="#" onClick={(e) => { e.preventDefault(); onOpen() }}>
@@ -214,15 +246,37 @@ function BillingSummary({ onViewInvoice }: BillingSummaryProps) {
 
 // ─── Members list ──────────────────────────────────────────────────────────────
 
+type MemberAvatarTone = 'primary' | 'info' | 'success'
+
+const MEMBER_AVATAR_TONE: Record<
+  MemberAvatarTone,
+  { backgroundColor: string; color: string }
+> = {
+  primary: {
+    backgroundColor: 'var(--aquarium-background-color-primary-graphic)',
+    color: 'var(--aquarium-text-color-opposite-default)',
+  },
+  info: {
+    backgroundColor: 'var(--aquarium-background-color-info-graphic)',
+    color: 'var(--aquarium-text-color-opposite-default)',
+  },
+  success: {
+    backgroundColor: 'var(--aquarium-background-color-success-graphic)',
+    color: 'var(--aquarium-text-color-opposite-default)',
+  },
+}
+
 type MemberRowProps = {
   initials: string
   name: string
   email: string
   role: string
-  avatarColor: string
+  avatarTone: MemberAvatarTone
 }
 
-function MemberRow({ initials, name, email, role, avatarColor }: MemberRowProps) {
+function MemberRow({ initials, name, email, role, avatarTone }: MemberRowProps) {
+  const avatarStyle = MEMBER_AVATAR_TONE[avatarTone]
+
   return (
     <Box
       style={{
@@ -241,11 +295,11 @@ function MemberRow({ initials, name, email, role, avatarColor }: MemberRowProps)
             width: 36,
             height: 36,
             borderRadius: '50%',
-            backgroundColor: avatarColor,
+            backgroundColor: avatarStyle.backgroundColor,
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            color: '#fff',
+            color: avatarStyle.color,
             fontSize: 13,
             fontWeight: 600,
             flexShrink: 0,
@@ -325,29 +379,25 @@ function OrgHomePage({ onProjectsClick, onBillingClick, onInvoiceClick }: OrgHom
           <Box style={{ display: 'flex', gap: 16, marginBottom: 16 }}>
             <MetricCard
               icon={applicationsIcon}
-              iconColor="#4e4fce"
-              iconBg="#eef1ff"
+              tone="primary"
               label="Projects"
               value={1}
             />
             <MetricCard
               icon={databaseIcon}
-              iconColor="#16a34a"
-              iconBg="#f0fdf4"
+              tone="success"
               label="Services running"
               value={1}
             />
             <MetricCard
               icon={appUsersIcon}
-              iconColor="#0369a1"
-              iconBg="#f0f9ff"
+              tone="info"
               label="Members"
               value={3}
             />
             <MetricCard
               icon={bankAccountIcon}
-              iconColor="#b45309"
-              iconBg="var(--aquarium-background-color-warning-muted)"
+              tone="warning"
               label="Current billing"
               value="$23.80"
               detail="USD · Feb 2026"
@@ -379,21 +429,21 @@ function OrgHomePage({ onProjectsClick, onBillingClick, onInvoiceClick }: OrgHom
                   name="Elena Ivanova"
                   email="elena@bigco.io"
                   role="Admin"
-                  avatarColor="#222f95"
+                  avatarTone="primary"
                 />
                 <MemberRow
                   initials="JS"
                   name="Jake Sullivan"
                   email="jake@bigco.io"
                   role="Developer"
-                  avatarColor="#0369a1"
+                  avatarTone="info"
                 />
                 <MemberRow
                   initials="MP"
                   name="Maria Pereira"
                   email="maria@bigco.io"
                   role="Developer"
-                  avatarColor="#16a34a"
+                  avatarTone="success"
                 />
               </Section>
             </Box>
@@ -405,8 +455,12 @@ function OrgHomePage({ onProjectsClick, onBillingClick, onInvoiceClick }: OrgHom
             actions={{ text: 'Go to billing', onClick: () => onBillingClick?.() }}
           >
             <Box style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 16 }}>
-              <Icon icon={tickCircleIcon} style={{ width: 16, height: 16, color: '#16a34a' }} />
-              <Box style={{ color: '#4a4b57' }}>
+              <Icon
+                icon={tickCircleIcon}
+                color="success-intense"
+                style={{ width: 16, height: 16 }}
+              />
+              <Box style={{ color: 'var(--aquarium-text-color-default)' }}>
                 <Typography.Small>Payment method on file · Visa ending in 4242</Typography.Small>
               </Box>
             </Box>

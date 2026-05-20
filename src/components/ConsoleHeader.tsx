@@ -73,7 +73,9 @@ function NavButton({ label, active = false, hasDropdown = false }: NavButtonProp
         display: 'flex',
         alignItems: 'center',
         gap: 4,
-        color: active ? '#292a31' : '#4a4b57',
+        color: active
+          ? 'var(--aquarium-text-color-default)'
+          : 'var(--aquarium-text-color-muted)',
         fontWeight: active ? 600 : 400,
         fontSize: 14,
         lineHeight: '20px',
@@ -117,17 +119,32 @@ function OrgSelector({ orgName, orgSublabel }: OrgSelectorProps) {
           }}
         >
           <Box style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-            <Icon icon={officeIcon} style={{ width: 20, height: 20, color: '#4a4b57' }} />
+            <Icon icon={officeIcon} color="muted" style={{ width: 20, height: 20 }} />
           </Box>
           <Box style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 0 }}>
-            <Box component="span" style={{ color: '#292a31', fontSize: 13, lineHeight: '16px', fontWeight: 600 }}>
+            <Box
+              component="span"
+              style={{
+                color: 'var(--aquarium-text-color-default)',
+                fontSize: 13,
+                lineHeight: '16px',
+                fontWeight: 600,
+              }}
+            >
               {orgName}
             </Box>
-            <Box component="span" style={{ color: '#4a4b57', fontSize: 11, lineHeight: '14px' }}>
+            <Box
+              component="span"
+              style={{
+                color: 'var(--aquarium-text-color-muted)',
+                fontSize: 11,
+                lineHeight: '14px',
+              }}
+            >
               {orgSublabel}
             </Box>
           </Box>
-          <Icon icon={chevronDownIcon} style={{ width: 12, height: 12, color: '#4a4b57' }} />
+          <Icon icon={chevronDownIcon} color="muted" style={{ width: 12, height: 12 }} />
         </Box>
       </DropdownMenu.Trigger>
       <DropdownMenu.Items>
@@ -273,10 +290,10 @@ export function ConsoleHeader({
             alignItems: 'center',
             justifyContent: 'center',
             borderRadius: 4,
-            color: '#4a4b57',
+            color: 'var(--aquarium-text-color-muted)',
           }}
         >
-          <Icon icon={notificationsIcon} style={{ width: 20, height: 20 }} />
+          <Icon icon={notificationsIcon} color="muted" style={{ width: 20, height: 20 }} />
         </Box>
 
         {/* Help icon */}
@@ -293,10 +310,10 @@ export function ConsoleHeader({
             alignItems: 'center',
             justifyContent: 'center',
             borderRadius: 4,
-            color: '#4a4b57',
+            color: 'var(--aquarium-text-color-muted)',
           }}
         >
-          <Icon icon={helpIcon} style={{ width: 20, height: 20 }} />
+          <Icon icon={helpIcon} color="muted" style={{ width: 20, height: 20 }} />
         </Box>
 
         {/* User avatar */}
