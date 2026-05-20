@@ -11,6 +11,14 @@ export type Scenario = {
 }
 
 export const SCENARIOS: Scenario[] = [
+  // Onboarding
+  {
+    id: 'onboarding-playground',
+    label: 'Playground',
+    group: 'Onboarding',
+    description: 'Just signed up — personal org, playground project, no services',
+  },
+
   // Service Creation
   { id: 'empty-state',             label: 'Empty state',                        group: 'Service Creation',   description: 'No services exist yet' },
   { id: 'first-time-user',         label: 'First-time user',                    group: 'Service Creation',   description: 'Onboarding state, no services' },

@@ -9,3 +9,12 @@ export { ScenarioTrigger } from './ScenarioTrigger'
 
 export { SCENARIOS, getScenarioById, getGroups, getScenariosByGroup } from './scenarioConfig'
 export type { Scenario } from './scenarioConfig'
+
+export {
+  DEFAULT_CONSOLE_CONTEXT,
+  ONBOARDING_PLAYGROUND_CONTEXT,
+  ONBOARDING_PLAYGROUND_SCENARIO_ID,
+  getConsoleContext,
+  isOnboardingPlaygroundScenario,
+} from './consoleContext'
+export type { ConsoleContext } from './consoleContext'

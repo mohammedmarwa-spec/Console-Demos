@@ -9,14 +9,15 @@ import ServiceOverview from './screens/ServiceOverview'
 import BillingInvoiceDetail from './screens/BillingInvoiceDetail'
 import OrgHomePage from './screens/OrgHomePage'
 import ServiceTypeSelectModal, { getServiceTypeDisplayName, type ServiceTypeId } from './screens/ServiceTypeSelectModal'
-import { ScenarioProvider, ScenarioPanel, ScenarioTrigger, useScenario } from './scenarios'
+import { getConsoleContext, isOnboardingPlaygroundScenario, ScenarioProvider, ScenarioPanel, ScenarioTrigger, useScenario } from './scenarios'
+import { PlaygroundOnboarding } from './screens/playground'
 import { ThemeProvider } from './theme'
 import { MysqlAcuRolloutModal } from './screens/MysqlAcuRolloutModal'
 import { UPGRADE_PLAN_SERVICE_DATA, type UpgradeTier } from './screens/UpgradeServiceModal'
 import { UpgradeServiceModalV2 } from './screens/UpgradeServiceModalV2'
 import { enrichServicesWithRandomCreatedBy } from './utils/serviceCreatedByDataset'
 
-type View = 'org-home' | 'project-services' | 'service-overview' | 'billing-invoice'
+type View = 'org-home' | 'project-services' | 'service-overview' | 'billing-invoice' | 'playground'
 
 // ─── Scenario service data ────────────────────────────────────────────────────
 // Define what each scenario's initial service list looks like.
@@ -178,6 +179,7 @@ function getInitialServicesForScenario(scenarioId: string | null): ServiceRow[] 
   switch (scenarioId) {
     case 'empty-state':
     case 'first-time-user':
+    case 'onboarding-playground':
       return []
     case 'many-services':
       return withRandomCreatedByAvatars(shuffle([...MANY_SERVICES]))
@@ -199,6 +201,7 @@ function getInitialServicesForScenario(scenarioId: string | null): ServiceRow[] 
 function initialViewForScenario(scenarioId: string | null): View {
   if (scenarioId === 'invoice-mixed-services' || scenarioId === 'invoice-plan-acumixed') return 'billing-invoice'
   if (scenarioId === 'deeptrace-demo') return 'service-overview'
+  if (isOnboardingPlaygroundScenario(scenarioId)) return 'playground'
   return 'project-services'
 }
 
@@ -210,15 +213,17 @@ function initialOverviewServiceTypeForScenario(scenarioId: string | null): Servi
   return scenarioId === 'deeptrace-demo' ? 'postgresql' : null
 }
 
-const SUBTITLE = (
-  <Box style={{ color: '#4a4b57' }}>
-    <Typography.Small>Project: ux-tests · Organization: BigCo Ltd.</Typography.Small>
-  </Box>
-)
-
 function AppContent() {
   const addToast = useToast()
   const { activeScenarioId } = useScenario()
+  const consoleContext = getConsoleContext(activeScenarioId)
+  const modalSubtitle = (
+    <Box style={{ color: '#4a4b57' }}>
+      <Typography.Small>
+        Project: {consoleContext.projectName} · Organization: {consoleContext.orgName}
+      </Typography.Small>
+    </Box>
+  )
   const [view, setView] = useState<View>(() => initialViewForScenario(activeScenarioId))
   const [serviceTypeModalOpen, setServiceTypeModalOpen] = useState(false)
   const [creationModalOpen, setCreationModalOpen] = useState(false)
@@ -254,6 +259,10 @@ function AppContent() {
       setOverviewServiceId(DEEPTRACE_DEMO_PG_ID)
       setOverviewServiceType('postgresql')
       setView('service-overview')
+    } else if (isOnboardingPlaygroundScenario(activeScenarioId)) {
+      setOverviewServiceId(null)
+      setOverviewServiceType(null)
+      setView('playground')
     } else {
       setOverviewServiceId(null)
       setOverviewServiceType(null)
@@ -559,6 +568,25 @@ function AppContent() {
         />
       )}
 
+      {view === 'playground' && (
+        <PlaygroundOnboarding
+          onBackToSetup={() => setView('org-home')}
+          onSetUpProject={() => {
+            setView('project-services')
+            openServiceTypeModal()
+          }}
+          onPlaygroundReady={() => {
+            setView('project-services')
+            addToast({
+              message: 'PostgreSQL playground is ready — create a service to continue',
+              icon: tickIcon,
+              duration: 4000,
+              position: 'top-right',
+            })
+          }}
+        />
+      )}
+
       {view === 'project-services' && (
         <ProjectServices
           services={services}
@@ -644,7 +672,7 @@ function AppContent() {
       {/* Edit / Upgrade plan modal — opened from ServiceOverview "Change" / "Upgrade" button */}
       <Modal
         title={editModalTitle}
-        subtitle={SUBTITLE}
+        subtitle={modalSubtitle}
         open={editModalOpen}
         onClose={() => setEditModalOpen(false)}
         size="full"
@@ -677,10 +705,11 @@ function AppContent() {
         open={serviceTypeModalOpen}
         onClose={() => setServiceTypeModalOpen(false)}
         onSelectService={openCreationModal}
+        subtitle={modalSubtitle}
       />
       <Modal
         title={createModalTitle}
-        subtitle={SUBTITLE}
+        subtitle={modalSubtitle}
         open={creationModalOpen}
         onClose={closeCreationModal}
         size="full"

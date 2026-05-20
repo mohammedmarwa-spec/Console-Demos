@@ -3,7 +3,8 @@ import notificationsIcon from '@aivenio/aquarium/icons/notifications'
 import helpIcon from '@aivenio/aquarium/icons/help'
 import officeIcon from '@aivenio/aquarium/icons/office'
 import chevronDownIcon from '@aivenio/aquarium/icons/chevronDown'
-import aivenConsoleLogo from '../assets/aiven-console-logo.svg'
+import { getAivenIcon } from '../assets/icons/aivenIcon'
+import { useResolvedTheme } from '../theme/ThemeProvider'
 
 export type NavItem = 'home' | 'projects' | 'tools' | 'billing' | 'support' | 'admin'
 
@@ -26,9 +27,15 @@ export type ConsoleHeaderProps = {
 
 // ─── Aiven Console Logo ───────────────────────────────────────────────────────
 
-function AivenConsoleLogo() {
+const CRAB_ASPECT = 230 / 202
+
+export function AivenConsoleLogo({ width = 32 }: { width?: number }) {
+  const theme = useResolvedTheme()
+  const height = Math.round(width / CRAB_ASPECT)
+
   return (
     <Box
+      aria-label="Aiven"
       style={{
         flexShrink: 0,
         userSelect: 'none',
@@ -36,10 +43,9 @@ function AivenConsoleLogo() {
         alignItems: 'center',
       }}
     >
-      <img
-        src={aivenConsoleLogo}
-        alt="Aiven Console"
-        style={{ height: 32, width: 'auto', display: 'block' }}
+      <Icon
+        icon={getAivenIcon(theme)}
+        style={{ width, height, display: 'block', flexShrink: 0 }}
       />
     </Box>
   )

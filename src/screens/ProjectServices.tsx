@@ -1,10 +1,13 @@
 import { useState, useMemo, useEffect, useRef, useCallback, Fragment, useContext, type MouseEvent as ReactMouseEvent } from 'react'
+import { ScenarioContext } from '../scenarios/ScenarioContext'
 import { CalendarDateTime } from '@internationalized/date'
 import { DateRangePickerStateContext as AriaDateRangePickerStateContext } from 'react-aria-components'
 import {
+  Alert,
   Box,
   Breadcrumbs,
   Button,
+  Card,
   Checkbox,
   CheckboxGroup,
   DataTable,
@@ -33,12 +36,11 @@ import proPlansIcon from '@aivenio/aquarium/icons/proPlans'
 import exportIcon from '@aivenio/aquarium/icons/export'
 import { ConsoleHeader } from '../components/ConsoleHeader'
 import { ProjectSidebar } from '../components/ProjectSidebar'
+import { getConsoleContext, isOnboardingPlaygroundScenario } from '../scenarios'
 import { NodesCountChip } from '../components/NodesCountChip'
 import { ServiceStatusChip } from '../components/ServiceStatusChip'
 import { ServiceIcon } from '../components/ServiceIcon'
 import type { ServiceTypeId } from './ServiceTypeSelectModal'
-
-const PROJECT_NAME = 'ux-tests'
 
 export type ServiceRow = {
   id: string
@@ -929,6 +931,61 @@ function EmptyState({ onCreateServiceClick }: { onCreateServiceClick: () => void
 
 EmptyState.displayName = 'EmptyState'
 
+function PlaygroundEmptyState({ onCreateServiceClick }: { onCreateServiceClick: () => void }) {
+  return (
+    <Box style={{ display: 'flex', flexDirection: 'column', gap: 24, maxWidth: 640 }}>
+      <Alert type="information">
+        You have $300 in trial credits to explore services in your playground project.
+      </Alert>
+      <Card
+        fullWidth
+        title={
+          <Card.Title>
+            <Typography.LargeHeading>Welcome to your playground</Typography.LargeHeading>
+          </Card.Title>
+        }
+      >
+        <Box
+          style={{
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            gap: 16,
+            textAlign: 'center',
+            padding: '24px 8px 8px',
+          }}
+        >
+          <Box
+            aria-hidden="true"
+            style={{
+              width: 80,
+              height: 80,
+              borderRadius: 20,
+              background:
+                'linear-gradient(135deg, var(--aquarium-background-color-primary-muted) 0%, var(--aquarium-background-color-muted) 100%)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}
+          >
+            <Box component="span" style={{ fontSize: 36 }}>☁</Box>
+          </Box>
+          <Box style={{ maxWidth: 400 }}>
+            <Typography.Default color="muted">
+              Your playground project is ready. Create a free service to start exploring Aiven.
+            </Typography.Default>
+          </Box>
+          <Button.Primary type="button" onClick={onCreateServiceClick}>
+            Create service
+          </Button.Primary>
+        </Box>
+      </Card>
+    </Box>
+  )
+}
+
+PlaygroundEmptyState.displayName = 'PlaygroundEmptyState'
+
 // ─── Main component ───────────────────────────────────────────────────────────
 
 type ProjectServicesProps = {
@@ -948,6 +1005,11 @@ type ProjectServicesProps = {
 type ProjectPageId = 'services' | 'observability' | 'audit-logs'
 
 function ProjectServices({ services, onCreateServiceClick, onServiceClick, onDeleteService, onPlanAction, onBillingClick, onOrgHomeClick }: ProjectServicesProps) {
+  const activeScenarioId = useContext(ScenarioContext)?.activeScenarioId ?? null
+  const consoleContext = getConsoleContext(activeScenarioId)
+  const isOnboardingPlayground = isOnboardingPlaygroundScenario(activeScenarioId)
+  const projectName = consoleContext.projectName
+
   const [activeProjectPage, setActiveProjectPage] = useState<ProjectPageId>('services')
   const [hoveredServiceId, setHoveredServiceId] = useState<string | null>(null)
   const [filterOpen, setFilterOpen] = useState(false)
@@ -1040,11 +1102,19 @@ function ProjectServices({ services, onCreateServiceClick, onServiceClick, onDel
         flexDirection: 'column',
       }}
     >
-      <ConsoleHeader activeNav="projects" onHomeClick={onOrgHomeClick} onBillingClick={onBillingClick} onProjectsClick={onOrgHomeClick} />
+      <ConsoleHeader
+        activeNav="projects"
+        orgName={consoleContext.orgName}
+        orgSublabel={consoleContext.orgSublabel}
+        userInitials={consoleContext.userInitials}
+        onHomeClick={onOrgHomeClick}
+        onBillingClick={onBillingClick}
+        onProjectsClick={onOrgHomeClick}
+      />
 
       <Box style={{ display: 'flex', flex: 1, minHeight: 0 }}>
         <ProjectSidebar
-          projectName={PROJECT_NAME}
+          projectName={projectName}
           activeItem={activeProjectPage}
           onBillingClick={onBillingClick}
           onItemClick={handleProjectSidebarItemClick}
@@ -1081,7 +1151,7 @@ function ProjectServices({ services, onCreateServiceClick, onServiceClick, onDel
                     Projects
                   </Link>
                 </Breadcrumbs.Crumb>,
-                <Breadcrumbs.Crumb key="project">{PROJECT_NAME}</Breadcrumbs.Crumb>,
+                <Breadcrumbs.Crumb key="project">{projectName}</Breadcrumbs.Crumb>,
                 <Breadcrumbs.Crumb key="page">
                   {activeProjectPage === 'services'
                     ? 'Services'
@@ -1118,7 +1188,11 @@ function ProjectServices({ services, onCreateServiceClick, onServiceClick, onDel
               <AuditLogsSection />
             )
           ) : isEmpty ? (
-            <EmptyState onCreateServiceClick={onCreateServiceClick} />
+            isOnboardingPlayground ? (
+              <PlaygroundEmptyState onCreateServiceClick={onCreateServiceClick} />
+            ) : (
+              <EmptyState onCreateServiceClick={onCreateServiceClick} />
+            )
           ) : (
             <>
               {/* Toolbar */}

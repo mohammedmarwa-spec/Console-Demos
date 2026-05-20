@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react'
 import { Box, Modal, StatusChip, Typography } from '@aivenio/aquarium'
 import applicationsIcon from '@aivenio/aquarium/icons/applications'
 import { ServiceIcon } from '../components/ServiceIcon'
@@ -51,6 +52,8 @@ type ServiceTypeSelectModalProps = {
   open: boolean
   onClose: () => void
   onSelectService: (serviceType: ServiceTypeId) => void
+  /** Project and org line under the modal title (defaults to ux-tests / BigCo Ltd.). */
+  subtitle?: ReactNode
 }
 
 
@@ -58,15 +61,18 @@ function ServiceTypeSelectModal({
   open,
   onClose,
   onSelectService,
+  subtitle,
 }: ServiceTypeSelectModalProps) {
+  const defaultSubtitle = (
+    <Box style={{ color: '#4a4b57' }}>
+      <Typography.Small>Project: ux-tests · Organization: BigCo Ltd.</Typography.Small>
+    </Box>
+  )
+
   return (
     <Modal
       title="Select service type"
-      subtitle={
-        <Box style={{ color: '#4a4b57' }}>
-          <Typography.Small>Project: ux-tests · Organization: BigCo Ltd.</Typography.Small>
-        </Box>
-      }
+      subtitle={subtitle ?? defaultSubtitle}
       open={open}
       onClose={onClose}
       size="full"
