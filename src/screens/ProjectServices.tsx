@@ -1085,7 +1085,7 @@ function ProjectServices({ services, onCreateServiceClick, onServiceClick, onDel
             <PageHeader
               title={
                 activeProjectPage === 'services'
-                  ? 'Services'
+                  ? 'Project overview'
                   : activeProjectPage === 'observability'
                   ? 'Observability'
                   : 'Audit logs'
@@ -1104,7 +1104,7 @@ function ProjectServices({ services, onCreateServiceClick, onServiceClick, onDel
                 <Breadcrumbs.Crumb key="project">{projectName}</Breadcrumbs.Crumb>,
                 <Breadcrumbs.Crumb key="page">
                   {activeProjectPage === 'services'
-                    ? 'Services'
+                    ? 'Project overview'
                     : activeProjectPage === 'observability'
                     ? 'Observability'
                     : 'Audit logs'}

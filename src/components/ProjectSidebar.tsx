@@ -13,7 +13,7 @@ import type { IconifyIcon } from '@iconify/react'
 
 const NAV_ITEMS: { label: string; icon: IconifyIcon; id: string }[] = [
   { id: 'get-started', label: 'Get started', icon: clipboardCheckIcon },
-  { id: 'services', label: 'Services', icon: databaseIcon },
+  { id: 'services', label: 'Project overview', icon: databaseIcon },
   { id: 'applications', label: 'Applications', icon: applicationsIcon },
   { id: 'integration-endpoints', label: 'Integration endpoints', icon: integrationsIcon },
   { id: 'vpcs', label: 'VPCs', icon: cloudIcon },

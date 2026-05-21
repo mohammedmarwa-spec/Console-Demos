@@ -16,9 +16,9 @@ import integrationsIcon from '@aivenio/aquarium/icons/integrations'
 import mapIcon from '@aivenio/aquarium/icons/map'
 import proPlansIcon from '@aivenio/aquarium/icons/proPlans'
 import sendIcon from '@aivenio/aquarium/icons/send'
-import smallPlusIcon from '@aivenio/aquarium/icons/smallPlus'
 import toolsIcon from '@aivenio/aquarium/icons/tools'
 import type { IconProps } from '@aivenio/aquarium'
+import aivenStudioBannerUrl from '../../assets/playground/aiven-studio-banner.svg'
 
 type EcosystemAction = {
   id: string
@@ -64,59 +64,13 @@ function StudioBannerGraphic() {
   return (
     <Box
       aria-hidden
-      style={{
-        position: 'relative',
-        width: 119,
-        height: 100,
-        flexShrink: 0,
-      }}
-    >
-      <Box
-        component="span"
-        style={{
-          position: 'absolute',
-          left: 7,
-          top: 15,
-          fontSize: 34,
-          fontWeight: 600,
-          lineHeight: 1,
-          color: 'var(--aquarium-text-color-primary-default)',
-          transform: 'rotate(24deg)',
-          fontFamily: 'ui-monospace, Menlo, Monaco, Consolas, monospace',
-        }}
-      >
-        {'{'}
-      </Box>
-      <Box
-        component="span"
-        style={{
-          position: 'absolute',
-          left: 50,
-          top: 5,
-          fontSize: 28,
-          fontWeight: 600,
-          lineHeight: 1,
-          color: 'var(--aquarium-text-color-info-default, #2e6bd8)',
-          transform: 'rotate(106deg)',
-          fontFamily: 'ui-monospace, Menlo, Monaco, Consolas, monospace',
-        }}
-      >
-        {'<'}
-      </Box>
-      <Box
-        component="span"
-        style={{
-          position: 'absolute',
-          left: 55,
-          top: 42,
-          fontSize: 40,
-          lineHeight: 1,
-          color: 'var(--aquarium-text-color-muted)',
-        }}
-      >
-        ✦
-      </Box>
-    </Box>
+      component="img"
+      src={aivenStudioBannerUrl}
+      alt=""
+      width={119}
+      height={100}
+      style={{ width: 119, height: 100, flexShrink: 0, display: 'block' }}
+    />
   )
 }
 
@@ -254,9 +208,17 @@ export function PlaygroundEcosystemServices({
           borderRight: '1px solid var(--aquarium-border-color-default)',
         }}
       >
-        <Box style={{ flexShrink: 0, padding: '24px 24px 0' }}>
+        <Box
+          style={{
+            flexShrink: 0,
+            padding: '24px 24px 0',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: 24,
+          }}
+        >
           <PageHeader
-            title="Services"
+            title="Project overview"
             breadcrumbs={[
               <Breadcrumbs.Crumb key="org">
                 <Link
@@ -270,17 +232,17 @@ export function PlaygroundEcosystemServices({
                 </Link>
               </Breadcrumbs.Crumb>,
               <Breadcrumbs.Crumb key="project">{projectName}</Breadcrumbs.Crumb>,
-              <Breadcrumbs.Crumb key="services">Services</Breadcrumbs.Crumb>,
+              <Breadcrumbs.Crumb key="page">Project overview</Breadcrumbs.Crumb>,
             ]}
             secondaryAction={{ text: 'Deploy app', onClick: () => {} }}
             primaryAction={{ text: 'Create service', onClick: onCreateServiceClick }}
           />
-        </Box>
-        <Box className="playground-ecosystem-tabs" style={{ flexShrink: 0, padding: '0 24px' }}>
-          <Tabs value={activeTab} onChange={(value) => setActiveTab(value as StudioTab)}>
-            <Tabs.Tab title="Aiven Studio" value="aiven-studio" />
-            <Tabs.Tab title="Services" value="services" />
-          </Tabs>
+          <Box className="playground-ecosystem-tabs">
+            <Tabs value={activeTab} onChange={(value) => setActiveTab(value as StudioTab)}>
+              <Tabs.Tab title="Aiven Studio" value="aiven-studio" />
+              <Tabs.Tab title="Services" value="services" />
+            </Tabs>
+          </Box>
         </Box>
 
         {/* Tab panels */}
@@ -305,15 +267,7 @@ export function PlaygroundEcosystemServices({
                 padding: '0 16px',
               }}
             >
-              {/* Hero + Create */}
-              <Box style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 24 }}>
-                <StudioBannerGraphic />
-                <Box style={{ paddingTop: 16 }}>
-                  <Button.Primary type="button" onClick={onCreateServiceClick} icon={smallPlusIcon}>
-                    Create
-                  </Button.Primary>
-                </Box>
-              </Box>
+              <StudioBannerGraphic />
 
               {/* Let's get you building */}
               <Box style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
