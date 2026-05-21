@@ -1,12 +1,20 @@
-import { useState } from 'react'
+import { useMemo, useState, type ReactNode } from 'react'
 import { Box, Button, Card, Divider, Input, Select, Typography } from '@aivenio/aquarium'
-import gridIcon from '@aivenio/aquarium/icons/grid'
 import lightbulbIcon from '@aivenio/aquarium/icons/lightbulb'
 import { ONBOARDING_PLAYGROUND_CONTEXT } from '../../scenarios/consoleContext'
+import {
+  findRegionBySelectValue,
+  formatRegionSelectValue,
+  REGIONS_BY_CLOUD,
+  regionsToGroupedSelectOptions,
+  type CloudProviderId,
+  type Region,
+} from '../serviceRegions'
 import { OnboardingStepIndicator } from './OnboardingStepIndicator'
 import {
   ONBOARDING_CHECKABLE_CARD_CSS,
   ONBOARDING_CHECKABLE_CARD_RING_CSS,
+  OnboardingCatalogIconTile,
   OnboardingIconTile,
   OnboardingPanelPage,
   OnboardingPanelTitle,
@@ -26,22 +34,46 @@ export type OnboardingWelcomeProps = {
 
 const DEFAULT_PROJECT_NAME = ONBOARDING_PLAYGROUND_CONTEXT.projectName
 
-const REGION_OPTIONS = [
-  { label: 'Europe — Ireland (AWS eu-west-1)', value: 'aws:eu-west-1' },
-  { label: 'US East — N. Virginia (AWS us-east-1)', value: 'aws:us-east-1' },
-  { label: 'Europe — Belgium (GCP europe-west1)', value: 'gcp:europe-west1' },
-] as const
+function pickRegion(cloud: CloudProviderId, id: string): Region {
+  const region = REGIONS_BY_CLOUD[cloud].find((r) => r.id === id)
+  if (!region) throw new Error(`Unknown region: ${cloud}/${id}`)
+  return region
+}
+
+/** Curated regions for onboarding — grouped by continent in the Select. */
+const ONBOARDING_REGION_PICKS: Array<[CloudProviderId, string]> = [
+  ['aws', 'eu-west-1'],
+  ['aws', 'eu-central-1'],
+  ['aws', 'eu-west-2'],
+  ['google', 'europe-west1'],
+  ['google', 'europe-west4'],
+  ['azure', 'westeurope'],
+  ['aws', 'us-east-1'],
+  ['aws', 'us-west-2'],
+  ['aws', 'ca-central-1'],
+  ['google', 'us-central1'],
+  ['google', 'us-east1'],
+  ['aws', 'ap-southeast-1'],
+  ['aws', 'ap-northeast-1'],
+  ['google', 'asia-southeast1'],
+  ['aws', 'ap-southeast-2'],
+  ['google', 'australia-southeast1'],
+]
+
+const ONBOARDING_REGIONS: Region[] = ONBOARDING_REGION_PICKS.map(([cloud, id]) => pickRegion(cloud, id))
 
 function WelcomeChoiceCard({
   value,
   icon,
   iconVariant,
+  iconTile,
   title,
   description,
 }: {
   value: OnboardingStartChoice
-  icon: typeof lightbulbIcon
-  iconVariant: 'recommended' | 'default'
+  icon?: typeof lightbulbIcon
+  iconVariant?: 'recommended' | 'default'
+  iconTile?: ReactNode
   title: string
   description: string
 }) {
@@ -53,7 +85,9 @@ function WelcomeChoiceCard({
       title={
         <Card.Title>
           <Box style={{ display: 'flex', alignItems: 'flex-start', gap: 12, minWidth: 0 }}>
-            <OnboardingIconTile icon={icon} variant={iconVariant} />
+            {iconTile ?? (
+              <OnboardingIconTile icon={icon!} variant={iconVariant ?? 'default'} />
+            )}
             <Box style={{ display: 'flex', flexDirection: 'column', gap: 8, flex: 1, minWidth: 0 }}>
               <Typography.DefaultStrong color="intense">{title}</Typography.DefaultStrong>
               <Typography.Small color="muted">{description}</Typography.Small>
@@ -70,10 +104,21 @@ WelcomeChoiceCard.displayName = 'WelcomeChoiceCard'
 export function OnboardingWelcome({ onContinue }: OnboardingWelcomeProps) {
   const [choice, setChoice] = useState<OnboardingStartChoice>('playground')
   const [projectName, setProjectName] = useState(DEFAULT_PROJECT_NAME)
-  const [region, setRegion] = useState<string>(REGION_OPTIONS[0].value)
+  const [regionId, setRegionId] = useState(ONBOARDING_REGIONS[0].id)
+  const groupedRegionOptions = useMemo(
+    () => regionsToGroupedSelectOptions(ONBOARDING_REGIONS),
+    [],
+  )
+  const selectedRegion = useMemo(
+    () => ONBOARDING_REGIONS.find((r) => r.id === regionId) ?? ONBOARDING_REGIONS[0],
+    [regionId],
+  )
 
   function handleContinue() {
-    onContinue(choice, { projectName: projectName.trim() || DEFAULT_PROJECT_NAME, region })
+    onContinue(choice, {
+      projectName: projectName.trim() || DEFAULT_PROJECT_NAME,
+      region: regionId,
+    })
   }
 
   return (
@@ -123,8 +168,7 @@ export function OnboardingWelcome({ onContinue }: OnboardingWelcomeProps) {
                 />
                 <WelcomeChoiceCard
                   value="catalog"
-                  icon={gridIcon}
-                  iconVariant="default"
+                  iconTile={<OnboardingCatalogIconTile />}
                   title="I'll choose myself"
                   description="Browse the full catalog and create a service directly. Best if you already know what you need."
                 />
@@ -153,15 +197,18 @@ export function OnboardingWelcome({ onContinue }: OnboardingWelcomeProps) {
             <Select
               labelText="Region"
               description="Default region for services in this project"
-              options={[...REGION_OPTIONS]}
-              value={region}
-              onChange={(val) => setRegion(String(val ?? REGION_OPTIONS[0].value))}
+              options={groupedRegionOptions}
+              value={formatRegionSelectValue(selectedRegion)}
+              onChange={(val) => {
+                const found = findRegionBySelectValue(ONBOARDING_REGIONS, String(val ?? ''))
+                if (found) setRegionId(found.id)
+              }}
             />
           </Box>
 
           <Box style={{ display: 'flex', justifyContent: 'flex-end' }}>
             <Button.Primary type="button" onClick={handleContinue}>
-              {choice === 'playground' ? 'Open the playground' : 'Browse services'}
+              {choice === 'playground' ? 'Continue' : 'Browse services'}
             </Button.Primary>
           </Box>
         </Box>

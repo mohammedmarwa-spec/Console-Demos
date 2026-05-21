@@ -10,7 +10,7 @@ import BillingInvoiceDetail from './screens/BillingInvoiceDetail'
 import OrgHomePage from './screens/OrgHomePage'
 import ServiceTypeSelectModal, { getServiceTypeDisplayName, type ServiceTypeId } from './screens/ServiceTypeSelectModal'
 import { getConsoleContext, isOnboardingPlaygroundScenario, ScenarioProvider, ScenarioPanel, ScenarioTrigger, useScenario } from './scenarios'
-import { PlaygroundOnboarding, showPlaygroundToast } from './screens/playground'
+import { PlaygroundOnboarding, PlaygroundPgStudioWelcomeModal, showPlaygroundToast } from './screens/playground'
 import { ThemeProvider } from './theme'
 import { MysqlAcuRolloutModal } from './screens/MysqlAcuRolloutModal'
 import { UPGRADE_PLAN_SERVICE_DATA, type UpgradeTier } from './screens/UpgradeServiceModal'
@@ -287,6 +287,8 @@ function AppContent() {
   const [editModalOpen, setEditModalOpen] = useState(false)
   /** Controls visibility of the Upgrade V2 modal. */
   const [upgradeV2ModalOpen, setUpgradeV2ModalOpen] = useState(false)
+  /** Shown once after onboarding sample data loads into PG Studio. */
+  const [pgStudioWelcomeOpen, setPgStudioWelcomeOpen] = useState(false)
   /** Holds the current submit function exposed by CreateService (edit mode). */
   const editSubmitRef = useRef<(() => void) | undefined>(undefined)
 
@@ -343,7 +345,7 @@ function AppContent() {
     setOverviewServiceType('postgresql')
     setOverviewInitialSidebarItem('pg-studio')
     setView('service-overview')
-    showPlaygroundToast(addToast, 'Ecommerce sample loaded — explore your data in PG Studio')
+    setPgStudioWelcomeOpen(true)
   }
 
   function handleCreateSuccess(data?: CreatedServicePayload) {
@@ -623,11 +625,13 @@ function AppContent() {
           onBackToSetup={() => setView('org-home')}
           onBrowseServicesContinue={(selected) => {
             setView('project-services')
+            if (selected.length === 1) {
+              openCreationModal(selected[0])
+              return
+            }
             showPlaygroundToast(
               addToast,
-              selected.length === 1
-                ? '1 service selected — create it from the Services page'
-                : `${selected.length} services selected — create them from the Services page`,
+              `${selected.length} services selected — create them from the Services page`,
             )
           }}
           onSkipToProjectDashboard={() => setView('project-services')}
@@ -653,6 +657,11 @@ function AppContent() {
           onOrgHomeClick={() => setView('org-home')}
         />
       )}
+
+      <PlaygroundPgStudioWelcomeModal
+        open={pgStudioWelcomeOpen}
+        onClose={() => setPgStudioWelcomeOpen(false)}
+      />
 
       {/* Create fork modal — opened from ServiceOverview's Backups overview section */}
       <CreateForkModal

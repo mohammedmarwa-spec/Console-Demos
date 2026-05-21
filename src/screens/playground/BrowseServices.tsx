@@ -190,12 +190,6 @@ export function BrowseServices({ onBack, onContinue }: BrowseServicesProps) {
           <OnboardingStepIndicator step={2} />
         </Box>
 
-        <Box style={{ padding: '16px 24px 0' }}>
-          <Button.Ghost dense type="button" onClick={onBack}>
-            ← Back
-          </Button.Ghost>
-        </Box>
-
         <Box
           style={{
             display: 'grid',
@@ -235,12 +229,16 @@ export function BrowseServices({ onBack, onContinue }: BrowseServicesProps) {
         <Box
           style={{
             display: 'flex',
-            justifyContent: 'flex-end',
+            alignItems: 'center',
+            justifyContent: 'space-between',
             gap: 12,
             padding: '16px 24px 20px',
             borderTop: '1px solid var(--aquarium-border-color-muted)',
           }}
         >
+          <Button.Ghost dense type="button" onClick={onBack}>
+            ← Back
+          </Button.Ghost>
           <Button.Primary
             type="button"
             disabled={selectedCount === 0}

@@ -119,6 +119,11 @@ export function PlaygroundLoading({ onComplete }: PlaygroundLoadingProps) {
 
   return (
     <OnboardingPanelPage>
+      <style>{`
+        .playground-loading-progress [role="progressbar"] {
+          background-color: var(--aquarium-background-color-primary-graphic) !important;
+        }
+      `}</style>
       <PlaygroundPanelShadow>
         <Box
           style={{
@@ -130,31 +135,19 @@ export function PlaygroundLoading({ onComplete }: PlaygroundLoadingProps) {
             padding: '40px 24px',
           }}
         >
-        <Box style={{ position: 'relative', width: 88, height: 88 }}>
-          <Box
-            aria-hidden
-            style={{
-              width: 88,
-              height: 88,
-              borderRadius: 22,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              backgroundColor: 'var(--aquarium-background-color-success-muted)',
-            }}
-          >
-            <ServiceIcon serviceTypeId="postgresql" size={52} alt="" />
-          </Box>
-          <Box
-            aria-hidden
-            style={{
-              position: 'absolute',
-              inset: -3,
-              borderRadius: 24,
-              border: '2px solid var(--aquarium-text-color-success-intense)',
-              pointerEvents: 'none',
-            }}
-          />
+        <Box
+          aria-hidden
+          style={{
+            width: 88,
+            height: 88,
+            borderRadius: 22,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            backgroundColor: 'var(--aquarium-background-color-muted)',
+          }}
+        >
+          <ServiceIcon serviceTypeId="postgresql" size={52} alt="" />
         </Box>
 
         <Box style={{ textAlign: 'center', display: 'flex', flexDirection: 'column', gap: 4 }}>
@@ -164,7 +157,7 @@ export function PlaygroundLoading({ onComplete }: PlaygroundLoadingProps) {
           </Typography.Small>
         </Box>
 
-        <Box style={{ width: '100%', paddingTop: 8 }}>
+        <Box className="playground-loading-progress" style={{ width: '100%', paddingTop: 8 }}>
           <ProgressBar
             value={progress}
             max={100}

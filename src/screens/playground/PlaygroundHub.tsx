@@ -1,8 +1,7 @@
-import { Box, Button, Card, Typography } from '@aivenio/aquarium'
+import { Box, Button, Card, Chip, Typography } from '@aivenio/aquarium'
 import { ServiceIcon } from '../../components/ServiceIcon'
 import { OnboardingStepIndicator } from './OnboardingStepIndicator'
 import {
-  CategoryPill,
   CodeSnippet,
   PLAYGROUND_DEMOS,
   OnboardingPanelPage,
@@ -28,7 +27,7 @@ function DemoCard({ demo, onClick }: { demo: PlaygroundDemo; onClick: () => void
             <Box style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 8, width: '100%' }}>
               <ServiceIcon serviceTypeId={demo.serviceTypeId} size={28} alt="" />
               <Typography.DefaultStrong color="intense">{demo.title}</Typography.DefaultStrong>
-              <CategoryPill label={demo.categoryLabel} />
+              <Chip text="Free tier" dense />
             </Box>
           </Card.Title>
         }
@@ -71,7 +70,7 @@ export function PlaygroundHub({ onBackToSetup, onDemoClick, onSkipToProjectDashb
           <Box style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
             <OnboardingPanelTitle>Playground</OnboardingPanelTitle>
             <Typography.Small color="muted">
-              Sandboxed demos with sample data · nothing provisioned, nothing billed.
+              Sandboxed free services with sample data
             </Typography.Small>
           </Box>
           <OnboardingStepIndicator step={2} />

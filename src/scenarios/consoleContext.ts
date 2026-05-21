@@ -15,7 +15,7 @@ export const DEFAULT_CONSOLE_CONTEXT: ConsoleContext = {
 
 /** Post-sign-up: personal org, default playground project, no services yet. */
 export const ONBOARDING_PLAYGROUND_CONTEXT: ConsoleContext = {
-  projectName: 'playground',
+  projectName: 'elena-project',
   orgName: 'Elena Ivanova',
   orgSublabel: 'Personal',
   userInitials: 'EI',

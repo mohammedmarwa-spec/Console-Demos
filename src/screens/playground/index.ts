@@ -1,4 +1,5 @@
 export { PlaygroundOnboarding } from './PlaygroundOnboarding'
+export { PlaygroundPgStudioWelcomeModal } from './PlaygroundPgStudioWelcomeModal'
 export { showPlaygroundToast } from './showPlaygroundToast'
 export type { PlaygroundOnboardingProps } from './PlaygroundOnboarding'
 export { PlaygroundEcosystemServices } from './PlaygroundEcosystemServices'

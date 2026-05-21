@@ -1141,6 +1141,7 @@ function ProjectServices({ services, onCreateServiceClick, onServiceClick, onDel
           ) : showPlaygroundEcosystem ? (
             <PlaygroundEcosystemServices
               onCreateServiceClick={onCreateServiceClick}
+              projectName={projectName}
               onOrgHomeClick={onOrgHomeClick}
             />
           ) : isEmpty ? (

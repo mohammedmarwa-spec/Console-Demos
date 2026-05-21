@@ -5,20 +5,18 @@ import {
   Button,
   Icon,
   Link,
-  StatusChip,
+  PageHeader,
   Tabs,
   Typography,
 } from '@aivenio/aquarium'
 import applicationsIcon from '@aivenio/aquarium/icons/applications'
 import attachmentIcon from '@aivenio/aquarium/icons/attachment'
 import exportIcon from '@aivenio/aquarium/icons/export'
-import homeIcon from '@aivenio/aquarium/icons/home'
 import integrationsIcon from '@aivenio/aquarium/icons/integrations'
 import mapIcon from '@aivenio/aquarium/icons/map'
 import proPlansIcon from '@aivenio/aquarium/icons/proPlans'
 import sendIcon from '@aivenio/aquarium/icons/send'
 import smallPlusIcon from '@aivenio/aquarium/icons/smallPlus'
-import tickCircleIcon from '@aivenio/aquarium/icons/tickCircle'
 import toolsIcon from '@aivenio/aquarium/icons/tools'
 import type { IconProps } from '@aivenio/aquarium'
 
@@ -219,11 +217,13 @@ ServicesEmptyTab.displayName = 'ServicesEmptyTab'
 
 export type PlaygroundEcosystemServicesProps = {
   onCreateServiceClick: () => void
+  projectName: string
   onOrgHomeClick?: () => void
 }
 
 export function PlaygroundEcosystemServices({
   onCreateServiceClick,
+  projectName,
   onOrgHomeClick,
 }: PlaygroundEcosystemServicesProps) {
   const [activeTab, setActiveTab] = useState<StudioTab>('aiven-studio')
@@ -238,35 +238,11 @@ export function PlaygroundEcosystemServices({
         backgroundColor: 'var(--aquarium-background-color-body)',
       }}
     >
-      {/* Subheader — Aiven Studio breadcrumb + fleet status */}
-      <Box
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          gap: 16,
-          padding: '11px 24px',
-          borderBottom: '1px solid var(--aquarium-border-color-muted)',
-          flexShrink: 0,
-        }}
-      >
-        <Breadcrumbs>
-          <Breadcrumbs.Crumb>
-            <Link
-              href="#"
-              onClick={(e) => {
-                e.preventDefault()
-                onOrgHomeClick?.()
-              }}
-              style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}
-            >
-              <Icon icon={homeIcon} style={{ width: 14, height: 14 }} />
-              Aiven Studio
-            </Link>
-          </Breadcrumbs.Crumb>
-        </Breadcrumbs>
-        <StatusChip text="All services running" status="success" dense icon={tickCircleIcon} />
-      </Box>
+      <style>{`
+        .playground-ecosystem-tabs [role="tabpanel"] {
+          display: none;
+        }
+      `}</style>
 
       {/* Studio workspace */}
       <Box
@@ -278,14 +254,29 @@ export function PlaygroundEcosystemServices({
           borderRight: '1px solid var(--aquarium-border-color-default)',
         }}
       >
-        <Box
-          style={{
-            flexShrink: 0,
-            padding: '0 24px',
-            borderBottom: '1px solid var(--aquarium-border-color-muted)',
-            backgroundColor: 'var(--aquarium-background-color-body)',
-          }}
-        >
+        <Box style={{ flexShrink: 0, padding: '24px 24px 0' }}>
+          <PageHeader
+            title="Services"
+            breadcrumbs={[
+              <Breadcrumbs.Crumb key="org">
+                <Link
+                  href="#"
+                  onClick={(e) => {
+                    e.preventDefault()
+                    onOrgHomeClick?.()
+                  }}
+                >
+                  Aiven
+                </Link>
+              </Breadcrumbs.Crumb>,
+              <Breadcrumbs.Crumb key="project">{projectName}</Breadcrumbs.Crumb>,
+              <Breadcrumbs.Crumb key="services">Services</Breadcrumbs.Crumb>,
+            ]}
+            secondaryAction={{ text: 'Deploy app', onClick: () => {} }}
+            primaryAction={{ text: 'Create service', onClick: onCreateServiceClick }}
+          />
+        </Box>
+        <Box className="playground-ecosystem-tabs" style={{ flexShrink: 0, padding: '0 24px' }}>
           <Tabs value={activeTab} onChange={(value) => setActiveTab(value as StudioTab)}>
             <Tabs.Tab title="Aiven Studio" value="aiven-studio" />
             <Tabs.Tab title="Services" value="services" />
