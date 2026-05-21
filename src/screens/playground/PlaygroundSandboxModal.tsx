@@ -98,11 +98,6 @@ export function PlaygroundSandboxModal({ open, onClose, onConfirm }: PlaygroundS
           />
           </Box>
         </Card.Group>
-
-        <Card.Compact
-          fullWidth
-          title="You can swap data sources anytime from the dashboard."
-        />
       </Box>
     </Modal>
   )

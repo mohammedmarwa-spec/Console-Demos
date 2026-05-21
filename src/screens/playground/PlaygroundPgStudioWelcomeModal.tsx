@@ -12,22 +12,22 @@ export function PlaygroundPgStudioWelcomeModal({ open, onClose }: PlaygroundPgSt
     <div className="pg-studio-welcome-modal">
       <style>{`
         /*
-         * Aquarium-Modal is on the overlay, not the header. Title row lives in
-         * .flex.flex-col.grow (TitleContainer): h2 + subtitle slot.
+         * Aquarium-Modal is on the overlay. Scope grid to TitleContainer inside the
+         * header only — not the dialog body (it also uses flex flex-col grow).
          */
-        .pg-studio-welcome-modal .Aquarium-Modal .flex.flex-col.grow {
+        .pg-studio-welcome-modal .Aquarium-Modal .pt-6.pb-4 .flex.flex-col.grow {
           display: grid;
           grid-template-columns: 48px 1fr;
           column-gap: 12px;
           row-gap: 4px;
           align-items: start;
         }
-        .pg-studio-welcome-modal .Aquarium-Modal .flex.flex-col.grow > h2 {
+        .pg-studio-welcome-modal .Aquarium-Modal .pt-6.pb-4 .flex.flex-col.grow > h2 {
           grid-column: 2;
           grid-row: 1;
           margin: 0;
         }
-        .pg-studio-welcome-modal .Aquarium-Modal .flex.flex-col.grow > :nth-child(2) {
+        .pg-studio-welcome-modal .Aquarium-Modal .pt-6.pb-4 .flex.flex-col.grow > :nth-child(2) {
           display: contents;
           max-width: none;
         }

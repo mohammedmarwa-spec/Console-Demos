@@ -150,11 +150,8 @@ export function PlaygroundLoading({ onComplete }: PlaygroundLoadingProps) {
           <ServiceIcon serviceTypeId="postgresql" size={52} alt="" />
         </Box>
 
-        <Box style={{ textAlign: 'center', display: 'flex', flexDirection: 'column', gap: 4 }}>
-          <OnboardingPanelTitle>Loading PostgreSQL sample dataset</OnboardingPanelTitle>
-          <Typography.Small color="muted">
-            Seeding a realistic dataset so the service is ready to query in seconds.
-          </Typography.Small>
+        <Box style={{ textAlign: 'center' }}>
+          <OnboardingPanelTitle>Creating your PG free service with pre-loaded data</OnboardingPanelTitle>
         </Box>
 
         <Box className="playground-loading-progress" style={{ width: '100%', paddingTop: 8 }}>
