@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { Box, Modal, ToastProvider, Typography, useToast } from '@aivenio/aquarium'
+import { Box, Modal, Typography, useToast } from '@aivenio/aquarium'
 import tickIcon from '@aivenio/aquarium/icons/tick'
 import CreateService, { type CreatedServicePayload } from './screens/CreateService'
 import CreateReadReplicaModal from './screens/CreateReadReplicaModal'
@@ -10,7 +10,7 @@ import BillingInvoiceDetail from './screens/BillingInvoiceDetail'
 import OrgHomePage from './screens/OrgHomePage'
 import ServiceTypeSelectModal, { getServiceTypeDisplayName, type ServiceTypeId } from './screens/ServiceTypeSelectModal'
 import { getConsoleContext, isOnboardingPlaygroundScenario, ScenarioProvider, ScenarioPanel, ScenarioTrigger, useScenario } from './scenarios'
-import { PlaygroundOnboarding } from './screens/playground'
+import { PlaygroundOnboarding, showPlaygroundToast } from './screens/playground'
 import { ThemeProvider } from './theme'
 import { MysqlAcuRolloutModal } from './screens/MysqlAcuRolloutModal'
 import { UPGRADE_PLAN_SERVICE_DATA, type UpgradeTier } from './screens/UpgradeServiceModal'
@@ -343,12 +343,7 @@ function AppContent() {
     setOverviewServiceType('postgresql')
     setOverviewInitialSidebarItem('pg-studio')
     setView('service-overview')
-    addToast({
-      message: 'Ecommerce sample loaded — explore your data in PG Studio',
-      icon: tickIcon,
-      duration: 4000,
-      position: 'top-right',
-    })
+    showPlaygroundToast(addToast, 'Ecommerce sample loaded — explore your data in PG Studio')
   }
 
   function handleCreateSuccess(data?: CreatedServicePayload) {
@@ -626,9 +621,14 @@ function AppContent() {
       {view === 'playground' && (
         <PlaygroundOnboarding
           onBackToSetup={() => setView('org-home')}
-          onSetUpProject={() => {
+          onBrowseServicesContinue={(selected) => {
             setView('project-services')
-            openServiceTypeModal()
+            showPlaygroundToast(
+              addToast,
+              selected.length === 1
+                ? '1 service selected — create it from the Services page'
+                : `${selected.length} services selected — create them from the Services page`,
+            )
           }}
           onSkipToProjectDashboard={() => setView('project-services')}
           onPlaygroundSampleReady={handlePlaygroundSampleReady}
@@ -792,9 +792,7 @@ function App() {
   return (
     <ScenarioProvider>
       <ThemeProvider>
-        <ToastProvider>
-          <AppContent />
-        </ToastProvider>
+        <AppContent />
       </ThemeProvider>
     </ScenarioProvider>
   )

@@ -1,6 +1,8 @@
 import { useState } from 'react'
 import { useToast } from '@aivenio/aquarium'
-import tickIcon from '@aivenio/aquarium/icons/tick'
+import { BrowseServices } from './BrowseServices'
+import { showPlaygroundToast } from './showPlaygroundToast'
+import type { BrowseServiceId } from './browseServicesCatalog'
 import { OnboardingWelcome, type OnboardingStartChoice } from './OnboardingWelcome'
 import { PlaygroundHub } from './PlaygroundHub'
 import { PlaygroundLoading } from './PlaygroundLoading'
@@ -10,18 +12,19 @@ import type { PlaygroundDemo } from './playgroundShared'
 
 export type PlaygroundOnboardingProps = {
   onBackToSetup: () => void
-  onSetUpProject: () => void
   onSkipToProjectDashboard: () => void
   /** After sample data finishes loading — open PG Studio with preloaded ecommerce schema. */
   onPlaygroundSampleReady: () => void
+  /** User picked services from the browse catalog (I'll choose myself). */
+  onBrowseServicesContinue: (selected: BrowseServiceId[]) => void
 }
 
-type Phase = 'welcome' | 'hub' | 'loading'
+type Phase = 'welcome' | 'hub' | 'loading' | 'browse'
 
 export function PlaygroundOnboarding({
-  onSetUpProject,
   onSkipToProjectDashboard,
   onPlaygroundSampleReady,
+  onBrowseServicesContinue,
 }: PlaygroundOnboardingProps) {
   const addToast = useToast()
   const [phase, setPhase] = useState<Phase>('welcome')
@@ -32,10 +35,9 @@ export function PlaygroundOnboarding({
       setSandboxModalOpen(true)
       return
     }
-    addToast({
-      message: `${demo.title} sandbox coming soon`,
+    showPlaygroundToast(addToast, `${demo.title} sandbox coming soon`, {
       duration: 3000,
-      position: 'top-right',
+      icon: undefined,
     })
   }
 
@@ -44,7 +46,7 @@ export function PlaygroundOnboarding({
       setPhase('hub')
       return
     }
-    onSetUpProject()
+    setPhase('browse')
   }
 
   function handleSandboxConfirm(choice: SandboxDataChoice) {
@@ -53,18 +55,18 @@ export function PlaygroundOnboarding({
       setPhase('loading')
       return
     }
-    addToast({
-      message: 'Migrate your data will be available in a future release',
-      icon: tickIcon,
-      duration: 4000,
-      position: 'top-right',
-    })
+    showPlaygroundToast(addToast, 'Migrate your data will be available in a future release')
   }
 
   return (
     <PlaygroundShell>
       {phase === 'welcome' ? (
         <OnboardingWelcome onContinue={handleWelcomeContinue} />
+      ) : phase === 'browse' ? (
+        <BrowseServices
+          onBack={() => setPhase('welcome')}
+          onContinue={(selected) => onBrowseServicesContinue(selected)}
+        />
       ) : phase === 'loading' ? (
         <PlaygroundLoading onComplete={onPlaygroundSampleReady} />
       ) : (

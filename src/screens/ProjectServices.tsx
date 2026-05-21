@@ -3,11 +3,9 @@ import { ScenarioContext } from '../scenarios/ScenarioContext'
 import { CalendarDateTime } from '@internationalized/date'
 import { DateRangePickerStateContext as AriaDateRangePickerStateContext } from 'react-aria-components'
 import {
-  Alert,
   Box,
   Breadcrumbs,
   Button,
-  Card,
   Checkbox,
   CheckboxGroup,
   DataTable,
@@ -37,6 +35,7 @@ import exportIcon from '@aivenio/aquarium/icons/export'
 import { ConsoleHeader } from '../components/ConsoleHeader'
 import { ProjectSidebar } from '../components/ProjectSidebar'
 import { getConsoleContext, isOnboardingPlaygroundScenario } from '../scenarios'
+import { PlaygroundEcosystemServices } from './playground/PlaygroundEcosystemServices'
 import { NodesCountChip } from '../components/NodesCountChip'
 import { ServiceStatusChip } from '../components/ServiceStatusChip'
 import { ServiceIcon } from '../components/ServiceIcon'
@@ -935,61 +934,6 @@ function EmptyState({ onCreateServiceClick }: { onCreateServiceClick: () => void
 
 EmptyState.displayName = 'EmptyState'
 
-function PlaygroundEmptyState({ onCreateServiceClick }: { onCreateServiceClick: () => void }) {
-  return (
-    <Box style={{ display: 'flex', flexDirection: 'column', gap: 24, maxWidth: 640 }}>
-      <Alert type="information">
-        You have $300 in trial credits to explore services in your playground project.
-      </Alert>
-      <Card
-        fullWidth
-        title={
-          <Card.Title>
-            <Typography.LargeHeading>Welcome to your playground</Typography.LargeHeading>
-          </Card.Title>
-        }
-      >
-        <Box
-          style={{
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            gap: 16,
-            textAlign: 'center',
-            padding: '24px 8px 8px',
-          }}
-        >
-          <Box
-            aria-hidden="true"
-            style={{
-              width: 80,
-              height: 80,
-              borderRadius: 20,
-              background:
-                'linear-gradient(135deg, var(--aquarium-background-color-primary-muted) 0%, var(--aquarium-background-color-muted) 100%)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-            }}
-          >
-            <Box component="span" style={{ fontSize: 36 }}>☁</Box>
-          </Box>
-          <Box style={{ maxWidth: 400 }}>
-            <Typography.Default color="muted">
-              Your playground project is ready. Create a free service to start exploring Aiven.
-            </Typography.Default>
-          </Box>
-          <Button.Primary type="button" onClick={onCreateServiceClick}>
-            Create service
-          </Button.Primary>
-        </Box>
-      </Card>
-    </Box>
-  )
-}
-
-PlaygroundEmptyState.displayName = 'PlaygroundEmptyState'
-
 // ─── Main component ───────────────────────────────────────────────────────────
 
 type ProjectServicesProps = {
@@ -1073,6 +1017,7 @@ function ProjectServices({ services, onCreateServiceClick, onServiceClick, onDel
 
   const isEmpty = services.length === 0
   const isServicesPage = activeProjectPage === 'services'
+  const showPlaygroundEcosystem = isOnboardingPlayground && isEmpty && isServicesPage
 
   const handleServicesTableMouseOver = useCallback(
     (event: ReactMouseEvent<HTMLDivElement>) => {
@@ -1129,12 +1074,13 @@ function ProjectServices({ services, onCreateServiceClick, onServiceClick, onDel
           style={{
             flex: 1,
             minWidth: 0,
-            padding: 24,
+            padding: showPlaygroundEcosystem ? 0 : 24,
             overflow: 'auto',
             backgroundColor: 'var(--aquarium-background-color-body)',
           }}
         >
           {/* Page header */}
+          {!showPlaygroundEcosystem && (
           <Box style={{ marginBottom: 24 }}>
             <PageHeader
               title={
@@ -1169,6 +1115,7 @@ function ProjectServices({ services, onCreateServiceClick, onServiceClick, onDel
               }
             />
           </Box>
+          )}
 
           {!isServicesPage ? (
             activeProjectPage === 'observability' ? (
@@ -1191,12 +1138,13 @@ function ProjectServices({ services, onCreateServiceClick, onServiceClick, onDel
             ) : (
               <AuditLogsSection />
             )
+          ) : showPlaygroundEcosystem ? (
+            <PlaygroundEcosystemServices
+              onCreateServiceClick={onCreateServiceClick}
+              onOrgHomeClick={onOrgHomeClick}
+            />
           ) : isEmpty ? (
-            isOnboardingPlayground ? (
-              <PlaygroundEmptyState onCreateServiceClick={onCreateServiceClick} />
-            ) : (
-              <EmptyState onCreateServiceClick={onCreateServiceClick} />
-            )
+            <EmptyState onCreateServiceClick={onCreateServiceClick} />
           ) : (
             <>
               {/* Toolbar */}

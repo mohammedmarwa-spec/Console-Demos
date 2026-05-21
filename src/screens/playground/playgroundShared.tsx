@@ -173,9 +173,25 @@ export const PG_LOADING_STEPS: LoadingStep[] = [
 /** Same max width as Aquarium `Modal` size `md` (940px). */
 export const ONBOARDING_PANEL_MAX_WIDTH = 940
 
-/** Top-align radio in checkable card title row (DS CardInputWrapper defaults to vertical center). */
+/** Inset primary border when selected (replaces DS outer ring-2). */
+export const ONBOARDING_CHECKABLE_CARD_RING_CSS = `
+  .onboarding-checkable-cards label.Aquarium-Card\\.Label.ring-2 {
+    --tw-ring-offset-shadow: 0 0 #0000 !important;
+    --tw-ring-shadow: 0 0 #0000 !important;
+    --tw-ring-width: 0 !important;
+    --tw-ring-offset-width: 0 !important;
+    box-shadow: inset 0 0 0 2px var(--aquarium-border-color-primary-default) !important;
+  }
+  .onboarding-checkable-cards label.Aquarium-Card\\.Label {
+    min-width: 0 !important;
+    width: 100%;
+  }
+`
+
+/** Top-align radio/checkbox in checkable card title row (DS CardInputWrapper defaults to vertical center). */
 export const ONBOARDING_CHECKABLE_CARD_CSS = `
-  .onboarding-checkable-cards label.Aquarium-Card\\.Label input[type="radio"] {
+  .onboarding-checkable-cards label.Aquarium-Card\\.Label input[type="radio"],
+  .onboarding-checkable-cards label.Aquarium-Card\\.Label input[type="checkbox"] {
     align-self: start !important;
   }
   .onboarding-checkable-cards label.Aquarium-Card\\.Label .flex.flex-col.flex-auto > div:first-child {

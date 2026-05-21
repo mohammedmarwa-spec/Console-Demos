@@ -6,6 +6,7 @@ import { ONBOARDING_PLAYGROUND_CONTEXT } from '../../scenarios/consoleContext'
 import { OnboardingStepIndicator } from './OnboardingStepIndicator'
 import {
   ONBOARDING_CHECKABLE_CARD_CSS,
+  ONBOARDING_CHECKABLE_CARD_RING_CSS,
   OnboardingIconTile,
   OnboardingPanelPage,
   OnboardingPanelTitle,
@@ -22,20 +23,6 @@ export type OnboardingWelcomeConfig = {
 export type OnboardingWelcomeProps = {
   onContinue: (choice: OnboardingStartChoice, config: OnboardingWelcomeConfig) => void
 }
-
-const CARD_RING_CSS = `
-  .onboarding-welcome-cards label.Aquarium-Card\\.Label.ring-2 {
-    --tw-ring-offset-shadow: 0 0 #0000 !important;
-    --tw-ring-shadow: 0 0 #0000 !important;
-    --tw-ring-width: 0 !important;
-    --tw-ring-offset-width: 0 !important;
-    box-shadow: inset 0 0 0 2px var(--aquarium-border-color-primary-default) !important;
-  }
-  .onboarding-welcome-cards label.Aquarium-Card\\.Label {
-    min-width: 0 !important;
-    width: 100%;
-  }
-`
 
 const DEFAULT_PROJECT_NAME = ONBOARDING_PLAYGROUND_CONTEXT.projectName
 
@@ -91,7 +78,7 @@ export function OnboardingWelcome({ onContinue }: OnboardingWelcomeProps) {
 
   return (
     <OnboardingPanelPage>
-      <style>{`${CARD_RING_CSS}\n${ONBOARDING_CHECKABLE_CARD_CSS}`}</style>
+      <style>{`${ONBOARDING_CHECKABLE_CARD_RING_CSS}\n${ONBOARDING_CHECKABLE_CARD_CSS}`}</style>
       <PlaygroundPanelShadow>
         <Box
           style={{
@@ -114,7 +101,7 @@ export function OnboardingWelcome({ onContinue }: OnboardingWelcomeProps) {
         </Box>
 
         <Box style={{ padding: '20px 24px 24px' }}>
-          <Box className="onboarding-welcome-cards onboarding-checkable-cards">
+          <Box className="onboarding-checkable-cards">
             <Card.Group
               checked={choice}
               onCheckedChange={({ value }) => setChoice((value as OnboardingStartChoice) ?? 'playground')}
