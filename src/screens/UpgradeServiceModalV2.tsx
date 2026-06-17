@@ -43,6 +43,24 @@ function regionCityChip(cloud: CloudProviderId, regionId: string): PlanChip {
   return { text: `${region.flag} ${city}`, status: 'neutral' }
 }
 
+function regionLocationChip(cloud: CloudProviderId, regionId: string): PlanChip {
+  const region = REGIONS_BY_CLOUD[cloud].find((r) => r.id === regionId)
+  if (!region) return { text: regionId, status: 'neutral' }
+  return { text: `${region.flag} ${region.location}`, status: 'neutral' }
+}
+
+function longestAwsRegionId(): string {
+  return REGIONS_BY_CLOUD.aws.reduce((bestId, region) => {
+    const best = REGIONS_BY_CLOUD.aws.find((r) => r.id === bestId)!
+    const bestLen = `${best.flag} ${best.location}`.length
+    const len = `${region.flag} ${region.location}`.length
+    return len > bestLen ? region.id : bestId
+  }, REGIONS_BY_CLOUD.aws[0].id)
+}
+
+/** Playground stress case: longest AWS region+country label for chip-wrap testing. */
+const LONGEST_AWS_REGION_ID = longestAwsRegionId()
+
 function providerChip(cloud: CloudProviderId, icon: IconProps['icon']): PlanChip {
   const label = CLOUD_PROVIDERS.find((p) => p.id === cloud)?.label ?? cloud
   return { text: label, status: 'neutral', icon }
@@ -52,8 +70,13 @@ function cloudPlanChips(
   cloud: CloudProviderId,
   regionId: string,
   icon: IconProps['icon'],
+  regionFormat: 'city' | 'location' = 'city',
 ): PlanChip[] {
-  return [providerChip(cloud, icon), regionCityChip(cloud, regionId)]
+  const regionChip =
+    regionFormat === 'location'
+      ? regionLocationChip(cloud, regionId)
+      : regionCityChip(cloud, regionId)
+  return [providerChip(cloud, icon), regionChip]
 }
 
 type PlanV2 = {
@@ -120,7 +143,7 @@ const HOBBYIST_V2: PlanV2 = {
 
 const HOBBYIST_AWS_V4: PlanV2 = {
   id: 'hobbyist-aws',
-  chips: cloudPlanChips('aws', 'eu-west-1', getAwsIcon('dark')),
+  chips: cloudPlanChips('aws', LONGEST_AWS_REGION_ID, getAwsIcon('dark'), 'location'),
   name: 'Hobbyist',
   description: 'For learning, side projects, and small workloads',
   features: [
@@ -238,7 +261,7 @@ export function UpgradeServiceModalV2({
           if (plan.id === 'hobbyist-aws') {
             return {
               ...plan,
-              chips: cloudPlanChips('aws', 'eu-west-1', getAwsIcon(theme)),
+              chips: cloudPlanChips('aws', LONGEST_AWS_REGION_ID, getAwsIcon(theme), 'location'),
             }
           }
           return plan
