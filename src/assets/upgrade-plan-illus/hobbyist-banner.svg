@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 27.5 275 120" width="275" height="120" fill="none">
+  <g clip-path="url(#clip-hobbyist-banner)">
+    <rect class="plan-illustration-banner__bg" width="275" height="175"/>
+    <g transform="translate(199 87.5) scale(0.8) translate(-199 -87.5)">
+      <path class="plan-illustration-banner__stroke" d="M138.34 68.9072L138.67 69.0381L258.806 116.986L259.524 117.273L259.524 75.6016L259.171 75.4795L184.309 49.6621L184.309 48.8369L259.171 23.0205L259.524 22.8984L259.524 -18.7734L258.806 -18.4863L138.67 29.4619L138.34 29.5928L138.34 68.9072Z" stroke-width="1.04819"/>
+    </g>
+  </g>
+  <defs>
+    <clipPath id="clip-hobbyist-banner">
+      <rect x="0" y="27.5" width="275" height="120"/>
+    </clipPath>
+  </defs>
+</svg>

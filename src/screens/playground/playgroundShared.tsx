@@ -211,21 +211,27 @@ export const PG_LOADING_STEPS: LoadingStep[] = [
 /** Same max width as Aquarium `Modal` size `md` (940px). */
 export const ONBOARDING_PANEL_MAX_WIDTH = 940
 
-/** Single primary border when selected (DS ring-2 stacks on the default border). */
+/**
+ * Checkable Card.Label selection without layout shift:
+ * - Always 2px border (DS default is 1px; jumping to 2px on select shifts content)
+ * - Swap border-color only when selected; suppress DS ring-2
+ */
 export const ONBOARDING_CHECKABLE_CARD_RING_CSS = `
+  .onboarding-checkable-cards label.Aquarium-Card\\.Label {
+    box-sizing: border-box !important;
+    border: 2px solid var(--aquarium-border-color-muted) !important;
+    outline: none !important;
+    outline-offset: 0 !important;
+    box-shadow: none !important;
+    min-width: 0 !important;
+    width: 100%;
+  }
   .onboarding-checkable-cards label.Aquarium-Card\\.Label.ring-2 {
     --tw-ring-offset-shadow: 0 0 #0000 !important;
     --tw-ring-shadow: 0 0 #0000 !important;
     --tw-ring-width: 0 !important;
     --tw-ring-offset-width: 0 !important;
-    outline: none !important;
-    outline-offset: 0 !important;
-    box-shadow: none !important;
-    border: 2px solid var(--aquarium-border-color-primary-default) !important;
-  }
-  .onboarding-checkable-cards label.Aquarium-Card\\.Label {
-    min-width: 0 !important;
-    width: 100%;
+    border-color: var(--aquarium-border-color-primary-default) !important;
   }
 `
 

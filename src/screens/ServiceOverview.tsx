@@ -1563,7 +1563,7 @@ function ServiceOverview({
                       <StatusChip text="ACU" status="neutral" />
                     </Box>
                   )}
-                  {hasAcuCapability && !isAcuPricing && !hideSwitchToNewPricingAlert && (
+                  {hasAcuCapability && !isAcuPricing && !hideSwitchToNewPricingAlert && !currentService?.playgroundSampleLoaded && (
                     <Box style={{ marginBottom: 16 }}>
                       <Alert type="success">
                         <Box style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>

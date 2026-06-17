@@ -1,73 +1,15 @@
-import type { ResolvedTheme } from '../theme/ThemeProvider'
+export type IllustrationKey = 'developer' | 'hobbyist' | 'startup'
 
-const VIEWBOX = '0 0 285 100'
-const ICON_STROKE_OPACITY = 0.1
-
-const ILLUSTRATION_COLORS: Record<ResolvedTheme, { bg: string; stroke: string }> = {
-  light: { bg: '#f3f6ff', stroke: '#b8c8f0' },
-  dark: { bg: '#1e2a2c', stroke: '#3d8f8a' },
+const PLAN_ILLUSTRATION_KEY: Record<string, IllustrationKey> = {
+  'developer-plan': 'developer',
+  hobbyist: 'hobbyist',
+  'hobbyist-aws': 'hobbyist',
+  'hobbyist-gcp': 'hobbyist',
+  startup: 'startup',
+  'startup-4': 'startup',
+  business: 'startup',
 }
 
-/** Icon paths scaled to 285×100 banner (same layout as public/illus-*.svg). */
-const PLAN_ICON_PATHS: Record<string, { transform: string; d: string; strokeWidth?: number }> = {
-  'developer-plan': {
-    transform: 'translate(132.5,-56) scale(1.091,1.333)',
-    d: 'M109.818 106.25C117.705 106.25 124.105 99.8563 124.105 91.9625V63.3937L131.249 56.25L124.105 49.1063V20.5375C124.105 12.6437 117.711 6.25 109.818 6.25M27.6812 6.25C19.7875 6.25 13.3937 12.6437 13.3937 20.5375V49.1063L6.25 56.25L13.3937 63.3937V91.9625C13.3937 99.8563 19.7875 106.25 27.6812 106.25M50 87.5L87.5 25',
-  },
-  hobbyist: {
-    transform: 'translate(132.5,-56) scale(1.091,1.333)',
-    d: 'M109.818 106.25C117.705 106.25 124.105 99.8563 124.105 91.9625V63.3937L131.249 56.25L124.105 49.1063V20.5375C124.105 12.6437 117.711 6.25 109.818 6.25M27.6812 6.25C19.7875 6.25 13.3937 12.6437 13.3937 20.5375V49.1063L6.25 56.25L13.3937 63.3937V91.9625C13.3937 99.8563 19.7875 106.25 27.6812 106.25M50 87.5L87.5 25',
-  },
-  'hobbyist-aws': {
-    transform: 'translate(132.5,-56) scale(1.091,1.333)',
-    d: 'M109.818 106.25C117.705 106.25 124.105 99.8563 124.105 91.9625V63.3937L131.249 56.25L124.105 49.1063V20.5375C124.105 12.6437 117.711 6.25 109.818 6.25M27.6812 6.25C19.7875 6.25 13.3937 12.6437 13.3937 20.5375V49.1063L6.25 56.25L13.3937 63.3937V91.9625C13.3937 99.8563 19.7875 106.25 27.6812 106.25M50 87.5L87.5 25',
-  },
-  'hobbyist-gcp': {
-    transform: 'translate(132.5,-56) scale(1.091,1.333)',
-    d: 'M109.818 106.25C117.705 106.25 124.105 99.8563 124.105 91.9625V63.3937L131.249 56.25L124.105 49.1063V20.5375C124.105 12.6437 117.711 6.25 109.818 6.25M27.6812 6.25C19.7875 6.25 13.3937 12.6437 13.3937 20.5375V49.1063L6.25 56.25L13.3937 63.3937V91.9625C13.3937 99.8563 19.7875 106.25 27.6812 106.25M50 87.5L87.5 25',
-  },
-  startup: {
-    transform: 'translate(132.5,-56) scale(1.118)',
-    d: 'M73.7117 60.985L14.3367 120.36M80.0769 14.3505C87.6895 19.4017 95.0065 25.3569 101.844 32.1943C108.74 39.0908 114.739 46.4751 119.818 54.1585M50.3053 41.5859L32.3373 35.5966C30.268 34.9068 27.9889 35.3458 26.3238 36.7547L8.46652 51.8647C4.81073 54.958 5.84935 60.8449 10.343 62.5005L27.263 68.7342M65.4683 106.938L71.702 123.858C73.3575 128.352 79.2444 129.391 82.3378 125.735L97.4477 107.878C98.8567 106.212 99.2956 103.933 98.6058 101.864L92.6165 83.896M113.39 6.42707L82.7249 11.538C79.4137 12.0899 76.3765 13.7174 74.0832 16.1689L32.7515 60.351C22.038 71.8034 22.336 89.6882 33.4251 100.777C44.5142 111.866 62.399 112.164 73.8514 101.451L118.033 60.1192C120.485 57.8259 122.113 54.7887 122.664 51.4774L127.775 20.812C129.185 12.3517 121.851 5.01703 113.39 6.42707Z',
-  },
-  'startup-4': {
-    transform: 'translate(132.5,-56) scale(1.118)',
-    d: 'M73.7117 60.985L14.3367 120.36M80.0769 14.3505C87.6895 19.4017 95.0065 25.3569 101.844 32.1943C108.74 39.0908 114.739 46.4751 119.818 54.1585M50.3053 41.5859L32.3373 35.5966C30.268 34.9068 27.9889 35.3458 26.3238 36.7547L8.46652 51.8647C4.81073 54.958 5.84935 60.8449 10.343 62.5005L27.263 68.7342M65.4683 106.938L71.702 123.858C73.3575 128.352 79.2444 129.391 82.3378 125.735L97.4477 107.878C98.8567 106.212 99.2956 103.933 98.6058 101.864L92.6165 83.896M113.39 6.42707L82.7249 11.538C79.4137 12.0899 76.3765 13.7174 74.0832 16.1689L32.7515 60.351C22.038 71.8034 22.336 89.6882 33.4251 100.777C44.5142 111.866 62.399 112.164 73.8514 101.451L118.033 60.1192C120.485 57.8259 122.113 54.7887 122.664 51.4774L127.775 20.812C129.185 12.3517 121.851 5.01703 113.39 6.42707Z',
-  },
-  business: {
-    // dataflow02 (22×22) — same placement as startup/rocket; native 1.5 stroke (not 12.5)
-    transform: 'translate(132.5,-56) scale(6.818)',
-    strokeWidth: 1.5,
-    d: 'M10.083 4.125h6.692c1.027 0 1.54 0 1.932.2.345.176.626.456.802.801.2.392.2.906.2 1.932V8.25c0 .854 0 1.281-.14 1.618a1.83 1.83 0 01-.992.992c-.337.14-.764.14-1.619.14m-5.041 6.875H5.225c-1.027 0-1.54 0-1.932-.2a1.833 1.833 0 01-.802-.801c-.2-.392-.2-.906-.2-1.932V13.75c0-.854 0-1.281.14-1.618a1.83 1.83 0 01.992-.992C3.76 11 4.187 11 5.042 11m4.4 2.292h3.116c.257 0 .385 0 .483-.05a.457.457 0 00.2-.2c.05-.099.05-.227.05-.484V9.442c0-.257 0-.385-.05-.483a.458.458 0 00-.2-.2c-.098-.05-.226-.05-.483-.05H9.442c-.257 0-.385 0-.483.05a.458.458 0 00-.2.2c-.05.098-.05.226-.05.483v3.116c0 .257 0 .385.05.483a.458.458 0 00.2.2c.098.05.226.05.483.05Zm6.875 6.875h3.116c.257 0 .385 0 .483-.05a.457.457 0 00.2-.2c.05-.099.05-.227.05-.484v-3.116c0-.257 0-.385-.05-.483a.458.458 0 00-.2-.2c-.098-.05-.226-.05-.483-.05h-3.116c-.257 0-.385 0-.483.05a.458.458 0 00-.2.2c-.05.098-.05.226-.05.483v3.116c0 .257 0 .385.05.483a.458.458 0 00.2.2c.098.05.226.05.483.05ZM2.567 6.417h3.116c.257 0 .385 0 .483-.05a.458.458 0 00.2-.2c.05-.099.05-.227.05-.484V2.567c0-.257 0-.385-.05-.483a.458.458 0 00-.2-.2c-.098-.05-.226-.05-.483-.05H2.567c-.257 0-.385 0-.483.05a.458.458 0 00-.2.2c-.05.098-.05.226-.05.483v3.116c0 .257 0 .385.05.483a.458.458 0 00.2.2c.098.05.226.05.483.05Z',
-  },
-}
-
-function buildPlanIllustrationSvg(planId: string, theme: ResolvedTheme, includeIcon: boolean): string {
-  const { bg, stroke } = ILLUSTRATION_COLORS[theme]
-  const iconMarkup = (() => {
-    if (!includeIcon) return ''
-    const icon = PLAN_ICON_PATHS[planId] ?? PLAN_ICON_PATHS['developer-plan']
-    const strokeWidth = icon.strokeWidth ?? 12.5
-    return `<g transform="${icon.transform}" fill="none" stroke="${stroke}" stroke-opacity="${ICON_STROKE_OPACITY}" stroke-width="${strokeWidth}" stroke-linecap="round" stroke-linejoin="round">
-      <path d="${icon.d}"/>
-    </g>`
-  })()
-
-  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${VIEWBOX}" width="285" height="100">
-  <defs><clipPath id="clip"><rect width="285" height="100"/></clipPath></defs>
-  <rect width="285" height="100" fill="${bg}"/>
-  <g clip-path="url(#clip)">
-    ${iconMarkup}
-  </g>
-</svg>`
-}
-
-export function getPlanIllustrationUrl(
-  planId: string,
-  theme: ResolvedTheme,
-  options?: { includeIcon?: boolean },
-): string {
-  const includeIcon = options?.includeIcon ?? true
-  const svg = buildPlanIllustrationSvg(planId, theme, includeIcon)
-  return `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`
+export function resolvePlanIllustrationKey(planId: string): IllustrationKey {
+  return PLAN_ILLUSTRATION_KEY[planId] ?? 'developer'
 }

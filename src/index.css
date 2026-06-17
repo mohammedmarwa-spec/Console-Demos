@@ -67,6 +67,28 @@ tr.plan-row-selected {
   background-color: var(--aquarium-background-color-primary-muted);
 }
 
+/* Upgrade modal plan card banners (Figma 2565:23856 / 23859 / 23862 — 275×120) */
+.plan-illustration-banner svg {
+  display: block;
+  width: 100%;
+  height: 120px;
+}
+
+.plan-illustration-banner__bg {
+  fill: color-mix(
+    in srgb,
+    var(--aquarium-background-color-primary-graphic) 5%,
+    transparent
+  );
+}
+
+.plan-illustration-banner__stroke {
+  stroke: var(--aquarium-background-color-primary-graphic);
+  fill: none;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
 /* Services table: plan title + inline Upgrade/Change action */
 .services-table .services-plan-title-row {
   display: inline-flex;

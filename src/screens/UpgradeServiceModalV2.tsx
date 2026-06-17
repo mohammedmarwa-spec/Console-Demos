@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { Box, Button, Card, Icon, Modal, Typography, type IconProps } from '@aivenio/aquarium'
+import { Box, Button, Card, Icon, Modal, StatusChip, Typography, type IconProps } from '@aivenio/aquarium'
 import layersIcon from '@aivenio/aquarium/icons/layers'
 import settingsIcon from '@aivenio/aquarium/icons/settings'
 import { getAivenIcon } from '../assets/icons/aivenIcon'
@@ -7,12 +7,52 @@ import { getAwsIcon } from '../assets/icons/awsIcon'
 import digitalOceanIcon from '../assets/icons/digitalOceanIcon'
 import gcpIcon from '../assets/icons/gcpIcon'
 import { useTheme } from '../theme/ThemeProvider'
+import { CLOUD_PROVIDERS, REGIONS_BY_CLOUD, type CloudProviderId } from './serviceRegions'
 import { UPGRADE_PLAN_SERVICE_DATA, type UpgradeTier } from './UpgradeServiceModal'
-import { getPlanIllustrationUrl } from './upgradePlanIllustrations'
+import { ONBOARDING_CHECKABLE_CARD_RING_CSS } from './playground/playgroundShared'
+import { PlanIllustrationBanner } from './PlanIllustrationBanner'
+
+/** Aquarium Card label class is literally "Aquarium-Card.Label" (one token) — escape the dot in CSS. */
+const UPGRADE_V2_CHECKABLE_CARD_CSS = `
+  ${ONBOARDING_CHECKABLE_CARD_RING_CSS.replace(/\.onboarding-checkable-cards/g, '.upgrade-v2-cards')}
+  /* Hide DS checkbox in chip row (last grid cell); illustration is a separate sibling, not affected */
+  .upgrade-v2-cards label.Aquarium-Card\\.Label > div:first-child > *:last-child {
+    display: none !important;
+  }
+  .upgrade-v2-cards label.Aquarium-Card\\.Label > div:first-child {
+    grid-template-columns: 1fr !important;
+  }
+  .upgrade-v2-cards label.Aquarium-Card\\.Label {
+    max-width: 100%;
+    overflow: hidden;
+  }
+`
 
 // ─── Plan definitions ────────────────────────────────────────────────────────
 
 type PlanChip = { text: string; status: 'neutral'; icon?: IconProps['icon'] }
+
+function regionCityChip(cloud: CloudProviderId, regionId: string): PlanChip {
+  const region = REGIONS_BY_CLOUD[cloud].find((r) => r.id === regionId)
+  if (!region) return { text: regionId, status: 'neutral' }
+  const city = region.label.includes(', ')
+    ? region.label.split(', ').slice(1).join(', ')
+    : region.label
+  return { text: `${region.flag} ${city}`, status: 'neutral' }
+}
+
+function providerChip(cloud: CloudProviderId, icon: IconProps['icon']): PlanChip {
+  const label = CLOUD_PROVIDERS.find((p) => p.id === cloud)?.label ?? cloud
+  return { text: label, status: 'neutral', icon }
+}
+
+function cloudPlanChips(
+  cloud: CloudProviderId,
+  regionId: string,
+  icon: IconProps['icon'],
+): PlanChip[] {
+  return [providerChip(cloud, icon), regionCityChip(cloud, regionId)]
+}
 
 type PlanV2 = {
   id: string
@@ -38,7 +78,7 @@ const DEVELOPER_V2: PlanV2 = {
 
 const STARTUP_V2: PlanV2 = {
   id: 'startup',
-  chips: [{ text: 'eu-central-1, Frankfurt', status: 'neutral', icon: digitalOceanIcon }],
+  chips: cloudPlanChips('digitalocean', 'fra1', digitalOceanIcon),
   name: 'Startup',
   description: 'For growing apps and staging environments',
   features: [
@@ -52,7 +92,7 @@ const STARTUP_V2: PlanV2 = {
 
 const BUSINESS_V2: PlanV2 = {
   id: 'business',
-  chips: [{ text: 'eu-central-1, Frankfurt', status: 'neutral', icon: digitalOceanIcon }],
+  chips: cloudPlanChips('digitalocean', 'fra1', digitalOceanIcon),
   name: 'Business',
   description: 'For critical workloads and live applications',
   features: [
@@ -65,7 +105,7 @@ const BUSINESS_V2: PlanV2 = {
 
 const HOBBYIST_V2: PlanV2 = {
   id: 'hobbyist',
-  chips: [{ text: 'eu-central-1, Frankfurt', status: 'neutral', icon: digitalOceanIcon }],
+  chips: cloudPlanChips('digitalocean', 'fra1', digitalOceanIcon),
   name: 'Hobbyist',
   description: 'For learning, side projects, and small workloads',
   features: [
@@ -78,7 +118,7 @@ const HOBBYIST_V2: PlanV2 = {
 
 const HOBBYIST_AWS_V4: PlanV2 = {
   id: 'hobbyist-aws',
-  chips: [{ text: 'Europe West 1', status: 'neutral' }],
+  chips: cloudPlanChips('aws', 'eu-west-1', getAwsIcon('dark')),
   name: 'Hobbyist',
   description: 'For learning, side projects, and small workloads',
   features: [
@@ -91,7 +131,7 @@ const HOBBYIST_AWS_V4: PlanV2 = {
 
 const HOBBYIST_GCP_V4: PlanV2 = {
   id: 'hobbyist-gcp',
-  chips: [{ text: 'Europe West 1', status: 'neutral', icon: gcpIcon }],
+  chips: cloudPlanChips('google', 'europe-west1', gcpIcon),
   name: 'Hobbyist',
   description: 'For learning, side projects, and small workloads',
   features: [
@@ -104,7 +144,7 @@ const HOBBYIST_GCP_V4: PlanV2 = {
 
 const STARTUP_4_V2: PlanV2 = {
   id: 'startup-4',
-  chips: [{ text: 'eu-central-1, Frankfurt', status: 'neutral', icon: digitalOceanIcon }],
+  chips: cloudPlanChips('digitalocean', 'fra1', digitalOceanIcon),
   name: 'Startup-4',
   description: 'For growing apps and staging environments',
   features: [
@@ -132,7 +172,8 @@ const TIER_GROUPS_BY_TIER: Record<UpgradeModalPlanVariant, Record<UpgradeTier, T
       { label: 'Professional tier', plans: [STARTUP_V2, BUSINESS_V2] },
     ],
     developer: [
-      { label: 'Professional tier', plans: [STARTUP_V2, BUSINESS_V2] },
+      { label: 'Hobby tier',        plans: [HOBBYIST_V2] },
+      { label: 'Professional tier', plans: [BUSINESS_V2, STARTUP_V2] },
     ],
   },
   'hobbyist-startup-4': {
@@ -142,7 +183,7 @@ const TIER_GROUPS_BY_TIER: Record<UpgradeModalPlanVariant, Record<UpgradeTier, T
     ],
     developer: [
       { label: 'Hobby tier',        plans: [HOBBYIST_V2] },
-      { label: 'Professional tier', plans: [STARTUP_4_V2] },
+      { label: 'Professional tier', plans: [BUSINESS_V2, STARTUP_4_V2] },
     ],
   },
   'dual-hobbyist-clouds': {
@@ -150,7 +191,10 @@ const TIER_GROUPS_BY_TIER: Record<UpgradeModalPlanVariant, Record<UpgradeTier, T
       { label: 'Hobby tier', plans: [DEVELOPER_V2, HOBBYIST_AWS_V4, HOBBYIST_GCP_V4] },
     ],
     developer: [
-      { label: 'Hobby tier', plans: [HOBBYIST_AWS_V4, HOBBYIST_GCP_V4] },
+      {
+        label: 'Hobby tier',
+        plans: [HOBBYIST_AWS_V4, HOBBYIST_GCP_V4, STARTUP_4_V2],
+      },
     ],
   },
 }
@@ -192,7 +236,7 @@ export function UpgradeServiceModalV2({
           if (plan.id === 'hobbyist-aws') {
             return {
               ...plan,
-              chips: [{ text: 'Europe West 1', status: 'neutral' as const, icon: getAwsIcon(theme) }],
+              chips: cloudPlanChips('aws', 'eu-west-1', getAwsIcon(theme)),
             }
           }
           return plan
@@ -202,14 +246,6 @@ export function UpgradeServiceModalV2({
   )
   const allPlans = tierGroups.flatMap((g) => g.plans)
   const defaultPlanId = allPlans[0].id
-
-  const planImageUrls = useMemo(
-    () =>
-      Object.fromEntries(
-        allPlans.map((p) => [p.id, getPlanIllustrationUrl(p.id, theme, { includeIcon: false })]),
-      ),
-    [allPlans, theme],
-  )
 
   const [selectedPlanId, setSelectedPlanId] = useState(defaultPlanId)
 
@@ -238,31 +274,17 @@ export function UpgradeServiceModalV2({
     >
       {/* Hide DS Card checkbox indicators */}
       <style>{`
-        .upgrade-v2-cards label > div:first-child > *:last-child { display: none !important; }
-        /* Fit cards in modal: DS sets min-w-[280px] per card; allow grid columns to shrink */
+        ${UPGRADE_V2_CHECKABLE_CARD_CSS}
         .upgrade-v2-cards {
           width: 100%;
           min-width: 0;
         }
-        .upgrade-v2-cards label.Aquarium-Card.Label {
-          box-sizing: border-box;
-          min-width: 0 !important;
-          max-width: 100%;
-          width: 100%;
-          overflow: hidden;
+        .upgrade-v2-cards .upgrade-plan-features {
+          line-height: 1.42;
         }
-        /* DS checkable cards use an outer ring when selected; use inset border so edges align with modal content */
-        .upgrade-v2-cards .Aquarium-StatusChip .Aquarium-InlineIcon svg {
           width: 18px;
           height: 16px;
           flex-shrink: 0;
-        }
-        .upgrade-v2-cards label.Aquarium-Card.Label.ring-2 {
-          --tw-ring-offset-shadow: 0 0 #0000 !important;
-          --tw-ring-shadow: 0 0 #0000 !important;
-          --tw-ring-width: 0 !important;
-          --tw-ring-offset-width: 0 !important;
-          box-shadow: inset 0 0 0 2px var(--aquarium-border-color-primary-default) !important;
         }
         .upgrade-v2-tier-bar--hobby {
           background-color: color-mix(
@@ -330,12 +352,9 @@ export function UpgradeServiceModalV2({
               value={plan.id}
               checked={selectedPlanId === plan.id}
               onCheckedChange={({ value }) => setSelectedPlanId(value)}
-              image={
-                planImageUrls[plan.id] ??
-                getPlanIllustrationUrl('developer-plan', theme, { includeIcon: false })
-              }
+              image={<PlanIllustrationBanner planId={plan.id} />}
               imageAlt=""
-              imageHeight={100}
+              imageHeight={120}
               chips={plan.chips}
               title={
                 <Card.Title>
@@ -349,7 +368,7 @@ export function UpgradeServiceModalV2({
                 <Box style={{ display: 'flex', flexDirection: 'column', gap: 16, flex: 1 }}>
                   <Typography.Small color="muted">{plan.description}</Typography.Small>
 
-                  <Box style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                  <Box className="upgrade-plan-features" style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
                     {plan.features.map((feat) => (
                       <Box key={feat} style={{ display: 'flex', alignItems: 'baseline', gap: 6 }}>
                         <Box component="span" style={{ flexShrink: 0 }}>
@@ -372,17 +391,100 @@ export function UpgradeServiceModalV2({
             </Card>
           ))}
           </Box>
-        </Box>
 
-        <Box style={{ marginTop: 32 }}>
-          {planVariant === 'hobbyist-startup-4' || planVariant === 'dual-hobbyist-clouds' ? (
-            <CustomizeCompactCard onCustomize={onCustomize} />
-          ) : (
-            <FullConfigurationCard onClick={onCustomize} />
+          {planVariant === 'dual-hobbyist-clouds' && (
+            <>
+              <OrDivider />
+              <SeeAllPlansCard onCustomize={onCustomize} />
+            </>
           )}
         </Box>
+
+        {planVariant !== 'dual-hobbyist-clouds' && (
+          <Box style={{ marginTop: 32 }}>
+            {planVariant === 'hobbyist-startup-4' ? (
+              <CustomizeCompactCard onCustomize={onCustomize} />
+            ) : (
+              <FullConfigurationCard onClick={onCustomize} />
+            )}
+          </Box>
+        )}
       </Box>
     </Modal>
+  )
+}
+
+// ─── Or divider (Figma 2565:23428) ───────────────────────────────────────────
+
+function OrDivider() {
+  return (
+    <Box
+      style={{
+        display: 'flex',
+        alignItems: 'center',
+        gap: 8,
+        width: '100%',
+        minWidth: 0,
+      }}
+    >
+      <Box
+        aria-hidden
+        style={{
+          flex: 1,
+          height: 1,
+          backgroundColor: 'var(--aquarium-border-color-muted)',
+        }}
+      />
+      <StatusChip text="or" status="neutral" dense />
+      <Box
+        aria-hidden
+        style={{
+          flex: 1,
+          height: 1,
+          backgroundColor: 'var(--aquarium-border-color-muted)',
+        }}
+      />
+    </Box>
+  )
+}
+
+// ─── See all plans CTA (V4: Figma 2565:23432) ───────────────────────────────
+
+function SeeAllPlansCard({ onCustomize }: { onCustomize: () => void }) {
+  return (
+    <Box className="upgrade-v3-customize-compact-wrap">
+      <Card.Compact
+        fullWidth
+        onClick={onCustomize}
+        title={
+          <Card.Title>
+            <Box style={{ display: 'flex', alignItems: 'flex-start', gap: 12, width: '100%' }}>
+              <Box
+                aria-hidden
+                style={{
+                  flexShrink: 0,
+                  width: 32,
+                  height: 32,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  borderRadius: '50%',
+                  backgroundColor: 'var(--aquarium-background-color-primary-muted)',
+                }}
+              >
+                <Icon icon={settingsIcon} color="primary-default" style={{ width: 16, height: 16 }} />
+              </Box>
+              <Box style={{ display: 'flex', flexDirection: 'column', gap: 2, minWidth: 0 }}>
+                <Typography.DefaultStrong color="intense">See all plans</Typography.DefaultStrong>
+                <Typography.Small color="muted">
+                  View all clouds, regions, plans, CPU, RAM, disk, and scaling options.
+                </Typography.Small>
+              </Box>
+            </Box>
+          </Card.Title>
+        }
+      />
+    </Box>
   )
 }
 
