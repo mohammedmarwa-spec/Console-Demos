@@ -1,5 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
+import { Alert as AlertBase } from '@aivenio/aquarium/atoms'
 import { Box, Button, Card, Icon, Modal, StatusChip, Typography, type IconProps } from '@aivenio/aquarium'
+import currencyDollarIcon from '@aivenio/aquarium/icons/currencyDollar'
 import layersIcon from '@aivenio/aquarium/icons/layers'
 import settingsIcon from '@aivenio/aquarium/icons/settings'
 import { getAivenIcon } from '../assets/icons/aivenIcon'
@@ -282,9 +284,15 @@ export function UpgradeServiceModalV2({
         .upgrade-v2-cards .upgrade-plan-features {
           line-height: 1.42;
         }
-          width: 18px;
+        .upgrade-trial-alert {
+          padding: 12px !important;
+          column-gap: 8px !important;
+        }
+        .upgrade-trial-alert__icon {
           height: 16px;
-          flex-shrink: 0;
+          grid-column-start: 1;
+          grid-row-start: 1;
+          align-self: start;
         }
         .upgrade-v2-tier-bar--hobby {
           background-color: color-mix(
@@ -318,12 +326,13 @@ export function UpgradeServiceModalV2({
 
       <Box style={{ display: 'flex', flexDirection: 'column', width: '100%', minWidth: 0 }}>
         <Box style={{ display: 'flex', flexDirection: 'column', gap: 16, width: '100%', minWidth: 0 }}>
+          <TrialCreditsAlert />
           {planVariant !== 'dual-hobbyist-clouds' && (
             <Box
               style={{
                 display: 'grid',
                 gridTemplateColumns: planCardColumns,
-                gap: 24,
+                gap: 16,
                 width: '100%',
                 minWidth: 0,
               }}
@@ -339,7 +348,7 @@ export function UpgradeServiceModalV2({
             style={{
               display: 'grid',
               gridTemplateColumns: planCardColumns,
-              gap: 24,
+              gap: 16,
               width: '100%',
               minWidth: 0,
             }}
@@ -584,6 +593,27 @@ function FullConfigurationCard({ onClick }: { onClick: () => void }) {
         </Card.Title>
       }
     />
+  )
+}
+
+// ─── Trial credits alert (Figma: Pricing UX 2573:42693) ─────────────────────
+
+function TrialCreditsAlert() {
+  return (
+    <AlertBase
+      type="success"
+      className="Aquarium-Alert upgrade-trial-alert"
+      dense={false}
+      hasAction={false}
+      role="status"
+    >
+      <div className="upgrade-trial-alert__icon">
+        <Icon icon={currencyDollarIcon} color="success-graphic" fontSize={16} />
+      </div>
+      <AlertBase.Description>
+        Trial active · Upgrade covered by trial credits · No credit card required
+      </AlertBase.Description>
+    </AlertBase>
   )
 }
 
