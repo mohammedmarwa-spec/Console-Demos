@@ -10,7 +10,6 @@ import {
   StatusChip,
   Tooltip,
   Typography,
-  useToast,
 } from '@aivenio/aquarium'
 import infoSignIcon from '@aivenio/aquarium/icons/infoSign'
 import { ServiceIcon } from '../../components/ServiceIcon'
@@ -21,7 +20,6 @@ import {
   ONBOARDING_CHECKABLE_CARD_RING_CSS,
 } from './playgroundShared'
 import { OnboardingTestEnvShell } from './OnboardingTestEnvShell'
-import { showPlaygroundToast } from './showPlaygroundToast'
 import {
   DEFAULT_TEST_ENV_SERVICE_ID,
   TEST_ENV_LOCATION_OPTIONS,
@@ -43,6 +41,7 @@ export type OnboardingTestEnvProps = {
   defaultProjectName: string
   onSkip: () => void
   onCreate: (payload: OnboardingTestEnvCreatePayload) => void
+  onCustomizePlan: (serviceTypeId: TestEnvServiceId) => void
 }
 
 const MONO_STYLE = {
@@ -85,7 +84,7 @@ function CloudProviderStack({
             marginLeft: index === 0 ? 0 : -CLOUD_ICON_OVERLAP,
             borderRadius: '50%',
             border: '1px solid var(--aquarium-border-color-muted)',
-            backgroundColor: 'var(--aquarium-background-color-layer)',
+            backgroundColor: 'var(--aquarium-background-color-body)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
@@ -111,8 +110,8 @@ function ServicePickerCard({ service }: { service: TestEnvServiceOption }) {
       title={
         <Card.Title>
           <Box style={{ display: 'flex', alignItems: 'flex-start', gap: 12, minWidth: 0 }}>
-            <ServiceIcon serviceTypeId={service.id} size={28} alt="" />
-            <Box style={{ display: 'flex', flexDirection: 'column', gap: 2, flex: 1, minWidth: 0 }}>
+            <ServiceIcon serviceTypeId={service.id} size={40} alt="" />
+            <Box style={{ display: 'flex', flexDirection: 'column', gap: 4, flex: 1, minWidth: 0 }}>
               <Typography.DefaultStrong color="intense">{service.title}</Typography.DefaultStrong>
               <Typography.Small color="muted">{service.description}</Typography.Small>
             </Box>
@@ -138,8 +137,10 @@ function PlanDetailRow({ label, value, info }: { label: string; value: string; i
     >
       <Typography.Small color="muted">{label}</Typography.Small>
       <Box style={{ display: 'flex', alignItems: 'center', gap: 4, minWidth: 0 }}>
-        <Box component="span" style={{ ...MONO_STYLE, color: 'var(--aquarium-text-color-default)' }}>
-          {value}
+        <Box component="span" style={MONO_STYLE}>
+          <Typography.Small color="intense" htmlTag="span">
+            {value}
+          </Typography.Small>
         </Box>
         {info && (
           <Tooltip content={info}>
@@ -158,8 +159,8 @@ export function OnboardingTestEnv({
   defaultProjectName,
   onSkip,
   onCreate,
+  onCustomizePlan,
 }: OnboardingTestEnvProps) {
-  const addToast = useToast()
   const [projectName, setProjectName] = useState(defaultProjectName)
   const [location, setLocation] = useState<TestEnvLocationId>('finland')
   const [selectedServiceId, setSelectedServiceId] = useState<TestEnvServiceId>(DEFAULT_TEST_ENV_SERVICE_ID)
@@ -177,7 +178,7 @@ export function OnboardingTestEnv({
   }, [selectedService])
 
   function handleCustomizePlan() {
-    showPlaygroundToast(addToast, 'Customize plan and cloud coming soon')
+    onCustomizePlan(selectedServiceId)
   }
 
   function handleCreate() {
@@ -207,7 +208,7 @@ export function OnboardingTestEnv({
             Welcome to Aiven! Create your test environment in minutes
           </Typography.Heading>
           <Box style={{ display: 'inline-flex', maxWidth: '100%' }}>
-            <StatusChip text="$50 trial credits active · No card needed" status="success" dense />
+            <StatusChip text="$50 trial credits active · No card needed" status="success" />
           </Box>
         </Box>
 
@@ -334,7 +335,7 @@ export function OnboardingTestEnv({
                     <PlanDetailRow
                       label="Cloud & region"
                       value={selectedService.cloudRegionLabel}
-                      info="Cloud and region are auto-assigned based on your location for the fastest setup."
+                      info="You can select a specific cloud provider and region on the Professional tier"
                     />
                     <PlanDetailRow label="Resources" value={selectedService.planResources} />
                   </Box>
@@ -343,7 +344,7 @@ export function OnboardingTestEnv({
                     style={{
                       padding: '12px 16px',
                       borderRadius: 8,
-                      border: '1px solid var(--aquarium-border-color-default)',
+                      border: '1px solid var(--aquarium-border-color-muted)',
                       display: 'flex',
                       flexDirection: 'column',
                       gap: 4,

@@ -281,6 +281,21 @@ html.aquarium-theme-dark .audit-logs-histogram {
   border-color: transparent;
 }
 
+/*
+ * Aquarium Tooltip uses bg-inverse / text-opposite-default, which flip to a light
+ * surface (grey-5) in dark mode. Match popover and chart tooltips instead.
+ */
+html.aquarium-theme-dark .Aquarium-Tooltip.bg-inverse {
+  background-color: var(--aquarium-background-color-popover-content) !important;
+  color: var(--aquarium-text-color-default) !important;
+  border: 1px solid var(--aquarium-border-color-muted);
+  box-shadow: 0 4px 24px color-mix(in srgb, var(--aquarium-colors-black) 14%, transparent);
+}
+
+html.aquarium-theme-dark .Aquarium-Tooltip > .absolute.bg-inverse {
+  background-color: var(--aquarium-background-color-popover-content) !important;
+}
+
 /* Create service — disk size range (token-based track + thumb; --slider-fill set inline) */
 .create-service-disk-slider {
   width: 100%;

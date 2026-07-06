@@ -314,10 +314,12 @@ function AppContent() {
     setCreationModalOpen(false)
   }
 
-  /** Back from create form: close create modal and show Select service type again. */
-  function handleBackToServiceTypeSelect() {
+  /** Cancel from create modal — on onboarding, return to the test-env screen only. */
+  function handleCreationModalCancel() {
     setCreationModalOpen(false)
-    setServiceTypeModalOpen(true)
+    if (view !== 'test-env-onboarding') {
+      setServiceTypeModalOpen(true)
+    }
   }
 
   function handlePlaygroundSampleReady() {
@@ -676,6 +678,7 @@ function AppContent() {
           defaultProjectName={consoleContext.projectName}
           onSkip={() => setView('project-services')}
           onCreate={handleTestEnvCreate}
+          onCustomizePlan={openCreationModal}
         />
       )}
 
@@ -835,7 +838,7 @@ function AppContent() {
         }}
         secondaryActions={{
           text: 'Cancel',
-          onClick: handleBackToServiceTypeSelect,
+          onClick: handleCreationModalCancel,
         }}
       >
         {creationModalOpen && (
@@ -844,7 +847,7 @@ function AppContent() {
             embedded
             serviceTypeId={selectedServiceType ?? undefined}
             serviceDisplayName={selectedServiceType ? getServiceTypeDisplayName(selectedServiceType) : undefined}
-            onClose={handleBackToServiceTypeSelect}
+            onClose={handleCreationModalCancel}
             onCreateSuccess={handleCreateSuccess}
             submitRef={createServiceSubmitRef}
           />

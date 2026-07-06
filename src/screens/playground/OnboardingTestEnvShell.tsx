@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react'
-import { Box, Button, Link } from '@aivenio/aquarium'
+import { Box, Button, Divider } from '@aivenio/aquarium'
 import helpIcon from '@aivenio/aquarium/icons/help'
 import { AivenConsoleLogo } from '../../components/ConsoleHeader'
 import { OnboardingFooter } from './OnboardingFooter'
@@ -10,34 +10,20 @@ export type OnboardingTestEnvShellProps = {
   onSkip: () => void
 }
 
-function HeaderIconButton({ label, icon }: { label: string; icon: typeof helpIcon }) {
-  return (
-    <Button.Icon
-      type="button"
-      dense
-      aria-label={label}
-      icon={icon}
-      style={{ flexShrink: 0 }}
-    />
-  )
-}
-
-HeaderIconButton.displayName = 'HeaderIconButton'
-
 function UserAvatar({ initials }: { initials: string }) {
   return (
     <Box
       aria-hidden
       style={{
-        width: 24,
-        height: 24,
+        width: 35,
+        height: 35,
         borderRadius: '50%',
         backgroundColor: 'var(--aquarium-background-color-primary-graphic)',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
         color: 'var(--aquarium-text-color-opposite-default)',
-        fontSize: 10,
+        fontSize: 13,
         fontWeight: 600,
         flexShrink: 0,
       }}
@@ -49,7 +35,7 @@ function UserAvatar({ initials }: { initials: string }) {
 
 UserAvatar.displayName = 'UserAvatar'
 
-/** Onboarding shell with skip, help, and user actions in the header. */
+/** Onboarding shell — Console Header (New) from Figma node 20687:6769. */
 export function OnboardingTestEnvShell({ children, userInitials, onSkip }: OnboardingTestEnvShellProps) {
   return (
     <Box
@@ -64,21 +50,36 @@ export function OnboardingTestEnvShell({ children, userInitials, onSkip }: Onboa
         component="header"
         style={{
           flexShrink: 0,
+          height: 66,
+          boxSizing: 'border-box',
           display: 'flex',
           alignItems: 'center',
-          gap: 32,
-          padding: '8px 16px',
+          paddingInline: 24,
           borderBottom: '1px solid var(--aquarium-border-color-muted)',
+          backgroundColor: 'var(--aquarium-background-color-body)',
         }}
       >
         <AivenConsoleLogo />
         <Box style={{ flex: 1 }} />
-        <Box style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
-          <Link href="#" onClick={(e) => { e.preventDefault(); onSkip() }}>
-            Skip and set up later
-          </Link>
-          <HeaderIconButton label="Help" icon={helpIcon} />
-          <UserAvatar initials={userInitials} />
+        <Box style={{ display: 'flex', alignItems: 'center', gap: 9, flexShrink: 0 }}>
+          <Button.Ghost type="button" onClick={onSkip}>
+            Skip and setup later
+          </Button.Ghost>
+          <Box
+            aria-hidden
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              alignSelf: 'stretch',
+              paddingBlock: 11,
+            }}
+          >
+            <Divider direction="vertical" />
+          </Box>
+          <Box style={{ display: 'flex', alignItems: 'center', gap: 12, flexShrink: 0 }}>
+            <Button.Icon type="button" aria-label="Help" icon={helpIcon} />
+            <UserAvatar initials={userInitials} />
+          </Box>
         </Box>
       </Box>
 

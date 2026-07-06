@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react'
 import { Box, Icon, Typography } from '@aivenio/aquarium'
 import type lightbulbIcon from '@aivenio/aquarium/icons/lightbulb'
+import { ServiceIcon } from '../../components/ServiceIcon'
 import type { ServiceTypeId } from '../ServiceTypeSelectModal'
 
 export type PlaygroundDemoId = 'postgresql' | 'kafka' | 'opensearch' | 'valkey'
@@ -118,59 +119,14 @@ export function OnboardingIconTile({
 
 OnboardingIconTile.displayName = 'OnboardingIconTile'
 
-/** Brand stroke colors: Kafka, PostgreSQL, OpenSearch, ClickHouse (2×2 grid order). */
-const CATALOG_GRID_SQUARE_STROKES = [
-  '#F19BFC', // Kafka pink (from service icon ring)
-  '#336791', // PostgreSQL
-  '#005EB8', // OpenSearch
-  '#FFCC01', // ClickHouse
-] as const
-
-/** 2×2 grid icon for “I'll choose myself” — bordered squares in service brand colors. */
-export function OnboardingCatalogGridIcon({ size = 22 }: { size?: number }) {
-  const cell = 7.2
-  const gap = 2.05
-  const origin = 2.75
-  const strokeWidth = 1.5
-  const inset = strokeWidth / 2
-  const positions = [
-    { x: origin, y: origin },
-    { x: origin + cell + gap, y: origin },
-    { x: origin, y: origin + cell + gap },
-    { x: origin + cell + gap, y: origin + cell + gap },
-  ]
-
-  return (
-    <Box
-      aria-hidden
-      component="svg"
-      xmlns="http://www.w3.org/2000/svg"
-      width={size}
-      height={size}
-      viewBox="0 0 22 22"
-      fill="none"
-      style={{ display: 'block', flexShrink: 0 }}
-    >
-      {positions.map((pos, i) => (
-        <rect
-          key={CATALOG_GRID_SQUARE_STROKES[i]}
-          x={pos.x + inset}
-          y={pos.y + inset}
-          width={cell - strokeWidth}
-          height={cell - strokeWidth}
-          rx={1.2}
-          fill="transparent"
-          stroke={CATALOG_GRID_SQUARE_STROKES[i]}
-          strokeWidth={strokeWidth}
-        />
-      ))}
-    </Box>
-  )
-}
-
-OnboardingCatalogGridIcon.displayName = 'OnboardingCatalogGridIcon'
+/** Preview services for “I'll choose myself” — 2×2 grid of theme-aware service icons. */
+const CATALOG_PREVIEW_SERVICES: ServiceTypeId[] = ['kafka', 'postgresql', 'opensearch', 'clickhouse']
 
 export function OnboardingCatalogIconTile({ size = 40 }: { size?: number }) {
+  const gridGap = 2
+  const gridSize = size <= 36 ? 28 : 32
+  const cellSize = Math.floor((gridSize - gridGap) / 2)
+
   return (
     <Box
       aria-hidden
@@ -186,7 +142,19 @@ export function OnboardingCatalogIconTile({ size = 40 }: { size?: number }) {
         border: '1px solid var(--aquarium-border-color-muted)',
       }}
     >
-      <OnboardingCatalogGridIcon size={size <= 36 ? 20 : 22} />
+      <Box
+        style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(2, 1fr)',
+          gap: gridGap,
+          width: gridSize,
+          height: gridSize,
+        }}
+      >
+        {CATALOG_PREVIEW_SERVICES.map((serviceTypeId) => (
+          <ServiceIcon key={serviceTypeId} serviceTypeId={serviceTypeId} size={cellSize} alt="" />
+        ))}
+      </Box>
     </Box>
   )
 }
