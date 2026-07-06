@@ -23,12 +23,26 @@ export const ONBOARDING_PLAYGROUND_CONTEXT: ConsoleContext = {
 
 export const ONBOARDING_PLAYGROUND_SCENARIO_ID = 'onboarding-playground'
 
+export const ONBOARDING_TEST_ENV_SCENARIO_ID = 'onboarding-test-env'
+
+/** Post-sign-up test environment flow — default project name from Figma. */
+export const ONBOARDING_TEST_ENV_CONTEXT: ConsoleContext = {
+  projectName: 'test-env',
+  orgName: 'Elena Ivanova',
+  orgSublabel: 'Personal',
+  userInitials: 'EI',
+}
+
 export function isOnboardingPlaygroundScenario(scenarioId: string | null): boolean {
   return scenarioId === ONBOARDING_PLAYGROUND_SCENARIO_ID
 }
 
+export function isOnboardingTestEnvScenario(scenarioId: string | null): boolean {
+  return scenarioId === ONBOARDING_TEST_ENV_SCENARIO_ID
+}
+
 export function getConsoleContext(scenarioId: string | null): ConsoleContext {
-  return isOnboardingPlaygroundScenario(scenarioId)
-    ? ONBOARDING_PLAYGROUND_CONTEXT
-    : DEFAULT_CONSOLE_CONTEXT
+  if (isOnboardingPlaygroundScenario(scenarioId)) return ONBOARDING_PLAYGROUND_CONTEXT
+  if (isOnboardingTestEnvScenario(scenarioId)) return ONBOARDING_TEST_ENV_CONTEXT
+  return DEFAULT_CONSOLE_CONTEXT
 }

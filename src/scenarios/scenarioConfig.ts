@@ -18,6 +18,12 @@ export const SCENARIOS: Scenario[] = [
     group: 'Onboarding',
     description: 'Just signed up — personal org, playground project, no services',
   },
+  {
+    id: 'onboarding-test-env',
+    label: 'Create test environment',
+    group: 'Onboarding',
+    description: 'Full-page onboarding — project setup, service picker, summary sidebar',
+  },
 
   // Service Creation
   { id: 'empty-state',             label: 'Empty state',                        group: 'Service Creation',   description: 'No services exist yet' },

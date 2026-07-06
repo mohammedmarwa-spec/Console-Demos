@@ -1,6 +1,8 @@
 export { PlaygroundOnboarding } from './PlaygroundOnboarding'
 export { PlaygroundPgStudioWelcomeModal } from './PlaygroundPgStudioWelcomeModal'
+export { OnboardingTestEnv } from './OnboardingTestEnv'
 export { showPlaygroundToast } from './showPlaygroundToast'
 export type { PlaygroundOnboardingProps } from './PlaygroundOnboarding'
+export type { OnboardingTestEnvCreatePayload, OnboardingTestEnvProps } from './OnboardingTestEnv'
 export { PlaygroundEcosystemServices } from './PlaygroundEcosystemServices'
 export type { PlaygroundEcosystemServicesProps } from './PlaygroundEcosystemServices'

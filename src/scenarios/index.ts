@@ -14,7 +14,10 @@ export {
   DEFAULT_CONSOLE_CONTEXT,
   ONBOARDING_PLAYGROUND_CONTEXT,
   ONBOARDING_PLAYGROUND_SCENARIO_ID,
+  ONBOARDING_TEST_ENV_CONTEXT,
+  ONBOARDING_TEST_ENV_SCENARIO_ID,
   getConsoleContext,
   isOnboardingPlaygroundScenario,
+  isOnboardingTestEnvScenario,
 } from './consoleContext'
 export type { ConsoleContext } from './consoleContext'

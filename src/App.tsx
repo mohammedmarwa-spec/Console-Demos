@@ -9,8 +9,9 @@ import ServiceOverview from './screens/ServiceOverview'
 import BillingInvoiceDetail from './screens/BillingInvoiceDetail'
 import OrgHomePage from './screens/OrgHomePage'
 import ServiceTypeSelectModal, { getServiceTypeDisplayName, type ServiceTypeId } from './screens/ServiceTypeSelectModal'
-import { getConsoleContext, isOnboardingPlaygroundScenario, ScenarioProvider, ScenarioPanel, ScenarioTrigger, useScenario } from './scenarios'
-import { PlaygroundOnboarding, PlaygroundPgStudioWelcomeModal, showPlaygroundToast } from './screens/playground'
+import { getConsoleContext, isOnboardingPlaygroundScenario, isOnboardingTestEnvScenario, ScenarioProvider, ScenarioPanel, ScenarioTrigger, useScenario } from './scenarios'
+import { OnboardingTestEnv, PlaygroundOnboarding, PlaygroundPgStudioWelcomeModal, showPlaygroundToast } from './screens/playground'
+import type { OnboardingTestEnvCreatePayload } from './screens/playground'
 import { ThemeProvider } from './theme'
 import { MysqlAcuRolloutModal } from './screens/MysqlAcuRolloutModal'
 import { UPGRADE_PLAN_SERVICE_DATA, type UpgradeTier } from './screens/UpgradeServiceModal'
@@ -18,7 +19,7 @@ import { UpgradeServiceModalV2 } from './screens/UpgradeServiceModalV2'
 import { enrichServicesWithRandomCreatedBy } from './utils/serviceCreatedByDataset'
 import { PLAYGROUND_SAMPLE_SERVICE_ID } from './utils/pgStudioPlaygroundSample'
 
-type View = 'org-home' | 'project-services' | 'service-overview' | 'billing-invoice' | 'playground'
+type View = 'org-home' | 'project-services' | 'service-overview' | 'billing-invoice' | 'playground' | 'test-env-onboarding'
 
 // ─── Scenario service data ────────────────────────────────────────────────────
 // Define what each scenario's initial service list looks like.
@@ -181,6 +182,7 @@ function getInitialServicesForScenario(scenarioId: string | null): ServiceRow[] 
     case 'empty-state':
     case 'first-time-user':
     case 'onboarding-playground':
+    case 'onboarding-test-env':
       return []
     case 'many-services':
       return withRandomCreatedByAvatars(shuffle([...MANY_SERVICES]))
@@ -203,6 +205,7 @@ function initialViewForScenario(scenarioId: string | null): View {
   if (scenarioId === 'invoice-mixed-services' || scenarioId === 'invoice-plan-acumixed') return 'billing-invoice'
   if (scenarioId === 'deeptrace-demo') return 'service-overview'
   if (isOnboardingPlaygroundScenario(scenarioId)) return 'playground'
+  if (isOnboardingTestEnvScenario(scenarioId)) return 'test-env-onboarding'
   return 'project-services'
 }
 
@@ -267,6 +270,11 @@ function AppContent() {
       setOverviewServiceType(null)
       setOverviewInitialSidebarItem(undefined)
       setView('playground')
+    } else if (isOnboardingTestEnvScenario(activeScenarioId)) {
+      setOverviewServiceId(null)
+      setOverviewServiceType(null)
+      setOverviewInitialSidebarItem(undefined)
+      setView('test-env-onboarding')
     } else {
       setOverviewServiceId(null)
       setOverviewServiceType(null)
@@ -346,6 +354,48 @@ function AppContent() {
     setOverviewInitialSidebarItem('pg-studio')
     setView('service-overview')
     setPgStudioWelcomeOpen(true)
+  }
+
+  function handleTestEnvCreate(payload: OnboardingTestEnvCreatePayload) {
+    const displayName = getServiceTypeDisplayName(payload.serviceTypeId)
+    const iconLetter =
+      payload.serviceTypeId === 'mysql'
+        ? 'M'
+        : payload.serviceTypeId === 'postgresql'
+          ? 'P'
+          : displayName.charAt(0)
+    setServices((prev) => {
+      if (prev.some((s) => s.id === payload.serviceName)) return prev
+      return [
+        ...prev,
+        {
+          id: payload.serviceName,
+          serviceName: payload.serviceName,
+          serviceType: displayName,
+          serviceTypeId: payload.serviceTypeId,
+          status: 'Running',
+          nodes: 'Nodes 1',
+          nodeCount: 1,
+          planName: 'Free',
+          planDetails: '1 vCPU / 1 GB RAM / 1 GB storage',
+          cloudRegion: 'AWS: eu-west-1',
+          location: 'Europe, Ireland',
+          created: 'Just now',
+          createdByInitials: 'ME',
+          createdByFullName: 'You',
+          iconLetter,
+          cpuCount: 1,
+          ramCapacity: '1 GB',
+          storageCapacity: '1 GB',
+          userCreated: true,
+        },
+      ]
+    })
+    setOverviewServiceId(payload.serviceName)
+    setOverviewServiceType(payload.serviceTypeId)
+    setOverviewInitialSidebarItem(undefined)
+    setView('service-overview')
+    showPlaygroundToast(addToast, `${displayName} service created`)
   }
 
   function handleCreateSuccess(data?: CreatedServicePayload) {
@@ -617,6 +667,15 @@ function AppContent() {
               setView('service-overview')
             }
           }}
+        />
+      )}
+
+      {view === 'test-env-onboarding' && (
+        <OnboardingTestEnv
+          userInitials={consoleContext.userInitials}
+          defaultProjectName={consoleContext.projectName}
+          onSkip={() => setView('project-services')}
+          onCreate={handleTestEnvCreate}
         />
       )}
 

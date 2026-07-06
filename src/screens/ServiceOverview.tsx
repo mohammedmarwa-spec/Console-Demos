@@ -1157,6 +1157,7 @@ function ServiceOverview({
         {/* Main content */}
         <div
           ref={contentRef}
+          data-figma-capture="service-main"
           style={{
             flex: 1,
             minWidth: 0,
