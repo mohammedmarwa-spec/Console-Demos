@@ -23,9 +23,9 @@ function buildAwsLogoBody(wordmarkFill: string): string {
   )
 }
 
-/** White wordmark in dark theme, official #252F3E in light; smile stays orange. */
+/** White wordmark in dark theme (DS token), official #252F3E in light; smile stays orange. */
 export function getAwsIcon(theme: ResolvedTheme): IconProps['icon'] {
-  const wordmarkFill = theme === 'dark' ? '#FFFFFF' : '#252F3E'
+  const wordmarkFill = theme === 'dark' ? 'var(--aquarium-text-color-default)' : '#252F3E'
   return {
     body: buildAwsLogoBody(wordmarkFill),
     width: 16,

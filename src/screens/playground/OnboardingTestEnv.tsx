@@ -3,10 +3,8 @@ import {
   Box,
   Button,
   Card,
-  Icon,
   InlineIcon,
   Input,
-  Link,
   Section,
   Select,
   StatusChip,
@@ -16,10 +14,8 @@ import {
 } from '@aivenio/aquarium'
 import infoSignIcon from '@aivenio/aquarium/icons/infoSign'
 import { ServiceIcon } from '../../components/ServiceIcon'
-import { getAwsIcon } from '../../assets/icons/awsIcon'
-import gcpIcon from '../../assets/icons/gcpIcon'
-import { useResolvedTheme } from '../../theme/ThemeProvider'
-import { ServiceSummarySidebar } from '../ServiceCreationShared'
+import { CloudProviderIcon } from '../CloudProviderIcon'
+import type { CloudProviderId } from '../serviceRegions'
 import {
   ONBOARDING_CHECKABLE_CARD_CSS,
   ONBOARDING_CHECKABLE_CARD_RING_CSS,
@@ -34,25 +30,6 @@ import {
   type TestEnvServiceId,
   type TestEnvServiceOption,
 } from './testEnvServicesCatalog'
-
-function SectionPanel({ children }: { children: React.ReactNode }) {
-  return (
-    <Box
-      style={{
-        padding: 24,
-        borderRadius: 8,
-        border: '1px solid var(--aquarium-border-color-muted)',
-        backgroundColor: 'var(--aquarium-background-color-layer)',
-        display: 'flex',
-        flexDirection: 'column',
-        gap: 16,
-        width: '100%',
-      }}
-    >
-      {children}
-    </Box>
-  )
-}
 
 export type OnboardingTestEnvCreatePayload = {
   serviceTypeId: TestEnvServiceId
@@ -74,26 +51,38 @@ const MONO_STYLE = {
   lineHeight: 1.42,
 } as const
 
-function CloudProviderStack() {
-  const theme = useResolvedTheme()
-  const providers = [
-    { id: 'aws', label: 'AWS', icon: getAwsIcon(theme) },
-    { id: 'gcp', label: 'Google Cloud', icon: gcpIcon },
-    { id: 'azure', label: 'Azure', text: 'Az' },
-    { id: 'do', label: 'DigitalOcean', text: 'DO' },
-  ] as const
+/** Outer height of Aquarium `Button.Secondary` with `dense` (py-2 + typography-default-strong). */
+const DENSE_SECONDARY_BUTTON_SIZE = 32
+
+const CLOUD_PROVIDER_STACK: Array<{ id: CloudProviderId; label: string }> = [
+  { id: 'aws', label: 'AWS' },
+  { id: 'google', label: 'Google Cloud' },
+  { id: 'azure', label: 'Azure' },
+  { id: 'upcloud', label: 'UpCloud' },
+  { id: 'digitalocean', label: 'DigitalOcean' },
+]
+
+/** Overlap between stacked cloud badges — lower = more spread, easier to read. */
+const CLOUD_ICON_OVERLAP = 10
+
+function CloudProviderStack({
+  size = DENSE_SECONDARY_BUTTON_SIZE,
+}: {
+  size?: number
+}) {
+  const logoSize = Math.round(size * 0.56)
 
   return (
-    <Box style={{ display: 'flex', alignItems: 'center', paddingLeft: 8 }}>
-      {providers.map((provider, index) => (
+    <Box style={{ display: 'flex', alignItems: 'center' }}>
+      {CLOUD_PROVIDER_STACK.map((provider, index) => (
         <Box
           key={provider.id}
           aria-hidden
           title={provider.label}
           style={{
-            width: 26,
-            height: 26,
-            marginLeft: index === 0 ? 0 : -14,
+            width: size,
+            height: size,
+            marginLeft: index === 0 ? 0 : -CLOUD_ICON_OVERLAP,
             borderRadius: '50%',
             border: '1px solid var(--aquarium-border-color-muted)',
             backgroundColor: 'var(--aquarium-background-color-layer)',
@@ -101,14 +90,10 @@ function CloudProviderStack() {
             alignItems: 'center',
             justifyContent: 'center',
             flexShrink: 0,
-            zIndex: providers.length - index,
+            zIndex: CLOUD_PROVIDER_STACK.length - index,
           }}
         >
-          {'icon' in provider ? (
-            <Icon icon={provider.icon} style={{ width: 14, height: 14 }} />
-          ) : (
-            <Typography.Caption color="muted">{provider.text}</Typography.Caption>
-          )}
+          <CloudProviderIcon id={provider.id} size={logoSize} />
         </Box>
       ))}
     </Box>
@@ -217,153 +202,187 @@ export function OnboardingTestEnv({
           gap: 32,
         }}
       >
-        <Box style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+        <Box style={{ display: 'flex', flexDirection: 'column', gap: 8, alignItems: 'flex-start' }}>
           <Typography.Heading color="intense">
             Welcome to Aiven! Create your test environment in minutes
           </Typography.Heading>
-          <StatusChip text="$50 trial credits active · No card needed" status="success" dense />
+          <Box style={{ display: 'inline-flex', maxWidth: '100%' }}>
+            <StatusChip text="$50 trial credits active · No card needed" status="success" dense />
+          </Box>
         </Box>
 
         <Box
           style={{
             display: 'grid',
-            gridTemplateColumns: 'minmax(0, 1fr) 400px',
+            gridTemplateColumns: 'minmax(0, 1fr) minmax(0, 1fr)',
             gap: 32,
             alignItems: 'start',
           }}
         >
           <Box style={{ display: 'flex', flexDirection: 'column', gap: 24, minWidth: 0 }}>
-            <SectionPanel>
-              <Section title="Project details">
-                <Box
-                  style={{
-                    display: 'grid',
-                    gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
-                    gap: 16,
+            <Section title="Project details">
+              <Box
+                style={{
+                  display: 'grid',
+                  gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
+                  gap: 16,
+                  alignItems: 'start',
+                }}
+              >
+                <Input
+                  labelText="Project name"
+                  description="Used to organize your services"
+                  reserveSpaceForError={false}
+                  value={projectName}
+                  onChange={(e) => setProjectName(e.target.value)}
+                />
+                <Select
+                  labelText="Location"
+                  description="To recommend nearby cloud regions"
+                  reserveSpaceForError={false}
+                  options={TEST_ENV_LOCATION_OPTIONS.map((o) => ({ label: o.label, value: o.value }))}
+                  value={location}
+                  onChange={(val) => {
+                    const next = String(val ?? '')
+                    const found = TEST_ENV_LOCATION_OPTIONS.find((o) => o.value === next)
+                    if (found) setLocation(found.value)
                   }}
-                >
-                  <Input
-                    labelText="Project name"
-                    description="Used to organize your services and environments"
-                    value={projectName}
-                    onChange={(e) => setProjectName(e.target.value)}
-                  />
-                  <Select
-                    labelText="Location"
-                    description="To recommend nearby cloud regions"
-                    options={TEST_ENV_LOCATION_OPTIONS.map((o) => ({ label: o.label, value: o.value }))}
-                    value={location}
-                    onChange={(val) => {
-                      const next = String(val ?? '')
-                      const found = TEST_ENV_LOCATION_OPTIONS.find((o) => o.value === next)
-                      if (found) setLocation(found.value)
-                    }}
-                  />
-                </Box>
-              </Section>
-            </SectionPanel>
+                />
+              </Box>
+            </Section>
 
-            <SectionPanel>
-              <Section title="Choose service">
-                  <Box className="onboarding-checkable-cards">
-                    <Card.Group
-                      checked={selectedServiceId}
-                      onCheckedChange={({ value }) =>
-                        setSelectedServiceId((value as TestEnvServiceId) ?? DEFAULT_TEST_ENV_SERVICE_ID)
-                      }
-                    >
-                      <Box
-                        style={{
-                          display: 'grid',
-                          gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
-                          gap: 16,
-                          alignItems: 'stretch',
-                        }}
-                      >
-                        {TEST_ENV_SERVICES.map((service) => (
-                          <ServicePickerCard key={service.id} service={service} />
-                        ))}
-                      </Box>
-                    </Card.Group>
+            <Section title="Choose service">
+              <Box className="onboarding-checkable-cards">
+                <Card.Group
+                  checked={selectedServiceId}
+                  onCheckedChange={({ value }) =>
+                    setSelectedServiceId((value as TestEnvServiceId) ?? DEFAULT_TEST_ENV_SERVICE_ID)
+                  }
+                >
+                  <Box
+                    style={{
+                      display: 'grid',
+                      gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
+                      gap: 16,
+                      alignItems: 'stretch',
+                    }}
+                  >
+                    {TEST_ENV_SERVICES.map((service) => (
+                      <ServicePickerCard key={service.id} service={service} />
+                    ))}
                   </Box>
-                </Section>
-            </SectionPanel>
+                </Card.Group>
+              </Box>
+            </Section>
           </Box>
 
-          <ServiceSummarySidebar style={{ width: 400 }} top={0}>
-            <Typography.Heading color="intense">{selectedService.title}</Typography.Heading>
-
-            <Box
-              style={{
-                padding: 16,
-                borderRadius: 8,
-                backgroundColor: 'var(--aquarium-background-color-muted)',
-                display: 'flex',
-                flexDirection: 'column',
-                gap: 8,
-                width: '100%',
-              }}
-            >
-              <Box style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
-                <Typography.DefaultStrong>Recommended plan</Typography.DefaultStrong>
-                <StatusChip text="Free" status="neutral" dense />
-              </Box>
-              <PlanDetailRow
-                label="Cloud & region"
-                value={selectedService.cloudRegionLabel}
-                info="Cloud and region are auto-assigned based on your location for the fastest setup."
-              />
-              <PlanDetailRow label="Resources" value={selectedService.planResources} />
-              <Box style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-                <Link href="#" onClick={(e) => { e.preventDefault(); handleCustomizePlan() }}>
-                  Customize plan and cloud
-                </Link>
-                <CloudProviderStack />
-              </Box>
+          <Box
+            style={{
+              width: '100%',
+              minWidth: 0,
+              flexShrink: 0,
+              alignSelf: 'flex-start',
+              position: 'sticky',
+              top: 0,
+            }}
+            className="onboarding-summary-section"
+          >
+            <style>{`
+              .onboarding-summary-section {
+                position: relative;
+              }
+              .onboarding-summary-section .Aquarium-Section > div:first-child {
+                position: relative;
+              }
+              .onboarding-summary-section .Aquarium-Section > div:first-child > div:first-child {
+                max-width: calc(100% - 340px);
+              }
+              .onboarding-summary-section__header-actions {
+                position: absolute;
+                top: 0;
+                right: 20px;
+                height: 62px;
+                display: flex;
+                align-items: center;
+                gap: 8px;
+                z-index: 1;
+              }
+            `}</style>
+            <Box className="onboarding-summary-section__header-actions">
+              <Button.Secondary dense type="button" onClick={handleCustomizePlan}>
+                Customize plan and cloud
+              </Button.Secondary>
+              <CloudProviderStack />
             </Box>
+            <Section title={selectedService.title}>
+                <Box style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+                  <Box
+                    style={{
+                      padding: 16,
+                      borderRadius: 8,
+                      backgroundColor: 'var(--aquarium-background-color-muted)',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      gap: 8,
+                      width: '100%',
+                    }}
+                  >
+                    <Box style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
+                      <Typography.DefaultStrong>Recommended plan</Typography.DefaultStrong>
+                      <StatusChip text="Free" status="neutral" dense />
+                    </Box>
+                    <PlanDetailRow
+                      label="Cloud & region"
+                      value={selectedService.cloudRegionLabel}
+                      info="Cloud and region are auto-assigned based on your location for the fastest setup."
+                    />
+                    <PlanDetailRow label="Resources" value={selectedService.planResources} />
+                  </Box>
 
-            <Box
-              style={{
-                padding: '12px 16px',
-                borderRadius: 8,
-                border: '1px solid var(--aquarium-border-color-default)',
-                display: 'flex',
-                flexDirection: 'column',
-                gap: 4,
-                width: '100%',
-              }}
-            >
-              <Box style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
-                <Typography.DefaultStrong>
-                  Price{' '}
-                  <Typography.Small color="muted" htmlTag="span">
-                    /per month
-                  </Typography.Small>
-                </Typography.DefaultStrong>
-                <Typography.Subheading color="intense">Free</Typography.Subheading>
-              </Box>
-              <Typography.Small color="muted">
-                No credit card. No expiry. Auto-pauses when idle
-              </Typography.Small>
-            </Box>
+                  <Box
+                    style={{
+                      padding: '12px 16px',
+                      borderRadius: 8,
+                      border: '1px solid var(--aquarium-border-color-default)',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      gap: 4,
+                      width: '100%',
+                    }}
+                  >
+                    <Box style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
+                      <Typography.DefaultStrong>
+                        Price{' '}
+                        <Typography.Small color="muted" htmlTag="span">
+                          /per month
+                        </Typography.Small>
+                      </Typography.DefaultStrong>
+                      <Typography.Subheading color="intense">Free</Typography.Subheading>
+                    </Box>
+                    <Typography.Small color="muted">
+                      No credit card. No expiry. Auto-pauses when idle
+                    </Typography.Small>
+                  </Box>
 
-            <Input
-              labelText="Service name"
-              value={serviceName}
-              onChange={(e) => setServiceName(e.target.value)}
-            />
+                <Input
+                  labelText="Service name"
+                  value={serviceName}
+                  onChange={(e) => setServiceName(e.target.value)}
+                />
 
-            <Box style={{ display: 'flex', flexDirection: 'column', gap: 8, width: '100%' }}>
-              <Button.Primary type="button" fullWidth onClick={handleCreate}>
-                Create {selectedService.title} service
-              </Button.Primary>
-              <Box style={{ textAlign: 'center' }}>
-                <Typography.Caption color="muted">
-                  Usually takes 2–5 minutes to provision
-                </Typography.Caption>
-              </Box>
-            </Box>
-          </ServiceSummarySidebar>
+                <Box style={{ display: 'flex', flexDirection: 'column', gap: 8, width: '100%' }}>
+                  <Button.Primary type="button" fullWidth onClick={handleCreate}>
+                    Create {selectedService.title} service
+                  </Button.Primary>
+                  <Box style={{ textAlign: 'center' }}>
+                    <Typography.Caption color="muted">
+                      Usually takes 2–5 minutes to provision
+                    </Typography.Caption>
+                  </Box>
+                </Box>
+                </Box>
+            </Section>
+          </Box>
         </Box>
       </Box>
     </OnboardingTestEnvShell>

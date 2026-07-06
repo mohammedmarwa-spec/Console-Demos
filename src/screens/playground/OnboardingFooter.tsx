@@ -1,9 +1,16 @@
-import { Box, Icon, Typography } from '@aivenio/aquarium'
+import { Box, Icon, Link, Typography } from '@aivenio/aquarium'
 import containerIcon from '@aivenio/aquarium/icons/container'
 import terraformIcon from '@aivenio/aquarium/icons/terraform'
 import type lightbulbIcon from '@aivenio/aquarium/icons/lightbulb'
 
-const FOOTER_BUTTON_STYLE = {
+const AIVEN_DEV_TOOL_LINKS = {
+  kubernetes: 'https://aiven.io/docs/tools/aiven-kubernetes-operator',
+  terraform: 'https://aiven.io/docs/tools/terraform',
+  api: 'https://aiven.io/docs/tools/api',
+  mcp: 'https://aiven.io/docs/tools/mcp-server',
+} as const
+
+const FOOTER_LINK_STYLE = {
   width: 36,
   height: 36,
   display: 'flex',
@@ -12,28 +19,44 @@ const FOOTER_BUTTON_STYLE = {
   border: '1px solid var(--aquarium-border-color-muted)',
   borderRadius: 4,
   backgroundColor: 'var(--aquarium-background-color-layer)',
-  cursor: 'default',
   color: 'var(--aquarium-text-color-muted)',
+  textDecoration: 'none',
+  flexShrink: 0,
 } as const
 
-function FooterIconButton({ icon, label }: { icon: typeof lightbulbIcon; label: string }) {
+function FooterIconLink({
+  href,
+  icon,
+  label,
+}: {
+  href: string
+  icon: typeof lightbulbIcon
+  label: string
+}) {
   return (
-    <Box component="button" type="button" aria-label={label} style={FOOTER_BUTTON_STYLE}>
+    <Link
+      href={href}
+      target="_blank"
+      rel="noopener noreferrer"
+      aria-label={label}
+      style={FOOTER_LINK_STYLE}
+    >
       <Icon icon={icon} style={{ width: 16, height: 16 }} />
-    </Box>
+    </Link>
   )
 }
 
-FooterIconButton.displayName = 'FooterIconButton'
+FooterIconLink.displayName = 'FooterIconLink'
 
-function FooterTextButton({ label }: { label: string }) {
+function FooterTextLink({ href, label }: { href: string; label: string }) {
   return (
-    <Box
-      component="button"
-      type="button"
+    <Link
+      href={href}
+      target="_blank"
+      rel="noopener noreferrer"
       aria-label={label}
       style={{
-        ...FOOTER_BUTTON_STYLE,
+        ...FOOTER_LINK_STYLE,
         fontFamily: '"Roboto Mono", monospace',
         fontSize: 10,
         fontWeight: 600,
@@ -41,11 +64,11 @@ function FooterTextButton({ label }: { label: string }) {
       }}
     >
       {label}
-    </Box>
+    </Link>
   )
 }
 
-FooterTextButton.displayName = 'FooterTextButton'
+FooterTextLink.displayName = 'FooterTextLink'
 
 /** Shared footer for all onboarding / playground shell screens. */
 export function OnboardingFooter() {
@@ -67,10 +90,10 @@ export function OnboardingFooter() {
         </Typography.Small>
       </Box>
       <Box style={{ display: 'flex', gap: 10 }}>
-        <FooterIconButton icon={containerIcon} label="Kubernetes" />
-        <FooterIconButton icon={terraformIcon} label="Terraform" />
-        <FooterTextButton label="API" />
-        <FooterTextButton label="MCP" />
+        <FooterIconLink href={AIVEN_DEV_TOOL_LINKS.kubernetes} icon={containerIcon} label="Aiven Kubernetes Operator" />
+        <FooterIconLink href={AIVEN_DEV_TOOL_LINKS.terraform} icon={terraformIcon} label="Aiven Terraform Provider" />
+        <FooterTextLink href={AIVEN_DEV_TOOL_LINKS.api} label="API" />
+        <FooterTextLink href={AIVEN_DEV_TOOL_LINKS.mcp} label="MCP" />
       </Box>
     </Box>
   )
