@@ -88,46 +88,7 @@ export type ServiceRow = {
   playgroundSampleLoaded?: boolean
 }
 
-export const INITIAL_SERVICES: ServiceRow[] = [
-  {
-    id: 'mysql-204e49c9',
-    serviceName: 'mysql-204e49c9',
-    serviceType: 'MySQL',
-    status: 'Running',
-    nodes: 'Nodes 1',
-    planName: 'Hobbyist',
-    planDetails: '1 CPU / 2 GB RAM / 8 GB storage',
-    cloudRegion: 'Google Cloud: asia-east1',
-    location: 'Asia, Taiwan',
-    created: '16 minutes ago',
-    createdByInitials: 'RS',
-    createdByFullName: 'Rick Salevsky',
-    iconLetter: 'M',
-    serviceTypeId: 'mysql',
-    pricingType: 'ACU',
-    nodeCount: 1,
-    cpuCount: 1,
-    ramCapacity: '8 GB',
-    storageCapacity: '8 GB',
-    serviceTier: 'Professional',
-    computeType: 'Standard',
-  },
-]
-
-/** Services list for Free & Dev quick-upgrade scenarios (v2, v3, v4). */
-// prettier-ignore
-export const FREE_DEV_UPGRADE_SERVICES: ServiceRow[] = [
-  // PostgreSQL
-  { id: 'pg-free-01',     serviceName: 'pg-free-01',     serviceType: 'PostgreSQL', serviceTypeId: 'postgresql', status: 'Running', nodes: 'Nodes 1', nodeCount: 1, planName: 'Free',      planDetails: '1 CPU / 1 GB RAM / 1 GB storage',  cloudRegion: 'AWS: eu-west-1', location: 'Europe, Ireland', created: '2 days ago',  iconLetter: 'P', cpuCount: 1, ramCapacity: '1 GB', storageCapacity: '1 GB'  },
-  { id: 'pg-dev-01',      serviceName: 'pg-dev-01',      serviceType: 'PostgreSQL', serviceTypeId: 'postgresql', status: 'Running', nodes: 'Nodes 1', nodeCount: 1, planName: 'Developer', planDetails: '1 CPU / 1 GB RAM / 8 GB storage',  cloudRegion: 'AWS: eu-west-1', location: 'Europe, Ireland', created: '1 week ago',  iconLetter: 'P', cpuCount: 1, ramCapacity: '1 GB', storageCapacity: '8 GB'  },
-  // MySQL
-  { id: 'mysql-free-01',  serviceName: 'mysql-free-01',  serviceType: 'MySQL',      serviceTypeId: 'mysql',      status: 'Running', nodes: 'Nodes 1', nodeCount: 1, planName: 'Free',      planDetails: '1 CPU / 1 GB RAM / 1 GB storage',  cloudRegion: 'AWS: eu-west-1', location: 'Europe, Ireland', created: '3 days ago',  iconLetter: 'M', cpuCount: 1, ramCapacity: '1 GB', storageCapacity: '1 GB'  },
-  { id: 'mysql-dev-01',   serviceName: 'mysql-dev-01',   serviceType: 'MySQL',      serviceTypeId: 'mysql',      status: 'Running', nodes: 'Nodes 1', nodeCount: 1, planName: 'Developer', planDetails: '1 CPU / 1 GB RAM / 8 GB storage',  cloudRegion: 'AWS: eu-west-1', location: 'Europe, Ireland', created: '2 weeks ago', iconLetter: 'M', cpuCount: 1, ramCapacity: '1 GB', storageCapacity: '8 GB'  },
-  // Valkey (Free only — Developer tier not available in Aiven)
-  { id: 'valkey-free-01', serviceName: 'valkey-free-01', serviceType: 'Valkey',     serviceTypeId: 'valkey',     status: 'Running', nodes: 'Nodes 1', nodeCount: 1, planName: 'Free',      planDetails: '1 CPU / 1 GB RAM',                 cloudRegion: 'AWS: eu-west-1', location: 'Europe, Ireland', created: '4 days ago',  iconLetter: 'V', cpuCount: 1, ramCapacity: '1 GB' },
-  // OpenSearch
-  { id: 'os-free-01',     serviceName: 'os-free-01',     serviceType: 'OpenSearch', serviceTypeId: 'opensearch', status: 'Running', nodes: 'Nodes 1', nodeCount: 1, planName: 'Free',      planDetails: '2 CPU / 4 GB RAM / 20 GB storage', cloudRegion: 'AWS: eu-west-1', location: 'Europe, Ireland', created: '5 days ago',  iconLetter: 'O', cpuCount: 2, ramCapacity: '4 GB', storageCapacity: '20 GB' },
-]
+export { INITIAL_SERVICES, FREE_DEV_UPGRADE_SERVICES } from '../mocks/services'
 
 // ─── Filter options ────────────────────────────────────────────────────────────
 
@@ -1091,15 +1052,11 @@ function ProjectServices({ services, onCreateServiceClick, onServiceClick, onDel
                   : 'Audit logs'
               }
               breadcrumbs={[
-                <Breadcrumbs.Crumb key="org">
-                  <Link href="#" onClick={(e) => { e.preventDefault(); onOrgHomeClick?.() }}>
-                    My Organization
-                  </Link>
+                <Breadcrumbs.Crumb key="org" href="#" onClick={(e) => { e.preventDefault(); onOrgHomeClick?.() }}>
+                  My Organization
                 </Breadcrumbs.Crumb>,
-                <Breadcrumbs.Crumb key="projects">
-                  <Link href="#" onClick={(e) => { e.preventDefault(); onOrgHomeClick?.() }}>
-                    Projects
-                  </Link>
+                <Breadcrumbs.Crumb key="projects" href="#" onClick={(e) => { e.preventDefault(); onOrgHomeClick?.() }}>
+                  Projects
                 </Breadcrumbs.Crumb>,
                 <Breadcrumbs.Crumb key="project">{projectName}</Breadcrumbs.Crumb>,
                 <Breadcrumbs.Crumb key="page">

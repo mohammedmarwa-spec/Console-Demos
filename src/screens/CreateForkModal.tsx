@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Box, Input, Modal, RadioButton, Select, Typography } from '@aivenio/aquarium'
 import databaseIcon from '@aivenio/aquarium/icons/database'
 import database02Icon from '@aivenio/aquarium/icons/database02'
@@ -60,6 +60,14 @@ export default function CreateForkModal({
   const [configType, setConfigType] = useState<ConfigType>('same-as-source')
   const [targetProject] = useState(PROJECT_NAME)
   const [useAcuPricing, setUseAcuPricing] = useState(sourceService?.pricingType === 'ACU')
+
+  useEffect(() => {
+    if (!open || !sourceService) return
+    setForkName(defaultForkName(sourceService.serviceName))
+    setUseAcuPricing(sourceService.pricingType === 'ACU')
+    setBackupType('latest')
+    setConfigType('same-as-source')
+  }, [open, sourceService?.id])
 
   if (!open || !sourceService) return null
 

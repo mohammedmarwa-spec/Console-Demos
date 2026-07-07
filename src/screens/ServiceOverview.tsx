@@ -1206,20 +1206,14 @@ function ServiceOverview({
                 <PageHeader
                   title=""
                   breadcrumbs={[
-                    <Breadcrumbs.Crumb key="org">
-                      <Link href="#" onClick={(e) => { e.preventDefault(); onBackToProject?.() }}>
-                        My Organization
-                      </Link>
+                    <Breadcrumbs.Crumb key="org" href="#" onClick={(e) => { e.preventDefault(); onBackToProject?.() }}>
+                      My Organization
                     </Breadcrumbs.Crumb>,
-                    <Breadcrumbs.Crumb key="projects">
-                      <Link href="#" onClick={(e) => { e.preventDefault(); onBackToProject?.() }}>
-                        Projects
-                      </Link>
+                    <Breadcrumbs.Crumb key="projects" href="#" onClick={(e) => { e.preventDefault(); onBackToProject?.() }}>
+                      Projects
                     </Breadcrumbs.Crumb>,
-                    <Breadcrumbs.Crumb key="project">
-                      <Link href="#" onClick={(e) => { e.preventDefault(); onBackToProject?.() }}>
-                        {PROJECT_NAME}
-                      </Link>
+                    <Breadcrumbs.Crumb key="project" href="#" onClick={(e) => { e.preventDefault(); onBackToProject?.() }}>
+                      {PROJECT_NAME}
                     </Breadcrumbs.Crumb>,
                     <Breadcrumbs.Crumb key="service">{serviceName}</Breadcrumbs.Crumb>,
                     <Breadcrumbs.Crumb key="logs">Event logs</Breadcrumbs.Crumb>,
@@ -1461,20 +1455,14 @@ function ServiceOverview({
               image={getServiceIconUrl(serviceTypeId ?? null, theme)}
               imageAlt={serviceTypeId ?? 'service'}
               breadcrumbs={[
-                <Breadcrumbs.Crumb key="org">
-                  <Link href="#" onClick={(e) => { e.preventDefault(); onBackToProject?.() }}>
-                    My Organization
-                  </Link>
+                <Breadcrumbs.Crumb key="org" href="#" onClick={(e) => { e.preventDefault(); onBackToProject?.() }}>
+                  My Organization
                 </Breadcrumbs.Crumb>,
-                <Breadcrumbs.Crumb key="projects">
-                  <Link href="#" onClick={(e) => { e.preventDefault(); onBackToProject?.() }}>
-                    Projects
-                  </Link>
+                <Breadcrumbs.Crumb key="projects" href="#" onClick={(e) => { e.preventDefault(); onBackToProject?.() }}>
+                  Projects
                 </Breadcrumbs.Crumb>,
-                <Breadcrumbs.Crumb key="project">
-                  <Link href="#" onClick={(e) => { e.preventDefault(); onBackToProject?.() }}>
-                    {PROJECT_NAME}
-                  </Link>
+                <Breadcrumbs.Crumb key="project" href="#" onClick={(e) => { e.preventDefault(); onBackToProject?.() }}>
+                  {PROJECT_NAME}
                 </Breadcrumbs.Crumb>,
                 <Breadcrumbs.Crumb key="service">{serviceName}</Breadcrumbs.Crumb>,
                 <Breadcrumbs.Crumb key="overview">Overview</Breadcrumbs.Crumb>,

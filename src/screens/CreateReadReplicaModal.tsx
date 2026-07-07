@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Alert, Box, Input, Modal, RadioButton, Typography } from '@aivenio/aquarium'
 import databaseIcon from '@aivenio/aquarium/icons/database'
 import database02Icon from '@aivenio/aquarium/icons/database02'
@@ -40,6 +40,13 @@ export default function CreateReadReplicaModal({
     sourceService ? defaultReplicaName(sourceService.id) : '',
   )
   const [useAcuPricing, setUseAcuPricing] = useState(sourceService?.pricingType === 'ACU')
+
+  useEffect(() => {
+    if (!open || !sourceService) return
+    setReplicaName(defaultReplicaName(sourceService.id))
+    setUseAcuPricing(sourceService.pricingType === 'ACU')
+    setConfig('same-as-primary')
+  }, [open, sourceService?.id])
 
   if (!open || !sourceService) return null
 

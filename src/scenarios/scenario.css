@@ -538,3 +538,228 @@
   color: rgba(255, 255, 255, 0.28);
 }
 
+/* ─── Type filters ───────────────────────────────────────────────────────── */
+
+.scenario-panel__filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 0 16px 8px;
+  flex-shrink: 0;
+}
+
+.scenario-panel__filter-chip {
+  padding: 4px 10px;
+  border-radius: 100px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.04);
+  color: rgba(255, 255, 255, 0.45);
+  font-size: 10px;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  transition: background 0.1s, color 0.1s, border-color 0.1s;
+}
+
+.scenario-panel__filter-chip:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: rgba(255, 255, 255, 0.75);
+}
+
+.scenario-panel__filter-chip--active {
+  border-color: rgba(99, 102, 241, 0.55);
+  background: rgba(99, 102, 241, 0.2);
+  color: rgba(199, 210, 254, 0.95);
+}
+
+/* ─── Scenario item metadata ─────────────────────────────────────────────── */
+
+.scenario-item__title-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.scenario-item__title {
+  font-weight: 500;
+}
+
+.scenario-item__owner {
+  display: block;
+  font-size: 10px;
+  color: rgba(255, 255, 255, 0.22);
+  margin-top: 2px;
+}
+
+.scenario-item--active .scenario-item__owner {
+  color: rgba(165, 180, 252, 0.4);
+}
+
+/* ─── Playground badges ──────────────────────────────────────────────────── */
+
+.playground-badges {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.playground-badge {
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  padding: 1px 6px;
+  border-radius: 100px;
+  line-height: 1.4;
+}
+
+.playground-badge--type {
+  background: rgba(255, 255, 255, 0.08);
+  color: rgba(255, 255, 255, 0.4);
+}
+
+.playground-badge--reusable {
+  background: rgba(34, 197, 94, 0.15);
+  color: rgba(134, 239, 172, 0.9);
+}
+
+.playground-badge--status {
+  background: rgba(255, 255, 255, 0.06);
+  color: rgba(255, 255, 255, 0.35);
+}
+
+.playground-badge--status-active {
+  color: rgba(134, 239, 172, 0.85);
+}
+
+.playground-badge--status-rough {
+  color: rgba(251, 191, 36, 0.85);
+}
+
+.playground-badge--status-review-ready {
+  color: rgba(129, 140, 248, 0.9);
+}
+
+.playground-badge--status-archived {
+  color: rgba(255, 255, 255, 0.25);
+}
+
+/* ─── Active scenario detail ─────────────────────────────────────────────── */
+
+.scenario-panel__active-detail {
+  flex-shrink: 0;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  padding: 10px 16px;
+}
+
+.scenario-panel__active-title {
+  font-size: 12px;
+  font-weight: 600;
+  color: #f1f5f9;
+  margin: 0 0 4px;
+}
+
+.scenario-panel__active-desc {
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.35);
+  margin: 0 0 8px;
+  line-height: 1.4;
+}
+
+.scenario-panel__active-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 6px;
+}
+
+.scenario-panel__active-owner {
+  font-size: 10px;
+  color: rgba(255, 255, 255, 0.3);
+}
+
+.scenario-panel__active-source {
+  font-size: 10px;
+  color: rgba(255, 255, 255, 0.28);
+  margin: 0 0 8px;
+}
+
+.scenario-panel__active-source code {
+  font-family: ui-monospace, 'SF Mono', Menlo, monospace;
+  font-size: 10px;
+  color: rgba(165, 180, 252, 0.8);
+}
+
+.scenario-panel__copy-prompt {
+  width: 100%;
+  padding: 6px 10px;
+  border-radius: 6px;
+  border: 1px solid rgba(99, 102, 241, 0.35);
+  background: rgba(99, 102, 241, 0.12);
+  color: rgba(199, 210, 254, 0.95);
+  font-size: 11px;
+  font-weight: 500;
+  font-family: inherit;
+  cursor: pointer;
+  transition: background 0.1s;
+}
+
+.scenario-panel__copy-prompt:hover {
+  background: rgba(99, 102, 241, 0.22);
+}
+
+/* ─── Trigger type hint ──────────────────────────────────────────────────── */
+
+.scenario-trigger__type {
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: rgba(99, 102, 241, 0.75);
+  padding: 1px 5px;
+  border-radius: 3px;
+  background: rgba(99, 102, 241, 0.12);
+}
+
+/* ─── Prototype banner ───────────────────────────────────────────────────── */
+
+.prototype-banner {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 9990;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 4px 12px;
+  background: rgba(99, 102, 241, 0.92);
+  color: #fff;
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  pointer-events: none;
+}
+
+.prototype-banner__label {
+  font-weight: 700;
+  text-transform: uppercase;
+  font-size: 9px;
+  letter-spacing: 0.08em;
+  opacity: 0.85;
+}
+
+.prototype-banner__title {
+  font-weight: 600;
+}
+
+.prototype-banner__owner,
+.prototype-banner__source {
+  opacity: 0.8;
+  font-size: 10px;
+}
+
+

@@ -15,9 +15,17 @@ The agent acts as a **Senior Product Designer & Design Systems Lead** — a "Des
 
 All `.md` files in `cursor/rules/` are authoritative project guidelines. The most important ones:
 
+- **`playground-rules.mdc`** — prototyping safety: experiments, mock data, edit scope
 - **`senior-designer.md`** — persona and behavioral principles
 - **`figma-design.md`** — technical Figma execution standards (naming, Auto-Layout, tokens)
 - **`ds_reference.md`** — Design System file links and layout standards
+
+## Playground vs Figma
+
+This repo supports two workflows:
+
+1. **Interactive prototyping** — scenario panel, experiments, mock Console flows ([docs/README.md](docs/README.md))
+2. **Figma design audits** — enforce Aquarium DS quality via MCP tools (below)
 
 ## Figma Design System Entry Points
 

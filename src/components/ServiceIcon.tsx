@@ -18,13 +18,20 @@ import grafanaIconLight from '../assets/service-icons/grafana-blk.png'
 import genericIcon from '../assets/service-icons/generic.png'
 import genericIconLight from '../assets/service-icons/generic-blk.png'
 
+import { imageSrc, type ImageSource } from '../lib/image'
 import type { ServiceTypeId } from '../screens/ServiceTypeSelectModal'
 import { useResolvedTheme, type ResolvedTheme } from '../theme/ThemeProvider'
 
 /** Circular icon fill — lighter grey surface token from Aquarium. */
 export const SERVICE_ICON_BACKGROUND = 'var(--aquarium-background-color-muted)'
 
-const ICON_URLS_DARK: Record<ServiceTypeId, string> = {
+type IconSource = ImageSource
+
+function iconSrc(icon: IconSource): string {
+  return imageSrc(icon)
+}
+
+const ICON_URLS_DARK: Record<ServiceTypeId, IconSource> = {
   postgresql: postgresqlIcon,
   kafka: kafkaIcon,
   valkey: valkeyIcon,
@@ -39,7 +46,7 @@ const ICON_URLS_DARK: Record<ServiceTypeId, string> = {
   m3db: metricsIcon,
 }
 
-const ICON_URLS_LIGHT: Record<ServiceTypeId, string> = {
+const ICON_URLS_LIGHT: Record<ServiceTypeId, IconSource> = {
   postgresql: postgresqlIconLight,
   kafka: kafkaIconLight,
   valkey: valkeyIconLight,
@@ -54,7 +61,7 @@ const ICON_URLS_LIGHT: Record<ServiceTypeId, string> = {
   m3db: metricsIconLight,
 }
 
-function iconMapForTheme(theme: ResolvedTheme): Record<ServiceTypeId, string> {
+function iconMapForTheme(theme: ResolvedTheme): Record<ServiceTypeId, IconSource> {
   return theme === 'light' ? ICON_URLS_LIGHT : ICON_URLS_DARK
 }
 
@@ -68,9 +75,9 @@ export function getServiceIconUrl(
 ): string {
   const map = iconMapForTheme(theme)
   if (serviceTypeId && serviceTypeId in map) {
-    return map[serviceTypeId]
+    return iconSrc(map[serviceTypeId])
   }
-  return theme === 'light' ? genericIconLight : genericIcon
+  return iconSrc(theme === 'light' ? genericIconLight : genericIcon)
 }
 
 type ServiceIconProps = {

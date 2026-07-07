@@ -347,7 +347,15 @@ Cursor reads `AGENTS.md` and `cursor/rules/*.md` automatically as project rules.
 
 ### Scenario panel
 
-Once the app runs, use the **scenario trigger** (bottom of the UI) to switch between prototype states: onboarding, empty project, upgrade modals, billing, etc. Scenarios are defined in `src/scenarios/scenarioConfig.ts`.
+Once the app runs, use the **scenario trigger** (top-right) or **Shift+S** to switch between prototype states.
+
+The panel supports:
+
+- **Reusable scenarios** — stable team starting points (green badge)
+- **Prototype scenarios** — exploratory ideas (owner, status badges)
+- **Experiments** — designer-owned copies under `src/experiments/`
+
+Scenarios are registered in `src/registry/`. See [docs/README.md](docs/README.md) and [docs/how-to-create-prototype.md](docs/how-to-create-prototype.md).
 
 ---
 

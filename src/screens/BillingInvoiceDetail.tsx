@@ -3,7 +3,6 @@ import {
   Box,
   Breadcrumbs,
   Icon,
-  Link,
   PageHeader,
   Section,
   StatusChip,
@@ -801,20 +800,14 @@ function BillingInvoiceDetail({ onBack, onOrgHomeClick, onBillingClick }: Billin
             <PageHeader
               title="Invoice for 1 February - 1 March 2026"
               breadcrumbs={[
-                <Breadcrumbs.Crumb key="org">
-                  <Link href="#" onClick={(e) => { e.preventDefault(); onOrgHomeClick?.() }}>
-                    My Organization
-                  </Link>
+                <Breadcrumbs.Crumb key="org" href="#" onClick={(e) => { e.preventDefault(); onOrgHomeClick?.() }}>
+                  My Organization
                 </Breadcrumbs.Crumb>,
-                <Breadcrumbs.Crumb key="billing">
-                  <Link href="#" onClick={(e) => { e.preventDefault(); onBillingClick?.() }}>
-                    Billing
-                  </Link>
+                <Breadcrumbs.Crumb key="billing" href="#" onClick={(e) => { e.preventDefault(); onBillingClick?.() }}>
+                  Billing
                 </Breadcrumbs.Crumb>,
-                <Breadcrumbs.Crumb key="invoices">
-                  <Link href="#" onClick={(e) => { e.preventDefault(); onBack?.() }}>
-                    Invoices
-                  </Link>
+                <Breadcrumbs.Crumb key="invoices" href="#" onClick={(e) => { e.preventDefault(); onBack?.() }}>
+                  Invoices
                 </Breadcrumbs.Crumb>,
                 <Breadcrumbs.Crumb key="invoice">
                   Invoice for 1 February - 1 March 2026

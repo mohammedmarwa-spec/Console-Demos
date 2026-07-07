@@ -2,7 +2,6 @@ import {
   Box,
   Breadcrumbs,
   DropdownMenu,
-  Link,
   PageHeader,
   StatusChip,
 } from '@aivenio/aquarium'
@@ -77,20 +76,14 @@ export function ServicePgStudioBody({
         <PageHeader
           title=""
           breadcrumbs={[
-            <Breadcrumbs.Crumb key="org">
-              <Link href="#" onClick={(e) => { e.preventDefault(); onBackToProject?.() }}>
-                My Organization
-              </Link>
+            <Breadcrumbs.Crumb key="org" href="#" onClick={(e) => { e.preventDefault(); onBackToProject?.() }}>
+              My Organization
             </Breadcrumbs.Crumb>,
-            <Breadcrumbs.Crumb key="projects">
-              <Link href="#" onClick={(e) => { e.preventDefault(); onBackToProject?.() }}>
-                Projects
-              </Link>
+            <Breadcrumbs.Crumb key="projects" href="#" onClick={(e) => { e.preventDefault(); onBackToProject?.() }}>
+              Projects
             </Breadcrumbs.Crumb>,
-            <Breadcrumbs.Crumb key="project">
-              <Link href="#" onClick={(e) => { e.preventDefault(); onBackToProject?.() }}>
-                {PROJECT_NAME}
-              </Link>
+            <Breadcrumbs.Crumb key="project" href="#" onClick={(e) => { e.preventDefault(); onBackToProject?.() }}>
+              {PROJECT_NAME}
             </Breadcrumbs.Crumb>,
             <Breadcrumbs.Crumb key="service">{serviceName}</Breadcrumbs.Crumb>,
             breadcrumbTrail,

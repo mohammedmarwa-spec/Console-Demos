@@ -1,6 +1,7 @@
 import { Box, Icon } from '@aivenio/aquarium'
 import { getAwsIcon } from '../assets/icons/awsIcon'
 import { useResolvedTheme } from '../theme/ThemeProvider'
+import { imageSrc } from '../lib/image'
 import type { CloudProviderId } from './serviceRegions'
 import cloudGoogle from '../assets/cloud-google.svg'
 import cloudAzure1 from '../assets/cloud-azure-1.svg'
@@ -22,20 +23,20 @@ export function CloudProviderIcon({ id, size = 20 }: { id: CloudProviderId; size
     case 'aws':
       return <AwsCloudProviderIcon size={size} />
     case 'google':
-      return <img alt="" width={size} height={size} style={{ display: 'block', objectFit: 'contain' }} src={cloudGoogle} />
+      return <img alt="" width={size} height={size} style={{ display: 'block', objectFit: 'contain' }} src={imageSrc(cloudGoogle)} />
     case 'azure':
       return (
         <Box aria-hidden="true" style={{ position: 'relative', width: size, height: size, flexShrink: 0 }}>
-          <img alt="" style={{ position: 'absolute', top: 0, left: 0, width: '47.5%', height: '47.5%', objectFit: 'fill' }} src={cloudAzure1} />
-          <img alt="" style={{ position: 'absolute', top: 0, right: 0, width: '47.5%', height: '47.5%', objectFit: 'fill' }} src={cloudAzure2} />
-          <img alt="" style={{ position: 'absolute', bottom: 0, left: 0, width: '47.5%', height: '47.5%', objectFit: 'fill' }} src={cloudAzure3} />
-          <img alt="" style={{ position: 'absolute', bottom: 0, right: 0, width: '47.5%', height: '47.5%', objectFit: 'fill' }} src={cloudAzure4} />
+          <img alt="" style={{ position: 'absolute', top: 0, left: 0, width: '47.5%', height: '47.5%', objectFit: 'fill' }} src={imageSrc(cloudAzure1)} />
+          <img alt="" style={{ position: 'absolute', top: 0, right: 0, width: '47.5%', height: '47.5%', objectFit: 'fill' }} src={imageSrc(cloudAzure2)} />
+          <img alt="" style={{ position: 'absolute', bottom: 0, left: 0, width: '47.5%', height: '47.5%', objectFit: 'fill' }} src={imageSrc(cloudAzure3)} />
+          <img alt="" style={{ position: 'absolute', bottom: 0, right: 0, width: '47.5%', height: '47.5%', objectFit: 'fill' }} src={imageSrc(cloudAzure4)} />
         </Box>
       )
     case 'digitalocean':
-      return <img alt="" width={size} height={size} style={{ display: 'block', objectFit: 'contain' }} src={cloudDigitalOcean} />
+      return <img alt="" width={size} height={size} style={{ display: 'block', objectFit: 'contain' }} src={imageSrc(cloudDigitalOcean)} />
     case 'upcloud':
-      return <img alt="" width={size} height={size} style={{ display: 'block', objectFit: 'contain' }} src={cloudUpCloud} />
+      return <img alt="" width={size} height={size} style={{ display: 'block', objectFit: 'contain' }} src={imageSrc(cloudUpCloud)} />
     default:
       return null
   }

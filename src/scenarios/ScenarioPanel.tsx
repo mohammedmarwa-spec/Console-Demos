@@ -1,6 +1,13 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useTheme, type ThemePreference } from '../theme'
-import { getGroups, getScenariosByGroup, type Scenario } from './scenarioConfig'
+import {
+  getEntryById,
+  getGroups,
+  getEntriesByGroupLabel,
+  isArchivedEntry,
+  type PlaygroundEntry,
+} from '../registry'
+import { ScenarioBadges } from '../components/playground/ScenarioBadges'
 import { useScenario } from './ScenarioContext'
 import './scenario.css'
 
@@ -54,29 +61,78 @@ function IconCollapse() {
   )
 }
 
+type TypeFilter = 'all' | 'reusable' | 'prototype' | 'archived'
+
+function matchesTypeFilter(entry: PlaygroundEntry, filter: TypeFilter): boolean {
+  if (filter === 'all') return !isArchivedEntry(entry)
+  if (filter === 'reusable') return entry.type === 'reusable-scenario'
+  if (filter === 'prototype') return entry.type === 'prototype' || entry.id.startsWith('experiment/')
+  if (filter === 'archived') return isArchivedEntry(entry)
+  return true
+}
+
+function matchesSearch(entry: PlaygroundEntry, q: string): boolean {
+  const haystack = [
+    entry.title,
+    entry.description,
+    entry.owner,
+    entry.type,
+    entry.status,
+    ...entry.tags,
+  ]
+    .join(' ')
+    .toLowerCase()
+  return haystack.includes(q)
+}
+
+function buildExperimentPrompt(entry: PlaygroundEntry): string {
+  const sourceId = entry.reusable ? entry.id : entry.sourceScenarioId ?? entry.runtimeKey
+  return `Use the existing "${entry.title}" scenario as the base.
+
+Create a new experiment for me under my owner folder.
+
+Goal:
+[Describe what you want to test]
+
+Rules:
+- Do not edit the original reusable scenario.
+- Modify only my new experiment folder under src/experiments/<your-name>/<experiment-name>/.
+- Reuse existing mock data from src/mocks/.
+- Keep existing price calculation logic.
+- Keep the Console-like shell.
+- Add or update prototype metadata in prototype.config.ts.
+- Add a short notes.md explaining what changed.
+
+Source scenario id: ${sourceId}`
+}
+
 // ─── ScenarioItem ─────────────────────────────────────────────────────────────
 
 type ScenarioItemProps = {
-  scenario: Scenario
+  entry: PlaygroundEntry
   isActive: boolean
   onSelect: (id: string) => void
 }
 
-function ScenarioItem({ scenario, isActive, onSelect }: ScenarioItemProps) {
+function ScenarioItem({ entry, isActive, onSelect }: ScenarioItemProps) {
   return (
     <button
       role="option"
       aria-selected={isActive}
       className={`scenario-item${isActive ? ' scenario-item--active' : ''}`}
-      onClick={() => onSelect(scenario.id)}
+      onClick={() => onSelect(entry.id)}
       tabIndex={0}
     >
       <span className="scenario-item__dot" aria-hidden="true" />
       <span className="scenario-item__label">
-        {scenario.label}
-        {scenario.description && (
-          <span className="scenario-item__description">{scenario.description}</span>
+        <span className="scenario-item__title-row">
+          <span className="scenario-item__title">{entry.title}</span>
+          <ScenarioBadges entry={entry} />
+        </span>
+        {entry.description && (
+          <span className="scenario-item__description">{entry.description}</span>
         )}
+        <span className="scenario-item__owner">{entry.owner}</span>
       </span>
       {isActive && <span className="scenario-item__active-pill">Active</span>}
     </button>
@@ -87,16 +143,15 @@ function ScenarioItem({ scenario, isActive, onSelect }: ScenarioItemProps) {
 
 type ScenarioGroupProps = {
   group: string
-  scenarios: Scenario[]
+  entries: PlaygroundEntry[]
   activeScenarioId: string | null
   onSelect: (id: string) => void
 }
 
-function ScenarioGroup({ group, scenarios, activeScenarioId, onSelect }: ScenarioGroupProps) {
-  const hasActive = scenarios.some((s) => s.id === activeScenarioId)
+function ScenarioGroup({ group, entries, activeScenarioId, onSelect }: ScenarioGroupProps) {
+  const hasActive = entries.some((e) => e.id === activeScenarioId)
   const [isOpen, setIsOpen] = useState(true)
 
-  // Auto-expand the group that contains the active scenario
   useEffect(() => {
     if (hasActive) setIsOpen(true)
   }, [hasActive])
@@ -114,11 +169,11 @@ function ScenarioGroup({ group, scenarios, activeScenarioId, onSelect }: Scenari
 
       {isOpen && (
         <div className="scenario-group__items" role="listbox" aria-label={group}>
-          {scenarios.map((s) => (
+          {entries.map((e) => (
             <ScenarioItem
-              key={s.id}
-              scenario={s}
-              isActive={s.id === activeScenarioId}
+              key={e.id}
+              entry={e}
+              isActive={e.id === activeScenarioId}
               onSelect={onSelect}
             />
           ))}
@@ -154,33 +209,41 @@ function ThemeOption({
   )
 }
 
+const TYPE_FILTERS: { id: TypeFilter; label: string }[] = [
+  { id: 'all', label: 'All' },
+  { id: 'reusable', label: 'Reusable' },
+  { id: 'prototype', label: 'Prototypes' },
+  { id: 'archived', label: 'Archived' },
+]
+
 export function ScenarioPanel() {
   const { preference, setPreference } = useTheme()
   const { activeScenarioId, isPanelOpen, setScenario, resetScenario, closePanel } = useScenario()
   const [query, setQuery] = useState('')
+  const [typeFilter, setTypeFilter] = useState<TypeFilter>('all')
+  const [copyFeedback, setCopyFeedback] = useState<string | null>(null)
   const panelRef = useRef<HTMLDivElement>(null)
   const searchRef = useRef<HTMLInputElement>(null)
-  const closeButtonRef = useRef<HTMLButtonElement>(null)
 
   const groups = useMemo(() => getGroups(), [])
+  const activeEntry = activeScenarioId ? getEntryById(activeScenarioId) : undefined
 
-  // Filter scenarios by search query
   const filteredGroups = useMemo(() => {
-    if (!query.trim()) return groups.map((g) => ({ group: g, scenarios: getScenariosByGroup(g) }))
-    const q = query.toLowerCase()
+    const q = query.trim().toLowerCase()
     return groups
       .map((g) => ({
         group: g,
-        scenarios: getScenariosByGroup(g).filter(
-          (s) => s.label.toLowerCase().includes(q) || s.description?.toLowerCase().includes(q),
-        ),
+        entries: getEntriesByGroupLabel(g).filter((e) => {
+          if (!matchesTypeFilter(e, typeFilter)) return false
+          if (q && !matchesSearch(e, q)) return false
+          return true
+        }),
       }))
-      .filter((g) => g.scenarios.length > 0)
-  }, [groups, query])
+      .filter((g) => g.entries.length > 0)
+  }, [groups, query, typeFilter])
 
   const hasResults = filteredGroups.length > 0
 
-  // Focus the search input when panel opens
   useEffect(() => {
     if (isPanelOpen) {
       const t = setTimeout(() => searchRef.current?.focus(), 80)
@@ -188,19 +251,15 @@ export function ScenarioPanel() {
     }
   }, [isPanelOpen])
 
-  // Escape closes the panel
   useEffect(() => {
     if (!isPanelOpen) return
     function onKeyDown(e: KeyboardEvent) {
-      if (e.key === 'Escape') {
-        closePanel()
-      }
+      if (e.key === 'Escape') closePanel()
     }
     window.addEventListener('keydown', onKeyDown)
     return () => window.removeEventListener('keydown', onKeyDown)
   }, [isPanelOpen, closePanel])
 
-  // Click-outside closes the panel (badge serves as the collapsed state)
   const handleOverlayClick = useCallback(
     (e: React.MouseEvent) => {
       if (panelRef.current && !panelRef.current.contains(e.target as Node)) {
@@ -212,35 +271,45 @@ export function ScenarioPanel() {
 
   function handleSelect(id: string) {
     setScenario(id)
-    // Keep panel open so user can switch; easy to change here if preferred
   }
+
+  async function handleCopyExperimentPrompt() {
+    if (!activeEntry) return
+    const prompt = buildExperimentPrompt(activeEntry)
+    try {
+      await navigator.clipboard.writeText(prompt)
+      setCopyFeedback('Copied!')
+      setTimeout(() => setCopyFeedback(null), 2000)
+    } catch {
+      setCopyFeedback('Copy failed')
+      setTimeout(() => setCopyFeedback(null), 2000)
+    }
+  }
+
+  const headerLabel =
+    activeEntry?.type === 'reusable-scenario'
+      ? 'Playground'
+      : activeEntry
+        ? 'Prototype'
+        : 'Prototype'
 
   return (
     <>
-      {/* Transparent overlay to capture click-outside */}
       {isPanelOpen && (
-        <div
-          className="scenario-overlay"
-          aria-hidden="true"
-          onClick={handleOverlayClick}
-        />
+        <div className="scenario-overlay" aria-hidden="true" onClick={handleOverlayClick} />
       )}
 
       <div
         ref={panelRef}
         className={`scenario-panel${isPanelOpen ? ' scenario-panel--open' : ''}`}
         aria-label="Scenario Control Panel"
-        // data-react-aria-top-layer exempts this devtool overlay from react-aria's
-        // modal focus containment and aria-hide-outside, so panel controls remain
-        // interactive when an Aquarium Modal is open on the page.
         data-react-aria-top-layer="true"
       >
-        {/* ── Header ── */}
         <div className="scenario-panel__header">
           <div className="scenario-panel__title-row">
             <IconSliders className="scenario-panel__icon" />
             <span className="scenario-panel__title">Scenarios</span>
-            <span className="scenario-panel__label">Prototype</span>
+            <span className="scenario-panel__label">{headerLabel}</span>
           </div>
           <div className="scenario-panel__header-actions">
             <button
@@ -251,7 +320,6 @@ export function ScenarioPanel() {
               <IconCollapse />
             </button>
             <button
-              ref={closeButtonRef}
               className="scenario-panel__close"
               onClick={closePanel}
               aria-label="Close scenario panel"
@@ -261,7 +329,20 @@ export function ScenarioPanel() {
           </div>
         </div>
 
-        {/* ── Search ── */}
+        <div className="scenario-panel__filters" role="group" aria-label="Filter by type">
+          {TYPE_FILTERS.map((f) => (
+            <button
+              key={f.id}
+              type="button"
+              className={`scenario-panel__filter-chip${typeFilter === f.id ? ' scenario-panel__filter-chip--active' : ''}`}
+              onClick={() => setTypeFilter(f.id)}
+              aria-pressed={typeFilter === f.id}
+            >
+              {f.label}
+            </button>
+          ))}
+        </div>
+
         <div className="scenario-panel__search-wrap">
           <IconSearch />
           <input
@@ -281,14 +362,13 @@ export function ScenarioPanel() {
           />
         </div>
 
-        {/* ── Body ── */}
         <div className="scenario-panel__body">
           {hasResults ? (
-            filteredGroups.map(({ group, scenarios }) => (
+            filteredGroups.map(({ group, entries }) => (
               <ScenarioGroup
                 key={group}
                 group={group}
-                scenarios={scenarios}
+                entries={entries}
                 activeScenarioId={activeScenarioId}
                 onSelect={handleSelect}
               />
@@ -300,7 +380,31 @@ export function ScenarioPanel() {
           )}
         </div>
 
-        {/* ── Appearance (Aquarium light/dark) ── */}
+        {activeEntry && (
+          <div className="scenario-panel__active-detail">
+            <p className="scenario-panel__active-title">{activeEntry.title}</p>
+            <p className="scenario-panel__active-desc">{activeEntry.description}</p>
+            <div className="scenario-panel__active-meta">
+              <ScenarioBadges entry={activeEntry} />
+              <span className="scenario-panel__active-owner">{activeEntry.owner}</span>
+            </div>
+            {activeEntry.sourceScenarioId && (
+              <p className="scenario-panel__active-source">
+                Based on: <code>{activeEntry.sourceScenarioId}</code>
+              </p>
+            )}
+            {activeEntry.reusable && (
+              <button
+                type="button"
+                className="scenario-panel__copy-prompt"
+                onClick={handleCopyExperimentPrompt}
+              >
+                {copyFeedback ?? 'Copy experiment prompt'}
+              </button>
+            )}
+          </div>
+        )}
+
         <div className="scenario-panel__theme">
           <span className="scenario-panel__theme-label" id="scenario-panel-theme-label">
             Appearance
@@ -316,7 +420,6 @@ export function ScenarioPanel() {
           </div>
         </div>
 
-        {/* ── Footer ── */}
         <div className="scenario-panel__footer">
           <button
             className={`scenario-panel__reset${activeScenarioId ? ' scenario-panel__reset--has-active' : ''}`}

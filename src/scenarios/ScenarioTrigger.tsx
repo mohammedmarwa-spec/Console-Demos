@@ -1,5 +1,5 @@
+import { getEntryById } from '../registry'
 import { useScenario } from './ScenarioContext'
-import { getScenarioById } from './scenarioConfig'
 import './scenario.css'
 
 function IconSliders() {
@@ -18,10 +18,16 @@ function IconSliders() {
 /** Small floating button in the top-right corner that opens the scenario panel. */
 export function ScenarioTrigger() {
   const { activeScenarioId, togglePanel } = useScenario()
-  const scenario = activeScenarioId ? getScenarioById(activeScenarioId) : null
-  const previewLabel = scenario?.label ?? 'Scenarios'
-  const ariaLabel = scenario
-    ? `Open scenario panel (Shift+S). Active scenario: ${scenario.label}`
+  const entry = activeScenarioId ? getEntryById(activeScenarioId) : null
+  const previewLabel = entry?.title ?? 'Scenarios'
+  const typeHint =
+    entry?.type === 'reusable-scenario'
+      ? 'Reusable'
+      : entry
+        ? 'Prototype'
+        : null
+  const ariaLabel = entry
+    ? `Open scenario panel (Shift+S). Active: ${entry.title}${typeHint ? ` (${typeHint})` : ''}`
     : 'Open scenario panel (Shift+S)'
 
   return (
@@ -34,6 +40,7 @@ export function ScenarioTrigger() {
       <IconSliders />
       {activeScenarioId && <span className="scenario-trigger__dot" aria-hidden="true" />}
       <span className="scenario-trigger__label">{previewLabel}</span>
+      {typeHint && <span className="scenario-trigger__type">{typeHint}</span>}
       <span className="scenario-trigger__kbd">⇧S</span>
     </button>
   )

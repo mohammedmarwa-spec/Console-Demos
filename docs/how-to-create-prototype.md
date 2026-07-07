@@ -1,0 +1,68 @@
+# How to create a prototype experiment
+
+## 1. Pick a reusable starting scenario
+
+Open the app and use the scenario panel (**Shift+S**). Filter by **Reusable**.
+
+Recommended starters:
+
+- **Create test environment** — onboarding + service create flow
+- **Empty project** — no services, empty states
+- **Existing customer** — one MySQL service
+
+## 2. Scaffold an experiment folder
+
+```bash
+node scripts/create-experiment.mjs --owner your-name --name my-experiment --from onboarding-test-env
+```
+
+This creates:
+
+```txt
+src/experiments/your-name/my-experiment/
+  prototype.config.ts
+  notes.md
+```
+
+And registers the experiment in `src/registry/experiments.ts`.
+
+## 3. Ask Cursor Agent to modify only the experiment
+
+Example prompt:
+
+```txt
+Use the existing "Create test environment" scenario as the base.
+
+Create a new experiment for me under my owner folder.
+
+Goal:
+Test a shorter create service flow where advanced settings are hidden by default.
+
+Rules:
+- Do not edit the original reusable scenario.
+- Modify only my new experiment folder.
+- Reuse existing mock data.
+- Keep existing price calculation logic.
+- Keep the Console-like shell.
+- Add or update prototype metadata.
+- Add a short notes file explaining what changed.
+```
+
+## 4. Preview locally
+
+```bash
+npm run dev
+```
+
+Open `?scenario=experiment/your-name/my-experiment` or select it in the scenario panel.
+
+## 5. Share with the team
+
+See [how-to-deploy.md](./how-to-deploy.md) and [contribution-guide.md](./contribution-guide.md).
+
+## Rules
+
+- **Never edit reusable scenarios** during normal prototyping
+- Work inside `src/experiments/<owner>/<name>/`
+- Update `notes.md` with what you are testing
+- Use mock data from `src/mocks/` only

@@ -1,0 +1,61 @@
+---
+description: Rules for AI-assisted prototyping in Console Prototype Lab
+globs:
+  - src/**
+  - docs/**
+  - scripts/**
+---
+
+# Console Prototype Lab — Agent Rules
+
+This repo is a **shared design playground**, not production Aiven Console.
+
+## Hard rules
+
+- Never use production APIs or real customer data
+- Never add secrets, tokens, or private customer information
+- Never use production API dependencies
+- Optimize for prototype clarity, not production quality
+
+## Edit scope
+
+- **Do not edit** shared reusable scenarios in `src/registry/scenarios.ts` or their runtime unless explicitly requested
+- For new design explorations, copy an existing scenario into `src/experiments/<owner>/<name>/`
+- **Default edit scope:** only the experiment folder
+- Ask before changing shared shell, global mock data structure, `scenarioRuntime` base configs, or shared components
+
+## Reuse first
+
+- Reuse `src/mocks/`, `src/screens/`, `src/components/` before creating new code
+- Reuse existing logic where possible
+- Keep code simple and readable
+
+## Metadata and notes
+
+- Add or update `prototype.config.ts` for new experiments
+- Add or update `notes.md` explaining what changed
+- Keep prototypes clearly marked as prototype-only (`type: prototype`)
+
+## Creating experiments
+
+```bash
+node scripts/create-experiment.mjs --owner <name> --name <slug> --from <scenarioId>
+```
+
+Example:
+
+```txt
+Use the existing "Create test environment" scenario as the base.
+Create a new experiment under src/experiments/<your-name>/<experiment-name>/.
+Modify only that experiment folder.
+```
+
+## Registry
+
+- Scenarios and experiments are registered in `src/registry/`
+- The scenario switch panel reads from the registry — do not hardcode scenario lists elsewhere
+
+## Deployment
+
+- Deploy via Aiven Application (Product app runtime), port 8080
+- No Vercel configuration in this project

@@ -4,7 +4,6 @@ import {
   Breadcrumbs,
   Button,
   Icon,
-  Link,
   PageHeader,
   Tabs,
   Typography,
@@ -220,16 +219,15 @@ export function PlaygroundEcosystemServices({
           <PageHeader
             title="Project overview"
             breadcrumbs={[
-              <Breadcrumbs.Crumb key="org">
-                <Link
-                  href="#"
-                  onClick={(e) => {
-                    e.preventDefault()
-                    onOrgHomeClick?.()
-                  }}
-                >
-                  Aiven
-                </Link>
+              <Breadcrumbs.Crumb
+                key="org"
+                href="#"
+                onClick={(e) => {
+                  e.preventDefault()
+                  onOrgHomeClick?.()
+                }}
+              >
+                Aiven
               </Breadcrumbs.Crumb>,
               <Breadcrumbs.Crumb key="project">{projectName}</Breadcrumbs.Crumb>,
               <Breadcrumbs.Crumb key="page">Project overview</Breadcrumbs.Crumb>,

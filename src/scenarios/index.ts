@@ -11,6 +11,15 @@ export { SCENARIOS, getScenarioById, getGroups, getScenariosByGroup } from './sc
 export type { Scenario } from './scenarioConfig'
 
 export {
+  getInitialServicesForScenario,
+  initialViewForScenario,
+  resolveRuntime,
+  resolveRuntimeKey,
+  getRuntimeFlags,
+} from './scenarioRuntime'
+export type { AppView, ScenarioRuntime } from './scenarioRuntime'
+
+export {
   DEFAULT_CONSOLE_CONTEXT,
   ONBOARDING_PLAYGROUND_CONTEXT,
   ONBOARDING_PLAYGROUND_SCENARIO_ID,

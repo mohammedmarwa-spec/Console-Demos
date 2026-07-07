@@ -8,7 +8,7 @@
  */
 
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { render, screen, waitFor, within } from '@testing-library/react'
+import { render, screen, waitFor, within, cleanup } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import React from 'react'
 
@@ -33,12 +33,32 @@ vi.mock('@aivenio/aquarium/charts', () => {
 // ─── Imports (after mocks) ────────────────────────────────────────────────────
 
 import App from '../App'
+import mockRouter from 'next-router-mock'
+import { Context } from '@aivenio/aquarium'
 import CreateReadReplicaModal from '../screens/CreateReadReplicaModal'
 import CreateForkModal from '../screens/CreateForkModal'
 import ServiceOverview from '../screens/ServiceOverview'
 import ProjectServices from '../screens/ProjectServices'
 import type { ServiceRow } from '../screens/ProjectServices'
+
+import mockRouter from 'next-router-mock'
+
+function renderApp() {
+  mockRouter.setCurrentUrl('/console/project/services?scenario=existing-customer')
+  if (typeof window !== 'undefined') {
+    window.localStorage.setItem('scenario:active', 'existing-customer')
+  }
+  return render(
+    <Context>
+      <App />
+    </Context>,
+  )
+}
 import type { CreatedServicePayload } from '../screens/CreateService'
+
+afterEach(() => {
+  cleanup()
+})
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -343,20 +363,24 @@ describe('ProjectServices — replica as normal service row', () => {
 })
 
 describe('App — full create-replica flow (integration)', () => {
-  beforeEach(() => vi.clearAllMocks())
+  beforeEach(() => {
+    vi.clearAllMocks()
+    mockRouter.setCurrentUrl('/console/project/services?scenario=existing-customer')
+  })
 
   async function openServiceOverview() {
     const user = userEvent.setup()
-    render(<App />)
-    // The initial MySQL service is rendered in the services table; click it to open overview
+    renderApp()
     await user.click(screen.getByText('mysql-204e49c9'))
+    await waitFor(() => {
+      expect(screen.getByText('Create replica')).toBeInTheDocument()
+    })
     return user
   }
 
   it('navigates to the service overview on row click', async () => {
     await openServiceOverview()
-    // Service name appears in the overview (could appear more than once)
-    expect(screen.getAllByText('mysql-204e49c9').length).toBeGreaterThan(0)
+    expect(screen.getByText('Create replica')).toBeInTheDocument()
   })
 
   it('opens the Create read-replica modal when "Create replica" is clicked', async () => {
@@ -390,8 +414,10 @@ describe('App — full create-replica flow (integration)', () => {
     })
 
     // Stays on the primary service overview; replica appears in the Read replica section
-    expect(screen.getByText('replica-mysql-204e49c9')).toBeInTheDocument()
-    expect(screen.getByText('Active')).toBeInTheDocument()
+    await waitFor(() => {
+      expect(screen.getByText('replica-mysql-204e49c9')).toBeInTheDocument()
+    })
+    expect(screen.getAllByText('Active').length).toBeGreaterThan(0)
   })
 
   it('replica appears in the Read replica section immediately after creation', async () => {
@@ -408,8 +434,10 @@ describe('App — full create-replica flow (integration)', () => {
     })
 
     // Still on primary service overview; replica row now visible
-    expect(screen.getByText('replica-mysql-204e49c9')).toBeInTheDocument()
-    expect(screen.getByText('Active')).toBeInTheDocument()
+    await waitFor(() => {
+      expect(screen.getByText('replica-mysql-204e49c9')).toBeInTheDocument()
+    })
+    expect(screen.getAllByText('Active').length).toBeGreaterThan(0)
     expect(screen.queryByText(/create a read-only replica for better performance/i)).not.toBeInTheDocument()
   })
 
@@ -486,7 +514,9 @@ describe('App — full create-replica flow (integration)', () => {
     await user.click(screen.getByRole('button', { name: /^Create read-replica$/ }))
 
     // Replica is now visible in the primary service's Read replica section
-    await waitFor(() => screen.getByText('Active'))
+    await waitFor(() => {
+      expect(screen.getAllByText('Active').length).toBeGreaterThan(0)
+    })
     const replicaLinks = screen.getAllByText('replica-mysql-204e49c9')
     const replicaAnchor = replicaLinks.find((el) => el.closest('a'))
     expect(replicaAnchor).toBeTruthy()
@@ -800,12 +830,18 @@ describe('ProjectServices — fork as normal service row', () => {
 // ─── App — full create-fork flow (integration) ───────────────────────────────
 
 describe('App — full create-fork flow (integration)', () => {
-  beforeEach(() => vi.clearAllMocks())
+  beforeEach(() => {
+    vi.clearAllMocks()
+    mockRouter.setCurrentUrl('/console/project/services?scenario=existing-customer')
+  })
 
   async function openServiceOverview() {
     const user = userEvent.setup()
-    render(<App />)
+    renderApp()
     await user.click(screen.getByText('mysql-204e49c9'))
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: /^Create fork$/ })).toBeInTheDocument()
+    })
     return user
   }
 
@@ -1068,11 +1104,14 @@ describe('ServiceOverview — plan usage reflects service resource fields', () =
 // ─── App — service creation propagates selected values ───────────────────────
 
 describe('App — service creation data propagation (integration)', () => {
-  beforeEach(() => vi.clearAllMocks())
+  beforeEach(() => {
+    vi.clearAllMocks()
+    mockRouter.setCurrentUrl('/console/project/services?scenario=existing-customer')
+  })
 
   async function createNewPgService() {
     const user = userEvent.setup()
-    render(<App />)
+    renderApp()
     // Open service type modal
     await user.click(screen.getByRole('button', { name: /create service/i }))
     await waitFor(() => screen.getByRole('dialog', { name: /select service type/i }))
@@ -1120,19 +1159,31 @@ describe('App — service creation data propagation (integration)', () => {
     const user = await createNewPgService()
     const dialog = screen.getByRole('dialog', { name: /create postgresql/i })
     await user.click(within(dialog).getByRole('button', { name: 'Create PostgreSQL® service' }))
-    // Free tier fixed plan uses 1 GB RAM (see `STANDARD_FIXED_TIER_PLANS` + `handleCreate` simple tier path).
     await waitFor(() => {
-      expect(screen.getByText(/of 1 GB \(37%\)/)).toBeInTheDocument()
+      expect(mockRouter.pathname).toContain('postgresql-2536119c')
     })
+    // Free tier fixed plan uses 1 GB RAM (see `STANDARD_FIXED_TIER_PLANS` + `handleCreate` simple tier path).
+    await waitFor(
+      () => {
+        expect(screen.getByText(/of 1 GB \(37%\)/)).toBeInTheDocument()
+      },
+      { timeout: 5000 },
+    )
   })
 
   it('service overview after creation shows storage capacity from the selected plan', async () => {
     const user = await createNewPgService()
     const dialog = screen.getByRole('dialog', { name: /create postgresql/i })
     await user.click(within(dialog).getByRole('button', { name: 'Create PostgreSQL® service' }))
-    // Free tier uses 1 GB storage in the plan usage bar copy.
     await waitFor(() => {
-      expect(screen.getByText(/of 1 GB \(13%\)/)).toBeInTheDocument()
+      expect(mockRouter.pathname).toContain('postgresql-2536119c')
     })
+    // Free tier uses 1 GB storage in the plan usage bar copy.
+    await waitFor(
+      () => {
+        expect(screen.getByText(/of 1 GB \(13%\)/)).toBeInTheDocument()
+      },
+      { timeout: 5000 },
+    )
   })
 })

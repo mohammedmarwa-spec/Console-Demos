@@ -1,5 +1,6 @@
 import '@testing-library/jest-dom'
 import '@aivenio/aquarium/dist/styles.css'
+import './next-mock'
 import { vi } from 'vitest'
 
 Object.defineProperty(window, 'matchMedia', {

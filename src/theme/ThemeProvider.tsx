@@ -23,6 +23,7 @@ type ThemeContextValue = {
 const ThemeContext = createContext<ThemeContextValue | null>(null)
 
 function readStoredPreference(): ThemePreference {
+  if (typeof window === 'undefined') return 'dark'
   try {
     const raw = localStorage.getItem(STORAGE_KEY)
     if (raw === 'light' || raw === 'dark' || raw === 'system') return raw
@@ -33,12 +34,16 @@ function readStoredPreference(): ThemePreference {
 }
 
 export function ThemeProvider({ children }: { children: ReactNode }) {
-  const [preference, setPreferenceState] = useState<ThemePreference>(readStoredPreference)
+  const [preference, setPreferenceState] = useState<ThemePreference>('dark')
   const [systemDark, setSystemDark] = useState(
     () => typeof window !== 'undefined' && window.matchMedia('(prefers-color-scheme: dark)').matches,
   )
 
   const resolved: ResolvedTheme = preference === 'system' ? (systemDark ? 'dark' : 'light') : preference
+
+  useEffect(() => {
+    setPreferenceState(readStoredPreference())
+  }, [])
 
   useEffect(() => {
     const mq = window.matchMedia('(prefers-color-scheme: dark)')
