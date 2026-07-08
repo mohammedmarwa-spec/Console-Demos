@@ -8,10 +8,13 @@ import {
   PLAYGROUND_ENTRIES,
   type PlaygroundEntry,
 } from '../../registry'
+import { HubHeader } from './HubHeader'
+import { DesignerAvatar } from './DesignerAvatar'
 import { PrototypeCard } from './PrototypeCard'
 import { ROUTES } from '../../lib/navigation'
 import { ForceResolvedTheme } from '../../theme'
 import { aquariumSelectValue } from '../../lib/aquariumSelect'
+import { DESIGN_TEAM_OWNERS } from '../../lib/cursorDeeplink'
 
 type TypeFilter = 'all' | 'templates' | 'archived'
 
@@ -45,12 +48,9 @@ export function PrototypeHub() {
   const query = search.trim().toLowerCase()
 
   const ownerOptions = useMemo(() => {
-    const owners = [...new Set(PLAYGROUND_ENTRIES.map((entry) => entry.owner))].sort((a, b) =>
-      a.localeCompare(b),
-    )
     return [
       { label: 'All owners', value: ALL_OWNERS_VALUE },
-      ...owners.map((owner) => ({ label: owner, value: owner })),
+      ...DESIGN_TEAM_OWNERS.map((owner) => ({ label: owner, value: owner })),
     ]
   }, [])
 
@@ -76,23 +76,22 @@ export function PrototypeHub() {
 
   return (
     <ForceResolvedTheme theme="light">
-    <Box
-      style={{
-        minHeight: '100vh',
-        padding: '32px 24px 48px',
-        maxWidth: 1200,
-        margin: '0 auto',
-      }}
-    >
+    <Box style={{ minHeight: '100vh' }}>
+      <HubHeader />
+
+      <Box
+        style={{
+          padding: '32px 24px 48px',
+          maxWidth: 1200,
+          margin: '0 auto',
+        }}
+      >
       <Box style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'flex-start', justifyContent: 'space-between', gap: 16, marginBottom: 32 }}>
-        <Box>
-          <Typography.Heading color="intense">Console Prototype Lab</Typography.Heading>
-          <Box style={{ marginTop: 8, maxWidth: 560 }}>
-            <Typography.Default color="muted">
-              Shared design playground for Aiven product designers. Pick a scenario or experiment to launch the
-              Console-like shell with mock data.
-            </Typography.Default>
-          </Box>
+        <Box style={{ maxWidth: 560 }}>
+          <Typography.Default color="muted">
+            Shared design playground for Aiven product designers. Pick a scenario or experiment to launch the
+            Console-like shell with mock data.
+          </Typography.Default>
         </Box>
         <Link href={`${ROUTES.consoleServices}?scenario=existing-customer`} style={{ textDecoration: 'none' }}>
           <Button kind="secondary">Open console directly</Button>
@@ -135,7 +134,15 @@ export function PrototypeHub() {
 
       {filteredOwnerGroups.map(({ owner, entries }) => (
         <Box key={owner} style={{ marginBottom: 40 }}>
-          <Box style={{ marginBottom: 16 }}>
+          <Box
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 12,
+              marginBottom: 16,
+            }}
+          >
+            <DesignerAvatar owner={owner} size={48} />
             <Typography.Subheading color="intense">{owner}</Typography.Subheading>
           </Box>
           <Box
@@ -157,6 +164,7 @@ export function PrototypeHub() {
           <Typography.Default color="muted">No prototypes match your search.</Typography.Default>
         </Box>
       )}
+      </Box>
     </Box>
     </ForceResolvedTheme>
   )

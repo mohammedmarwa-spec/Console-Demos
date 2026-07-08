@@ -40,7 +40,7 @@ Review is **lightweight** — this is a design sandbox, not production software.
 
 | Type | Who edits | Purpose |
 |------|-----------|---------|
-| Reusable scenario | Design team, explicit request only | Stable starting points |
+| Reusable scenario | Elena, explicit request only | Stable starting points |
 | Prototype | Owner designer | Exploratory ideas |
 | Experiment | Owner designer | Isolated working copy |
 

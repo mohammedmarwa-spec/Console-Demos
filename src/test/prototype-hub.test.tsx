@@ -36,7 +36,7 @@ describe('PrototypeHub', () => {
     const user = userEvent.setup()
     renderHub()
 
-    expect(screen.getAllByRole('heading', { level: 2 })).toHaveLength(3)
+    expect(screen.getAllByRole('heading', { level: 2 })).toHaveLength(2)
 
     await user.type(screen.getByLabelText(/search prototypes/i), 'ownership')
 

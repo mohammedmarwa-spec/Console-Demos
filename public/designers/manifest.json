@@ -1,0 +1,47 @@
+[
+  {
+    "name": "Brian",
+    "file": "/designers/brian.png",
+    "frameColor": "#FFD60A"
+  },
+  {
+    "name": "Caio",
+    "file": "/designers/caio.png",
+    "frameColor": "#5FFA74"
+  },
+  {
+    "name": "Elena",
+    "file": "/designers/elena.png",
+    "frameColor": "#7B61FF"
+  },
+  {
+    "name": "Ioan",
+    "file": "/designers/ioan.png",
+    "frameColor": "#FF965E"
+  },
+  {
+    "name": "Irene",
+    "file": "/designers/irene.png",
+    "frameColor": "#00C2FF"
+  },
+  {
+    "name": "Kate",
+    "file": "/designers/kate.png",
+    "frameColor": "#6F64FF"
+  },
+  {
+    "name": "Marwa",
+    "file": "/designers/marwa.png",
+    "frameColor": "#DF56F2"
+  },
+  {
+    "name": "Robin",
+    "file": "/designers/robin.png",
+    "frameColor": "#F85149"
+  },
+  {
+    "name": "Yaesul",
+    "file": "/designers/yaesul.png",
+    "frameColor": "#59D2F4"
+  }
+]

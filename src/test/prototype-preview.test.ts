@@ -13,7 +13,7 @@ const baseEntry: PlaygroundEntry = {
   category: 'service-creation',
   type: 'prototype',
   status: 'active',
-  owner: 'Design team',
+  owner: 'Elena',
   reusable: false,
   tags: [],
   route: '/console/project/services?scenario=first-time-user',

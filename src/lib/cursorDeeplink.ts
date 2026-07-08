@@ -9,14 +9,15 @@ const CURSOR_WEB_PROMPT_BASE = 'https://cursor.com/link/prompt'
 const OWNER_STORAGE_KEY = 'prototype-lab:owner-slug'
 
 export const DESIGN_TEAM_OWNERS = [
-  'Elena',
-  'Irene',
+  'Brian',
   'Caio',
-  'Yaesul',
-  'Kate',
-  'Robin',
-  'Marwa',
+  'Elena',
   'Ioan',
+  'Irene',
+  'Kate',
+  'Marwa',
+  'Robin',
+  'Yaesul',
 ] as const
 
 export type DesignTeamOwner = (typeof DESIGN_TEAM_OWNERS)[number]
