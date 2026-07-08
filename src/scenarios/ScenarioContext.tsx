@@ -35,12 +35,7 @@ function readInitialScenario(searchParams: URLSearchParams): string | null {
 
 export type ScenarioContextValue = {
   activeScenarioId: string | null
-  isPanelOpen: boolean
   setScenario: (id: string) => void
-  resetScenario: () => void
-  openPanel: () => void
-  closePanel: () => void
-  togglePanel: () => void
 }
 
 // ─── Context ──────────────────────────────────────────────────────────────────
@@ -56,8 +51,6 @@ export function ScenarioProvider({ children }: { children: ReactNode }) {
   const [activeScenarioId, setActiveScenarioId] = useState<string | null>(() =>
     readInitialScenario(searchParams),
   )
-  const [isPanelOpen, setIsPanelOpen] = useState(false)
-
   // Keep in sync when URL search params change (e.g. back/forward)
   useEffect(() => {
     const fromUrl = readScenarioFromUrl(searchParams)
@@ -91,40 +84,12 @@ export function ScenarioProvider({ children }: { children: ReactNode }) {
     [syncScenarioToUrl],
   )
 
-  const resetScenario = useCallback(() => {
-    setActiveScenarioId(null)
-    if (typeof window !== 'undefined') {
-      localStorage.removeItem(STORAGE_KEY)
-    }
-    syncScenarioToUrl(null)
-  }, [syncScenarioToUrl])
-
-  const openPanel = useCallback(() => setIsPanelOpen(true), [])
-  const closePanel = useCallback(() => setIsPanelOpen(false), [])
-  const togglePanel = useCallback(() => setIsPanelOpen((v) => !v), [])
-
-  useEffect(() => {
-    function onKeyDown(e: KeyboardEvent) {
-      if (e.key !== 'S' || !e.shiftKey || e.ctrlKey || e.metaKey || e.altKey) return
-      const target = e.target as HTMLElement
-      if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable) return
-      setIsPanelOpen((v) => !v)
-    }
-    window.addEventListener('keydown', onKeyDown)
-    return () => window.removeEventListener('keydown', onKeyDown)
-  }, [])
-
   const value = useMemo<ScenarioContextValue>(
     () => ({
       activeScenarioId,
-      isPanelOpen,
       setScenario,
-      resetScenario,
-      openPanel,
-      closePanel,
-      togglePanel,
     }),
-    [activeScenarioId, isPanelOpen, setScenario, resetScenario, openPanel, closePanel, togglePanel],
+    [activeScenarioId, setScenario],
   )
 
   return <ScenarioContext.Provider value={value}>{children}</ScenarioContext.Provider>

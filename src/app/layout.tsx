@@ -1,7 +1,6 @@
 import type { Metadata } from 'next'
 import '@aivenio/aquarium/dist/styles.css'
 import '../index.css'
-import '../scenarios/scenario.css'
 import { Providers } from './providers'
 
 export const metadata: Metadata = {
