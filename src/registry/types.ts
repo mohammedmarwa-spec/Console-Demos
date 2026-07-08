@@ -43,6 +43,8 @@ export type PlaygroundEntry = {
   sourceScenarioId?: string
   /** Alias of another entry (e.g. first-time-user → empty-state). */
   aliasOf?: string
+  /** Optional override; defaults to convention path under /public/previews */
+  previewImage?: string
 }
 
 /** Legacy shape kept for backward compatibility with existing imports. */

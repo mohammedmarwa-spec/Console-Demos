@@ -1,11 +1,9 @@
 'use client'
 
 import { useState } from 'react'
-import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import { Box, Button, Card, Typography } from '@aivenio/aquarium'
 import type { PlaygroundEntry } from '../../registry/types'
-import { ScenarioBadges } from '../playground/ScenarioBadges'
-import { CATEGORY_LABELS } from '../../registry/types'
 import { getLaunchUrlForScenario } from '../../lib/navigation'
 import {
   buildCursorPrompt,
@@ -15,12 +13,19 @@ import {
   suggestOwnerSlug,
 } from '../../lib/cursorDeeplink'
 import { StartInCursorModal } from './StartInCursorModal'
+import { PrototypePreviewPopover } from './PrototypePreviewPopover'
 
 export function PrototypeCard({ entry }: { entry: PlaygroundEntry }) {
+  const router = useRouter()
   const launchUrl = entry.route || getLaunchUrlForScenario(entry.id)
   const [cursorModalOpen, setCursorModalOpen] = useState(false)
 
-  function handleStartInCursor() {
+  function handleOpenPrototype() {
+    router.push(launchUrl)
+  }
+
+  function handleStartInCursor(event: React.MouseEvent) {
+    event.stopPropagation()
     const intent = getCursorPromptIntent(entry)
     if (intent === 'edit') {
       const ownerSlug = suggestOwnerSlug(entry)
@@ -35,10 +40,26 @@ export function PrototypeCard({ entry }: { entry: PlaygroundEntry }) {
     setCursorModalOpen(true)
   }
 
+  function handleCardKeyDown(event: React.KeyboardEvent) {
+    if (event.target !== event.currentTarget) return
+    if (event.key === 'Enter' || event.key === ' ') {
+      event.preventDefault()
+      handleOpenPrototype()
+    }
+  }
+
   return (
     <>
-      <Box style={{ height: '100%', display: 'flex' }}>
-        <Card
+      <PrototypePreviewPopover entry={entry}>
+        <Box
+          role="button"
+          tabIndex={0}
+          aria-label={`Open ${entry.title}`}
+          onClick={handleOpenPrototype}
+          onKeyDown={handleCardKeyDown}
+          style={{ height: '100%', display: 'flex', cursor: 'pointer' }}
+        >
+          <Card
           fullWidth
           title={
             <Card.Title>
@@ -49,22 +70,7 @@ export function PrototypeCard({ entry }: { entry: PlaygroundEntry }) {
           }
         >
           <Box style={{ display: 'flex', flexDirection: 'column', gap: 12, flex: 1, minHeight: 0 }}>
-            <ScenarioBadges entry={entry} />
             <Typography.Small color="muted">{entry.description}</Typography.Small>
-            <Box style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-              <Typography.Small color="muted">Owner: {entry.owner}</Typography.Small>
-              <Typography.Small color="muted">·</Typography.Small>
-              <Typography.Small color="muted">{CATEGORY_LABELS[entry.category]}</Typography.Small>
-            </Box>
-            {entry.tags.length > 0 && (
-              <Box style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
-                {entry.tags.slice(0, 4).map((tag) => (
-                  <span key={tag} className="playground-badge playground-badge--tag">
-                    {tag}
-                  </span>
-                ))}
-              </Box>
-            )}
             <Box
               style={{
                 marginTop: 'auto',
@@ -74,16 +80,14 @@ export function PrototypeCard({ entry }: { entry: PlaygroundEntry }) {
                 gap: 8,
               }}
             >
-              <Link href={launchUrl} style={{ textDecoration: 'none' }}>
-                <Button>Open prototype</Button>
-              </Link>
-              <Button kind="secondary" onClick={handleStartInCursor}>
+              <Button.Secondary dense type="button" onClick={handleStartInCursor}>
                 Start in Cursor
-              </Button>
+              </Button.Secondary>
             </Box>
           </Box>
-        </Card>
-      </Box>
+          </Card>
+        </Box>
+      </PrototypePreviewPopover>
       <StartInCursorModal
         entry={entry}
         open={cursorModalOpen}

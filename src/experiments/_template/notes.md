@@ -16,3 +16,12 @@ What are you testing?
 
 - Modify only this experiment folder
 - Do not edit shared reusable scenarios
+
+## Preview screenshot
+
+After visual changes, refresh the hub card preview:
+
+```bash
+npm run dev   # separate terminal
+PREVIEW_ONLY=experiment/<owner>/<slug> npm run capture-previews
+```

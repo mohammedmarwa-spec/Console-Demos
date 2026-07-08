@@ -1,8 +1,9 @@
 'use client'
 
-import { useEffect, useState } from 'react'
-import { Box, Modal, Typography } from '@aivenio/aquarium'
+import { useEffect, useMemo, useState } from 'react'
+import { Alert, Box, Button, Input, Modal, Select, Typography } from '@aivenio/aquarium'
 import type { PlaygroundEntry } from '../../registry/types'
+import { aquariumSelectValue } from '../../lib/aquariumSelect'
 import {
   buildCursorPrompt,
   CURSOR_DEEPLINK_MAX_LENGTH,
@@ -25,6 +26,11 @@ export function StartInCursorModal({ entry, open, onClose }: StartInCursorModalP
   const [ownerName, setOwnerName] = useState<DesignTeamOwner | ''>('')
   const [experimentName, setExperimentName] = useState('')
   const [copyState, setCopyState] = useState<'idle' | 'copied' | 'error'>('idle')
+
+  const ownerOptions = useMemo(
+    () => DESIGN_TEAM_OWNERS.map((name) => ({ label: name, value: name })),
+    [],
+  )
 
   useEffect(() => {
     if (!entry || !open) return
@@ -70,6 +76,8 @@ export function StartInCursorModal({ entry, open, onClose }: StartInCursorModalP
   }
 
   const isFork = intent === 'fork'
+  const copyLabel =
+    copyState === 'copied' ? 'Copied' : copyState === 'error' ? 'Copy failed' : 'Copy prompt'
 
   return (
     <Modal
@@ -92,61 +100,39 @@ export function StartInCursorModal({ entry, open, onClose }: StartInCursorModalP
       <Box style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
         {isFork && (
           <>
-            <label style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-              <Typography.SmallStrong color="intense">Owner</Typography.SmallStrong>
-              <select
-                value={ownerName}
-                onChange={(e) => setOwnerName(e.target.value as DesignTeamOwner | '')}
-                className="scenario-panel__search-input"
-                aria-label="Owner"
-              >
-                <option value="">Select owner</option>
-                {DESIGN_TEAM_OWNERS.map((name) => (
-                  <option key={name} value={name}>
-                    {name}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <label style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-              <Typography.SmallStrong color="intense">Experiment name</Typography.SmallStrong>
-              <input
-                type="text"
-                value={experimentName}
-                onChange={(e) => setExperimentName(e.target.value)}
-                placeholder="My experiment"
-                className="scenario-panel__search-input"
-                aria-label="Experiment name"
-              />
-            </label>
+            <Select
+              labelText="Owner"
+              options={ownerOptions}
+              value={ownerName}
+              onChange={(selected) =>
+                setOwnerName(aquariumSelectValue(selected) as DesignTeamOwner | '')
+              }
+            />
+            <Input
+              labelText="Experiment name"
+              placeholder="My experiment"
+              value={experimentName}
+              onChange={(e) => setExperimentName(e.target.value)}
+            />
           </>
         )}
 
-        <Box>
-          <Typography.Small color="muted">
-            Prerequisites: Cursor installed, this repo cloned locally, and the workspace open in Cursor.
-            Review the pre-filled prompt before running the agent.
-          </Typography.Small>
-        </Box>
+        <Typography.Small color="muted">
+          Prerequisites: Cursor installed, this repo cloned locally, and the workspace open in Cursor.
+          Review the pre-filled prompt before running the agent.
+        </Typography.Small>
 
         {result && !result.withinLimit && (
-          <Box style={{ color: 'var(--aquarium-text-color-danger, #c62828)' }}>
-            <Typography.Small>
-              Prompt is too long for a Cursor deeplink ({result.url.length} / {CURSOR_DEEPLINK_MAX_LENGTH}).
-              Use Copy prompt instead.
-            </Typography.Small>
-          </Box>
+          <Alert type="warning">
+            Prompt is too long for a Cursor deeplink ({result.url.length} / {CURSOR_DEEPLINK_MAX_LENGTH}).
+            Use Copy prompt instead.
+          </Alert>
         )}
 
-        <Box style={{ display: 'flex', flexWrap: 'wrap', gap: 8, alignItems: 'center' }}>
-          <button
-            type="button"
-            className="scenario-panel__filter-chip"
-            onClick={handleCopyPrompt}
-            disabled={!canSubmit}
-          >
-            {copyState === 'copied' ? 'Copied' : copyState === 'error' ? 'Copy failed' : 'Copy prompt'}
-          </button>
+        <Box>
+          <Button.Secondary dense type="button" onClick={handleCopyPrompt} disabled={!canSubmit}>
+            {copyLabel}
+          </Button.Secondary>
         </Box>
       </Box>
     </Modal>

@@ -2,23 +2,22 @@
 
 import { useMemo, useState } from 'react'
 import Link from 'next/link'
-import { Box, Button, Typography } from '@aivenio/aquarium'
+import { Box, Button, Input, Select, Tabs, Typography } from '@aivenio/aquarium'
 import {
-  getGroups,
-  getEntriesByGroupLabel,
   isArchivedEntry,
   PLAYGROUND_ENTRIES,
   type PlaygroundEntry,
 } from '../../registry'
 import { PrototypeCard } from './PrototypeCard'
 import { ROUTES } from '../../lib/navigation'
+import { ForceResolvedTheme } from '../../theme'
+import { aquariumSelectValue } from '../../lib/aquariumSelect'
 
-type TypeFilter = 'all' | 'reusable' | 'prototype' | 'archived'
+type TypeFilter = 'all' | 'templates' | 'archived'
 
 function matchesTypeFilter(entry: PlaygroundEntry, filter: TypeFilter): boolean {
   if (filter === 'all') return !isArchivedEntry(entry)
-  if (filter === 'reusable') return entry.type === 'reusable-scenario'
-  if (filter === 'prototype') return entry.type === 'prototype' || entry.id.startsWith('experiment/')
+  if (filter === 'templates') return entry.type === 'prototype' || entry.id.startsWith('experiment/')
   if (filter === 'archived') return isArchivedEntry(entry)
   return true
 }
@@ -30,34 +29,53 @@ function matchesSearch(entry: PlaygroundEntry, q: string): boolean {
   return haystack.includes(q)
 }
 
-const FILTER_OPTIONS: { id: TypeFilter; label: string }[] = [
+const TYPE_TABS: { id: TypeFilter; label: string }[] = [
   { id: 'all', label: 'All' },
-  { id: 'reusable', label: 'Reusable' },
-  { id: 'prototype', label: 'Prototypes' },
+  { id: 'templates', label: 'Templates' },
   { id: 'archived', label: 'Archived' },
 ]
+
+const ALL_OWNERS_VALUE = 'all'
 
 export function PrototypeHub() {
   const [search, setSearch] = useState('')
   const [typeFilter, setTypeFilter] = useState<TypeFilter>('all')
+  const [ownerFilter, setOwnerFilter] = useState(ALL_OWNERS_VALUE)
 
-  const groups = useMemo(() => getGroups(), [])
   const query = search.trim().toLowerCase()
 
-  const filteredGroups = useMemo(() => {
-    return groups
-      .map((group) => {
-        const entries = getEntriesByGroupLabel(group).filter(
-          (entry) => matchesTypeFilter(entry, typeFilter) && (!query || matchesSearch(entry, query)),
-        )
-        return { group, entries }
-      })
-      .filter((g) => g.entries.length > 0)
-  }, [groups, typeFilter, query])
+  const ownerOptions = useMemo(() => {
+    const owners = [...new Set(PLAYGROUND_ENTRIES.map((entry) => entry.owner))].sort((a, b) =>
+      a.localeCompare(b),
+    )
+    return [
+      { label: 'All owners', value: ALL_OWNERS_VALUE },
+      ...owners.map((owner) => ({ label: owner, value: owner })),
+    ]
+  }, [])
 
-  const totalVisible = filteredGroups.reduce((sum, g) => sum + g.entries.length, 0)
+  const filteredOwnerGroups = useMemo(() => {
+    const byOwner = new Map<string, PlaygroundEntry[]>()
+
+    for (const entry of PLAYGROUND_ENTRIES) {
+      if (!matchesTypeFilter(entry, typeFilter)) continue
+      if (query && !matchesSearch(entry, query)) continue
+      if (ownerFilter !== ALL_OWNERS_VALUE && entry.owner !== ownerFilter) continue
+
+      const entries = byOwner.get(entry.owner) ?? []
+      entries.push(entry)
+      byOwner.set(entry.owner, entries)
+    }
+
+    return [...byOwner.entries()]
+      .sort(([ownerA], [ownerB]) => ownerA.localeCompare(ownerB))
+      .map(([owner, entries]) => ({ owner, entries }))
+  }, [typeFilter, query, ownerFilter])
+
+  const totalVisible = filteredOwnerGroups.reduce((sum, group) => sum + group.entries.length, 0)
 
   return (
+    <ForceResolvedTheme theme="light">
     <Box
       style={{
         minHeight: '100vh',
@@ -81,40 +99,44 @@ export function PrototypeHub() {
         </Link>
       </Box>
 
-      <Box style={{ display: 'flex', flexWrap: 'wrap', gap: 12, marginBottom: 24, alignItems: 'center' }}>
-        <input
-          type="search"
+      <Box style={{ marginBottom: 24 }}>
+        <Tabs value={typeFilter} onChange={(value) => setTypeFilter(value as TypeFilter)}>
+          {TYPE_TABS.map((tab) => (
+            <Tabs.Tab key={tab.id} title={tab.label} value={tab.id} />
+          ))}
+        </Tabs>
+      </Box>
+
+      <Box
+        style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))',
+          gap: 16,
+          marginBottom: 32,
+          alignItems: 'end',
+        }}
+      >
+        <Input
+          labelText="Search"
           placeholder="Search prototypes…"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          className="scenario-panel__search-input"
-          style={{ flex: '1 1 240px', maxWidth: 400 }}
           aria-label="Search prototypes"
         />
-        <Box style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-          {FILTER_OPTIONS.map((opt) => (
-            <button
-              key={opt.id}
-              type="button"
-              className={`scenario-panel__filter-chip${typeFilter === opt.id ? ' scenario-panel__filter-chip--active' : ''}`}
-              onClick={() => setTypeFilter(opt.id)}
-            >
-              {opt.label}
-            </button>
-          ))}
-        </Box>
+        <Select
+          labelText="Owner"
+          options={ownerOptions}
+          value={ownerFilter}
+          onChange={(selected) =>
+            setOwnerFilter(aquariumSelectValue(selected, ALL_OWNERS_VALUE))
+          }
+        />
       </Box>
 
-      <Box style={{ marginBottom: 24 }}>
-        <Typography.Small color="muted">
-          {totalVisible} of {PLAYGROUND_ENTRIES.length} entries
-        </Typography.Small>
-      </Box>
-
-      {filteredGroups.map(({ group, entries }) => (
-        <Box key={group} style={{ marginBottom: 40 }}>
+      {filteredOwnerGroups.map(({ owner, entries }) => (
+        <Box key={owner} style={{ marginBottom: 40 }}>
           <Box style={{ marginBottom: 16 }}>
-            <Typography.Subheading color="intense">{group}</Typography.Subheading>
+            <Typography.Subheading color="intense">{owner}</Typography.Subheading>
           </Box>
           <Box
             style={{
@@ -136,6 +158,7 @@ export function PrototypeHub() {
         </Box>
       )}
     </Box>
+    </ForceResolvedTheme>
   )
 }
 

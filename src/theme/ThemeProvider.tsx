@@ -3,6 +3,7 @@ import {
   useCallback,
   useContext,
   useEffect,
+  useLayoutEffect,
   useMemo,
   useState,
   type ReactNode,
@@ -17,10 +18,18 @@ export type ResolvedTheme = 'light' | 'dark'
 type ThemeContextValue = {
   preference: ThemePreference
   resolved: ResolvedTheme
+  effectiveResolved: ResolvedTheme
   setPreference: (preference: ThemePreference) => void
+  registerForcedTheme: (theme: ResolvedTheme | null) => void
 }
 
 const ThemeContext = createContext<ThemeContextValue | null>(null)
+
+function applyResolvedThemeToDocument(theme: ResolvedTheme) {
+  const root = document.documentElement
+  if (theme === 'dark') root.classList.add('aquarium-theme-dark')
+  else root.classList.remove('aquarium-theme-dark')
+}
 
 function readStoredPreference(): ThemePreference {
   if (typeof window === 'undefined') return 'dark'
@@ -35,11 +44,13 @@ function readStoredPreference(): ThemePreference {
 
 export function ThemeProvider({ children }: { children: ReactNode }) {
   const [preference, setPreferenceState] = useState<ThemePreference>('dark')
+  const [forcedTheme, setForcedTheme] = useState<ResolvedTheme | null>(null)
   const [systemDark, setSystemDark] = useState(
     () => typeof window !== 'undefined' && window.matchMedia('(prefers-color-scheme: dark)').matches,
   )
 
   const resolved: ResolvedTheme = preference === 'system' ? (systemDark ? 'dark' : 'light') : preference
+  const effectiveResolved = forcedTheme ?? resolved
 
   useEffect(() => {
     setPreferenceState(readStoredPreference())
@@ -52,11 +63,9 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     return () => mq.removeEventListener('change', onChange)
   }, [])
 
-  useEffect(() => {
-    const root = document.documentElement
-    if (resolved === 'dark') root.classList.add('aquarium-theme-dark')
-    else root.classList.remove('aquarium-theme-dark')
-  }, [resolved])
+  useLayoutEffect(() => {
+    applyResolvedThemeToDocument(effectiveResolved)
+  }, [effectiveResolved])
 
   const setPreference = useCallback((next: ThemePreference) => {
     setPreferenceState(next)
@@ -67,9 +76,19 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     }
   }, [])
 
+  const registerForcedTheme = useCallback((theme: ResolvedTheme | null) => {
+    setForcedTheme(theme)
+  }, [])
+
   const value = useMemo(
-    () => ({ preference, resolved, setPreference }),
-    [preference, resolved, setPreference],
+    () => ({
+      preference,
+      resolved,
+      effectiveResolved,
+      setPreference,
+      registerForcedTheme,
+    }),
+    [preference, resolved, effectiveResolved, setPreference, registerForcedTheme],
   )
 
   return <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>
@@ -84,7 +103,25 @@ export function useTheme(): ThemeContextValue {
 /** Resolved theme; falls back to `html.aquarium-theme-dark` when outside ThemeProvider (e.g. tests). */
 export function useResolvedTheme(): ResolvedTheme {
   const ctx = useContext(ThemeContext)
-  if (ctx) return ctx.resolved
+  if (ctx) return ctx.effectiveResolved
   if (typeof document === 'undefined') return 'dark'
   return document.documentElement.classList.contains('aquarium-theme-dark') ? 'dark' : 'light'
+}
+
+/** Overrides ThemeProvider preference while mounted (e.g. Prototype Lab hub in light mode). */
+export function ForceResolvedTheme({
+  theme,
+  children,
+}: {
+  theme: ResolvedTheme
+  children: ReactNode
+}) {
+  const { registerForcedTheme } = useTheme()
+
+  useEffect(() => {
+    registerForcedTheme(theme)
+    return () => registerForcedTheme(null)
+  }, [registerForcedTheme, theme])
+
+  return <>{children}</>
 }
