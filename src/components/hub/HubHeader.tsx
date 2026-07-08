@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, type ReactNode } from 'react'
 import { DESIGNER_AVATAR_LIST } from '../../lib/designerAvatars'
 import { AppearanceSwitcher } from '../AppearanceSwitcher'
 import './hub-header.css'
@@ -20,7 +20,7 @@ const ASTERISK_SIZE = 54
 const FIRST_ASTERISK = { cx: 99.6975, cy: 44.7727 }
 const SECOND_ASTERISK = { cx: 278.3615, cy: 44.7727 }
 
-export function HubHeader() {
+export function HubHeader({ children }: { children?: ReactNode }) {
   const [previewActive, setPreviewActive] = useState(false)
   const [photoIndex, setPhotoIndex] = useState(0)
   const [compact, setCompact] = useState(false)
@@ -143,6 +143,7 @@ export function HubHeader() {
           </a>
         </div>
         </div>
+        {!compact && children ? <div className="hub-header__intro">{children}</div> : null}
       </div>
     </header>
   )

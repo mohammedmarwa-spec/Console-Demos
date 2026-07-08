@@ -1,8 +1,7 @@
 'use client'
 
 import { useMemo, useState } from 'react'
-import Link from 'next/link'
-import { Box, Button, Input, Select, Tabs, Typography } from '@aivenio/aquarium'
+import { Box, Input, Select, Tabs, Typography } from '@aivenio/aquarium'
 import {
   isArchivedEntry,
   PLAYGROUND_ENTRIES,
@@ -11,7 +10,6 @@ import {
 import { HubHeader } from './HubHeader'
 import { DesignerAvatar } from './DesignerAvatar'
 import { PrototypeCard } from './PrototypeCard'
-import { ROUTES } from '../../lib/navigation'
 import { aquariumSelectValue } from '../../lib/aquariumSelect'
 import { DESIGN_TEAM_OWNERS } from '../../lib/cursorDeeplink'
 
@@ -75,7 +73,14 @@ export function PrototypeHub() {
 
   return (
     <Box style={{ minHeight: '100vh' }}>
-      <HubHeader />
+      <HubHeader>
+        <Box style={{ maxWidth: 560 }}>
+          <Typography.Default color="muted">
+            Shared design playground for Aiven product designers. Pick a scenario or experiment to launch the
+            Console-like shell with mock data.
+          </Typography.Default>
+        </Box>
+      </HubHeader>
 
       <Box
         style={{
@@ -84,18 +89,6 @@ export function PrototypeHub() {
           margin: '0 auto',
         }}
       >
-      <Box style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'flex-start', justifyContent: 'space-between', gap: 16, marginBottom: 32 }}>
-        <Box style={{ maxWidth: 560 }}>
-          <Typography.Default color="muted">
-            Shared design playground for Aiven product designers. Pick a scenario or experiment to launch the
-            Console-like shell with mock data.
-          </Typography.Default>
-        </Box>
-        <Link href={`${ROUTES.consoleServices}?scenario=existing-customer`} style={{ textDecoration: 'none' }}>
-          <Button kind="secondary">Open console directly</Button>
-        </Link>
-      </Box>
-
       <Box style={{ marginBottom: 24 }}>
         <Tabs value={typeFilter} onChange={(value) => setTypeFilter(value as TypeFilter)}>
           {TYPE_TABS.map((tab) => (

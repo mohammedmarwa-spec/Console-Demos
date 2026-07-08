@@ -31,7 +31,7 @@
 
 .hub-header__row {
   display: flex;
-  align-items: flex-end;
+  align-items: flex-start;
   justify-content: space-between;
   gap: 16px;
 }
@@ -46,11 +46,10 @@
   align-items: center;
   gap: 12px;
   flex-shrink: 0;
-  margin-bottom: 6px;
 }
 
-.hub-header--compact .hub-header__end {
-  margin-bottom: 0;
+.hub-header__intro {
+  margin-top: 24px;
 }
 
 .hub-header__logo {
