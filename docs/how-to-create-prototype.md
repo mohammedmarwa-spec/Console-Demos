@@ -12,9 +12,24 @@ Recommended starters:
 
 ## 2. Scaffold an experiment folder
 
+**From the hub:** click **Start in Cursor** on a card. For reusable scenarios, enter your owner slug and experiment name; Cursor opens with a pre-filled agent prompt. Use **Copy prompt** if the deeplink does not open Cursor.
+
+**From the terminal:**
+
 ```bash
 node scripts/create-experiment.mjs --owner your-name --name my-experiment --from onboarding-test-env
 ```
+
+**From Cursor:** run the `/scaffold-prototype` command (see `.cursor/commands/scaffold-prototype.md`).
+
+### Prerequisites for Start in Cursor
+
+- [Cursor](https://cursor.com) installed and registered as a deeplink handler
+- This repo cloned locally (`console-prototype-lab`)
+- Open the repo as your Cursor workspace before confirming the agent prompt
+- Node.js installed (for `create-experiment.mjs`)
+
+If the browser does not open Cursor, use **Copy prompt** on the hub modal and paste into Cursor chat manually.
 
 This creates:
 
