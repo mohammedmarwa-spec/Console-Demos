@@ -9,9 +9,18 @@
 .playground-header__inner {
   display: flex;
   align-items: center;
+  justify-content: space-between;
   gap: 16px;
   min-height: 48px;
   padding: 0 16px;
+}
+
+.playground-header__start {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  min-width: 0;
+  flex: 1;
 }
 
 .playground-header__back {

@@ -1,7 +1,22 @@
 .hub-header {
+  position: sticky;
+  top: 0;
+  z-index: 100;
   width: 100%;
   background-color: #1c1c1c;
-  padding: 24px;
+  padding: 40px 24px;
+  transition:
+    padding 0.25s ease,
+    height 0.25s ease,
+    box-shadow 0.25s ease;
+}
+
+.hub-header--compact {
+  height: 48px;
+  padding: 0 24px;
+  display: flex;
+  align-items: center;
+  box-shadow: 0 1px 0 rgb(255 255 255 / 8%);
 }
 
 .hub-header__inner {
@@ -10,26 +25,61 @@
   margin: 0 auto;
 }
 
+.hub-header--compact .hub-header__inner {
+  height: 100%;
+}
+
 .hub-header__row {
   display: flex;
   align-items: flex-end;
+  justify-content: space-between;
   gap: 16px;
+}
+
+.hub-header--compact .hub-header__row {
+  align-items: center;
+  height: 100%;
+}
+
+.hub-header__end {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-shrink: 0;
+  margin-bottom: 6px;
+}
+
+.hub-header--compact .hub-header__end {
+  margin-bottom: 0;
 }
 
 .hub-header__logo {
   display: block;
-  width: 75%;
+  width: 56.25%;
   height: auto;
   flex-shrink: 0;
+  transition:
+    width 0.25s ease,
+    height 0.25s ease;
+}
+
+.hub-header--compact .hub-header__logo {
+  width: auto;
+  height: 24px;
+  max-width: min(240px, 42vw);
 }
 
 .hub-header__credit {
-  font-size: 14px;
+  font-size: 10.5px;
   line-height: 1.4;
   color: var(--aquarium-text-color-muted);
   text-decoration: none;
   white-space: nowrap;
-  margin-bottom: 6px;
+  transition: font-size 0.25s ease;
+}
+
+.hub-header--compact .hub-header__credit {
+  font-size: 9px;
 }
 
 .hub-header__credit:hover {

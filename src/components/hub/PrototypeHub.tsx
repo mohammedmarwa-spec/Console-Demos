@@ -12,7 +12,6 @@ import { HubHeader } from './HubHeader'
 import { DesignerAvatar } from './DesignerAvatar'
 import { PrototypeCard } from './PrototypeCard'
 import { ROUTES } from '../../lib/navigation'
-import { ForceResolvedTheme } from '../../theme'
 import { aquariumSelectValue } from '../../lib/aquariumSelect'
 import { DESIGN_TEAM_OWNERS } from '../../lib/cursorDeeplink'
 
@@ -75,7 +74,6 @@ export function PrototypeHub() {
   const totalVisible = filteredOwnerGroups.reduce((sum, group) => sum + group.entries.length, 0)
 
   return (
-    <ForceResolvedTheme theme="light">
     <Box style={{ minHeight: '100vh' }}>
       <HubHeader />
 
@@ -166,7 +164,6 @@ export function PrototypeHub() {
       )}
       </Box>
     </Box>
-    </ForceResolvedTheme>
   )
 }
 

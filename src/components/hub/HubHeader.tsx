@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { DESIGNER_AVATAR_LIST } from '../../lib/designerAvatars'
+import { AppearanceSwitcher } from '../AppearanceSwitcher'
 import './hub-header.css'
 
 const LETTER_FILL = '#3A3A44'
@@ -22,6 +23,14 @@ const SECOND_ASTERISK = { cx: 278.3615, cy: 44.7727 }
 export function HubHeader() {
   const [previewActive, setPreviewActive] = useState(false)
   const [photoIndex, setPhotoIndex] = useState(0)
+  const [compact, setCompact] = useState(false)
+
+  useEffect(() => {
+    const onScroll = () => setCompact(window.scrollY > 0)
+    onScroll()
+    window.addEventListener('scroll', onScroll, { passive: true })
+    return () => window.removeEventListener('scroll', onScroll)
+  }, [])
 
   useEffect(() => {
     if (!previewActive) return
@@ -38,7 +47,15 @@ export function HubHeader() {
   const photoTop = SECOND_ASTERISK.cy - ASTERISK_SIZE / 2
 
   return (
-    <header className={`hub-header${previewActive ? ' hub-header--preview-active' : ''}`}>
+    <header
+      className={[
+        'hub-header',
+        compact && 'hub-header--compact',
+        previewActive && 'hub-header--preview-active',
+      ]
+        .filter(Boolean)
+        .join(' ')}
+    >
       <div className="hub-header__inner">
         <div className="hub-header__row">
         <svg
@@ -114,14 +131,17 @@ export function HubHeader() {
             <title>{currentPhoto.name}</title>
           </image>
         </svg>
-        <a
-          className="hub-header__credit"
-          href="https://github.com/design-police"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          by design-police 👮
-        </a>
+        <div className="hub-header__end">
+          <AppearanceSwitcher />
+          <a
+            className="hub-header__credit"
+            href="https://github.com/design-police"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            by design-police 👮
+          </a>
+        </div>
         </div>
       </div>
     </header>
