@@ -44,6 +44,35 @@ Deploy via Aiven Console or ask a teammate with Application deploy access.
 
 Naming convention: confirm with your team (e.g. one shared preview service redeployed on demand).
 
+## Experiment preview thumbnails (on commit)
+
+When you commit changes under `experiments/<owner>/<slug>/`, a pre-commit hook captures a screenshot of that experiment and saves it to `public/experiment-previews/<owner>/<slug>.png`. The Prototype Hub shows this image on the experiment card.
+
+### One-time setup
+
+After `npm install`, install the Playwright Chromium browser:
+
+```bash
+npx playwright install chromium
+```
+
+Husky is installed automatically via the `prepare` script.
+
+### Manual regeneration
+
+```bash
+npm run preview:shot -- elena/first-time-user
+git add public/experiment-previews/elena/first-time-user.png
+```
+
+### Skip preview generation
+
+```bash
+git commit --no-verify -m "your message"
+```
+
+Preview generation is non-blocking: if capture fails, the commit still succeeds (you may see a warning in the terminal).
+
 ## Verify after deploy
 
 - [ ] App loads at the Application URL

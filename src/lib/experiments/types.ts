@@ -18,4 +18,6 @@ export type DiscoveredPage = PageMeta & {
   route: string
   /** Present only for kind: 'experiment' */
   ownerSlug?: string
+  /** Public path to a committed preview screenshot, when available */
+  thumbnail?: string
 }

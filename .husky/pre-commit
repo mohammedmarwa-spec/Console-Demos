@@ -1,0 +1,2 @@
+node scripts/generate-experiment-previews.mjs --staged
+git add public/experiment-previews

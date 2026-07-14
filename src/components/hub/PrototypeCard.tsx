@@ -66,6 +66,29 @@ export function PrototypeCard({ entry }: { entry: DiscoveredPage }) {
           }
         >
           <Box style={{ display: 'flex', flexDirection: 'column', gap: 12, flex: 1, minHeight: 0 }}>
+            {entry.thumbnail && (
+              <Box
+                style={{
+                  width: '100%',
+                  aspectRatio: '16 / 10',
+                  borderRadius: 8,
+                  overflow: 'hidden',
+                  background: 'var(--aquarium-background-color-muted)',
+                }}
+              >
+                <img
+                  src={entry.thumbnail}
+                  alt={`${entry.title} preview`}
+                  style={{
+                    width: '100%',
+                    height: '100%',
+                    objectFit: 'cover',
+                    objectPosition: 'top center',
+                    display: 'block',
+                  }}
+                />
+              </Box>
+            )}
             <Typography.Small color="muted">{entry.description}</Typography.Small>
             <Box
               style={{

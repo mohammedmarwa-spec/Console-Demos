@@ -36,6 +36,12 @@ See [how-to-run.md](./how-to-run.md) for full setup (designers: start with [SETU
 | [contribution-guide.md](./contribution-guide.md) | Share work with the team |
 | [agent-rules.md](./agent-rules.md) | Cursor Agent prompts and safety rules |
 
+## Experiment preview thumbnails
+
+Commits that touch `experiments/<owner>/<slug>/` auto-generate a screenshot thumbnail (pre-commit hook). Cards on the Prototype Hub show the image when `public/experiment-previews/<owner>/<slug>.png` exists.
+
+Setup: `npx playwright install chromium` after `npm install`. See [how-to-deploy.md](./how-to-deploy.md#experiment-preview-thumbnails-on-commit).
+
 ## Scenario types
 
 - **Reusable scenarios** — stable team starting points (Create test environment, Empty project, Existing customer)

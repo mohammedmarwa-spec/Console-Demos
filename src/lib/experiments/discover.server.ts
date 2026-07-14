@@ -11,6 +11,7 @@ import type { DiscoveredPage, PageMeta } from './types'
 import { getPrototypeScenarioOrNull } from '@/content/prototype-scenarios'
 
 const EXPERIMENTS_ROOT = join(process.cwd(), 'experiments')
+const PREVIEWS_ROOT = join(process.cwd(), 'public', 'experiment-previews')
 const TEMPLATES_DIR = '_templates'
 const RESERVED = new Set([TEMPLATES_DIR])
 const PAGE_EXTENSIONS = ['tsx', 'ts']
@@ -75,6 +76,12 @@ export function discoverTemplates(): DiscoveredPage[] {
   return pages
 }
 
+function experimentThumbnail(ownerSlug: string, slug: string): string | undefined {
+  const previewPath = join(PREVIEWS_ROOT, ownerSlug, `${slug}.png`)
+  if (!existsSync(previewPath)) return undefined
+  return `/experiment-previews/${ownerSlug}/${slug}.png`
+}
+
 export function discoverExperiments(): DiscoveredPage[] {
   const ownerSlugs = listSubdirectories(EXPERIMENTS_ROOT).filter(
     (name) => !RESERVED.has(name) && !name.startsWith('_'),
@@ -95,6 +102,7 @@ export function discoverExperiments(): DiscoveredPage[] {
         kind: 'experiment',
         ownerSlug,
         route: `/experiments/${ownerSlug}/${slug}`,
+        thumbnail: experimentThumbnail(ownerSlug, slug),
       })
     }
   }

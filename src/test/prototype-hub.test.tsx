@@ -16,13 +16,13 @@ const experiments: DiscoveredPage[] = [
     route: '/experiments/elena/shorter-create-service',
   },
   {
-    id: 'experiment/caio/ownership-test',
-    title: 'Workspace ownership in test env',
-    description: 'Explicit personal vs org workspace choice during test environment onboarding',
-    slug: 'ownership-test',
+    id: 'experiment/elena/first-time-user',
+    title: 'First-time user',
+    description: 'Alias of Empty project — onboarding state, no services',
+    slug: 'first-time-user',
     kind: 'experiment',
-    ownerSlug: 'caio',
-    route: '/experiments/caio/ownership-test',
+    ownerSlug: 'elena',
+    route: '/experiments/elena/first-time-user',
   },
 ]
 
@@ -52,12 +52,13 @@ describe('PrototypeHub', () => {
     const user = userEvent.setup()
     renderHub()
 
-    expect(screen.getAllByRole('heading', { level: 2 })).toHaveLength(2)
+    expect(screen.getByText('Shorter create service flow')).toBeInTheDocument()
+    expect(screen.getByText('First-time user')).toBeInTheDocument()
 
-    await user.type(screen.getByLabelText('Search'), 'ownership')
+    await user.type(screen.getByLabelText('Search'), 'shorter')
 
-    expect(screen.getAllByRole('heading', { level: 2 })).toHaveLength(1)
-    expect(screen.getByRole('heading', { level: 2, name: 'Caio' })).toBeInTheDocument()
+    expect(screen.getByText('Shorter create service flow')).toBeInTheDocument()
+    expect(screen.queryByText('First-time user')).not.toBeInTheDocument()
   })
 
   it('switches between experiments and templates tabs', async () => {
