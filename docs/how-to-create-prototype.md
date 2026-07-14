@@ -34,7 +34,7 @@ If the browser does not open Cursor, use **Copy prompt** on the hub modal and pa
 This creates:
 
 ```txt
-src/experiments/your-name/my-experiment/
+experiments/your-name/my-experiment/
   prototype.config.ts
   notes.md
 ```
@@ -78,6 +78,6 @@ See [how-to-deploy.md](./how-to-deploy.md) and [contribution-guide.md](./contrib
 ## Rules
 
 - **Never edit reusable scenarios** during normal prototyping
-- Work inside `src/experiments/<owner>/<name>/`
+- Work inside `experiments/<owner>/<name>/`
 - Update `notes.md` with what you are testing
 - Use mock data from `src/mocks/` only

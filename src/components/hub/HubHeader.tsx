@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState, type ReactNode } from 'react'
-import { DESIGNER_AVATAR_LIST } from '../../lib/designerAvatars'
+import { listOwnerAvatars } from '../../lib/designTeamOwners'
 import { AppearanceSwitcher } from '../AppearanceSwitcher'
 import './hub-header.css'
 
@@ -20,13 +20,25 @@ const ASTERISK_SIZE = 54
 const FIRST_ASTERISK = { cx: 99.6975, cy: 44.7727 }
 const SECOND_ASTERISK = { cx: 278.3615, cy: 44.7727 }
 
+const COMPACT_ENTER_Y = 64
+const COMPACT_EXIT_Y = 16
+
+const OWNER_AVATARS = listOwnerAvatars()
+
 export function HubHeader({ children }: { children?: ReactNode }) {
   const [previewActive, setPreviewActive] = useState(false)
   const [photoIndex, setPhotoIndex] = useState(0)
   const [compact, setCompact] = useState(false)
 
   useEffect(() => {
-    const onScroll = () => setCompact(window.scrollY > 0)
+    const onScroll = () => {
+      const y = window.scrollY
+      setCompact((isCompact) => {
+        if (!isCompact && y > COMPACT_ENTER_Y) return true
+        if (isCompact && y < COMPACT_EXIT_Y) return false
+        return isCompact
+      })
+    }
     onScroll()
     window.addEventListener('scroll', onScroll, { passive: true })
     return () => window.removeEventListener('scroll', onScroll)
@@ -36,13 +48,13 @@ export function HubHeader({ children }: { children?: ReactNode }) {
     if (!previewActive) return
 
     const timer = window.setInterval(() => {
-      setPhotoIndex((index) => (index + 1) % DESIGNER_AVATAR_LIST.length)
+      setPhotoIndex((index) => (index + 1) % OWNER_AVATARS.length)
     }, PHOTO_CYCLE_MS)
 
     return () => window.clearInterval(timer)
   }, [previewActive])
 
-  const currentPhoto = DESIGNER_AVATAR_LIST[photoIndex]
+  const currentPhoto = OWNER_AVATARS[photoIndex]
   const photoOrigin = SECOND_ASTERISK.cx - ASTERISK_SIZE / 2
   const photoTop = SECOND_ASTERISK.cy - ASTERISK_SIZE / 2
 
@@ -143,7 +155,7 @@ export function HubHeader({ children }: { children?: ReactNode }) {
           </a>
         </div>
         </div>
-        {!compact && children ? <div className="hub-header__intro">{children}</div> : null}
+        {children ? <div className="hub-header__intro">{children}</div> : null}
       </div>
     </header>
   )

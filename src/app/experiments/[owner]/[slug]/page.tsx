@@ -1,13 +1,15 @@
-import ExperimentLauncher from './ExperimentLauncher'
-import { EXPERIMENT_ENTRIES } from '../../../../registry/experiments'
+import { discoverAllRoutes, loadPage } from '@/lib/experiments/discover.server'
 
 export function generateStaticParams() {
-  return EXPERIMENT_ENTRIES.map((entry) => {
-    const parts = entry.id.replace('experiment/', '').split('/')
-    return { owner: parts[0], slug: parts[1] }
-  })
+  return discoverAllRoutes()
 }
 
-export default function ExperimentPage() {
-  return <ExperimentLauncher />
+export default async function ExperimentRoutePage({
+  params,
+}: {
+  params: Promise<{ owner: string; slug: string }>
+}) {
+  const { owner, slug } = await params
+  const Page = await loadPage(owner, slug)
+  return <Page />
 }

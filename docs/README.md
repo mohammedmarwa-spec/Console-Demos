@@ -40,11 +40,11 @@ See [how-to-run.md](./how-to-run.md) for full setup (designers: start with [SETU
 
 - **Reusable scenarios** — stable team starting points (Create test environment, Empty project, Existing customer)
 - **Prototype scenarios** — exploratory ideas, usually owned by one designer
-- **Experiments** — isolated copies under `src/experiments/<owner>/<name>/`
+- **Experiments** — isolated copies under `experiments/<owner>/<name>/`
 
 ## Architecture
 
 - `src/registry/` — scenario and experiment metadata
 - `src/scenarios/` — scenario panel, runtime, context
 - `src/mocks/` — centralized mock data
-- `src/experiments/` — designer experiment folders
+- `experiments/` — designer experiment folders (entry: `index.tsx`)

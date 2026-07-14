@@ -1,0 +1,21 @@
+// ─── Experiment / template page metadata ──────────────────────────────────────
+// Every colocated page.tsx (template or experiment) exports this shape.
+
+export type PageMeta = {
+  title: string
+  description: string
+}
+
+/**
+ * Computed by discover.server.ts from folder structure — not authored by hand.
+ * Adds routing/classification info on top of the page's own PageMeta.
+ */
+export type DiscoveredPage = PageMeta & {
+  /** template/{slug} | experiment/{ownerSlug}/{slug} */
+  id: string
+  slug: string
+  kind: 'template' | 'experiment'
+  route: string
+  /** Present only for kind: 'experiment' */
+  ownerSlug?: string
+}

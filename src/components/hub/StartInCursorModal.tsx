@@ -2,39 +2,38 @@
 
 import { useEffect, useMemo, useState } from 'react'
 import { Alert, Box, Button, Input, Modal, Select, Typography } from '@aivenio/aquarium'
-import type { PlaygroundEntry } from '../../registry/types'
+import type { DiscoveredPage } from '@/lib/experiments/types'
 import { aquariumSelectValue } from '../../lib/aquariumSelect'
 import {
   buildCursorPrompt,
   CURSOR_DEEPLINK_MAX_LENGTH,
-  DESIGN_TEAM_OWNERS,
   getCursorPromptIntent,
   slugify,
   storeOwnerSlug,
   suggestExperimentSlug,
-  suggestOwnerName,
-  type DesignTeamOwner,
+  suggestOwnerSlug,
 } from '../../lib/cursorDeeplink'
+import { getOwnerDisplayName, listOwnerSlugs } from '../../lib/designTeamOwners'
 
 export type StartInCursorModalProps = {
-  entry: PlaygroundEntry | null
+  entry: DiscoveredPage | null
   open: boolean
   onClose: () => void
 }
 
 export function StartInCursorModal({ entry, open, onClose }: StartInCursorModalProps) {
-  const [ownerName, setOwnerName] = useState<DesignTeamOwner | ''>('')
+  const [ownerSlug, setOwnerSlug] = useState('')
   const [experimentName, setExperimentName] = useState('')
   const [copyState, setCopyState] = useState<'idle' | 'copied' | 'error'>('idle')
 
   const ownerOptions = useMemo(
-    () => DESIGN_TEAM_OWNERS.map((name) => ({ label: name, value: name })),
+    () => listOwnerSlugs().map((slug) => ({ label: getOwnerDisplayName(slug), value: slug })),
     [],
   )
 
   useEffect(() => {
     if (!entry || !open) return
-    setOwnerName(suggestOwnerName(entry))
+    setOwnerSlug(suggestOwnerSlug(entry))
     setExperimentName(suggestExperimentSlug(entry))
     setCopyState('idle')
   }, [entry, open])
@@ -42,13 +41,12 @@ export function StartInCursorModal({ entry, open, onClose }: StartInCursorModalP
   if (!entry) return null
 
   const intent = getCursorPromptIntent(entry)
-  const normalizedOwner = ownerName ? slugify(ownerName) : ''
   const normalizedExperiment = slugify(experimentName)
-  const canSubmit = normalizedOwner.length > 0 && normalizedExperiment.length > 0
+  const canSubmit = ownerSlug.length > 0 && normalizedExperiment.length > 0
 
   const result = canSubmit
     ? buildCursorPrompt(entry, {
-        ownerSlug: normalizedOwner,
+        ownerSlug,
         experimentSlug: normalizedExperiment,
       })
     : null
@@ -60,7 +58,7 @@ export function StartInCursorModal({ entry, open, onClose }: StartInCursorModalP
 
   function handleOpenInCursor() {
     if (!result?.withinLimit) return
-    storeOwnerSlug(normalizedOwner)
+    storeOwnerSlug(ownerSlug)
     window.open(result.url, '_blank', 'noopener,noreferrer')
     handleClose()
   }
@@ -103,10 +101,8 @@ export function StartInCursorModal({ entry, open, onClose }: StartInCursorModalP
             <Select
               labelText="Owner"
               options={ownerOptions}
-              value={ownerName}
-              onChange={(selected) =>
-                setOwnerName(aquariumSelectValue(selected) as DesignTeamOwner | '')
-              }
+              value={ownerSlug}
+              onChange={(selected) => setOwnerSlug(aquariumSelectValue(selected))}
             />
             <Input
               labelText="Experiment name"

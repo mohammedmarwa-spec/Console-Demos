@@ -14,7 +14,7 @@ These rules guide Cursor Agent when prototyping in Console Prototype Lab. The sa
 When creating a new design exploration:
 
 ```txt
-Modify only: src/experiments/<owner>/<experiment-name>/
+Modify only: experiments/<owner>/<experiment-name>/
 Do not modify: src/registry/scenarios.ts (reusable entries)
 Do not modify: unrelated experiments or shared shell
 ```

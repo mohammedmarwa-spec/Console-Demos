@@ -10,7 +10,6 @@ import './playground-header.css'
 export function PlaygroundHeader() {
   const { activeScenarioId } = useScenario()
   const entry = activeScenarioId ? getEntryById(activeScenarioId) : null
-  const isPrototype = entry != null && entry.type !== 'reusable-scenario'
 
   return (
     <header className="playground-header">
@@ -21,11 +20,6 @@ export function PlaygroundHeader() {
           </Link>
           {entry && (
             <div className="playground-header__meta">
-              {isPrototype && (
-                <span className="playground-header__label">
-                  {entry.id.startsWith('experiment/') ? 'Experiment' : 'Prototype'}
-                </span>
-              )}
               <span className="playground-header__title">{entry.title}</span>
               {entry.owner && <span className="playground-header__owner">· {entry.owner}</span>}
             </div>

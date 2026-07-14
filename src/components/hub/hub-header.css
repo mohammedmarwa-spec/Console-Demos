@@ -31,7 +31,7 @@
 
 .hub-header__row {
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   justify-content: space-between;
   gap: 16px;
 }
@@ -50,6 +50,20 @@
 
 .hub-header__intro {
   margin-top: 24px;
+  max-height: 120px;
+  opacity: 1;
+  overflow: hidden;
+  transition:
+    max-height 0.25s ease,
+    opacity 0.2s ease,
+    margin-top 0.25s ease;
+}
+
+.hub-header--compact .hub-header__intro {
+  max-height: 0;
+  opacity: 0;
+  margin-top: 0;
+  pointer-events: none;
 }
 
 .hub-header__logo {

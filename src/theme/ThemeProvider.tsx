@@ -43,7 +43,7 @@ function readStoredPreference(): ThemePreference {
 }
 
 export function ThemeProvider({ children }: { children: ReactNode }) {
-  const [preference, setPreferenceState] = useState<ThemePreference>('dark')
+  const [preference, setPreferenceState] = useState<ThemePreference>(readStoredPreference)
   const [forcedTheme, setForcedTheme] = useState<ResolvedTheme | null>(null)
   const [systemDark, setSystemDark] = useState(
     () => typeof window !== 'undefined' && window.matchMedia('(prefers-color-scheme: dark)').matches,
@@ -51,10 +51,6 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
 
   const resolved: ResolvedTheme = preference === 'system' ? (systemDark ? 'dark' : 'light') : preference
   const effectiveResolved = forcedTheme ?? resolved
-
-  useEffect(() => {
-    setPreferenceState(readStoredPreference())
-  }, [])
 
   useEffect(() => {
     const mq = window.matchMedia('(prefers-color-scheme: dark)')

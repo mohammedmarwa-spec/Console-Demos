@@ -1,5 +1,5 @@
-import { parseExperimentId } from './navigation'
-import type { PlaygroundEntry } from '../registry/types'
+import type { DiscoveredPage } from '@/lib/experiments/types'
+import { listOwnerSlugs } from './designTeamOwners'
 
 /** Cursor deeplink URL length limit (https://cursor.com/docs/reference/deeplinks). */
 export const CURSOR_DEEPLINK_MAX_LENGTH = 8000
@@ -8,24 +8,10 @@ const CURSOR_WEB_PROMPT_BASE = 'https://cursor.com/link/prompt'
 
 const OWNER_STORAGE_KEY = 'prototype-lab:owner-slug'
 
-export const DESIGN_TEAM_OWNERS = [
-  'Brian',
-  'Caio',
-  'Elena',
-  'Ioan',
-  'Irene',
-  'Kate',
-  'Marwa',
-  'Robin',
-  'Yaesul',
-] as const
-
-export type DesignTeamOwner = (typeof DESIGN_TEAM_OWNERS)[number]
-
 export type CursorPromptIntent = 'fork' | 'edit'
 
 export type ForkCursorPromptInput = {
-  entry: PlaygroundEntry
+  entry: DiscoveredPage
   ownerSlug: string
   experimentSlug: string
 }
@@ -42,10 +28,6 @@ export function slugify(value: string): string {
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, '-')
     .replace(/^-|-$/g, '')
-}
-
-export function ownerSlugFromDisplayName(name: string): string {
-  return slugify(name)
 }
 
 export function getStoredOwnerSlug(): string {
@@ -66,21 +48,15 @@ export function storeOwnerSlug(ownerSlug: string): void {
   }
 }
 
-export function getCursorPromptIntent(entry: PlaygroundEntry): CursorPromptIntent {
-  if (entry.id.startsWith('experiment/')) return 'edit'
-  return 'fork'
-}
-
-export function getSourceScenarioId(entry: PlaygroundEntry): string {
-  return entry.sourceScenarioId ?? entry.aliasOf ?? entry.runtimeKey
+/** Templates are forked into a new experiment; experiments are edited in place. */
+export function getCursorPromptIntent(entry: DiscoveredPage): CursorPromptIntent {
+  return entry.kind === 'experiment' ? 'edit' : 'fork'
 }
 
 function playgroundRulesBlock(): string {
-  return `- Do not edit reusable scenarios in src/registry/scenarios.ts unless explicitly asked.
-- Modify only the experiment folder for new work.
+  return `- Modify only the experiment folder for new work.
 - Reuse existing mock data from src/mocks/.
 - Keep the Console-like shell and existing price calculation logic.
-- Update notes.md with what you are testing.
 - Follow cursor/rules/ and docs/agent-rules.md.`
 }
 
@@ -89,53 +65,42 @@ export function buildForkCursorPrompt({
   ownerSlug,
   experimentSlug,
 }: ForkCursorPromptInput): string {
-  const sourceScenarioId = getSourceScenarioId(entry)
-  const experimentId = `experiment/${ownerSlug}/${experimentSlug}`
-  const folder = `src/experiments/${ownerSlug}/${experimentSlug}`
+  const folder = `experiments/${ownerSlug}/${experimentSlug}`
 
-  return `Use the existing "${entry.title}" scenario (${sourceScenarioId}) as the base.
+  return `Use the "${entry.title}" template as the base.
 
 Create a new experiment in Console Prototype Lab.
 
 Run (or replicate exactly):
-node scripts/create-experiment.mjs --owner ${ownerSlug} --name ${experimentSlug} --from ${sourceScenarioId}
+node scripts/create-experiment.mjs --owner ${ownerSlug} --name ${experimentSlug} --template ${entry.slug}
 
 Target folder: ${folder}/
-Registry id: ${experimentId}
 Preview route: /experiments/${ownerSlug}/${experimentSlug}
 
 Goal:
-Describe your design hypothesis in notes.md, then implement changes only inside ${folder}/.
+Update pageMeta (title, description) in ${folder}/index.tsx, then implement your design changes only inside ${folder}/.
 
 Rules:
 ${playgroundRulesBlock()}`
 }
 
-export function buildEditCursorPrompt(entry: PlaygroundEntry): string {
-  const experiment = parseExperimentId(entry.id)
-  if (!experiment) {
-    throw new Error(`Entry is not an experiment: ${entry.id}`)
-  }
-
-  const folder = `src/experiments/${experiment.owner}/${experiment.slug}`
-  const sourceScenarioId = getSourceScenarioId(entry)
+export function buildEditCursorPrompt(entry: DiscoveredPage): string {
+  const folder = `experiments/${entry.ownerSlug}/${entry.slug}`
 
   return `Continue work on the "${entry.title}" experiment in Console Prototype Lab.
 
 Experiment folder: ${folder}/
-Registry id: ${entry.id}
-Source scenario: ${sourceScenarioId}
 Preview route: ${entry.route}
 
 Goal:
-Read notes.md first, then implement design changes only inside ${folder}/.
+Implement design changes only inside ${folder}/.
 
 Rules:
 ${playgroundRulesBlock()}`
 }
 
 export function buildCursorPrompt(
-  entry: PlaygroundEntry,
+  entry: DiscoveredPage,
   forkInput?: Pick<ForkCursorPromptInput, 'ownerSlug' | 'experimentSlug'>,
 ): CursorPromptResult {
   const intent = getCursorPromptIntent(entry)
@@ -163,29 +128,14 @@ export function buildCursorPromptUrl(prompt: string): string {
   return url.toString()
 }
 
-export function suggestExperimentSlug(entry: PlaygroundEntry): string {
-  if (entry.id.startsWith('experiment/')) {
-    const parsed = parseExperimentId(entry.id)
-    return parsed?.slug ?? slugify(entry.title)
-  }
+export function suggestExperimentSlug(entry: DiscoveredPage): string {
+  if (entry.kind === 'experiment') return entry.slug
   return slugify(entry.title)
 }
 
-export function ownerNameFromSlug(slug: string): DesignTeamOwner | '' {
-  const match = DESIGN_TEAM_OWNERS.find((name) => slugify(name) === slug)
-  return match ?? ''
-}
-
-export function suggestOwnerSlug(entry: PlaygroundEntry): string {
+export function suggestOwnerSlug(entry: DiscoveredPage): string {
   const stored = getStoredOwnerSlug()
   if (stored) return stored
-
-  const parsed = parseExperimentId(entry.id)
-  if (parsed) return parsed.owner
-
-  return ownerSlugFromDisplayName(entry.owner)
-}
-
-export function suggestOwnerName(entry: PlaygroundEntry): DesignTeamOwner | '' {
-  return ownerNameFromSlug(suggestOwnerSlug(entry))
+  if (entry.kind === 'experiment' && entry.ownerSlug) return entry.ownerSlug
+  return listOwnerSlugs()[0] ?? ''
 }

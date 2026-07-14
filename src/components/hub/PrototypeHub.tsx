@@ -2,44 +2,36 @@
 
 import { useMemo, useState } from 'react'
 import { Box, Input, Select, Tabs, Typography } from '@aivenio/aquarium'
-import {
-  isArchivedEntry,
-  PLAYGROUND_ENTRIES,
-  type PlaygroundEntry,
-} from '../../registry'
+import type { DiscoveredPage } from '@/lib/experiments/types'
 import { HubHeader } from './HubHeader'
+import { HubMascot } from './HubMascot'
 import { DesignerAvatar } from './DesignerAvatar'
 import { PrototypeCard } from './PrototypeCard'
 import { aquariumSelectValue } from '../../lib/aquariumSelect'
-import { DESIGN_TEAM_OWNERS } from '../../lib/cursorDeeplink'
+import { getOwnerDisplayName, listOwnerSlugs } from '../../lib/designTeamOwners'
 
-type TypeFilter = 'all' | 'templates' | 'archived'
+type TabId = 'experiments' | 'templates'
 
-function matchesTypeFilter(entry: PlaygroundEntry, filter: TypeFilter): boolean {
-  if (filter === 'all') return !isArchivedEntry(entry)
-  if (filter === 'templates') return entry.type === 'prototype' || entry.id.startsWith('experiment/')
-  if (filter === 'archived') return isArchivedEntry(entry)
-  return true
-}
-
-function matchesSearch(entry: PlaygroundEntry, q: string): boolean {
-  const haystack = [entry.title, entry.description, entry.owner, entry.type, entry.status, ...entry.tags]
-    .join(' ')
-    .toLowerCase()
-  return haystack.includes(q)
-}
-
-const TYPE_TABS: { id: TypeFilter; label: string }[] = [
-  { id: 'all', label: 'All' },
+const TABS: { id: TabId; label: string }[] = [
+  { id: 'experiments', label: 'Experiments' },
   { id: 'templates', label: 'Templates' },
-  { id: 'archived', label: 'Archived' },
 ]
 
 const ALL_OWNERS_VALUE = 'all'
 
-export function PrototypeHub() {
+function matchesSearch(entry: DiscoveredPage, q: string): boolean {
+  const haystack = [entry.title, entry.description].join(' ').toLowerCase()
+  return haystack.includes(q)
+}
+
+export type PrototypeHubProps = {
+  experiments: DiscoveredPage[]
+  templates: DiscoveredPage[]
+}
+
+export function PrototypeHub({ experiments, templates }: PrototypeHubProps) {
   const [search, setSearch] = useState('')
-  const [typeFilter, setTypeFilter] = useState<TypeFilter>('all')
+  const [tab, setTab] = useState<TabId>('experiments')
   const [ownerFilter, setOwnerFilter] = useState(ALL_OWNERS_VALUE)
 
   const query = search.trim().toLowerCase()
@@ -47,36 +39,42 @@ export function PrototypeHub() {
   const ownerOptions = useMemo(() => {
     return [
       { label: 'All owners', value: ALL_OWNERS_VALUE },
-      ...DESIGN_TEAM_OWNERS.map((owner) => ({ label: owner, value: owner })),
+      ...listOwnerSlugs().map((slug) => ({ label: getOwnerDisplayName(slug), value: slug })),
     ]
   }, [])
 
-  const filteredOwnerGroups = useMemo(() => {
-    const byOwner = new Map<string, PlaygroundEntry[]>()
+  const filteredExperimentGroups = useMemo(() => {
+    const byOwner = new Map<string, DiscoveredPage[]>()
 
-    for (const entry of PLAYGROUND_ENTRIES) {
-      if (!matchesTypeFilter(entry, typeFilter)) continue
+    for (const entry of experiments) {
       if (query && !matchesSearch(entry, query)) continue
-      if (ownerFilter !== ALL_OWNERS_VALUE && entry.owner !== ownerFilter) continue
+      if (ownerFilter !== ALL_OWNERS_VALUE && entry.ownerSlug !== ownerFilter) continue
 
-      const entries = byOwner.get(entry.owner) ?? []
+      const entries = byOwner.get(entry.ownerSlug ?? '') ?? []
       entries.push(entry)
-      byOwner.set(entry.owner, entries)
+      byOwner.set(entry.ownerSlug ?? '', entries)
     }
 
     return [...byOwner.entries()]
-      .sort(([ownerA], [ownerB]) => ownerA.localeCompare(ownerB))
-      .map(([owner, entries]) => ({ owner, entries }))
-  }, [typeFilter, query, ownerFilter])
+      .sort(([a], [b]) => getOwnerDisplayName(a).localeCompare(getOwnerDisplayName(b)))
+      .map(([ownerSlug, entries]) => ({ ownerSlug, entries }))
+  }, [experiments, query, ownerFilter])
 
-  const totalVisible = filteredOwnerGroups.reduce((sum, group) => sum + group.entries.length, 0)
+  const filteredTemplates = useMemo(() => {
+    return templates.filter((entry) => !query || matchesSearch(entry, query))
+  }, [templates, query])
+
+  const totalVisible =
+    tab === 'experiments'
+      ? filteredExperimentGroups.reduce((sum, group) => sum + group.entries.length, 0)
+      : filteredTemplates.length
 
   return (
     <Box style={{ minHeight: '100vh' }}>
       <HubHeader>
         <Box style={{ maxWidth: 560 }}>
           <Typography.Default color="muted">
-            Shared design playground for Aiven product designers. Pick a scenario or experiment to launch the
+            Shared design playground for Aiven product designers. Pick an experiment or template to launch the
             Console-like shell with mock data.
           </Typography.Default>
         </Box>
@@ -89,53 +87,72 @@ export function PrototypeHub() {
           margin: '0 auto',
         }}
       >
-      <Box style={{ marginBottom: 24 }}>
-        <Tabs value={typeFilter} onChange={(value) => setTypeFilter(value as TypeFilter)}>
-          {TYPE_TABS.map((tab) => (
-            <Tabs.Tab key={tab.id} title={tab.label} value={tab.id} />
+        <Box style={{ marginBottom: 24 }}>
+          <Tabs value={tab} onChange={(value) => setTab(value as TabId)}>
+            {TABS.map((t) => (
+              <Tabs.Tab key={t.id} title={t.label} value={t.id} />
+            ))}
+          </Tabs>
+        </Box>
+
+        <Box
+          style={{
+            display: 'grid',
+            gridTemplateColumns:
+              tab === 'experiments' ? 'repeat(auto-fit, minmax(240px, 1fr))' : 'minmax(240px, 1fr)',
+            gap: 16,
+            marginBottom: 32,
+            alignItems: 'end',
+          }}
+        >
+          <Input
+            labelText="Search"
+            placeholder={tab === 'experiments' ? 'Search experiments…' : 'Search templates…'}
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            aria-label="Search"
+          />
+          {tab === 'experiments' && (
+            <Select
+              labelText="Owner"
+              options={ownerOptions}
+              value={ownerFilter}
+              onChange={(selected) => setOwnerFilter(aquariumSelectValue(selected, ALL_OWNERS_VALUE))}
+            />
+          )}
+        </Box>
+
+        {tab === 'experiments' &&
+          filteredExperimentGroups.map(({ ownerSlug, entries }) => (
+            <Box key={ownerSlug} style={{ marginBottom: 40 }}>
+              <Box
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 12,
+                  marginBottom: 16,
+                }}
+              >
+                <DesignerAvatar ownerSlug={ownerSlug} size={48} />
+                <Typography.Subheading color="intense">
+                  {getOwnerDisplayName(ownerSlug)}
+                </Typography.Subheading>
+              </Box>
+              <Box
+                style={{
+                  display: 'grid',
+                  gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))',
+                  gap: 16,
+                }}
+              >
+                {entries.map((entry) => (
+                  <PrototypeCard key={entry.id} entry={entry} />
+                ))}
+              </Box>
+            </Box>
           ))}
-        </Tabs>
-      </Box>
 
-      <Box
-        style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))',
-          gap: 16,
-          marginBottom: 32,
-          alignItems: 'end',
-        }}
-      >
-        <Input
-          labelText="Search"
-          placeholder="Search prototypes…"
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          aria-label="Search prototypes"
-        />
-        <Select
-          labelText="Owner"
-          options={ownerOptions}
-          value={ownerFilter}
-          onChange={(selected) =>
-            setOwnerFilter(aquariumSelectValue(selected, ALL_OWNERS_VALUE))
-          }
-        />
-      </Box>
-
-      {filteredOwnerGroups.map(({ owner, entries }) => (
-        <Box key={owner} style={{ marginBottom: 40 }}>
-          <Box
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: 12,
-              marginBottom: 16,
-            }}
-          >
-            <DesignerAvatar owner={owner} size={48} />
-            <Typography.Subheading color="intense">{owner}</Typography.Subheading>
-          </Box>
+        {tab === 'templates' && (
           <Box
             style={{
               display: 'grid',
@@ -143,19 +160,19 @@ export function PrototypeHub() {
               gap: 16,
             }}
           >
-            {entries.map((entry) => (
+            {filteredTemplates.map((entry) => (
               <PrototypeCard key={entry.id} entry={entry} />
             ))}
           </Box>
-        </Box>
-      ))}
+        )}
 
-      {totalVisible === 0 && (
-        <Box style={{ padding: 48, textAlign: 'center' }}>
-          <Typography.Default color="muted">No prototypes match your search.</Typography.Default>
-        </Box>
-      )}
+        {totalVisible === 0 && (
+          <Box style={{ padding: 48, textAlign: 'center' }}>
+            <Typography.Default color="muted">No {tab} match your search.</Typography.Default>
+          </Box>
+        )}
       </Box>
+      <HubMascot />
     </Box>
   )
 }

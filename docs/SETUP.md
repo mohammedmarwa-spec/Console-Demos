@@ -353,7 +353,7 @@ The panel supports:
 
 - **Reusable scenarios** — stable team starting points (green badge)
 - **Prototype scenarios** — exploratory ideas (owner, status badges)
-- **Experiments** — designer-owned copies under `src/experiments/`
+- **Experiments** — designer-owned copies under `experiments/`
 
 Scenarios are registered in `src/registry/`. See [docs/README.md](docs/README.md) and [docs/how-to-create-prototype.md](docs/how-to-create-prototype.md).
 

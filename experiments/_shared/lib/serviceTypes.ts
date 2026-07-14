@@ -1,0 +1,13 @@
+export type ServiceTypeId =
+  | 'postgresql'
+  | 'kafka'
+  | 'valkey'
+  | 'mysql'
+  | 'opensearch'
+  | 'clickhouse'
+  | 'dragonfly'
+  | 'metrics'
+  | 'grafana'
+  | 'redis'
+  | 'flink'
+  | 'm3db'

@@ -1,14 +1,13 @@
 import { Box } from '@aivenio/aquarium'
-import { getDesignerAvatar } from '../../lib/designerAvatars'
+import { getOwnerAvatarSrc, isKnownOwnerSlug } from '../../lib/designTeamOwners'
 
 export type DesignerAvatarProps = {
-  owner: string
+  ownerSlug: string
   size?: number
 }
 
-export function DesignerAvatar({ owner, size = 40 }: DesignerAvatarProps) {
-  const avatar = getDesignerAvatar(owner)
-  if (!avatar) return null
+export function DesignerAvatar({ ownerSlug, size = 40 }: DesignerAvatarProps) {
+  if (!isKnownOwnerSlug(ownerSlug)) return null
 
   return (
     <Box
@@ -20,7 +19,7 @@ export function DesignerAvatar({ owner, size = 40 }: DesignerAvatarProps) {
       }}
     >
       <img
-        src={avatar.src}
+        src={getOwnerAvatarSrc(ownerSlug)}
         alt=""
         width={size}
         height={size}

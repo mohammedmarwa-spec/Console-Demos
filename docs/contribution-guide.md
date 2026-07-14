@@ -47,7 +47,7 @@ Review is **lightweight** — this is a design sandbox, not production software.
 ## File locations
 
 - Reusable + prototype metadata: `src/registry/scenarios.ts`
-- Experiments: `src/experiments/<owner>/<name>/`
+- Experiments: `experiments/<owner>/<name>/`
 - Mock data: `src/mocks/`
 - Runtime logic: `src/scenarios/scenarioRuntime.ts`
 

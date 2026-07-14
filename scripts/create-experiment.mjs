@@ -1,17 +1,20 @@
 #!/usr/bin/env node
 /**
- * Scaffold a new experiment from a reusable scenario.
+ * Scaffold a new experiment by copying a template folder.
  *
  * Usage:
- *   node scripts/create-experiment.mjs --owner elena --name shorter-create-service --from onboarding-test-env
+ *   node scripts/create-experiment.mjs --owner elena --name my-experiment --template onboarding-starter
  */
 
-import { cpSync, existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
+import { cpSync, existsSync, readFileSync, readdirSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 const ROOT = join(__dirname, '..')
+const EXPERIMENTS_ROOT = join(ROOT, 'experiments')
+const TEMPLATES_ROOT = join(EXPERIMENTS_ROOT, '_templates')
+const OWNERS_FILE = join(ROOT, 'src/data/design-team-owners.json')
 
 function parseArgs(argv) {
   const args = {}
@@ -30,70 +33,54 @@ function slugify(value) {
     .replace(/^-|-$/g, '')
 }
 
-const { owner, name, from } = parseArgs(process.argv)
+function listAvailableTemplates() {
+  if (!existsSync(TEMPLATES_ROOT)) return []
+  return readdirSync(TEMPLATES_ROOT, { withFileTypes: true })
+    .filter((entry) => entry.isDirectory())
+    .map((entry) => entry.name)
+    .sort()
+}
 
-if (!owner || !name || !from) {
-  console.error('Usage: node scripts/create-experiment.mjs --owner <name> --name <slug> --from <scenarioId>')
+function listKnownOwnerSlugs() {
+  const owners = JSON.parse(readFileSync(OWNERS_FILE, 'utf8'))
+  return Object.keys(owners).sort()
+}
+
+const { owner, name, template } = parseArgs(process.argv)
+
+if (!owner || !name || !template) {
+  console.error(
+    'Usage: node scripts/create-experiment.mjs --owner <ownerSlug> --name <slug> --template <templateSlug>',
+  )
+  process.exit(1)
+}
+
+const knownOwners = listKnownOwnerSlugs()
+if (!knownOwners.includes(owner)) {
+  console.error(`Unknown owner slug: "${owner}"`)
+  console.error(`Known owners: ${knownOwners.join(', ')}`)
+  process.exit(1)
+}
+
+const availableTemplates = listAvailableTemplates()
+if (!availableTemplates.includes(template)) {
+  console.error(`Unknown template: "${template}"`)
+  console.error(`Available templates: ${availableTemplates.join(', ') || '(none found)'}`)
   process.exit(1)
 }
 
 const slug = slugify(name)
-const experimentId = `experiment/${owner}/${slug}`
-const targetDir = join(ROOT, 'src/experiments', owner, slug)
-const templateDir = join(ROOT, 'src/experiments/_template')
+const sourceDir = join(TEMPLATES_ROOT, template)
+const targetDir = join(EXPERIMENTS_ROOT, owner, slug)
 
 if (existsSync(targetDir)) {
   console.error(`Experiment folder already exists: ${targetDir}`)
   process.exit(1)
 }
 
-mkdirSync(targetDir, { recursive: true })
-cpSync(join(templateDir, 'notes.md'), join(targetDir, 'notes.md'))
+cpSync(sourceDir, targetDir, { recursive: true })
 
-const config = `import type { PlaygroundEntry } from '../../../registry/types'
-
-const config: PlaygroundEntry = {
-  id: '${experimentId}',
-  title: '${name.replace(/-/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase())}',
-  description: 'Experiment based on ${from}',
-  category: 'onboarding',
-  type: 'prototype',
-  status: 'rough',
-  owner: '${owner.charAt(0).toUpperCase() + owner.slice(1)}',
-  reusable: false,
-  tags: ['experiment'],
-  route: '/experiments/${owner}/${slug}',
-  runtimeKey: '${from}',
-  sourceScenarioId: '${from}',
-}
-
-export default config
-`
-
-writeFileSync(join(targetDir, 'prototype.config.ts'), config)
-
-const notes = readFileSync(join(targetDir, 'notes.md'), 'utf8')
-  .replace('**Owner:**', `**Owner:** ${owner}`)
-  .replace('**Source scenario:**', `**Source scenario:** \`${from}\``)
-writeFileSync(join(targetDir, 'notes.md'), notes)
-
-const experimentsFile = join(ROOT, 'src/registry/experiments.ts')
-let experimentsSrc = readFileSync(experimentsFile, 'utf8')
-const importLine = `import ${owner}${slug.replace(/-/g, '')} from '../experiments/${owner}/${slug}/prototype.config'`
-
-if (!experimentsSrc.includes(importLine)) {
-  experimentsSrc = experimentsSrc.replace(
-    '// Run: node scripts/create-experiment.mjs',
-    `import ${owner}${slug.replace(/-/g, '')} from '../experiments/${owner}/${slug}/prototype.config'\n// Run: node scripts/create-experiment.mjs`,
-  )
-  experimentsSrc = experimentsSrc.replace(
-    'export const EXPERIMENT_ENTRIES: PlaygroundEntry[] = [',
-    `export const EXPERIMENT_ENTRIES: PlaygroundEntry[] = [\n  ${owner}${slug.replace(/-/g, '')},`,
-  )
-  writeFileSync(experimentsFile, experimentsSrc)
-}
-
-console.log(`Created experiment: ${experimentId}`)
-console.log(`Folder: src/experiments/${owner}/${slug}/`)
-console.log(`Register in src/registry/experiments.ts if not auto-added.`)
+console.log(`Created experiment: ${owner}/${slug}`)
+console.log(`Folder: experiments/${owner}/${slug}/`)
+console.log(`Update pageMeta (title, description) in ${join('experiments', owner, slug, 'index.tsx')}`)
 console.log(`Open: /experiments/${owner}/${slug}`)

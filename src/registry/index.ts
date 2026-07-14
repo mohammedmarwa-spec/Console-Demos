@@ -1,4 +1,3 @@
-import { EXPERIMENT_ENTRIES } from './experiments'
 import { PROTOTYPE_SCENARIOS, REUSABLE_SCENARIOS } from './scenarios'
 import {
   CATEGORY_LABELS,
@@ -19,10 +18,14 @@ export type {
 }
 export { CATEGORY_LABELS, entryToLegacyScenario }
 
+/**
+ * Reusable + prototype scenarios only — experiments and templates are no longer
+ * registered here. They're discovered from the filesystem at build time via
+ * experiments/discover.server.ts and are not part of this registry.
+ */
 export const PLAYGROUND_ENTRIES: PlaygroundEntry[] = [
   ...REUSABLE_SCENARIOS,
   ...PROTOTYPE_SCENARIOS,
-  ...EXPERIMENT_ENTRIES,
 ]
 
 const _map = new Map(PLAYGROUND_ENTRIES.map((e) => [e.id, e]))
@@ -78,7 +81,7 @@ export function getEntriesByGroupLabel(group: string): PlaygroundEntry[] {
 export const SCENARIOS: Scenario[] = PLAYGROUND_ENTRIES.map(entryToLegacyScenario)
 
 export function isPrototypeEntry(entry: PlaygroundEntry): boolean {
-  return entry.type === 'prototype' || entry.id.startsWith('experiment/')
+  return entry.type === 'prototype'
 }
 
 export function isArchivedEntry(entry: PlaygroundEntry): boolean {

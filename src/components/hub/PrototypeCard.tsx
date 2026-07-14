@@ -3,25 +3,22 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Box, Button, Card, Typography } from '@aivenio/aquarium'
-import type { PlaygroundEntry } from '../../registry/types'
-import { getLaunchUrlForScenario } from '../../lib/navigation'
+import type { DiscoveredPage } from '@/lib/experiments/types'
 import {
   buildCursorPrompt,
   getCursorPromptIntent,
   storeOwnerSlug,
   suggestExperimentSlug,
   suggestOwnerSlug,
-} from '../../lib/cursorDeeplink'
+} from '@/lib/cursorDeeplink'
 import { StartInCursorModal } from './StartInCursorModal'
-import { PrototypePreviewPopover } from './PrototypePreviewPopover'
 
-export function PrototypeCard({ entry }: { entry: PlaygroundEntry }) {
+export function PrototypeCard({ entry }: { entry: DiscoveredPage }) {
   const router = useRouter()
-  const launchUrl = entry.route || getLaunchUrlForScenario(entry.id)
   const [cursorModalOpen, setCursorModalOpen] = useState(false)
 
   function handleOpenPrototype() {
-    router.push(launchUrl)
+    router.push(entry.route)
   }
 
   function handleStartInCursor(event: React.MouseEvent) {
@@ -50,16 +47,15 @@ export function PrototypeCard({ entry }: { entry: PlaygroundEntry }) {
 
   return (
     <>
-      <PrototypePreviewPopover entry={entry}>
-        <Box
-          role="button"
-          tabIndex={0}
-          aria-label={`Open ${entry.title}`}
-          onClick={handleOpenPrototype}
-          onKeyDown={handleCardKeyDown}
-          style={{ height: '100%', display: 'flex', cursor: 'pointer' }}
-        >
-          <Card
+      <Box
+        role="button"
+        tabIndex={0}
+        aria-label={`Open ${entry.title}`}
+        onClick={handleOpenPrototype}
+        onKeyDown={handleCardKeyDown}
+        style={{ height: '100%', display: 'flex', cursor: 'pointer' }}
+      >
+        <Card
           fullWidth
           title={
             <Card.Title>
@@ -85,9 +81,8 @@ export function PrototypeCard({ entry }: { entry: PlaygroundEntry }) {
               </Button.Secondary>
             </Box>
           </Box>
-          </Card>
-        </Box>
-      </PrototypePreviewPopover>
+        </Card>
+      </Box>
       <StartInCursorModal
         entry={entry}
         open={cursorModalOpen}

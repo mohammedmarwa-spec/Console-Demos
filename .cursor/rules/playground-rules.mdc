@@ -2,6 +2,7 @@
 description: Rules for AI-assisted prototyping in Console Prototype Lab
 globs:
   - src/**
+  - experiments/**
   - docs/**
   - scripts/**
 ---
@@ -20,40 +21,40 @@ This repo is a **shared design playground**, not production Aiven Console.
 ## Edit scope
 
 - **Do not edit** shared reusable scenarios in `src/registry/scenarios.ts` or their runtime unless explicitly requested
-- For new design explorations, copy an existing scenario into `src/experiments/<owner>/<name>/`
+- For new design explorations, copy a template into `experiments/<owner>/<name>/`
 - **Default edit scope:** only the experiment folder
-- Ask before changing shared shell, global mock data structure, `scenarioRuntime` base configs, or shared components
+- Ask before changing shared shell, global mock data structure, `scenarioRuntime` base configs, or shared app components in `src/`
 
-## Reuse first
+## Reuse first (experiments)
 
-- Reuse `src/mocks/`, `src/screens/`, `src/components/` before creating new code
-- Reuse existing logic where possible
+- Reuse domain UI, data, and assets from `experiments/_shared/` before creating new code in an experiment folder
+- If a needed dependency is not in `_shared`, copy it from `src/` into `_shared` first, then import from `@experiments/_shared/...`
+- Keep the **app-shell contract** on `@/`: `@/contexts/PlaygroundStateContext`, `@/theme/ThemeProvider`, `@/components/experiments/ExperimentPageShell`, `@/lib/experiments/types`
+- `_shared` is duplicated from `src/` and must be kept in sync manually when domain code changes
+
+## Reuse first (app)
+
+- Reuse `src/mocks/`, `src/screens/`, `src/components/` before creating new code in the app shell
 - Keep code simple and readable
-
-## Metadata and notes
-
-- Add or update `prototype.config.ts` for new experiments
-- Add or update `notes.md` explaining what changed
-- Keep prototypes clearly marked as prototype-only (`type: prototype`)
 
 ## Creating experiments
 
 ```bash
-node scripts/create-experiment.mjs --owner <name> --name <slug> --from <scenarioId>
+node scripts/create-experiment.mjs --owner <name> --name <slug> --template <templateSlug>
 ```
 
 Example:
 
 ```txt
-Use the existing "Create test environment" scenario as the base.
-Create a new experiment under src/experiments/<your-name>/<experiment-name>/.
-Modify only that experiment folder.
+Use the "Onboarding starter" template as the base.
+Create a new experiment under experiments/<your-name>/<experiment-name>/.
+Entry file is index.tsx. Modify only that experiment folder.
 ```
 
-## Registry
+## Discovery
 
-- Scenarios and experiments are registered in `src/registry/`
-- The scenario switch panel reads from the registry — do not hardcode scenario lists elsewhere
+- Experiments and templates are discovered from the filesystem via `src/lib/experiments/discover.server.ts`
+- Do not hardcode experiment lists elsewhere
 
 ## Deployment
 

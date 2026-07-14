@@ -15,12 +15,13 @@
     "incremental": true,
     "plugins": [{ "name": "next" }],
     "paths": {
-      "@/*": ["./src/*"]
+      "@/*": ["./src/*"],
+      "@experiments/*": ["./experiments/*"]
     },
     "noUnusedLocals": true,
     "noUnusedParameters": true,
     "noFallthroughCasesInSwitch": true
   },
   "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts"],
-  "exclude": ["node_modules", "src/screens/EditService.tsx", "src/screens/UserHome.tsx"]
+  "exclude": ["node_modules", "OLD_SHIT", "src/screens/UserHome.tsx"]
 }
