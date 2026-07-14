@@ -202,6 +202,7 @@ async function generatePreviews(experiments) {
 
   let devServer = null
   let spawnedServer = false
+  let browser = null
 
   try {
     const { chromium } = await import('playwright')
@@ -215,7 +216,7 @@ async function generatePreviews(experiments) {
       log(`reusing dev server at ${DEV_URL}`)
     }
 
-    const browser = await chromium.launch({ headless: true })
+    browser = await chromium.launch({ headless: true })
     const context = await browser.newContext({
       viewport: VIEWPORT,
       deviceScaleFactor: DEVICE_SCALE_FACTOR,
@@ -230,11 +231,17 @@ async function generatePreviews(experiments) {
         warn(`failed to capture ${label}: ${error instanceof Error ? error.message : String(error)}`)
       }
     }
-
-    await browser.close()
   } catch (error) {
     warn(error instanceof Error ? error.message : String(error))
   } finally {
+    if (browser) {
+      try {
+        await browser.close()
+      } catch (error) {
+        warn(`failed to close browser: ${error instanceof Error ? error.message : String(error)}`)
+      }
+    }
+
     if (spawnedServer && devServer) {
       log('stopping dev server')
       await stopDevServer(devServer)

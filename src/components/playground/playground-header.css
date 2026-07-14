@@ -3,7 +3,11 @@
   background-color: #1c1c1c;
   position: sticky;
   top: 0;
-  z-index: 9999;
+  /* Keep the lab chrome above scrolling page content, but strictly BELOW the
+     Aquarium overlay layer (z-index: 100 — modals, drawers, backdrops, popovers).
+     Those portal to <body>, so a lower value here lets them render over the bar
+     instead of the bar overflowing on top of them. */
+  z-index: 90;
 }
 
 .playground-header__inner {
