@@ -1,4 +1,4 @@
-import { PROTOTYPE_SCENARIOS, REUSABLE_SCENARIOS } from './scenarios'
+import { REUSABLE_SCENARIOS } from './scenarios'
 import {
   CATEGORY_LABELS,
   entryToLegacyScenario,
@@ -16,17 +16,14 @@ export type {
   ScenarioCategory,
   ScenarioStatus,
 }
-export { CATEGORY_LABELS, entryToLegacyScenario }
+export { CATEGORY_LABELS, entryToLegacyScenario, REUSABLE_SCENARIOS }
 
 /**
  * Reusable + prototype scenarios only — experiments and templates are no longer
  * registered here. They're discovered from the filesystem at build time via
  * experiments/discover.server.ts and are not part of this registry.
  */
-export const PLAYGROUND_ENTRIES: PlaygroundEntry[] = [
-  ...REUSABLE_SCENARIOS,
-  ...PROTOTYPE_SCENARIOS,
-]
+export const PLAYGROUND_ENTRIES: PlaygroundEntry[] = [...REUSABLE_SCENARIOS]
 
 const _map = new Map(PLAYGROUND_ENTRIES.map((e) => [e.id, e]))
 

@@ -23,5 +23,5 @@
     "noFallthroughCasesInSwitch": true
   },
   "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts"],
-  "exclude": ["node_modules", "OLD_SHIT", "src/screens/UserHome.tsx"]
+  "exclude": ["node_modules", "src/screens/UserHome.tsx"]
 }

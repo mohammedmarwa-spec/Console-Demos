@@ -1,4 +1,4 @@
-import type { ConsoleContext } from '../scenarios/consoleContext'
+import type { ConsoleContext } from '../data/console-context'
 
 /** Neutral team defaults for reusable scenarios. */
 export const TEAM_CONSOLE_CONTEXT: ConsoleContext = {

@@ -1,4 +1,4 @@
-import type { ServiceRow } from '../../screens/ProjectServices'
+import type { ServiceRow } from '@/screens/ProjectServices'
 
 export const MYSQL_ACU_ROLLOUT_SERVICES: ServiceRow[] = [
   { id: 'mysql-prod-01',    serviceName: 'mysql-prod-01',    serviceType: 'MySQL',      serviceTypeId: 'mysql',      status: 'Running', nodes: 'Nodes 1', nodeCount: 1, planName: 'Business-4',  planDetails: '4 CPU / 16 GB RAM / 300 GB storage',  cloudRegion: 'AWS: eu-west-1',            location: 'Europe, Ireland',         created: '2 months ago',  iconLetter: 'M', cpuCount: 4, ramCapacity: '16 GB', storageCapacity: '300 GB' },

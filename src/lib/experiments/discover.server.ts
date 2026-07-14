@@ -8,6 +8,7 @@ import { existsSync, readdirSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import type { ComponentType } from 'react'
 import type { DiscoveredPage, PageMeta } from './types'
+import { getPrototypeScenarioOrNull } from '@/content/prototype-scenarios'
 
 const EXPERIMENTS_ROOT = join(process.cwd(), 'experiments')
 const TEMPLATES_DIR = '_templates'
@@ -35,14 +36,22 @@ function findPageFile(dir: string): string | null {
  * parsing (no module execution) — keeps discovery fast, synchronous, and
  * side-effect free even though page.tsx files import client UI.
  */
-function readPageMeta(pageFilePath: string): PageMeta {
+function readPageMeta(pageFilePath: string, slug: string): PageMeta {
   const source = readFileSync(pageFilePath, 'utf8')
   const titleMatch = source.match(/title:\s*(['"`])([\s\S]*?)\1/)
   const descriptionMatch = source.match(/description:\s*(['"`])([\s\S]*?)\1/)
 
-  return {
+  const parsed: PageMeta = {
     title: titleMatch?.[2] ?? '(untitled)',
     description: descriptionMatch?.[2] ?? '',
+  }
+
+  const prototype = getPrototypeScenarioOrNull(slug)
+  if (!prototype) return parsed
+
+  return {
+    title: parsed.title !== '(untitled)' ? parsed.title : prototype.title,
+    description: parsed.description || prototype.description,
   }
 }
 
@@ -55,7 +64,7 @@ export function discoverTemplates(): DiscoveredPage[] {
     if (!pageFile) continue
 
     pages.push({
-      ...readPageMeta(pageFile),
+      ...readPageMeta(pageFile, slug),
       id: `template/${slug}`,
       slug,
       kind: 'template',
@@ -80,7 +89,7 @@ export function discoverExperiments(): DiscoveredPage[] {
       if (!pageFile) continue
 
       pages.push({
-        ...readPageMeta(pageFile),
+        ...readPageMeta(pageFile, slug),
         id: `experiment/${ownerSlug}/${slug}`,
         slug,
         kind: 'experiment',

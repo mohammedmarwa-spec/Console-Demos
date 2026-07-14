@@ -40,8 +40,7 @@ import CreateForkModal from '../screens/CreateForkModal'
 import ServiceOverview from '../screens/ServiceOverview'
 import ProjectServices from '../screens/ProjectServices'
 import type { ServiceRow } from '../screens/ProjectServices'
-
-import mockRouter from 'next-router-mock'
+import type { CreatedServicePayload } from '../screens/CreateService'
 
 function renderApp() {
   mockRouter.setCurrentUrl('/console/project/services?scenario=existing-customer')
@@ -54,7 +53,6 @@ function renderApp() {
     </Context>,
   )
 }
-import type { CreatedServicePayload } from '../screens/CreateService'
 
 afterEach(() => {
   cleanup()

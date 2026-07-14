@@ -1,4 +1,4 @@
-import type { ServiceRow } from '../../screens/ProjectServices'
+import type { ServiceRow } from '@/screens/ProjectServices'
 
 // prettier-ignore
 export const REPLICA_MIXED_SERVICES: ServiceRow[] = [

@@ -1,4 +1,4 @@
-import type { ServiceRow } from '../../screens/ProjectServices'
+import type { ServiceRow } from '@/screens/ProjectServices'
 import { INITIAL_SERVICES } from './initial'
 
 // prettier-ignore

@@ -27,12 +27,11 @@ Open **http://localhost:5173** in your browser.
 | `/console/onboarding/playground` | Playground onboarding |
 | `/experiments/[owner]/[slug]` | Experiment launcher |
 
-## Scenario panel (inside `/console/*`)
+## Launching scenarios
 
-- Click the **Scenarios** trigger (top-right) or press **Shift+S**
-- Filter by **All**, **Reusable**, **Prototypes**, or **Archived**
-- Search by title, description, owner, tags
-- Use **Reset scenario** to clear the active scenario
+- Open `/` (**Prototype Hub**) to browse reusable scenarios, prototypes, templates, and experiments
+- Click a card to launch — each scenario deep-links to the correct console route with `?scenario=<id>`
+- Use **Back** in the playground header to return to the hub
 
 ## Deep links
 

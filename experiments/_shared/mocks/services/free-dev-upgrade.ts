@@ -1,4 +1,4 @@
-import type { ServiceRow } from '../../screens/ProjectServices'
+import type { ServiceRow } from '@/screens/ProjectServices'
 
 /** Services list for Free & Dev quick-upgrade scenarios (v2, v3, v4). */
 // prettier-ignore

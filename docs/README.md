@@ -22,7 +22,7 @@ npm install
 npm run dev
 ```
 
-Open http://localhost:5173 and press **Shift+S** to open the scenario panel.
+Open http://localhost:5173 — browse scenarios from the hub or use deep links (see [how-to-run.md](./how-to-run.md)).
 
 See [how-to-run.md](./how-to-run.md) for full setup (designers: start with [SETUP.md](./SETUP.md)).
 
@@ -44,7 +44,31 @@ See [how-to-run.md](./how-to-run.md) for full setup (designers: start with [SETU
 
 ## Architecture
 
-- `src/registry/` — scenario and experiment metadata
-- `src/scenarios/` — scenario panel, runtime, context
+The repo is split into two layers with a single contract seam:
+
+### Layer A — App shell
+
+- `src/app/` — Next.js routes (hub `/`, console `/console/*`, experiments `/experiments/*`)
+- `src/components/hub/` — Prototype Hub homepage UI
+- `src/components/playground/` — PlaygroundHeader and chrome
+- `src/contexts/PlaygroundStateContext.tsx` — console mock state orchestration
+- `src/lib/experiments/` — filesystem discovery for templates and experiments
+
+### Layer B — Content
+
+- `src/registry/` — reusable and prototype scenario catalog
+- `src/scenarios/` — scenario runtime (`ScenarioRuntime`) and context
 - `src/mocks/` — centralized mock data
+- `src/screens/` — domain UI (services list, billing, onboarding, etc.)
 - `experiments/` — designer experiment folders (entry: `index.tsx`)
+
+### Contract (`src/lib/playground-contract.ts`)
+
+Shell imports content only through this module:
+
+| Direction | Imports |
+|-----------|---------|
+| Shell → content | `resolveRuntime`, `ScenarioRuntime`, registry helpers, `ROUTES` / navigation |
+| Experiments → shell | `PlaygroundStateProvider`, `ThemeProvider`, `ExperimentPageShell`, `PageMeta` |
+
+Content must **not** import from `src/app/`, `src/components/hub/`, or `PlaygroundStateContext`.

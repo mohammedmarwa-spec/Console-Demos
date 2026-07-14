@@ -29,3 +29,10 @@ class IntersectionObserverMock {
 }
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 ;(globalThis as any).IntersectionObserver = IntersectionObserverMock
+
+class ResizeObserverMock {
+  observe = vi.fn()
+  unobserve = vi.fn()
+  disconnect = vi.fn()
+}
+;(globalThis as any).ResizeObserver = ResizeObserverMock

@@ -1,4 +1,5 @@
 import { getEntryById } from '../registry'
+import { getPrototypeRuntimeKey } from '../content/prototype-scenarios'
 import type { ServiceTypeId } from '../screens/ServiceTypeSelectModal'
 import type { ServiceRow } from '../screens/ProjectServices'
 import { enrichServicesWithRandomCreatedBy } from '../utils/serviceCreatedByDataset'
@@ -66,7 +67,8 @@ function withRandomCreatedByAvatars(services: ServiceRow[]): ServiceRow[] {
 export function resolveRuntimeKey(scenarioId: string | null): string | null {
   if (!scenarioId) return null
   const entry = getEntryById(scenarioId)
-  return entry?.runtimeKey ?? scenarioId
+  if (entry?.runtimeKey) return entry.runtimeKey
+  return getPrototypeRuntimeKey(scenarioId)
 }
 
 function buildRuntimeForKey(runtimeKey: string): ScenarioRuntime {
@@ -209,5 +211,5 @@ export function getRuntimeFlags(scenarioId: string | null): ScenarioRuntimeFlags
 }
 
 export function shouldAutoOpenMysqlRolloutModal(scenarioId: string | null): boolean {
-  return scenarioId === 'mysql-acu-rollout'
+  return getRuntimeFlags(scenarioId).autoOpenMysqlRolloutModal ?? false
 }

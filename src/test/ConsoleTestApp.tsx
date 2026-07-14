@@ -3,7 +3,7 @@
 import { Suspense, useSyncExternalStore } from 'react'
 import mockRouter from 'next-router-mock'
 import { Providers } from '../app/providers'
-import ConsoleLayout from '../app/console/layout'
+import PlaygroundShell from '../components/playground/PlaygroundShell'
 import ProjectServicesPage from '../app/console/project/services/page'
 import ServiceOverviewClient from '../app/console/project/services/[serviceId]/ServiceOverviewClient'
 import OrgPage from '../app/console/org/page'
@@ -49,9 +49,9 @@ export default function ConsoleTestApp() {
   return (
     <Providers>
       <Suspense fallback={null}>
-        <ConsoleLayout>
+        <PlaygroundShell>
           <RoutedConsoleContent />
-        </ConsoleLayout>
+        </PlaygroundShell>
       </Suspense>
     </Providers>
   )

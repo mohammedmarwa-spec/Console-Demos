@@ -1,4 +1,4 @@
-import type { ServiceRow } from '../../screens/ProjectServices'
+import type { ServiceRow } from '@/screens/ProjectServices'
 
 export const DEEPTRACE_DEMO_PG_ID = 'pg-deeptrace-demo'
 

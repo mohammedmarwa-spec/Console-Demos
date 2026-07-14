@@ -74,7 +74,6 @@ function applyScenarioState(
     setOverviewServiceId: (id: string | null) => void
     setOverviewServiceType: (t: ServiceTypeId | null) => void
     setOverviewInitialSidebarItem: (item: string | undefined) => void
-    setMysqlRolloutModalOpen: (open: boolean) => void
     setServiceTypeModalOpen: (open: boolean) => void
     setCreationModalOpen: (open: boolean) => void
   },
@@ -87,7 +86,6 @@ function applyScenarioState(
   setters.setOverviewServiceId(runtime.initialOverviewServiceId ?? null)
   setters.setOverviewServiceType(runtime.initialOverviewServiceType ?? null)
   setters.setOverviewInitialSidebarItem(flags.initialSidebarItem)
-  setters.setMysqlRolloutModalOpen(flags.autoOpenMysqlRolloutModal ?? false)
 }
 
 export function PlaygroundStateProvider({ children }: { children: ReactNode }) {
@@ -108,13 +106,14 @@ export function PlaygroundStateProvider({ children }: { children: ReactNode }) {
   )
   const [overviewInitialSidebarItem, setOverviewInitialSidebarItem] = useState<string | undefined>()
   const [services, setServices] = useState<ServiceRow[]>(() => getInitialServicesForScenario(activeScenarioId))
-  const [mysqlRolloutModalOpen, setMysqlRolloutModalOpen] = useState(activeScenarioId === 'mysql-acu-rollout')
+  const [mysqlRolloutModalOpen, setMysqlRolloutModalOpen] = useState(false)
   const [createReplicaModalOpen, setCreateReplicaModalOpen] = useState(false)
   const [createForkModalOpen, setCreateForkModalOpen] = useState(false)
   const [editModalOpen, setEditModalOpen] = useState(false)
   const [upgradeV2ModalOpen, setUpgradeV2ModalOpen] = useState(false)
   const [pgStudioWelcomeOpen, setPgStudioWelcomeOpen] = useState(false)
   const [routeServiceId, setRouteServiceId] = useState<string | null>(null)
+  const [clientReady, setClientReady] = useState(false)
 
   const kafkaCreationCount = useRef(0)
   const createServiceSubmitRef = useRef<(() => void) | undefined>(undefined)
@@ -136,6 +135,16 @@ export function PlaygroundStateProvider({ children }: { children: ReactNode }) {
     [router],
   )
 
+  // Aquarium modals use document (portals) — skip SSR to avoid ReferenceError.
+  useEffect(() => {
+    setClientReady(true)
+  }, [])
+
+  // Defer auto-open modals until after mount — Aquarium Modal uses document (portals).
+  useEffect(() => {
+    setMysqlRolloutModalOpen(getRuntimeFlags(activeScenarioId).autoOpenMysqlRolloutModal ?? false)
+  }, [activeScenarioId])
+
   useEffect(() => {
     if (activeScenarioId === prevScenarioId.current) return
     prevScenarioId.current = activeScenarioId
@@ -144,7 +153,6 @@ export function PlaygroundStateProvider({ children }: { children: ReactNode }) {
       setOverviewServiceId,
       setOverviewServiceType,
       setOverviewInitialSidebarItem,
-      setMysqlRolloutModalOpen,
       setServiceTypeModalOpen,
       setCreationModalOpen,
     })
@@ -510,6 +518,8 @@ export function PlaygroundStateProvider({ children }: { children: ReactNode }) {
 
   return (
     <PlaygroundStateContext.Provider value={value}>
+      {clientReady ? (
+        <>
       <MysqlAcuRolloutModal
         open={mysqlRolloutModalOpen}
         onClose={() => setMysqlRolloutModalOpen(false)}
@@ -642,6 +652,8 @@ export function PlaygroundStateProvider({ children }: { children: ReactNode }) {
           />
         )}
       </Modal>
+        </>
+      ) : null}
 
       {children}
     </PlaygroundStateContext.Provider>

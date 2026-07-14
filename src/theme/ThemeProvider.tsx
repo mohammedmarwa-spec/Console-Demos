@@ -26,6 +26,7 @@ type ThemeContextValue = {
 const ThemeContext = createContext<ThemeContextValue | null>(null)
 
 function applyResolvedThemeToDocument(theme: ResolvedTheme) {
+  if (typeof document === 'undefined') return
   const root = document.documentElement
   if (theme === 'dark') root.classList.add('aquarium-theme-dark')
   else root.classList.remove('aquarium-theme-dark')

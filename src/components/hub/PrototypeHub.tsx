@@ -4,7 +4,6 @@ import { useMemo, useState } from 'react'
 import { Box, Input, Select, Tabs, Typography } from '@aivenio/aquarium'
 import type { DiscoveredPage } from '@/lib/experiments/types'
 import { HubHeader } from './HubHeader'
-import { HubMascot } from './HubMascot'
 import { DesignerAvatar } from './DesignerAvatar'
 import { PrototypeCard } from './PrototypeCard'
 import { aquariumSelectValue } from '../../lib/aquariumSelect'
@@ -172,7 +171,6 @@ export function PrototypeHub({ experiments, templates }: PrototypeHubProps) {
           </Box>
         )}
       </Box>
-      <HubMascot />
     </Box>
   )
 }
