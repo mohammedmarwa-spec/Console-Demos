@@ -10,10 +10,19 @@ export type ResourceKind = 'Service' | 'Project' | 'Organization' | 'Network' | 
 
 export type EventType =
   | 'Access'
-  | 'Network'
-  | 'Security'
+  | 'API token'
+  | 'Authentication'
+  | 'Backup'
   | 'Billing'
+  | 'Integration'
+  | 'Maintenance'
+  | 'Network'
+  | 'Organization'
+  | 'Project management'
+  | 'Quota'
+  | 'Security'
   | 'Service management'
+  | 'Support'
   | 'User management'
 
 /** A single organization event-log entry. Mirrors the schema shown in the design. */
@@ -537,6 +546,175 @@ function createMockEventLogs(): EventLog[] {
       actorUserId: 'system',
       metadata: { target_user: 'usr_elena_ivanova', location: 'Helsinki, FI' },
     },
+    // ── Rows exercising the newer event types so those filter options match data ──
+    {
+      id: 'evt-25',
+      occurredAt: new Date(Date.UTC(2024, 7, 22, 13, 47, 5)),
+      actor: 'Marcus Chen',
+      actorKind: 'user',
+      actorHref: '#',
+      action: 'Created project API token console-cli for prj-data',
+      eventType: 'API token',
+      resourceKind: 'Project',
+      resourceName: 'prj-data',
+      logEntryId: 'log_a17c0f92de',
+      organizationId: 'org-7a2c91',
+      accountId: 'acc-31f8',
+      billingGroupId: null,
+      projectId: 'prj-data',
+      serviceId: null,
+      actorUserId: 'usr_marcus_chen',
+      metadata: { token_name: 'console-cli', scope: 'read_write' },
+    },
+    {
+      id: 'evt-26',
+      occurredAt: new Date(Date.UTC(2024, 7, 21, 9, 14, 33)),
+      actor: 'Elena Ivanova',
+      actorKind: 'user',
+      actorHref: '#',
+      action: 'Signed in via SSO (Okta)',
+      eventType: 'Authentication',
+      resourceKind: 'Organization',
+      resourceName: 'Big Co Ltd.',
+      logEntryId: 'log_b2380ac71f',
+      organizationId: 'org-7a2c91',
+      accountId: null,
+      billingGroupId: null,
+      projectId: null,
+      serviceId: null,
+      actorUserId: 'usr_elena_ivanova',
+      metadata: { method: 'sso', provider: 'okta', mfa: true },
+    },
+    {
+      id: 'evt-27',
+      occurredAt: new Date(Date.UTC(2024, 7, 20, 3, 30, 0)),
+      actor: 'Aiven Automation',
+      actorKind: 'automation',
+      action: 'Created scheduled backup of pg-production',
+      eventType: 'Backup',
+      resourceKind: 'Service',
+      resourceName: 'pg-production',
+      logEntryId: 'log_c9911fe044',
+      organizationId: 'org-7a2c91',
+      accountId: 'acc-31f8',
+      billingGroupId: 'bg-004',
+      projectId: 'prj-platform',
+      serviceId: 'svc-pg-production',
+      actorUserId: 'svc_automation',
+      metadata: { backup_id: 'bkp_20240820', size_gb: 118, type: 'full' },
+    },
+    {
+      id: 'evt-28',
+      occurredAt: new Date(Date.UTC(2024, 7, 19, 14, 2, 41)),
+      actor: 'Priya Nair',
+      actorKind: 'user',
+      actorHref: '#',
+      action: 'Configured Datadog metrics integration for kafka-analytics',
+      eventType: 'Integration',
+      resourceKind: 'Service',
+      resourceName: 'kafka-analytics',
+      logEntryId: 'log_d40a1c8b72',
+      organizationId: 'org-7a2c91',
+      accountId: 'acc-31f8',
+      billingGroupId: 'bg-004',
+      projectId: 'prj-data',
+      serviceId: 'svc-kafka-analytics',
+      actorUserId: 'usr_priya_nair',
+      metadata: { integration: 'datadog', endpoint: 'metrics', enabled: true },
+    },
+    {
+      id: 'evt-29',
+      occurredAt: new Date(Date.UTC(2024, 7, 18, 6, 0, 0)),
+      actor: 'Aiven Automation',
+      actorKind: 'automation',
+      action: 'Scheduled maintenance window for os-search-eu',
+      eventType: 'Maintenance',
+      resourceKind: 'Service',
+      resourceName: 'os-search-eu',
+      logEntryId: 'log_e5520bd913',
+      organizationId: 'org-7a2c91',
+      accountId: 'acc-31f8',
+      billingGroupId: 'bg-004',
+      projectId: 'prj-platform',
+      serviceId: 'svc-os-search-eu',
+      actorUserId: 'svc_automation',
+      metadata: { window: '2024-08-25T06:00Z', version: '2.13.0' },
+    },
+    {
+      id: 'evt-30',
+      occurredAt: new Date(Date.UTC(2024, 7, 17, 10, 26, 18)),
+      actor: 'Priya Nair',
+      actorKind: 'user',
+      actorHref: '#',
+      action: 'Updated organization display name to Big Co Ltd.',
+      eventType: 'Organization',
+      resourceKind: 'Organization',
+      resourceName: 'Big Co Ltd.',
+      logEntryId: 'log_f6631ce0a4',
+      organizationId: 'org-7a2c91',
+      accountId: null,
+      billingGroupId: null,
+      projectId: null,
+      serviceId: null,
+      actorUserId: 'usr_priya_nair',
+      metadata: { previous_name: 'Big Company', new_name: 'Big Co Ltd.' },
+    },
+    {
+      id: 'evt-31',
+      occurredAt: new Date(Date.UTC(2024, 7, 16, 15, 48, 52)),
+      actor: 'Elena Ivanova',
+      actorKind: 'user',
+      actorHref: '#',
+      action: 'Renamed project prj-data to prj-data-eu',
+      eventType: 'Project management',
+      resourceKind: 'Project',
+      resourceName: 'prj-data',
+      logEntryId: 'log_071742db35',
+      organizationId: 'org-7a2c91',
+      accountId: 'acc-31f8',
+      billingGroupId: 'bg-004',
+      projectId: 'prj-data',
+      serviceId: null,
+      actorUserId: 'usr_elena_ivanova',
+      metadata: { from: 'prj-data', to: 'prj-data-eu' },
+    },
+    {
+      id: 'evt-32',
+      occurredAt: new Date(Date.UTC(2024, 7, 15, 11, 9, 7)),
+      actor: 'system@aiven.io',
+      actorKind: 'system',
+      action: 'Increased service quota for prj-platform',
+      eventType: 'Quota',
+      resourceKind: 'Project',
+      resourceName: 'prj-platform',
+      logEntryId: 'log_18835ef1c6',
+      organizationId: 'org-7a2c91',
+      accountId: 'acc-31f8',
+      billingGroupId: 'bg-004',
+      projectId: 'prj-platform',
+      serviceId: null,
+      actorUserId: 'system',
+      metadata: { resource: 'services', from: 20, to: 30 },
+    },
+    {
+      id: 'evt-33',
+      occurredAt: new Date(Date.UTC(2024, 7, 14, 8, 33, 24)),
+      actor: 'Marcus Chen',
+      actorKind: 'user',
+      actorHref: '#',
+      action: 'Opened support ticket #4821 (elevated storage latency)',
+      eventType: 'Support',
+      resourceKind: 'Organization',
+      resourceName: 'Big Co Ltd.',
+      logEntryId: 'log_299460af27',
+      organizationId: 'org-7a2c91',
+      accountId: 'acc-31f8',
+      billingGroupId: null,
+      projectId: null,
+      serviceId: null,
+      actorUserId: 'usr_marcus_chen',
+      metadata: { ticket_id: '4821', priority: 'high', category: 'performance' },
+    },
   ]
 
   return seeds.map((seed) => ({
@@ -581,7 +759,9 @@ export const ACTOR_OPTIONS: { value: string; label: string }[] = unique([
   .sort()
   .map((value) => ({ value, label: value }))
 
-export const EVENT_TYPE_OPTIONS: { value: string; label: string }[] = [
+// Typed against the EventType union so any option that isn't a real event type
+// (and therefore could never match a log row) fails to compile.
+const EVENT_TYPE_VALUES: EventType[] = [
   'Access',
   'API token',
   'Authentication',
@@ -597,7 +777,10 @@ export const EVENT_TYPE_OPTIONS: { value: string; label: string }[] = [
   'Service management',
   'Support',
   'User management',
-].map((value) => ({ value, label: value }))
+]
+
+export const EVENT_TYPE_OPTIONS: { value: EventType; label: string }[] =
+  EVENT_TYPE_VALUES.map((value) => ({ value, label: value }))
 
 /** Resources that don't exist in MOCK_EVENT_LOGS but round out the filter dropdown. */
 const EXTRA_RESOURCE_OPTIONS = [
