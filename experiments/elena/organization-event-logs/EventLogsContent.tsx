@@ -4,7 +4,6 @@ import {
   useContext,
   useEffect,
   useMemo,
-  useRef,
   useState,
   type ReactNode,
 } from 'react'
@@ -14,11 +13,10 @@ import {
   Box,
   Breadcrumbs,
   Button,
-  Checkbox,
-  CheckboxGroup,
   DataList,
   DateTimeRangePicker,
   Drawer,
+  DropdownMenu,
   Filter,
   Icon,
   InputBase,
@@ -73,8 +71,13 @@ function DateRangeFilterTrigger({ onClear }: { onClear?: () => void }) {
   )
 }
 
-// ─── Reusable multi-select checkbox filter ────────────────────────────────────
+// ─── Reusable searchable multi-select filter (DS DropdownMenu) ────────────────
 
+/**
+ * Pairs the DS `Filter.Trigger` with a searchable `DropdownMenu`. The dropdown's
+ * built-in search box filters options as you type; `maxHeight` caps the menu so
+ * roughly the first ten options are visible and the rest scroll.
+ */
 function CheckboxFilter({
   label,
   options,
@@ -86,65 +89,43 @@ function CheckboxFilter({
   selected: string[]
   onChange: (next: string[]) => void
 }) {
-  const [open, setOpen] = useState(false)
-  const ref = useRef<HTMLDivElement>(null)
-
-  useEffect(() => {
-    if (!open) return
-    function handleMouseDown(e: MouseEvent) {
-      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false)
-    }
-    document.addEventListener('mousedown', handleMouseDown)
-    return () => document.removeEventListener('mousedown', handleMouseDown)
-  }, [open])
-
   const active = selected.length > 0
   const valueText = active
     ? selected.length === 1
-      ? selected[0]
+      ? options.find((o) => o.value === selected[0])?.label ?? selected[0]
       : `${selected.length} selected`
     : undefined
 
   return (
-    <div ref={ref} style={{ position: 'relative' }}>
-      <Filter.Trigger
-        labelText={label}
-        icon={filterIcon}
-        value={valueText}
-        onClear={active ? () => onChange([]) : undefined}
-        onClick={() => setOpen((o) => !o)}
-      />
-      {open && (
-        <Box
-          style={{
-            position: 'absolute',
-            top: 'calc(100% + 8px)',
-            left: 0,
-            zIndex: 200,
-            backgroundColor: 'var(--aquarium-background-color-layer)',
-            border: '1px solid var(--aquarium-border-color-muted)',
-            borderRadius: 8,
-            boxShadow: '0 4px 24px rgba(0, 0, 0, 0.12)',
-            padding: 16,
-            minWidth: 260,
-            maxHeight: 320,
-            overflow: 'auto',
-          }}
-        >
-          <CheckboxGroup
-            labelText={label}
-            value={selected}
-            onChange={(val) => onChange(val ?? [])}
-          >
-            {options.map((opt) => (
-              <Checkbox key={opt.value} value={opt.value}>
-                {opt.label}
-              </Checkbox>
-            ))}
-          </CheckboxGroup>
-        </Box>
-      )}
-    </div>
+    <DropdownMenu
+      searchable
+      selectionMode="multiple"
+      selection={selected}
+      onSelectionChange={(keys) =>
+        onChange(keys === 'all' ? options.map((o) => o.value) : Array.from(keys, String))
+      }
+      emptyState={<Typography.Small color="muted">No matches</Typography.Small>}
+      placement="bottom-left"
+      minWidth={260}
+      maxWidth={340}
+      maxHeight={500}
+    >
+      <DropdownMenu.Trigger>
+        <Filter.Trigger
+          labelText={label}
+          icon={filterIcon}
+          value={valueText}
+          onClear={active ? () => onChange([]) : undefined}
+        />
+      </DropdownMenu.Trigger>
+      <DropdownMenu.Items>
+        {options.map((opt) => (
+          <DropdownMenu.Item key={opt.value} id={opt.value} textValue={opt.label}>
+            {opt.label}
+          </DropdownMenu.Item>
+        ))}
+      </DropdownMenu.Items>
+    </DropdownMenu>
   )
 }
 

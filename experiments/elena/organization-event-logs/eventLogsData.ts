@@ -553,26 +553,93 @@ function unique<T>(values: T[]): T[] {
   return Array.from(new Set(values))
 }
 
-export const ACTOR_OPTIONS = unique(MOCK_EVENT_LOGS.map((e) => e.actor))
-  .sort()
-  .map((value) => ({ value, label: value }))
+// The option catalogs below intentionally include more values than appear in the
+// mock rows. Real Console filter dropdowns list every possible value in the org
+// (most of which aren't on the current page), so padding these lets us exercise
+// the searchable dropdown's in-menu search and >10-item scroll behaviour.
 
-export const EVENT_TYPE_OPTIONS: { value: EventType; label: string }[] = [
-  { value: 'Access', label: 'Access' },
-  { value: 'Billing', label: 'Billing' },
-  { value: 'Network', label: 'Network' },
-  { value: 'Security', label: 'Security' },
-  { value: 'Service management', label: 'Service management' },
-  { value: 'User management', label: 'User management' },
+/** Actors that don't exist in MOCK_EVENT_LOGS but round out the filter dropdown. */
+const EXTRA_ACTOR_OPTIONS = [
+  'Sofia Rossi',
+  'Liam O’Connor',
+  'Yuki Tanaka',
+  'Noah Schmidt',
+  'Amara Okafor',
+  'Diego Fernández',
+  'Mei Lin',
+  'Oliver Brown',
+  'Fatima Al-Sayed',
+  'Lucas Silva',
+  'terraform@aiven.io',
+  'ci-bot@bigco.example',
 ]
 
-export const RESOURCE_OPTIONS = unique(MOCK_EVENT_LOGS.map((e) => e.resourceName))
+export const ACTOR_OPTIONS: { value: string; label: string }[] = unique([
+  ...MOCK_EVENT_LOGS.map((e) => e.actor),
+  ...EXTRA_ACTOR_OPTIONS,
+])
   .sort()
   .map((value) => ({ value, label: value }))
 
-export const PROJECT_OPTIONS = unique(
-  MOCK_EVENT_LOGS.map((e) => e.projectId).filter((id): id is string => Boolean(id)),
-)
+export const EVENT_TYPE_OPTIONS: { value: string; label: string }[] = [
+  'Access',
+  'API token',
+  'Authentication',
+  'Backup',
+  'Billing',
+  'Integration',
+  'Maintenance',
+  'Network',
+  'Organization',
+  'Project management',
+  'Quota',
+  'Security',
+  'Service management',
+  'Support',
+  'User management',
+].map((value) => ({ value, label: value }))
+
+/** Resources that don't exist in MOCK_EVENT_LOGS but round out the filter dropdown. */
+const EXTRA_RESOURCE_OPTIONS = [
+  'redis-sessions',
+  'mysql-orders',
+  'opensearch-logs',
+  'kafka-connect',
+  'flink-jobs',
+  'grafana-dashboards',
+  'cassandra-metrics',
+  'clickhouse-analytics',
+  'valkey-ratelimit',
+  'pg-staging',
+]
+
+export const RESOURCE_OPTIONS: { value: string; label: string }[] = unique([
+  ...MOCK_EVENT_LOGS.map((e) => e.resourceName),
+  ...EXTRA_RESOURCE_OPTIONS,
+])
+  .sort()
+  .map((value) => ({ value, label: value }))
+
+/** Projects that don't exist in MOCK_EVENT_LOGS but round out the filter dropdown. */
+const EXTRA_PROJECT_OPTIONS = [
+  'prj-staging',
+  'prj-sandbox',
+  'prj-analytics',
+  'prj-ml',
+  'prj-marketing',
+  'prj-infra',
+  'prj-security',
+  'prj-billing',
+  'prj-support',
+  'prj-experiments',
+  'prj-archive',
+  'prj-shared',
+]
+
+export const PROJECT_OPTIONS: { value: string; label: string }[] = unique([
+  ...MOCK_EVENT_LOGS.map((e) => e.projectId).filter((id): id is string => Boolean(id)),
+  ...EXTRA_PROJECT_OPTIONS,
+])
   .sort()
   .map((value) => ({ value, label: value }))
 
