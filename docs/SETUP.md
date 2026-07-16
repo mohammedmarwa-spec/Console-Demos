@@ -1,8 +1,10 @@
-# Design Police Playground — Setup Guide (macOS)
+# Console Prototype Lab — Setup Guide (macOS)
 
-A step-by-step guide for designers who have **never installed dev tools** on a Mac. By the end you will run the same prototype locally in your browser at `http://localhost:5173`.
+A step-by-step guide for designers who have **never installed dev tools** on a Mac. By the end you will run the Design Police playground locally in your browser at `http://localhost:5173`.
 
 **Time estimate:** 45–90 minutes (mostly waiting for downloads).
+
+> **Repo:** [`Aiven-Labs/console-prototype-lab`](https://github.com/Aiven-Labs/console-prototype-lab) — a shared Console-like prototyping playground built with **Next.js + React + Aquarium**. Mock data only, never production Console.
 
 ---
 
@@ -13,11 +15,12 @@ A step-by-step guide for designers who have **never installed dev tools** on a M
 | **Terminal** | Where you type commands to install and run the app |
 | **Git** | Downloads the project code from GitHub |
 | **Node.js + npm** | Runs JavaScript tooling; **npm** installs packages (including Aquarium) |
-| **Vite** | Fast dev server — bundled with the project, starts when you run `npm run dev` |
+| **Next.js** | The React framework this project runs on — dev server + static build (arrives via `npm install`, no global install needed) |
 | **@aivenio/aquarium** | Aiven Design System React components (installed from **public npm**) |
+| **Playwright** *(optional)* | Headless browser used to auto-capture experiment preview thumbnails |
 | **Cursor** *(optional)* | Code editor with AI + Figma MCP integration |
 
-The app is a React prototype of Aiven Console screens. It uses Aquarium components and design tokens so UI matches the design system.
+The app is a Next.js prototype of Aiven Console screens. It uses Aquarium components and design tokens so the UI matches the design system.
 
 ---
 
@@ -25,12 +28,14 @@ The app is a React prototype of Aiven Console screens. It uses Aquarium componen
 
 | Resource | URL | Notes |
 |----------|-----|-------|
+| **This playground repo** | https://github.com/Aiven-Labs/console-prototype-lab | The project you are cloning |
 | **Aquarium source repo** | https://github.com/aiven/aiven-design | Internal Aiven repo — request access from your team. Contains DS docs, tokens, and component source. |
 | **Aquarium on npm** | https://www.npmjs.com/package/@aivenio/aquarium | Public package — no special login needed to install in this project |
 | **Aquarium Storybook** | https://aquarium.aiven.io | Live component gallery |
 | **Aquarium component docs** | https://aquarium-library.aiven.io | Detailed props and usage |
-| **This project's DS rules** | `cursor/rules/` in the repo | `ds_reference.md`, `figma-design.md`, `senior-designer.md` |
-| **Agent / workflow rules** | `AGENTS.md` in the repo | How AI assistants should audit and build against the DS |
+| **Project rules** | `.cursor/rules/` in the repo | `playground-rules.mdc`, `experiment-previews.md` |
+| **Agent / workflow rules** | [`AGENTS.md`](../AGENTS.md) in the repo | Design Police persona + how AI assistants audit and build against the DS (Figma file keys, 8px grid, token rules) |
+| **Designer docs** | [`docs/`](./README.md) in the repo | Overview, how-to-run, how-to-create-prototype, how-to-deploy, contribution guide |
 
 > **Note:** `@aivenio/aquarium` installs from the **public npm registry**. You do **not** need an npm token or private registry to run this playground. The [aiven-design](https://github.com/aiven/aiven-design) repo is only needed if you want to read full DS documentation or contribute to the library itself.
 
@@ -85,9 +90,9 @@ brew --version
 
 ## Part 4 — Install Node.js (includes npm)
 
-Node runs the app tooling. **npm** (Node Package Manager) installs Aquarium, Vite, and everything else.
+Node runs the app tooling. **npm** (Node Package Manager) installs Aquarium, Next.js, and everything else.
 
-We recommend **nvm** (Node Version Manager) so you can switch Node versions safely — same approach used in the [aiven-design](https://github.com/aiven/aiven-design) repo.
+Next.js 15 requires **Node.js 20 or newer**. We recommend **nvm** (Node Version Manager) so you can switch Node versions safely — the same approach used in the [aiven-design](https://github.com/aiven/aiven-design) repo.
 
 ### 4a. Install nvm
 
@@ -116,7 +121,7 @@ nvm use --lts
 Verify both Node and npm:
 
 ```bash
-node --version    # e.g. v22.x.x
+node --version    # v20.x.x or v22.x.x (must be 20+)
 npm --version     # e.g. 10.x.x
 ```
 
@@ -159,11 +164,20 @@ npm install
 This downloads everything listed in `package.json`, including:
 
 - **`@aivenio/aquarium`** — Design System components (public npm)
-- **`vite`** — dev server and build tool
-- **`react`** / **`react-dom`** — UI framework
-- TypeScript, ESLint, test tools, etc.
+- **`next`** / **`react`** / **`react-dom`** — framework and UI runtime
+- TypeScript, ESLint, Vitest (tests), Playwright, Husky, etc.
 
-**First run takes a few minutes.** You should end with a `node_modules/` folder (do not edit it manually).
+**First run takes a few minutes.** You should end with a `node_modules/` folder (do not edit it manually). Husky git hooks are installed automatically via the `prepare` script.
+
+### Optional — experiment preview thumbnails
+
+Commits that touch `experiments/<owner>/<slug>/` auto-capture a screenshot via a pre-commit hook. To enable it, install the Playwright Chromium browser once:
+
+```bash
+npx playwright install chromium
+```
+
+If you skip this, commits still succeed — thumbnail capture just no-ops. See [how-to-deploy.md](./how-to-deploy.md#experiment-preview-thumbnails-on-commit).
 
 If install fails, see [Troubleshooting](#troubleshooting) below.
 
@@ -178,14 +192,13 @@ npm run dev
 Expected output:
 
 ```
-  VITE v7.x.x  ready in xxx ms
-
-  ➜  Local:   http://localhost:5173/
+  ▲ Next.js 15.x.x
+  - Local:   http://localhost:5173
 ```
 
 1. Open **Chrome** or **Safari**.
 2. Go to **http://localhost:5173**
-3. You should see the Aiven Console prototype.
+3. You should see the **Prototype Hub** — browse and launch scenarios from there.
 
 **To stop the server:** click the Terminal window and press **Ctrl + C**.
 
@@ -193,10 +206,14 @@ Expected output:
 
 | Command | What it does |
 |---------|----------------|
-| `npm run dev` | Start dev server (hot reload on save) |
-| `npm run build` | Production build check |
-| `npm run preview` | Preview production build locally |
-| `npm test` | Run automated tests |
+| `npm run dev` | Start dev server on port 5173 (hot reload on save) |
+| `npm run dev:clean` | Clear the `.next` cache, then start the dev server |
+| `npm run build` | Production static export to `out/` (build check before deploy) |
+| `npm run start` | Serve the production build |
+| `npm test` | Run automated tests (Vitest) |
+| `npm run lint` | Run ESLint |
+
+See [how-to-run.md](./how-to-run.md) for routes and deep links (e.g. `?scenario=onboarding-test-env`).
 
 ---
 
@@ -204,40 +221,53 @@ Expected output:
 
 This is already done in the cloned repo. Read this section to understand *how* DS components connect — or to rebuild from scratch later.
 
-Official installation steps from [aiven-design / npm](https://www.npmjs.com/package/@aivenio/aquarium):
+Official installation steps come from [aiven-design / npm](https://www.npmjs.com/package/@aivenio/aquarium).
 
-### 8a. Install the package
+### 8a. The package
 
-```bash
-npm install --save @aivenio/aquarium
-```
+Already pinned in `package.json` as `"@aivenio/aquarium": "^6.0.1"`. To add it to a fresh project you would run `npm install --save @aivenio/aquarium`.
 
-In this project it is already pinned in `package.json` as `"@aivenio/aquarium": "^6.0.1"`.
+### 8b. Aquarium CSS + app entry
 
-### 8b. Import Aquarium CSS
-
-In `src/main.tsx` (already present):
+In the App Router, the root layout `src/app/layout.tsx` imports the Aquarium stylesheet and wraps the app in the shared providers:
 
 ```tsx
 import '@aivenio/aquarium/dist/styles.css'
+import '../index.css'
+import { Providers } from './providers'
+
+export default function RootLayout({ children }: { children: React.ReactNode }) {
+  return (
+    <html lang="en">
+      <body>
+        <Providers>{children}</Providers>
+      </body>
+    </html>
+  )
+}
 ```
 
-This loads design tokens as CSS variables (`--aquarium-*`).
+The stylesheet loads design tokens as CSS variables (`--aquarium-*`).
 
-### 8c. Wrap the app in Aquarium `Context`
+### 8c. Providers (Aquarium `Context` + theme)
 
-Required for modals, toasts, and other providers:
+`src/app/providers.tsx` is a client component that wraps the app in Aquarium's `Context` (required for modals, toasts, and other providers), the scenario provider, and the theme provider:
 
 ```tsx
+'use client'
 import { Context } from '@aivenio/aquarium'
+import { ScenarioProvider } from '../scenarios/ScenarioContext'
+import { ThemeProvider } from '../theme'
 
-createRoot(document.getElementById('root')!).render(
-  <StrictMode>
+export function Providers({ children }: { children: React.ReactNode }) {
+  return (
     <Context>
-      <App />
+      <ScenarioProvider>
+        <ThemeProvider>{children}</ThemeProvider>
+      </ScenarioProvider>
     </Context>
-  </StrictMode>,
-)
+  )
+}
 ```
 
 ### 8d. Use components and icons
@@ -265,41 +295,37 @@ Browse all components at https://aquarium.aiven.io — names match Figma (`Input
 
 ### 8f. Font (Inter)
 
-Aquarium recommends [Inter](https://fonts.google.com/specimen/Inter). The playground currently uses system fonts in `src/index.css`. For pixel-perfect parity with production Console, add Inter via Google Fonts in `index.html`:
-
-```html
-<link rel="preconnect" href="https://fonts.googleapis.com" />
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
-```
-
-And in CSS: `font-family: 'Inter', system-ui, sans-serif;`
+Aquarium recommends [Inter](https://fonts.google.com/specimen/Inter). Global styles live in `src/index.css`.
 
 ### 8g. Dark mode
 
-The project includes `src/theme/ThemeProvider.tsx`. It toggles the class `aquarium-theme-dark` on `<html>` for dark theme tokens.
+The project includes `src/theme/ThemeProvider.tsx` (exported from `src/theme`). It toggles the class `aquarium-theme-dark` on `<html>` for dark theme tokens.
 
 ---
 
-## Part 9 — How Vite fits in
+## Part 9 — How Next.js fits in
 
-You do **not** install Vite globally. It arrives via `npm install` as a dev dependency.
+You do **not** install Next.js globally. It arrives via `npm install` as a dependency.
 
 | File | Role |
 |------|------|
-| `vite.config.ts` | Dev server config (port **5173**, `strictPort: true`) |
-| `index.html` | HTML shell — loads `src/main.tsx` |
-| `src/main.tsx` | App entry — Aquarium Context + React root |
-| `package.json` → `"dev": "vite"` | Script that starts the server |
+| `next.config.ts` | Next config — static export (`output: 'export'` → `out/`), SVG loader rules |
+| `src/app/layout.tsx` | Root layout — imports Aquarium CSS + `Providers` |
+| `src/app/providers.tsx` | Client providers — Aquarium `Context`, scenario + theme providers |
+| `src/app/page.tsx` | Prototype Hub homepage (`/`) |
+| `src/app/console/**` | Console routes (services, billing, org, onboarding) |
+| `src/app/experiments/[owner]/[slug]/page.tsx` | Experiment launcher |
+| `package.json` → `"dev": "next dev --port 5173"` | Script that starts the dev server on port 5173 |
+
+> The project is configured for **static export**, so `npm run build` produces a fully static `out/` folder (no Node server needed at runtime). Tests use **Vitest**, which is why `vite`/`vitest` still appear in `devDependencies`.
 
 ### Starting from zero (optional — not needed if you cloned)
 
-If you ever need a fresh Vite + React + TypeScript app:
+If you ever need a fresh Next.js + TypeScript app:
 
 ```bash
-npm create vite@latest my-prototype -- --template react-ts
+npx create-next-app@latest my-prototype --typescript
 cd my-prototype
-npm install
 npm install @aivenio/aquarium
 ```
 
@@ -307,16 +333,16 @@ Then wire Aquarium as described in Part 8.
 
 ---
 
-## Part 10 — Design System documentation in this repo
+## Part 10 — Project rules & DS documentation in this repo
 
 Read these **before** building new screens or asking AI to implement UI:
 
 | File | Purpose |
 |------|---------|
-| [`cursor/rules/ds_reference.md`](../cursor/rules/ds_reference.md) | Figma file links, 8px grid, layout widths, token rules |
-| [`cursor/rules/figma-design.md`](../cursor/rules/figma-design.md) | Figma MCP rules: auto-layout, variables, no hex, no detach |
-| [`cursor/rules/senior-designer.md`](../cursor/rules/senior-designer.md) | Design Police persona: system-first, component integrity |
-| [`AGENTS.md`](../AGENTS.md) | Full AI workflow: read Figma → audit → plan → execute → verify |
+| [`AGENTS.md`](../AGENTS.md) | Design Police persona + full AI workflow (read Figma → audit → plan → execute → verify), Figma file keys, 8px grid, token rules |
+| [`.cursor/rules/playground-rules.mdc`](../.cursor/rules/playground-rules.mdc) | Edit-scope safety, experiment structure, reuse rules, deployment |
+| [`.cursor/rules/experiment-previews.md`](../.cursor/rules/experiment-previews.md) | How experiment preview thumbnails are generated |
+| [`docs/README.md`](./README.md) | Playground overview and architecture |
 
 ### Figma libraries
 
@@ -333,29 +359,34 @@ If you have access to https://github.com/aiven/aiven-design, read the root `READ
 - Local development with `npm link`
 - Building the library (`npm ci`, `npm run build`)
 
-For day-to-day prototyping in *this* playground, Storybook + `cursor/rules/` is usually enough.
+For day-to-day prototyping in *this* playground, Storybook + `.cursor/rules/` + `AGENTS.md` is usually enough.
 
 ---
 
-## Part 11 — Install Cursor (optional, for AI-assisted design work)
+## Part 11 — Prototype Hub, scenarios & experiments
 
-1. Download **Cursor** from https://cursor.com
-2. Install and open it.
-3. **File → Open Folder** → select your `console-prototype-lab` folder.
+Once the app runs at `http://localhost:5173`:
 
-Cursor reads `AGENTS.md` and `cursor/rules/*.md` automatically as project rules.
+- The homepage (`/`) is the **Prototype Hub** — browse and launch reusable scenarios, prototypes, templates, and experiments.
+- Inside a scenario, use the **scenario trigger** in the playground header or press **Shift+S** to switch product states.
 
-### Scenario panel
+Scenario types:
 
-Once the app runs, use the **scenario trigger** (top-right) or **Shift+S** to switch between prototype states.
+- **Reusable scenarios** — stable team starting points (Create test environment, Empty project, Existing customer)
+- **Prototype scenarios** — exploratory ideas, usually owned by one designer
+- **Experiments** — isolated designer-owned copies under `experiments/<owner>/<name>/`
 
-The panel supports:
+Reusable and prototype scenarios are registered in `src/registry/`; experiments and templates are discovered from the filesystem.
 
-- **Reusable scenarios** — stable team starting points (green badge)
-- **Prototype scenarios** — exploratory ideas (owner, status badges)
-- **Experiments** — designer-owned copies under `experiments/`
+### Create a new experiment
 
-Scenarios are registered in `src/registry/`. See [docs/README.md](docs/README.md) and [docs/how-to-create-prototype.md](docs/how-to-create-prototype.md).
+Do **not** edit shared reusable scenarios directly. Instead, copy a template into your own experiment folder:
+
+```bash
+node scripts/create-experiment.mjs --owner <your-name> --name <slug> --template <templateSlug>
+```
+
+The entry file for an experiment is `index.tsx`, and by default you should modify **only** that experiment folder. See [how-to-create-prototype.md](./how-to-create-prototype.md).
 
 ---
 
@@ -368,21 +399,9 @@ Skip this section if you only need to **view and edit** the prototype in the bro
 1. Install **Figma Desktop** (not just the browser tab): https://www.figma.com/downloads/
 2. Open the Aquarium UI library (link above).
 
-### 12b. Figma Desktop Bridge plugin
+### 12b. MCP servers in Cursor
 
-The repo includes a local plugin at `figma-desktop-bridge/`. It lets AI tools read Figma variables and component descriptions.
-
-1. Open **Figma Desktop**
-2. **Plugins → Development → Import plugin from manifest…**
-3. Select `figma-desktop-bridge/manifest.json` from this project
-4. Run the plugin: **Plugins → Development → Figma Desktop Bridge**
-5. Wait for **✓ Desktop Bridge active**
-
-Full details: [`figma-desktop-bridge/README.md`](../figma-desktop-bridge/README.md)
-
-### 12c. MCP servers in Cursor
-
-Ask your team which MCP servers are configured. This project expects:
+Ask your team which MCP servers are configured. This project's Design Police workflow expects:
 
 | Server | Purpose |
 |--------|---------|
@@ -391,9 +410,33 @@ Ask your team which MCP servers are configured. This project expects:
 | `user-aiven-storybook` | Query Aquarium component props from Storybook |
 | `cursor-ide-browser` | Test the running app in a browser |
 
+See [`AGENTS.md`](../AGENTS.md) for the full list and the audit → plan → execute → verify workflow.
+
 ---
 
-## Part 13 — Daily workflow (cheat sheet)
+## Part 13 — Deploying (when you're ready to share)
+
+This project does **not** use Vercel. It deploys as a static site via **Aiven Application** (Docker multi-stage build → nginx serving `out/` on **port 8080**).
+
+- **Local only** — just run `npm run dev`, no branch needed.
+- **Branch preview** — push your feature branch and deploy it to a preview Application service.
+- **Shared team app** — merge to `main` and (re)deploy the shared Aiven Application service.
+
+Full instructions: [how-to-deploy.md](./how-to-deploy.md).
+
+---
+
+## Part 14 — Install Cursor (optional, for AI-assisted design work)
+
+1. Download **Cursor** from https://cursor.com
+2. Install and open it.
+3. **File → Open Folder** → select your `console-prototype-lab` folder.
+
+Cursor reads `AGENTS.md` and `.cursor/rules/*` automatically as project rules.
+
+---
+
+## Part 15 — Daily workflow (cheat sheet)
 
 ```bash
 # 1. Open Terminal
@@ -447,17 +490,17 @@ lsof -i :5173
 
 1. Open browser DevTools (⌘ + Option + I) → **Console** tab.
 2. Look for red errors.
-3. Common fix: `rm -rf node_modules && npm install`
+3. Common fixes: `npm run dev:clean` (clears the `.next` cache), or `rm -rf node_modules && npm install`.
 
 ### Aquarium components look unstyled
 
-Check that `src/main.tsx` imports:
+Check that `src/app/layout.tsx` imports:
 
 ```tsx
 import '@aivenio/aquarium/dist/styles.css'
 ```
 
-and that `<Context>` wraps `<App />`.
+and that `Providers` (which wraps `<Context>`) is present in the layout.
 
 ### Cannot clone the GitHub repo
 
@@ -476,21 +519,22 @@ That repo is internal. Use public alternatives:
 ## Quick verification checklist
 
 - [ ] `git --version` prints a version
-- [ ] `node --version` prints v20+ or v22+
+- [ ] `node --version` prints v20+ (or v22+)
 - [ ] `npm --version` prints 10+
 - [ ] Project cloned to `console-prototype-lab/`
 - [ ] `npm install` completed without errors
-- [ ] `npm run dev` shows `http://localhost:5173/`
-- [ ] Browser shows the Console prototype
-- [ ] Scenario panel opens and switches views
-- [ ] Bookmarked Storybook + `cursor/rules/ds_reference.md`
+- [ ] `npm run dev` shows `▲ Next.js` and `http://localhost:5173`
+- [ ] Browser shows the Prototype Hub at `/`
+- [ ] Scenario panel opens (Shift+S) and switches views
+- [ ] Bookmarked Storybook + `AGENTS.md` + `.cursor/rules/`
 
 ---
 
 ## What to read next
 
-1. [`cursor/rules/ds_reference.md`](../cursor/rules/ds_reference.md) — layout and Figma links
-2. https://aquarium.aiven.io — pick a component, copy usage patterns from existing screens in `src/screens/`
-3. [`AGENTS.md`](../AGENTS.md) — if using Cursor AI for design audits
+1. [`docs/README.md`](./README.md) — playground overview and architecture
+2. [`docs/how-to-create-prototype.md`](./how-to-create-prototype.md) — create experiments from reusable scenarios
+3. https://aquarium.aiven.io — pick a component, copy usage patterns from existing screens in `src/screens/`
+4. [`AGENTS.md`](../AGENTS.md) — Design Police persona + AI design-audit workflow
 
 Welcome to the playground. 👮
