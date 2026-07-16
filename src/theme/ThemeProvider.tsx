@@ -44,17 +44,19 @@ function readStoredPreference(): ThemePreference {
 }
 
 export function ThemeProvider({ children }: { children: ReactNode }) {
-  const [preference, setPreferenceState] = useState<ThemePreference>(readStoredPreference)
+  // Keep the server render and the client's first render deterministic. Persisted
+  // browser preferences are restored after hydration.
+  const [preference, setPreferenceState] = useState<ThemePreference>('dark')
   const [forcedTheme, setForcedTheme] = useState<ResolvedTheme | null>(null)
-  const [systemDark, setSystemDark] = useState(
-    () => typeof window !== 'undefined' && window.matchMedia('(prefers-color-scheme: dark)').matches,
-  )
+  const [systemDark, setSystemDark] = useState(false)
 
   const resolved: ResolvedTheme = preference === 'system' ? (systemDark ? 'dark' : 'light') : preference
   const effectiveResolved = forcedTheme ?? resolved
 
   useEffect(() => {
     const mq = window.matchMedia('(prefers-color-scheme: dark)')
+    setPreferenceState(readStoredPreference())
+    setSystemDark(mq.matches)
     const onChange = () => setSystemDark(mq.matches)
     mq.addEventListener('change', onChange)
     return () => mq.removeEventListener('change', onChange)

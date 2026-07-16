@@ -1,9 +1,11 @@
 'use client'
 
 import {
+  Fragment,
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
   type ReactNode,
 } from 'react'
@@ -19,6 +21,7 @@ import {
   DropdownMenu,
   Filter,
   Icon,
+  Input,
   InputBase,
   Link,
   MultiSelect,
@@ -41,6 +44,7 @@ import {
   MOCK_EVENT_LOGS,
   calendarDateTimeToUtcMs,
   downloadEventLogsJson,
+  eventLogToJson,
   type EventDateRange,
   type EventLog,
 } from './eventLogsData'
@@ -136,6 +140,9 @@ type FilterState = {
   eventTypes: string[]
   resources: string[]
   projects: string[]
+  organizationId: string
+  accountId: string
+  billingGroupId: string
 }
 
 function AllFiltersButton({
@@ -146,41 +153,83 @@ function AllFiltersButton({
   setFilters: (next: FilterState) => void
 }) {
   const [open, setOpen] = useState(false)
+  const triggerRef = useRef<HTMLDivElement>(null)
 
   const activeCount =
     filters.actors.length +
     filters.eventTypes.length +
     filters.resources.length +
-    filters.projects.length
+    filters.projects.length +
+    Number(Boolean(filters.organizationId.trim())) +
+    Number(Boolean(filters.accountId.trim())) +
+    Number(Boolean(filters.billingGroupId.trim()))
 
   const clearAll = () =>
-    setFilters({ actors: [], eventTypes: [], resources: [], projects: [] })
+    setFilters({
+      actors: [],
+      eventTypes: [],
+      resources: [],
+      projects: [],
+      organizationId: '',
+      accountId: '',
+      billingGroupId: '',
+    })
+
+  useEffect(() => {
+    if (!open) return
+
+    const filterGrid = document.querySelector('.event-logs-filter-grid')
+    const dialog = filterGrid?.closest<HTMLElement>('.react-aria-Modal')
+    if (!dialog) return
+
+    const closeOnEmptyOutsideClick = (event: MouseEvent) => {
+      if (activeCount > 0) return
+      if (!(event.target instanceof Node)) return
+      if (dialog.contains(event.target) || triggerRef.current?.contains(event.target)) return
+      setOpen(false)
+    }
+
+    document.addEventListener('mousedown', closeOnEmptyOutsideClick)
+    return () => document.removeEventListener('mousedown', closeOnEmptyOutsideClick)
+  }, [activeCount, open])
 
   return (
     <>
-      <Filter.Trigger
-        labelText="All filters"
-        icon={filterIcon}
-        badge={activeCount > 0 ? activeCount : undefined}
-        onClear={activeCount > 0 ? clearAll : undefined}
-        onClick={() => setOpen(true)}
-      />
+      <div ref={triggerRef} style={{ display: 'inline-flex' }}>
+        <Filter.Trigger
+          labelText="All filters"
+          icon={filterIcon}
+          badge={activeCount > 0 ? activeCount : undefined}
+          onClear={activeCount > 0 ? clearAll : undefined}
+          onClick={() => setOpen((prev) => !prev)}
+        />
+      </div>
       {/* Prototype-only: the playground's fixed top bars (lab chrome 48px + console
           header 66px = 114px) should stay visible, so open the drawer beneath them
           instead of over the whole viewport. Offsetting the top also requires capping
-          the panel height so its footer buttons stay on-screen. Empty MultiSelect
+          the panel height so its footer buttons stay on-screen. The overlay is made
+          non-blocking (no backdrop, pointer-events pass through) so the log table and
+          filter chips stay interactive while the drawer is open. Empty MultiSelect
           helper-text slots are collapsed so the filter gap reads as the intended 16px.
           The real Console has no lab chrome. */}
-      {open && (
-        <style>{`
-          .z-modal { top: 114px !important; }
-          .z-modal .react-aria-Modal > div {
-            height: calc(100vh - 114px) !important;
-            max-height: calc(100vh - 114px) !important;
-          }
-          .event-logs-filter-grid p.typography-small { display: none !important; }
-        `}</style>
-      )}
+      <style>{`
+        .Aquarium-Drawer:has(.event-logs-filter-grid) {
+          top: 114px !important;
+          pointer-events: none !important;
+        }
+        .Aquarium-Drawer:has(.event-logs-filter-grid) .bg-backdrop {
+          display: none !important;
+        }
+        .Aquarium-Drawer:has(.event-logs-filter-grid) .react-aria-Modal {
+          pointer-events: auto !important;
+        }
+        .Aquarium-Drawer:has(.event-logs-filter-grid) .react-aria-Modal > div {
+          height: calc(100vh - 114px) !important;
+          max-height: calc(100vh - 114px) !important;
+          border-left: 1px solid var(--aquarium-border-color-muted) !important;
+        }
+        .event-logs-filter-grid p.typography-small { display: none !important; }
+      `}</style>
       <Drawer
         open={open}
         onClose={() => setOpen(false)}
@@ -192,32 +241,56 @@ function AllFiltersButton({
       >
         <Box className="event-logs-filter-grid" style={{ display: 'grid', rowGap: 16 }}>
           <MultiSelect
-            labelText="Actor"
+            labelText="Actor [multiselect]"
             placeholder="All actors"
             options={ACTOR_OPTIONS.map((o) => o.value)}
             value={filters.actors}
             onChange={(items) => setFilters({ ...filters, actors: items ?? [] })}
           />
           <MultiSelect
-            labelText="Event type"
+            labelText="Event type [multiselect]"
             placeholder="All event types"
             options={EVENT_TYPE_OPTIONS.map((o) => o.value as string)}
             value={filters.eventTypes}
             onChange={(items) => setFilters({ ...filters, eventTypes: items ?? [] })}
           />
           <MultiSelect
-            labelText="Resource"
+            labelText="Resource [multiselect]"
             placeholder="All resources"
             options={RESOURCE_OPTIONS.map((o) => o.value)}
             value={filters.resources}
             onChange={(items) => setFilters({ ...filters, resources: items ?? [] })}
           />
           <MultiSelect
-            labelText="Project"
+            labelText="Project [multiselect]"
             placeholder="All projects"
             options={PROJECT_OPTIONS.map((o) => o.value)}
             value={filters.projects}
             onChange={(items) => setFilters({ ...filters, projects: items ?? [] })}
+          />
+          <Input
+            labelText="organization_id [string]"
+            placeholder="Enter organization ID"
+            value={filters.organizationId}
+            onChange={(event) =>
+              setFilters({ ...filters, organizationId: event.currentTarget.value })
+            }
+          />
+          <Input
+            labelText="account_id [string]"
+            placeholder="Enter account ID"
+            value={filters.accountId}
+            onChange={(event) =>
+              setFilters({ ...filters, accountId: event.currentTarget.value })
+            }
+          />
+          <Input
+            labelText="billing_group_id [string]"
+            placeholder="Enter billing group ID"
+            value={filters.billingGroupId}
+            onChange={(event) =>
+              setFilters({ ...filters, billingGroupId: event.currentTarget.value })
+            }
           />
         </Box>
       </Drawer>
@@ -249,6 +322,44 @@ function ActorAvatar({ kind }: { kind: EventLog['actorKind'] }) {
 }
 
 // ─── Expanded detail rows ──────────────────────────────────────────────────────
+
+const EMPHASIZED_TEXT_PATTERN =
+  /(\d{1,3}(?:\.\d{1,3}){3}(?:\.\d+)?|\d+(?:[.,:/]\d+)*|(?:log_|usr_)[\w]+|(?:org|acc|bg|prj|svc|vpce|plc|pcx|ups|pl)-[\w-]+)/g
+
+function isEmphasizedSegment(part: string): boolean {
+  return (
+    /^\d{1,3}(?:\.\d{1,3}){3}(?:\.\d+)?$/.test(part) ||
+    /^\d+(?:[.,:/]\d+)*$/.test(part) ||
+    /^(?:log_|usr_)[\w]+$/.test(part) ||
+    /^(?:org|acc|bg|prj|svc|vpce|plc|pcx|ups|pl)-[\w-]+$/.test(part)
+  )
+}
+
+function emphasizeIdsAndNumbers(text: string): ReactNode {
+  return text.split(EMPHASIZED_TEXT_PATTERN).map((part, index) => {
+    if (!part) return null
+    if (isEmphasizedSegment(part)) {
+      return (
+        <span key={`${part}-${index}`} style={{ fontWeight: 600 }}>
+          {part}
+        </span>
+      )
+    }
+    return <Fragment key={`${part}-${index}`}>{part}</Fragment>
+  })
+}
+
+function isIdDetailField(label: string): boolean {
+  return label.endsWith('_id')
+}
+
+function renderDetailValue(label: string, value: ReactNode): ReactNode {
+  if (typeof value !== 'string') return value
+  if (isIdDetailField(label)) {
+    return <Typography.SmallStrong>{value}</Typography.SmallStrong>
+  }
+  return <Typography.Small>{emphasizeIdsAndNumbers(value)}</Typography.Small>
+}
 
 function nullable(value: string | null): ReactNode {
   if (value === null) {
@@ -286,6 +397,15 @@ function ResourceCell({ row }: { row: EventLog }) {
 type DetailRow = { id: string; label: string; value: ReactNode }
 
 function EventDetails({ row }: { row: EventLog }) {
+  const [copied, setCopied] = useState(false)
+
+  const copyLogDetails = () => {
+    if (typeof navigator === 'undefined' || !navigator.clipboard?.writeText) return
+    void navigator.clipboard.writeText(JSON.stringify(eventLogToJson(row), null, 2))
+    setCopied(true)
+    window.setTimeout(() => setCopied(false), 1200)
+  }
+
   const detailRows: DetailRow[] = [
     { id: 'log_entry_id', label: 'log_entry_id', value: row.logEntryId },
     { id: 'event_type', label: 'event_type', value: row.eventType },
@@ -301,7 +421,11 @@ function EventDetails({ row }: { row: EventLog }) {
     {
       id: 'metadata',
       label: 'metadata',
-      value: <Typography.CodeSmall>{JSON.stringify(row.metadata)}</Typography.CodeSmall>,
+      value: (
+        <Typography.CodeSmall>
+          {emphasizeIdsAndNumbers(JSON.stringify(row.metadata))}
+        </Typography.CodeSmall>
+      ),
     },
   ]
 
@@ -309,8 +433,20 @@ function EventDetails({ row }: { row: EventLog }) {
     <Box style={{ padding: '16px 8px 12px' }}>
       {/* paddingLeft matches the detail DataList cell's 12px left padding so the
           heading aligns with the key column text below it. */}
-      <Box style={{ marginBottom: 12, paddingLeft: 12 }}>
+      <Box
+        style={{
+          marginBottom: 12,
+          paddingLeft: 12,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          gap: 8,
+        }}
+      >
         <Typography.SmallStrong>Event details</Typography.SmallStrong>
+        <Button.Secondary type="button" dense onClick={copyLogDetails}>
+          {copied ? 'Copied' : 'Copy log details'}
+        </Button.Secondary>
       </Box>
       <Box style={{ maxWidth: 720 }}>
         <DataList
@@ -333,11 +469,7 @@ function EventDetails({ row }: { row: EventLog }) {
               headerName: 'Value',
               UNSAFE_render: (r) => (
                 <Box style={{ wordBreak: 'break-word' }}>
-                  {typeof r.value === 'string' ? (
-                    <Typography.Small>{r.value}</Typography.Small>
-                  ) : (
-                    r.value
-                  )}
+                  {renderDetailValue(r.label, r.value)}
                 </Box>
               ),
             },
@@ -361,6 +493,9 @@ export function EventLogsContent() {
     eventTypes: [],
     resources: [],
     projects: [],
+    organizationId: '',
+    accountId: '',
+    billingGroupId: '',
   })
   const [queryStatus, setQueryStatus] = useState<QueryStatus>('loading')
   const [queryError, setQueryError] = useState<string>()
@@ -381,6 +516,17 @@ export function EventLogsContent() {
       if (filters.eventTypes.length > 0 && !filters.eventTypes.includes(row.eventType)) return false
       if (filters.resources.length > 0 && !filters.resources.includes(row.resourceName)) return false
       if (filters.projects.length > 0 && !(row.projectId && filters.projects.includes(row.projectId)))
+        return false
+      if (
+        filters.organizationId.trim() &&
+        row.organizationId !== filters.organizationId.trim()
+      )
+        return false
+      if (filters.accountId.trim() && row.accountId !== filters.accountId.trim()) return false
+      if (
+        filters.billingGroupId.trim() &&
+        row.billingGroupId !== filters.billingGroupId.trim()
+      )
         return false
       if (!q) return true
       const blob = [
@@ -521,7 +667,6 @@ export function EventLogsContent() {
 
           <Box style={{ marginLeft: 'auto', flexShrink: 0 }}>
             <Button.Secondary
-              dense
               icon={exportIcon}
               disabled={!canExport}
               onClick={() => downloadEventLogsJson(queryRows)}
@@ -569,10 +714,12 @@ export function EventLogsContent() {
                 UNSAFE_render: (row) => <ActorCell row={row} />,
               },
               {
-                type: 'text',
+                type: 'custom',
                 headerName: 'Action',
-                field: 'action',
                 sort: (a, b, direction) => dir(a.action.localeCompare(b.action), direction === 'descending'),
+                UNSAFE_render: (row) => (
+                  <Typography.Default>{emphasizeIdsAndNumbers(row.action)}</Typography.Default>
+                ),
               },
               {
                 type: 'custom',
