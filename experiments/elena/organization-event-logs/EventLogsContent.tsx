@@ -93,6 +93,10 @@ function CheckboxFilter({
   selected: string[]
   onChange: (next: string[]) => void
 }) {
+  // Controlled open state: Filter.Trigger must NOT sit inside DropdownMenu.Trigger.
+  // That Trigger wraps children in Pressable, which swallows the clear (×) press and
+  // opens the menu instead of calling onClear.
+  const [open, setOpen] = useState(false)
   const active = selected.length > 0
   const valueText = active
     ? selected.length === 1
@@ -100,36 +104,56 @@ function CheckboxFilter({
       : `${selected.length} selected`
     : undefined
 
+  const clear = () => {
+    onChange([])
+    setOpen(false)
+  }
+
   return (
-    <DropdownMenu
-      searchable
-      selectionMode="multiple"
-      selection={selected}
-      onSelectionChange={(keys) =>
-        onChange(keys === 'all' ? options.map((o) => o.value) : Array.from(keys, String))
-      }
-      emptyState={<Typography.Small color="muted">No matches</Typography.Small>}
-      placement="bottom-left"
-      minWidth={260}
-      maxWidth={340}
-      maxHeight={500}
-    >
-      <DropdownMenu.Trigger>
-        <Filter.Trigger
-          labelText={label}
-          icon={filterIcon}
-          value={valueText}
-          onClear={active ? () => onChange([]) : undefined}
-        />
-      </DropdownMenu.Trigger>
-      <DropdownMenu.Items>
-        {options.map((opt) => (
-          <DropdownMenu.Item key={opt.value} id={opt.value} textValue={opt.label}>
-            {opt.label}
-          </DropdownMenu.Item>
-        ))}
-      </DropdownMenu.Items>
-    </DropdownMenu>
+    <div style={{ display: 'inline-flex', position: 'relative' }}>
+      <Filter.Trigger
+        labelText={label}
+        icon={filterIcon}
+        value={valueText}
+        onClear={active ? clear : undefined}
+        onClick={() => setOpen((prev) => !prev)}
+      />
+      <DropdownMenu
+        searchable
+        selectionMode="multiple"
+        selection={selected}
+        isOpen={open}
+        onOpenChange={setOpen}
+        onSelectionChange={(keys) =>
+          onChange(keys === 'all' ? options.map((o) => o.value) : Array.from(keys, String))
+        }
+        emptyState={<Typography.Small color="muted">No matches</Typography.Small>}
+        placement="bottom-left"
+        minWidth={260}
+        maxWidth={340}
+        maxHeight={500}
+      >
+        {/* Invisible anchor so the popover positions to this chip without Pressable
+            owning the Filter.Trigger (which would break clear). */}
+        <DropdownMenu.Trigger>
+          <span
+            aria-hidden
+            style={{
+              position: 'absolute',
+              inset: 0,
+              pointerEvents: 'none',
+            }}
+          />
+        </DropdownMenu.Trigger>
+        <DropdownMenu.Items>
+          {options.map((opt) => (
+            <DropdownMenu.Item key={opt.value} id={opt.value} textValue={opt.label}>
+              {opt.label}
+            </DropdownMenu.Item>
+          ))}
+        </DropdownMenu.Items>
+      </DropdownMenu>
+    </div>
   )
 }
 
@@ -580,7 +604,7 @@ export function EventLogsContent() {
         <Box style={{ marginBottom: 24 }}>
           <PageHeader
             title="Event logs"
-            subtitle="View the history of user activity in your organization."
+            subtitle="View the history of actions across organization"
             breadcrumbs={[
               <Breadcrumbs.Crumb key="org" href="#" onClick={(e) => e.preventDefault()}>
                 Big Co Ltd.
@@ -715,7 +739,7 @@ export function EventLogsContent() {
               },
               {
                 type: 'custom',
-                headerName: 'Action',
+                headerName: 'Action (Human-readable)',
                 sort: (a, b, direction) => dir(a.action.localeCompare(b.action), direction === 'descending'),
                 UNSAFE_render: (row) => (
                   <Typography.Default>{emphasizeIdsAndNumbers(row.action)}</Typography.Default>
