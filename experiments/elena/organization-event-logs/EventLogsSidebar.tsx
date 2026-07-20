@@ -75,7 +75,6 @@ export function EventLogsSidebar({ activeItem, onItemClick }: EventLogsSidebarPr
         width: 240,
         flexShrink: 0,
         backgroundColor: 'var(--aquarium-background-color-layer)',
-        borderRight: '1px solid var(--aquarium-border-color-muted)',
         display: 'flex',
         flexDirection: 'column',
         overflowY: 'auto',
