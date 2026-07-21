@@ -72,8 +72,7 @@ export type EventLog = {
   resourceName: string
   // ── Detail fields (mirror the API schema in the Figma expanded row) ──────────
   logEntryId: string
-  organizationId: string
-  accountId: string | null
+  organizationUnitId: string | null
   billingGroupId: string | null
   projectId: string | null
   serviceId: string | null
@@ -113,7 +112,7 @@ function formatEventTimestamp(d: Date): string {
 
 type Seed = Omit<EventLog, 'dateTimeLabel'>
 
-/** Deterministic, mock-only dataset scoped to Aug 2024 to match the default range. */
+/** Deterministic, mock-only dataset scoped to Aug 2024 (within the 30-day retention window). */
 function createMockEventLogs(): EventLog[] {
   const seeds: Seed[] = [
     {
@@ -127,8 +126,7 @@ function createMockEventLogs(): EventLog[] {
       resourceKind: 'Service',
       resourceName: 'pg-production',
       logEntryId: 'log_2f9c41ab7e',
-      organizationId: 'org-7a2c91',
-      accountId: 'acc-31f8',
+      organizationUnitId: 'ou-platform',
       billingGroupId: 'bg-004',
       projectId: 'prj-platform',
       serviceId: 'svc-pg-production',
@@ -146,8 +144,7 @@ function createMockEventLogs(): EventLog[] {
       resourceKind: 'Service',
       resourceName: 'kafka-analytics',
       logEntryId: 'log_88b0aa1240',
-      organizationId: 'org-7a2c91',
-      accountId: 'acc-31f8',
+      organizationUnitId: 'ou-data',
       billingGroupId: 'bg-004',
       projectId: 'prj-data',
       serviceId: 'svc-kafka-analytics',
@@ -164,8 +161,7 @@ function createMockEventLogs(): EventLog[] {
       resourceKind: 'Service',
       resourceName: 'kafka-analytics',
       logEntryId: 'log_5c1d77e9a3',
-      organizationId: 'org-7a2c91',
-      accountId: 'acc-31f8',
+      organizationUnitId: 'ou-data',
       billingGroupId: null,
       projectId: 'prj-data',
       serviceId: 'svc-kafka-analytics',
@@ -183,8 +179,7 @@ function createMockEventLogs(): EventLog[] {
       resourceKind: 'Organization',
       resourceName: 'Big Co Ltd.',
       logEntryId: 'log_a71e0b93cc',
-      organizationId: 'org-7a2c91',
-      accountId: null,
+      organizationUnitId: null,
       billingGroupId: null,
       projectId: null,
       serviceId: null,
@@ -202,8 +197,7 @@ function createMockEventLogs(): EventLog[] {
       resourceKind: 'Project',
       resourceName: 'prj-data',
       logEntryId: 'log_33aa90fd12',
-      organizationId: 'org-7a2c91',
-      accountId: 'acc-31f8',
+      organizationUnitId: 'ou-data',
       billingGroupId: null,
       projectId: 'prj-data',
       serviceId: null,
@@ -220,8 +214,7 @@ function createMockEventLogs(): EventLog[] {
       resourceKind: 'Service',
       resourceName: 'os-search-eu',
       logEntryId: 'log_120fe4bb87',
-      organizationId: 'org-7a2c91',
-      accountId: 'acc-31f8',
+      organizationUnitId: 'ou-data',
       billingGroupId: 'bg-004',
       projectId: 'prj-platform',
       serviceId: 'svc-os-search-eu',
@@ -239,8 +232,7 @@ function createMockEventLogs(): EventLog[] {
       resourceKind: 'Service',
       resourceName: 'pg-production',
       logEntryId: 'log_9de1a2f450',
-      organizationId: 'org-7a2c91',
-      accountId: 'acc-31f8',
+      organizationUnitId: 'ou-platform',
       billingGroupId: 'bg-004',
       projectId: 'prj-platform',
       serviceId: 'svc-pg-production',
@@ -257,8 +249,7 @@ function createMockEventLogs(): EventLog[] {
       resourceKind: 'Service',
       resourceName: 'kafka-analytics',
       logEntryId: 'log_6640cd2f19',
-      organizationId: 'org-7a2c91',
-      accountId: 'acc-31f8',
+      organizationUnitId: 'ou-platform',
       billingGroupId: 'bg-004',
       projectId: 'prj-data',
       serviceId: 'svc-kafka-analytics',
@@ -276,8 +267,7 @@ function createMockEventLogs(): EventLog[] {
       resourceKind: 'Billing',
       resourceName: 'Default billing group',
       logEntryId: 'log_af0912ee6b',
-      organizationId: 'org-7a2c91',
-      accountId: 'acc-31f8',
+      organizationUnitId: 'ou-platform',
       billingGroupId: 'bg-004',
       projectId: 'prj-platform',
       serviceId: null,
@@ -295,8 +285,7 @@ function createMockEventLogs(): EventLog[] {
       resourceKind: 'Network',
       resourceName: 'vpc-eu-north',
       logEntryId: 'log_7b0c5519d0',
-      organizationId: 'org-7a2c91',
-      accountId: 'acc-31f8',
+      organizationUnitId: 'ou-platform',
       billingGroupId: null,
       projectId: 'prj-platform',
       serviceId: null,
@@ -314,8 +303,7 @@ function createMockEventLogs(): EventLog[] {
       resourceKind: 'Project',
       resourceName: 'prj-data',
       logEntryId: 'log_dd41aa7c02',
-      organizationId: 'org-7a2c91',
-      accountId: 'acc-31f8',
+      organizationUnitId: 'ou-data',
       billingGroupId: null,
       projectId: 'prj-data',
       serviceId: null,
@@ -332,8 +320,7 @@ function createMockEventLogs(): EventLog[] {
       resourceKind: 'Organization',
       resourceName: 'Big Co Ltd.',
       logEntryId: 'log_11c9be3a77',
-      organizationId: 'org-7a2c91',
-      accountId: null,
+      organizationUnitId: 'ou-data',
       billingGroupId: null,
       projectId: null,
       serviceId: null,
@@ -351,8 +338,7 @@ function createMockEventLogs(): EventLog[] {
       resourceKind: 'Service',
       resourceName: 'ch-events',
       logEntryId: 'log_4a7712fe58',
-      organizationId: 'org-7a2c91',
-      accountId: 'acc-31f8',
+      organizationUnitId: 'ou-data',
       billingGroupId: 'bg-004',
       projectId: 'prj-data',
       serviceId: 'svc-ch-events',
@@ -369,8 +355,7 @@ function createMockEventLogs(): EventLog[] {
       resourceKind: 'Service',
       resourceName: 'pg-production',
       logEntryId: 'log_9021ccaa31',
-      organizationId: 'org-7a2c91',
-      accountId: 'acc-31f8',
+      organizationUnitId: 'ou-data',
       billingGroupId: 'bg-004',
       projectId: 'prj-platform',
       serviceId: 'svc-pg-production',
@@ -388,8 +373,7 @@ function createMockEventLogs(): EventLog[] {
       resourceKind: 'Network',
       resourceName: 'static-ip-203-0-113-44',
       logEntryId: 'log_5f8830be7a',
-      organizationId: 'org-7a2c91',
-      accountId: 'acc-31f8',
+      organizationUnitId: 'ou-platform',
       billingGroupId: 'bg-004',
       projectId: 'prj-platform',
       serviceId: null,
@@ -407,8 +391,7 @@ function createMockEventLogs(): EventLog[] {
       resourceKind: 'Organization',
       resourceName: 'Big Co Ltd.',
       logEntryId: 'log_7cc0aa1e94',
-      organizationId: 'org-7a2c91',
-      accountId: null,
+      organizationUnitId: null,
       billingGroupId: null,
       projectId: null,
       serviceId: null,
@@ -426,8 +409,7 @@ function createMockEventLogs(): EventLog[] {
       resourceKind: 'Organization',
       resourceName: 'Big Co Ltd.',
       logEntryId: 'log_2ab7f00c65',
-      organizationId: 'org-7a2c91',
-      accountId: null,
+      organizationUnitId: null,
       billingGroupId: null,
       projectId: null,
       serviceId: null,
@@ -444,8 +426,7 @@ function createMockEventLogs(): EventLog[] {
       resourceKind: 'Service',
       resourceName: 'os-search-eu',
       logEntryId: 'log_66aa02cd18',
-      organizationId: 'org-7a2c91',
-      accountId: 'acc-31f8',
+      organizationUnitId: 'ou-platform',
       billingGroupId: 'bg-004',
       projectId: 'prj-platform',
       serviceId: 'svc-os-search-eu',
@@ -463,8 +444,7 @@ function createMockEventLogs(): EventLog[] {
       resourceKind: 'Service',
       resourceName: 'valkey-cache',
       logEntryId: 'log_98cd11a7ef',
-      organizationId: 'org-7a2c91',
-      accountId: 'acc-31f8',
+      organizationUnitId: 'ou-platform',
       billingGroupId: 'bg-004',
       projectId: 'prj-platform',
       serviceId: 'svc-valkey-cache',
@@ -482,8 +462,7 @@ function createMockEventLogs(): EventLog[] {
       resourceKind: 'Project',
       resourceName: 'prj-archive',
       logEntryId: 'log_0af7cc9b23',
-      organizationId: 'org-7a2c91',
-      accountId: 'acc-31f8',
+      organizationUnitId: 'ou-archive',
       billingGroupId: null,
       projectId: 'prj-archive',
       serviceId: null,
@@ -500,8 +479,7 @@ function createMockEventLogs(): EventLog[] {
       resourceKind: 'Service',
       resourceName: 'pg-production',
       logEntryId: 'log_71bc0a2d84',
-      organizationId: 'org-7a2c91',
-      accountId: 'acc-31f8',
+      organizationUnitId: 'ou-archive',
       billingGroupId: 'bg-004',
       projectId: 'prj-platform',
       serviceId: 'svc-pg-production',
@@ -519,8 +497,7 @@ function createMockEventLogs(): EventLog[] {
       resourceKind: 'Service',
       resourceName: 'pg-production',
       logEntryId: 'log_3390cae0f1',
-      organizationId: 'org-7a2c91',
-      accountId: 'acc-31f8',
+      organizationUnitId: 'ou-platform',
       billingGroupId: 'bg-004',
       projectId: 'prj-platform',
       serviceId: 'svc-pg-production',
@@ -538,8 +515,7 @@ function createMockEventLogs(): EventLog[] {
       resourceKind: 'Project',
       resourceName: 'prj-data',
       logEntryId: 'log_c0a1129fbe',
-      organizationId: 'org-7a2c91',
-      accountId: 'acc-31f8',
+      organizationUnitId: 'ou-data',
       billingGroupId: 'bg-004',
       projectId: 'prj-data',
       serviceId: null,
@@ -556,8 +532,7 @@ function createMockEventLogs(): EventLog[] {
       resourceKind: 'Network',
       resourceName: 'vpc-eu-north',
       logEntryId: 'log_ee02a7cc90',
-      organizationId: 'org-7a2c91',
-      accountId: 'acc-31f8',
+      organizationUnitId: 'ou-data',
       billingGroupId: null,
       projectId: 'prj-platform',
       serviceId: null,
@@ -575,8 +550,7 @@ function createMockEventLogs(): EventLog[] {
       resourceKind: 'Service',
       resourceName: 'pg-production',
       logEntryId: 'log_a17c0f92de',
-      organizationId: 'org-7a2c91',
-      accountId: 'acc-31f8',
+      organizationUnitId: 'ou-platform',
       billingGroupId: null,
       projectId: 'prj-platform',
       serviceId: 'svc-pg-production',
@@ -594,8 +568,7 @@ function createMockEventLogs(): EventLog[] {
       resourceKind: 'Service',
       resourceName: 'kafka-analytics',
       logEntryId: 'log_b2380ac71f',
-      organizationId: 'org-7a2c91',
-      accountId: null,
+      organizationUnitId: 'ou-data',
       billingGroupId: null,
       projectId: 'prj-data',
       serviceId: 'svc-kafka-analytics',
@@ -612,8 +585,7 @@ function createMockEventLogs(): EventLog[] {
       resourceKind: 'Service',
       resourceName: 'kafka-analytics',
       logEntryId: 'log_c9911fe044',
-      organizationId: 'org-7a2c91',
-      accountId: 'acc-31f8',
+      organizationUnitId: 'ou-data',
       billingGroupId: 'bg-004',
       projectId: 'prj-data',
       serviceId: 'svc-kafka-analytics',
@@ -631,8 +603,7 @@ function createMockEventLogs(): EventLog[] {
       resourceKind: 'Service',
       resourceName: 'kafka-analytics',
       logEntryId: 'log_d40a1c8b72',
-      organizationId: 'org-7a2c91',
-      accountId: 'acc-31f8',
+      organizationUnitId: 'ou-data',
       billingGroupId: 'bg-004',
       projectId: 'prj-data',
       serviceId: 'svc-kafka-analytics',
@@ -649,8 +620,7 @@ function createMockEventLogs(): EventLog[] {
       resourceKind: 'Service',
       resourceName: 'os-search-eu',
       logEntryId: 'log_e5520bd913',
-      organizationId: 'org-7a2c91',
-      accountId: 'acc-31f8',
+      organizationUnitId: 'ou-data',
       billingGroupId: 'bg-004',
       projectId: 'prj-platform',
       serviceId: 'svc-os-search-eu',
@@ -668,8 +638,7 @@ function createMockEventLogs(): EventLog[] {
       resourceKind: 'Service',
       resourceName: 'kafka-analytics',
       logEntryId: 'log_f6631ce0a4',
-      organizationId: 'org-7a2c91',
-      accountId: null,
+      organizationUnitId: 'ou-data',
       billingGroupId: null,
       projectId: 'prj-data',
       serviceId: 'svc-kafka-analytics',
@@ -687,8 +656,7 @@ function createMockEventLogs(): EventLog[] {
       resourceKind: 'Network',
       resourceName: 'vpc-eu-north',
       logEntryId: 'log_071742db35',
-      organizationId: 'org-7a2c91',
-      accountId: 'acc-31f8',
+      organizationUnitId: 'ou-platform',
       billingGroupId: 'bg-004',
       projectId: 'prj-platform',
       serviceId: null,
@@ -705,8 +673,7 @@ function createMockEventLogs(): EventLog[] {
       resourceKind: 'Project',
       resourceName: 'prj-platform',
       logEntryId: 'log_18835ef1c6',
-      organizationId: 'org-7a2c91',
-      accountId: 'acc-31f8',
+      organizationUnitId: 'ou-platform',
       billingGroupId: 'bg-004',
       projectId: 'prj-platform',
       serviceId: null,
@@ -724,8 +691,7 @@ function createMockEventLogs(): EventLog[] {
       resourceKind: 'Service',
       resourceName: 'kafka-analytics',
       logEntryId: 'log_299460af27',
-      organizationId: 'org-7a2c91',
-      accountId: 'acc-31f8',
+      organizationUnitId: 'ou-data',
       billingGroupId: null,
       projectId: 'prj-data',
       serviceId: 'svc-kafka-analytics',
@@ -734,7 +700,121 @@ function createMockEventLogs(): EventLog[] {
     },
   ]
 
-  return seeds.map((seed) => ({
+  const TARGET_COUNT = 100
+  const actors = [
+    {
+      actor: 'Elena Ivanova',
+      actorKind: 'user' as const,
+      actorUserId: 'usr_elena_ivanova',
+      actorHref: '#',
+    },
+    {
+      actor: 'Marcus Chen',
+      actorKind: 'user' as const,
+      actorUserId: 'usr_marcus_chen',
+      actorHref: '#',
+    },
+    {
+      actor: 'Priya Nair',
+      actorKind: 'user' as const,
+      actorUserId: 'usr_priya_nair',
+      actorHref: '#',
+    },
+    {
+      actor: 'Aiven Automation',
+      actorKind: 'automation' as const,
+      actorUserId: 'svc_automation',
+    },
+    {
+      actor: 'system@aiven.io',
+      actorKind: 'system' as const,
+      actorUserId: 'system',
+    },
+  ]
+  const resources = [
+    {
+      resourceKind: 'Service' as const,
+      resourceName: 'pg-production',
+      projectId: 'prj-platform',
+      organizationUnitId: 'ou-platform',
+      serviceId: 'svc-pg-production',
+      billingGroupId: 'bg-004' as string | null,
+    },
+    {
+      resourceKind: 'Service' as const,
+      resourceName: 'kafka-analytics',
+      projectId: 'prj-data',
+      organizationUnitId: 'ou-data',
+      serviceId: 'svc-kafka-analytics',
+      billingGroupId: 'bg-004' as string | null,
+    },
+    {
+      resourceKind: 'Service' as const,
+      resourceName: 'os-search-eu',
+      projectId: 'prj-platform',
+      organizationUnitId: 'ou-platform',
+      serviceId: 'svc-os-search-eu',
+      billingGroupId: 'bg-004' as string | null,
+    },
+    {
+      resourceKind: 'Service' as const,
+      resourceName: 'valkey-cache',
+      projectId: 'prj-platform',
+      organizationUnitId: 'ou-platform',
+      serviceId: 'svc-valkey-cache',
+      billingGroupId: null as string | null,
+    },
+    {
+      resourceKind: 'Project' as const,
+      resourceName: 'prj-data',
+      projectId: 'prj-data',
+      organizationUnitId: 'ou-data',
+      serviceId: null as string | null,
+      billingGroupId: 'bg-004' as string | null,
+    },
+  ]
+  const generatedActions: { eventType: EventType; action: (name: string) => string }[] = [
+    { eventType: 'service_update', action: (name) => `Updated configuration on ${name}` },
+    { eventType: 'service_poweron', action: (name) => `Powered on ${name}` },
+    { eventType: 'service_poweroff', action: (name) => `Powered off ${name}` },
+    { eventType: 'service_maintenance_perform', action: (name) => `Performed maintenance on ${name}` },
+    { eventType: 'service_integration_update', action: (name) => `Updated integration on ${name}` },
+    { eventType: 'project_update', action: (name) => `Updated project settings for ${name}` },
+    { eventType: 'static_ip_address_patch', action: (name) => `Patched static IP binding on ${name}` },
+    { eventType: 'privatelink_connection_updated', action: (name) => `Updated private link connection on ${name}` },
+  ]
+
+  const generated: Seed[] = []
+  for (let i = seeds.length; i < TARGET_COUNT; i++) {
+    const n = i - seeds.length
+    const actor = actors[n % actors.length]
+    const resource = resources[n % resources.length]
+    const actionSpec = generatedActions[n % generatedActions.length]
+    // Spread across ~28 days before latest handcrafted event (2024-08-23), staying in retention.
+    const dayOffset = 1 + (n % 28)
+    const hour = 6 + (n % 12)
+    const minute = (n * 7) % 60
+    generated.push({
+      id: `evt-${i + 1}`,
+      occurredAt: new Date(Date.UTC(2024, 7, 23 - dayOffset, hour, minute, (n * 3) % 60)),
+      actor: actor.actor,
+      actorKind: actor.actorKind,
+      actorHref: actor.actorHref,
+      action: actionSpec.action(resource.resourceName),
+      eventType: actionSpec.eventType,
+      resourceKind: resource.resourceKind,
+      resourceName: resource.resourceName,
+      logEntryId: `log_gen${(i + 1).toString(16).padStart(8, '0')}`,
+      organizationUnitId: resource.organizationUnitId,
+      billingGroupId: resource.billingGroupId,
+      projectId: resource.projectId,
+      serviceId: resource.serviceId,
+      actorUserId: actor.actorUserId,
+      metadata: { generated: true, sequence: n + 1 },
+    })
+  }
+
+  return [...seeds, ...generated].map((seed) => ({
     ...seed,
     dateTimeLabel: formatEventTimestamp(seed.occurredAt),
   }))
@@ -753,8 +833,8 @@ function unique<T>(values: T[]): T[] {
 // (most of which aren't on the current page), so padding these lets us exercise
 // the searchable dropdown's in-menu search and >10-item scroll behaviour.
 
-/** Actors that don't exist in MOCK_EVENT_LOGS but round out the filter dropdown. */
-const EXTRA_ACTOR_OPTIONS = [
+/** Human users that don't exist in MOCK_EVENT_LOGS but round out the filter dropdown. */
+const EXTRA_USER_OPTIONS = [
   'Sofia Rossi',
   'Liam O’Connor',
   'Yuki Tanaka',
@@ -765,40 +845,47 @@ const EXTRA_ACTOR_OPTIONS = [
   'Oliver Brown',
   'Fatima Al-Sayed',
   'Lucas Silva',
-  'terraform@aiven.io',
-  'ci-bot@bigco.example',
 ]
 
-export const ACTOR_OPTIONS: { value: string; label: string }[] = unique([
-  ...MOCK_EVENT_LOGS.map((e) => e.actor),
-  ...EXTRA_ACTOR_OPTIONS,
-])
-  .sort()
-  .map((value) => ({ value, label: value }))
+/** Automation identities that don't exist in MOCK_EVENT_LOGS but round out the dropdown. */
+const EXTRA_AUTOMATION_OPTIONS = ['terraform@aiven.io', 'ci-bot@bigco.example']
+
+export type UserOptionGroup = {
+  title: string
+  options: { value: string; label: string }[]
+}
+
+function toOptions(values: string[]): { value: string; label: string }[] {
+  return unique(values)
+    .sort((a, b) => a.localeCompare(b))
+    .map((value) => ({ value, label: value }))
+}
+
+/** Grouped User filter options: people vs Aiven automation / system actors. */
+export const USER_OPTION_GROUPS: UserOptionGroup[] = [
+  {
+    title: 'Users',
+    options: toOptions([
+      ...MOCK_EVENT_LOGS.filter((e) => e.actorKind === 'user').map((e) => e.actor),
+      ...EXTRA_USER_OPTIONS,
+    ]),
+  },
+  {
+    title: 'Aiven automation',
+    options: toOptions([
+      ...MOCK_EVENT_LOGS.filter((e) => e.actorKind !== 'user').map((e) => e.actor),
+      ...EXTRA_AUTOMATION_OPTIONS,
+    ]),
+  },
+]
+
+/** Flat list for drawer MultiSelect and value→label lookups. */
+export const USER_OPTIONS: { value: string; label: string }[] = USER_OPTION_GROUPS.flatMap(
+  (group) => group.options,
+)
 
 export const EVENT_TYPE_OPTIONS: { value: EventType; label: string }[] =
   EVENT_TYPE_VALUES.map((value) => ({ value, label: value }))
-
-/** Resources that don't exist in MOCK_EVENT_LOGS but round out the filter dropdown. */
-const EXTRA_RESOURCE_OPTIONS = [
-  'redis-sessions',
-  'mysql-orders',
-  'opensearch-logs',
-  'kafka-connect',
-  'flink-jobs',
-  'grafana-dashboards',
-  'cassandra-metrics',
-  'clickhouse-analytics',
-  'valkey-ratelimit',
-  'pg-staging',
-]
-
-export const RESOURCE_OPTIONS: { value: string; label: string }[] = unique([
-  ...MOCK_EVENT_LOGS.map((e) => e.resourceName),
-  ...EXTRA_RESOURCE_OPTIONS,
-])
-  .sort()
-  .map((value) => ({ value, label: value }))
 
 /** Projects that don't exist in MOCK_EVENT_LOGS but round out the filter dropdown. */
 const EXTRA_PROJECT_OPTIONS = [
@@ -823,43 +910,128 @@ export const PROJECT_OPTIONS: { value: string; label: string }[] = unique([
   .sort()
   .map((value) => ({ value, label: value }))
 
-/** Default date range shown on load — matches the 12/08/2024 – 24/08/2024 design. */
-export const DEFAULT_DATE_RANGE: EventDateRange = {
-  start: new CalendarDateTime(2024, 8, 12, 0, 0, 0),
-  end: new CalendarDateTime(2024, 8, 24, 23, 59, 59),
+/** Org units that don't exist in MOCK_EVENT_LOGS but round out the filter dropdown. */
+const EXTRA_ORGANIZATION_UNIT_OPTIONS = [
+  'ou-security',
+  'ou-finance',
+  'ou-marketing',
+  'ou-ml',
+  'ou-shared-services',
+  'ou-europe',
+  'ou-americas',
+]
+
+export const ORGANIZATION_UNIT_OPTIONS: { value: string; label: string }[] = unique([
+  ...MOCK_EVENT_LOGS.map((e) => e.organizationUnitId).filter((id): id is string => Boolean(id)),
+  ...EXTRA_ORGANIZATION_UNIT_OPTIONS,
+])
+  .sort()
+  .map((value) => ({ value, label: value }))
+
+/** Billing groups that don't exist in MOCK_EVENT_LOGS but round out the filter dropdown. */
+const EXTRA_BILLING_GROUP_OPTIONS = [
+  'bg-001',
+  'bg-002',
+  'bg-003',
+  'bg-005',
+  'bg-enterprise',
+  'bg-trial',
+  'bg-partner',
+]
+
+export const BILLING_GROUP_OPTIONS: { value: string; label: string }[] = unique([
+  ...MOCK_EVENT_LOGS.map((e) => e.billingGroupId).filter((id): id is string => Boolean(id)),
+  ...EXTRA_BILLING_GROUP_OPTIONS,
+])
+  .sort()
+  .map((value) => ({ value, label: value }))
+
+/** Lowercased blob of all row + detail fields for free-text search. */
+export function eventLogSearchBlob(row: EventLog): string {
+  const metadataBlob = Object.entries(row.metadata)
+    .flatMap(([key, value]) => [key, value == null ? '' : String(value)])
+    .join(' ')
+  return [
+    row.actor,
+    row.action,
+    row.eventType,
+    row.resourceKind,
+    row.resourceName,
+    row.dateTimeLabel,
+    row.logEntryId,
+    row.organizationUnitId,
+    row.billingGroupId,
+    row.projectId,
+    row.serviceId,
+    row.actorUserId,
+    metadataBlob,
+  ]
+    .filter(Boolean)
+    .join(' ')
+    .toLowerCase()
 }
+
+/** Event log retention window — calendar selection cannot start earlier than this. */
+export const EVENT_LOG_RETENTION_DAYS = 30
 
 /**
  * Quick-range presets rendered in the calendar popover's left column.
  * Anchored to the latest event so selecting a preset actually filters the
- * mock data (rather than a real "now" that has no rows).
+ * mock data (rather than a real "now" that has no rows). Only ranges within
+ * the retention window are offered.
  */
 export type DateRangePreset = {
   label: string
   value: { start: CalendarDateTime; end: CalendarDateTime }
 }
 
-export const DATE_RANGE_PRESETS: DateRangePreset[] = (() => {
-  const latestMs = Math.max(...MOCK_EVENT_LOGS.map((e) => e.occurredAt.getTime()))
-  const anchor = utcDateToCalendarDateTime(new Date(latestMs))
-  const end = new CalendarDateTime(anchor.year, anchor.month, anchor.day, 23, 59, 59)
-  const startOfDay = (cdt: CalendarDateTime) =>
-    new CalendarDateTime(cdt.year, cdt.month, cdt.day, 0, 0, 0)
+const startOfDay = (cdt: CalendarDateTime) =>
+  new CalendarDateTime(cdt.year, cdt.month, cdt.day, 0, 0, 0)
 
-  return [
-    { label: 'Last month', value: { start: startOfDay(anchor.subtract({ months: 1 })), end } },
-    { label: 'Last 3 months', value: { start: startOfDay(anchor.subtract({ months: 3 })), end } },
-    { label: 'Last 6 months', value: { start: startOfDay(anchor.subtract({ months: 6 })), end } },
-  ]
-})()
+const endOfDay = (cdt: CalendarDateTime) =>
+  new CalendarDateTime(cdt.year, cdt.month, cdt.day, 23, 59, 59)
 
-/**
- * Range applied on load. Uses the "Last 3 months" preset so that preset shows
- * as preselected/highlighted in the calendar popover.
- */
+/** Latest mock event — used as "now" for presets and retention bounds. */
+const EVENT_LOG_ANCHOR = utcDateToCalendarDateTime(
+  new Date(Math.max(...MOCK_EVENT_LOGS.map((e) => e.occurredAt.getTime()))),
+)
+
+/** Earliest selectable instant (start of day, retention days before the anchor). */
+export const EVENT_LOG_MIN_DATE: CalendarDateTime = startOfDay(
+  EVENT_LOG_ANCHOR.subtract({ days: EVENT_LOG_RETENTION_DAYS }),
+)
+
+/** Latest selectable instant (end of the anchor day). */
+export const EVENT_LOG_MAX_DATE: CalendarDateTime = endOfDay(EVENT_LOG_ANCHOR)
+
+export const DATE_RANGE_PRESETS: DateRangePreset[] = [
+  {
+    label: 'Last 3 days',
+    value: {
+      start: startOfDay(EVENT_LOG_ANCHOR.subtract({ days: 3 })),
+      end: EVENT_LOG_MAX_DATE,
+    },
+  },
+  {
+    label: 'Last week',
+    value: {
+      start: startOfDay(EVENT_LOG_ANCHOR.subtract({ days: 7 })),
+      end: EVENT_LOG_MAX_DATE,
+    },
+  },
+  {
+    label: 'Last month',
+    value: { start: EVENT_LOG_MIN_DATE, end: EVENT_LOG_MAX_DATE },
+  },
+]
+
+/** Range applied on load — "Last month" (30-day retention window). */
 export const DEFAULT_PRESET_RANGE: EventDateRange =
-  DATE_RANGE_PRESETS.find((preset) => preset.label === 'Last 3 months')?.value ??
-  DEFAULT_DATE_RANGE
+  DATE_RANGE_PRESETS.find((preset) => preset.label === 'Last month')?.value ??
+  DATE_RANGE_PRESETS[DATE_RANGE_PRESETS.length - 1].value
+
+/** @deprecated Prefer DEFAULT_PRESET_RANGE — kept for any leftover imports. */
+export const DEFAULT_DATE_RANGE: EventDateRange = DEFAULT_PRESET_RANGE
 
 // ─── Export helper ──────────────────────────────────────────────────────────
 
@@ -869,8 +1041,7 @@ export function eventLogToJson(row: EventLog) {
     event_type: row.eventType,
     summary: row.action,
     create_time: row.occurredAt.toISOString(),
-    organization_id: row.organizationId,
-    account_id: row.accountId,
+    organization_unit_id: row.organizationUnitId,
     billing_group_id: row.billingGroupId,
     project_id: row.projectId,
     service_id: row.serviceId,

@@ -21,7 +21,6 @@ import {
   DropdownMenu,
   Filter,
   Icon,
-  Input,
   InputBase,
   Link,
   MultiSelect,
@@ -35,18 +34,23 @@ import automaticUpdatesIcon from '@aivenio/aquarium/icons/automaticUpdates'
 import consoleIcon from '@aivenio/aquarium/icons/console'
 import personIcon from '@aivenio/aquarium/icons/person'
 import {
-  ACTOR_OPTIONS,
+  BILLING_GROUP_OPTIONS,
   DATE_RANGE_PRESETS,
-  EVENT_TYPE_OPTIONS,
+  EVENT_LOG_MAX_DATE,
+  EVENT_LOG_MIN_DATE,
+  ORGANIZATION_UNIT_OPTIONS,
   PROJECT_OPTIONS,
-  RESOURCE_OPTIONS,
   DEFAULT_PRESET_RANGE,
   MOCK_EVENT_LOGS,
+  USER_OPTIONS,
+  USER_OPTION_GROUPS,
   calendarDateTimeToUtcMs,
   downloadEventLogsJson,
+  eventLogSearchBlob,
   eventLogToJson,
   type EventDateRange,
   type EventLog,
+  type UserOptionGroup,
 } from './eventLogsData'
 
 type QueryStatus = 'loading' | 'ready' | 'error'
@@ -54,9 +58,16 @@ type FilterOption = { value: string; label: string }
 
 const COLUMN_WIDTHS = {
   dateTime: 260,
-  actor: 180,
-  resource: 240,
+  user: 180,
+  project: 160,
+  service: 200,
 } as const
+
+/** Max rows shown for a single query (retention / export cap). */
+const MAX_EVENT_LOGS = 100
+/** Infinite-scroll batch size. */
+const EVENT_LOGS_BATCH = 25
+const LOAD_MORE_DELAY_MS = 280
 
 // ─── Date range filter (Filter.Trigger + DS calendar popover) ─────────────────
 
@@ -85,11 +96,13 @@ function DateRangeFilterTrigger({ onClear }: { onClear?: () => void }) {
 function CheckboxFilter({
   label,
   options,
+  groups,
   selected,
   onChange,
 }: {
   label: string
-  options: FilterOption[]
+  options?: FilterOption[]
+  groups?: UserOptionGroup[]
   selected: string[]
   onChange: (next: string[]) => void
 }) {
@@ -97,10 +110,11 @@ function CheckboxFilter({
   // That Trigger wraps children in Pressable, which swallows the clear (×) press and
   // opens the menu instead of calling onClear.
   const [open, setOpen] = useState(false)
+  const flatOptions = groups?.flatMap((group) => group.options) ?? options ?? []
   const active = selected.length > 0
   const valueText = active
     ? selected.length === 1
-      ? options.find((o) => o.value === selected[0])?.label ?? selected[0]
+      ? flatOptions.find((o) => o.value === selected[0])?.label ?? selected[0]
       : `${selected.length} selected`
     : undefined
 
@@ -125,7 +139,7 @@ function CheckboxFilter({
         isOpen={open}
         onOpenChange={setOpen}
         onSelectionChange={(keys) =>
-          onChange(keys === 'all' ? options.map((o) => o.value) : Array.from(keys, String))
+          onChange(keys === 'all' ? flatOptions.map((o) => o.value) : Array.from(keys, String))
         }
         emptyState={<Typography.Small color="muted">No matches</Typography.Small>}
         placement="bottom-left"
@@ -146,11 +160,21 @@ function CheckboxFilter({
           />
         </DropdownMenu.Trigger>
         <DropdownMenu.Items>
-          {options.map((opt) => (
-            <DropdownMenu.Item key={opt.value} id={opt.value} textValue={opt.label}>
-              {opt.label}
-            </DropdownMenu.Item>
-          ))}
+          {groups
+            ? groups.map((group) => (
+                <DropdownMenu.Section key={group.title} title={group.title}>
+                  {group.options.map((opt) => (
+                    <DropdownMenu.Item key={opt.value} id={opt.value} textValue={opt.label}>
+                      {opt.label}
+                    </DropdownMenu.Item>
+                  ))}
+                </DropdownMenu.Section>
+              ))
+            : flatOptions.map((opt) => (
+                <DropdownMenu.Item key={opt.value} id={opt.value} textValue={opt.label}>
+                  {opt.label}
+                </DropdownMenu.Item>
+              ))}
         </DropdownMenu.Items>
       </DropdownMenu>
     </div>
@@ -160,13 +184,20 @@ function CheckboxFilter({
 // ─── "All filters" combined popover ────────────────────────────────────────────
 
 type FilterState = {
-  actors: string[]
+  users: string[]
+  /** Kept for a possible return of the Event type chip; UI currently hidden. */
   eventTypes: string[]
-  resources: string[]
   projects: string[]
-  organizationId: string
-  accountId: string
-  billingGroupId: string
+  organizationUnits: string[]
+  billingGroups: string[]
+}
+
+const EMPTY_FILTERS: FilterState = {
+  users: [],
+  eventTypes: [],
+  projects: [],
+  organizationUnits: [],
+  billingGroups: [],
 }
 
 function AllFiltersButton({
@@ -180,24 +211,13 @@ function AllFiltersButton({
   const triggerRef = useRef<HTMLDivElement>(null)
 
   const activeCount =
-    filters.actors.length +
+    filters.users.length +
     filters.eventTypes.length +
-    filters.resources.length +
     filters.projects.length +
-    Number(Boolean(filters.organizationId.trim())) +
-    Number(Boolean(filters.accountId.trim())) +
-    Number(Boolean(filters.billingGroupId.trim()))
+    filters.organizationUnits.length +
+    filters.billingGroups.length
 
-  const clearAll = () =>
-    setFilters({
-      actors: [],
-      eventTypes: [],
-      resources: [],
-      projects: [],
-      organizationId: '',
-      accountId: '',
-      billingGroupId: '',
-    })
+  const clearAll = () => setFilters({ ...EMPTY_FILTERS })
 
   useEffect(() => {
     if (!open) return
@@ -265,26 +285,13 @@ function AllFiltersButton({
       >
         <Box className="event-logs-filter-grid" style={{ display: 'grid', rowGap: 16 }}>
           <MultiSelect
-            labelText="Actor [multiselect]"
-            placeholder="All actors"
-            options={ACTOR_OPTIONS.map((o) => o.value)}
-            value={filters.actors}
-            onChange={(items) => setFilters({ ...filters, actors: items ?? [] })}
+            labelText="User [multiselect]"
+            placeholder="All users"
+            options={USER_OPTIONS.map((o) => o.value)}
+            value={filters.users}
+            onChange={(items) => setFilters({ ...filters, users: items ?? [] })}
           />
-          <MultiSelect
-            labelText="Event type [multiselect]"
-            placeholder="All event types"
-            options={EVENT_TYPE_OPTIONS.map((o) => o.value as string)}
-            value={filters.eventTypes}
-            onChange={(items) => setFilters({ ...filters, eventTypes: items ?? [] })}
-          />
-          <MultiSelect
-            labelText="Resource [multiselect]"
-            placeholder="All resources"
-            options={RESOURCE_OPTIONS.map((o) => o.value)}
-            value={filters.resources}
-            onChange={(items) => setFilters({ ...filters, resources: items ?? [] })}
-          />
+          {/* Event type filter hidden for now — keep EVENT_TYPE_OPTIONS + filters.eventTypes to restore. */}
           <MultiSelect
             labelText="Project [multiselect]"
             placeholder="All projects"
@@ -292,29 +299,19 @@ function AllFiltersButton({
             value={filters.projects}
             onChange={(items) => setFilters({ ...filters, projects: items ?? [] })}
           />
-          <Input
-            labelText="organization_id [string]"
-            placeholder="Enter organization ID"
-            value={filters.organizationId}
-            onChange={(event) =>
-              setFilters({ ...filters, organizationId: event.currentTarget.value })
-            }
+          <MultiSelect
+            labelText="Organization unit [multiselect]"
+            placeholder="All organization units"
+            options={ORGANIZATION_UNIT_OPTIONS.map((o) => o.value)}
+            value={filters.organizationUnits}
+            onChange={(items) => setFilters({ ...filters, organizationUnits: items ?? [] })}
           />
-          <Input
-            labelText="account_id [string]"
-            placeholder="Enter account ID"
-            value={filters.accountId}
-            onChange={(event) =>
-              setFilters({ ...filters, accountId: event.currentTarget.value })
-            }
-          />
-          <Input
-            labelText="billing_group_id [string]"
-            placeholder="Enter billing group ID"
-            value={filters.billingGroupId}
-            onChange={(event) =>
-              setFilters({ ...filters, billingGroupId: event.currentTarget.value })
-            }
+          <MultiSelect
+            labelText="Billing group [multiselect]"
+            placeholder="All billing groups"
+            options={BILLING_GROUP_OPTIONS.map((o) => o.value)}
+            value={filters.billingGroups}
+            onChange={(items) => setFilters({ ...filters, billingGroups: items ?? [] })}
           />
         </Box>
       </Drawer>
@@ -322,9 +319,9 @@ function AllFiltersButton({
   )
 }
 
-// ─── Actor avatar (reflects actor kind) ────────────────────────────────────────
+// ─── User avatar (reflects actor kind) ─────────────────────────────────────────
 
-function ActorAvatar({ kind }: { kind: EventLog['actorKind'] }) {
+function UserAvatar({ kind }: { kind: EventLog['actorKind'] }) {
   const icon = kind === 'automation' ? automaticUpdatesIcon : kind === 'system' ? consoleIcon : personIcon
   return (
     <Box
@@ -348,14 +345,14 @@ function ActorAvatar({ kind }: { kind: EventLog['actorKind'] }) {
 // ─── Expanded detail rows ──────────────────────────────────────────────────────
 
 const EMPHASIZED_TEXT_PATTERN =
-  /(\d{1,3}(?:\.\d{1,3}){3}(?:\.\d+)?|\d+(?:[.,:/]\d+)*|(?:log_|usr_)[\w]+|(?:org|acc|bg|prj|svc|vpce|plc|pcx|ups|pl)-[\w-]+)/g
+  /(\d{1,3}(?:\.\d{1,3}){3}(?:\.\d+)?|\d+(?:[.,:/]\d+)*|(?:log_|usr_)[\w]+|(?:org|ou|acc|bg|prj|svc|vpce|plc|pcx|ups|pl)-[\w-]+)/g
 
 function isEmphasizedSegment(part: string): boolean {
   return (
     /^\d{1,3}(?:\.\d{1,3}){3}(?:\.\d+)?$/.test(part) ||
     /^\d+(?:[.,:/]\d+)*$/.test(part) ||
     /^(?:log_|usr_)[\w]+$/.test(part) ||
-    /^(?:org|acc|bg|prj|svc|vpce|plc|pcx|ups|pl)-[\w-]+$/.test(part)
+    /^(?:org|ou|acc|bg|prj|svc|vpce|plc|pcx|ups|pl)-[\w-]+$/.test(part)
   )
 }
 
@@ -373,16 +370,25 @@ function emphasizeIdsAndNumbers(text: string): ReactNode {
   })
 }
 
-function isIdDetailField(label: string): boolean {
-  return label.endsWith('_id')
+function entityLink(value: string, alertMessage: string): ReactNode {
+  return (
+    <Link
+      href="#"
+      onClick={(e) => {
+        e.preventDefault()
+        window.alert(alertMessage)
+      }}
+    >
+      {value}
+    </Link>
+  )
 }
 
-function renderDetailValue(label: string, value: ReactNode): ReactNode {
-  if (typeof value !== 'string') return value
-  if (isIdDetailField(label)) {
-    return <Typography.SmallStrong>{value}</Typography.SmallStrong>
+function nullableEntityLink(value: string | null, alertMessage: string): ReactNode {
+  if (value === null) {
+    return <span style={{ color: 'var(--aquarium-text-color-muted)', fontStyle: 'italic' }}>null</span>
   }
-  return <Typography.Small>{emphasizeIdsAndNumbers(value)}</Typography.Small>
+  return entityLink(value, alertMessage)
 }
 
 function nullable(value: string | null): ReactNode {
@@ -394,10 +400,10 @@ function nullable(value: string | null): ReactNode {
 
 // ─── DataList cell renderers ───────────────────────────────────────────────────
 
-function ActorCell({ row }: { row: EventLog }) {
+function UserCell({ row }: { row: EventLog }) {
   return (
     <Box style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-      <ActorAvatar kind={row.actorKind} />
+      <UserAvatar kind={row.actorKind} />
       {row.actorHref ? (
         <Link href={row.actorHref} onClick={(e) => e.preventDefault()}>
           {row.actor}
@@ -409,13 +415,12 @@ function ActorCell({ row }: { row: EventLog }) {
   )
 }
 
-function ResourceCell({ row }: { row: EventLog }) {
-  return (
-    <Box style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-      <Typography.Caption color="muted">{row.resourceKind}</Typography.Caption>
-      <Typography.Default>{row.resourceName}</Typography.Default>
-    </Box>
-  )
+function ProjectCell({ row }: { row: EventLog }) {
+  return <Typography.Default>{row.projectId ?? '—'}</Typography.Default>
+}
+
+function ServiceCell({ row }: { row: EventLog }) {
+  return <Typography.Default>{row.serviceId ?? '—'}</Typography.Default>
 }
 
 type DetailRow = { id: string; label: string; value: ReactNode }
@@ -435,71 +440,75 @@ function EventDetails({ row }: { row: EventLog }) {
     { id: 'event_type', label: 'event_type', value: row.eventType },
     { id: 'summary', label: 'summary', value: row.action },
     { id: 'create_time', label: 'create_time', value: row.occurredAt.toISOString() },
-    { id: 'organization_id', label: 'organization_id', value: row.organizationId },
-    { id: 'account_id', label: 'account_id', value: nullable(row.accountId) },
-    { id: 'billing_group_id', label: 'billing_group_id', value: nullable(row.billingGroupId) },
-    { id: 'project_id', label: 'project_id', value: nullable(row.projectId) },
-    { id: 'service_id', label: 'service_id', value: nullable(row.serviceId) },
-    { id: 'actor_user_id', label: 'actor_user_id', value: row.actorUserId },
-    { id: 'actor', label: 'actor', value: row.actor },
+    { id: 'organization_unit_id', label: 'organization_unit_id', value: nullable(row.organizationUnitId) },
     {
-      id: 'metadata',
-      label: 'metadata',
-      value: (
-        <Typography.CodeSmall>
-          {emphasizeIdsAndNumbers(JSON.stringify(row.metadata))}
-        </Typography.CodeSmall>
-      ),
+      id: 'billing_group_id',
+      label: 'billing_group_id',
+      value: nullableEntityLink(row.billingGroupId, 'Link to billing group'),
     },
+    {
+      id: 'project_id',
+      label: 'project_id',
+      value: nullableEntityLink(row.projectId, 'Link to project'),
+    },
+    {
+      id: 'service_id',
+      label: 'service_id',
+      value: nullableEntityLink(row.serviceId, 'Link to service'),
+    },
+    {
+      id: 'actor_user_id',
+      label: 'actor_user_id',
+      value: entityLink(row.actorUserId, 'Link to user'),
+    },
+    { id: 'user', label: 'user', value: entityLink(row.actor, 'Link to user') },
+    { id: 'metadata', label: 'metadata', value: JSON.stringify(row.metadata) },
   ]
 
   return (
-    <Box style={{ padding: '16px 8px 12px' }}>
-      {/* paddingLeft matches the detail DataList cell's 12px left padding so the
-          heading aligns with the key column text below it. */}
+    <Box className="event-log-details" style={{ padding: '16px 0 12px', fontSize: 14, lineHeight: '20px' }}>
       <Box
         style={{
           marginBottom: 12,
           paddingLeft: 12,
+          paddingRight: 12,
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
           gap: 8,
         }}
       >
-        <Typography.SmallStrong>Event details</Typography.SmallStrong>
+        <Typography.DefaultStrong>Event details</Typography.DefaultStrong>
         <Button.Secondary type="button" dense onClick={copyLogDetails}>
           {copied ? 'Copied' : 'Copy log details'}
         </Button.Secondary>
       </Box>
-      <Box style={{ maxWidth: 720 }}>
-        <DataList
-          hideHeader
-          sticky={false}
-          rows={detailRows}
-          columns={[
-            {
-              type: 'custom',
-              headerName: 'Field',
+      {detailRows.map((r, index) => (
+        <Box
+          key={r.id}
+          style={{
+            display: 'flex',
+            alignItems: 'flex-start',
+            gap: 16,
+            padding: '12px',
+            borderBottom:
+              index < detailRows.length - 1
+                ? '1px solid var(--aquarium-border-color-muted)'
+                : undefined,
+          }}
+        >
+          <Box
+            style={{
               width: 220,
-              UNSAFE_render: (r) => (
-                <Box style={{ color: 'var(--aquarium-text-color-muted)' }}>
-                  <Typography.Small>{r.label}</Typography.Small>
-                </Box>
-              ),
-            },
-            {
-              type: 'custom',
-              headerName: 'Value',
-              UNSAFE_render: (r) => (
-                <Box style={{ wordBreak: 'break-word' }}>
-                  {renderDetailValue(r.label, r.value)}
-                </Box>
-              ),
-            },
-          ]}
-        />
-      </Box>
+              flexShrink: 0,
+              color: 'var(--aquarium-text-color-muted)',
+            }}
+          >
+            {r.label}
+          </Box>
+          <Box style={{ flex: 1, minWidth: 0, wordBreak: 'break-word' }}>{r.value}</Box>
+        </Box>
+      ))}
     </Box>
   )
 }
@@ -510,23 +519,18 @@ const dir = (n: number, descending: boolean) => (descending ? -n : n)
 // ─── Main content ──────────────────────────────────────────────────────────────
 
 export function EventLogsContent() {
-  const [search, setSearch] = useState('')
   const [dateRange, setDateRange] = useState<EventDateRange | null>(DEFAULT_PRESET_RANGE)
-  const [filters, setFilters] = useState<FilterState>({
-    actors: [],
-    eventTypes: [],
-    resources: [],
-    projects: [],
-    organizationId: '',
-    accountId: '',
-    billingGroupId: '',
-  })
+  const [filters, setFilters] = useState<FilterState>({ ...EMPTY_FILTERS })
+  const [searchInput, setSearchInput] = useState('')
   const [queryStatus, setQueryStatus] = useState<QueryStatus>('loading')
   const [queryError, setQueryError] = useState<string>()
   const [queryRows, setQueryRows] = useState<EventLog[]>([])
+  const [visibleCount, setVisibleCount] = useState(EVENT_LOGS_BATCH)
+  const [isLoadingMore, setIsLoadingMore] = useState(false)
+  const loadMoreTimerRef = useRef<number | null>(null)
 
   const filteredRows = useMemo(() => {
-    const q = search.trim().toLowerCase()
+    const q = searchInput.trim().toLowerCase()
     let startMs = -8.64e15
     let endMs = 8.64e15
     if (dateRange?.start && dateRange?.end) {
@@ -536,37 +540,24 @@ export function EventLogsContent() {
     return MOCK_EVENT_LOGS.filter((row) => {
       const t = row.occurredAt.getTime()
       if (t < startMs || t > endMs) return false
-      if (filters.actors.length > 0 && !filters.actors.includes(row.actor)) return false
+      if (filters.users.length > 0 && !filters.users.includes(row.actor)) return false
       if (filters.eventTypes.length > 0 && !filters.eventTypes.includes(row.eventType)) return false
-      if (filters.resources.length > 0 && !filters.resources.includes(row.resourceName)) return false
       if (filters.projects.length > 0 && !(row.projectId && filters.projects.includes(row.projectId)))
         return false
       if (
-        filters.organizationId.trim() &&
-        row.organizationId !== filters.organizationId.trim()
+        filters.organizationUnits.length > 0 &&
+        !(row.organizationUnitId && filters.organizationUnits.includes(row.organizationUnitId))
       )
         return false
-      if (filters.accountId.trim() && row.accountId !== filters.accountId.trim()) return false
       if (
-        filters.billingGroupId.trim() &&
-        row.billingGroupId !== filters.billingGroupId.trim()
+        filters.billingGroups.length > 0 &&
+        !(row.billingGroupId && filters.billingGroups.includes(row.billingGroupId))
       )
         return false
       if (!q) return true
-      const blob = [
-        row.actor,
-        row.action,
-        row.eventType,
-        row.resourceKind,
-        row.resourceName,
-        row.dateTimeLabel,
-        row.logEntryId,
-      ]
-        .join(' ')
-        .toLowerCase()
-      return blob.includes(q)
+      return eventLogSearchBlob(row).includes(q)
     })
-  }, [search, dateRange, filters])
+  }, [searchInput, dateRange, filters])
 
   // Simulate an async query so DS loading / error / empty states are exercised.
   useEffect(() => {
@@ -582,12 +573,41 @@ export function EventLogsContent() {
       return
     }
     setQueryStatus('loading')
+    setVisibleCount(EVENT_LOGS_BATCH)
+    setIsLoadingMore(false)
     const timerId = window.setTimeout(() => {
-      setQueryRows(filteredRows)
+      setQueryRows(filteredRows.slice(0, MAX_EVENT_LOGS))
       setQueryStatus('ready')
     }, 220)
     return () => window.clearTimeout(timerId)
   }, [filteredRows, dateRange])
+
+  useEffect(() => {
+    return () => {
+      if (loadMoreTimerRef.current != null) {
+        window.clearTimeout(loadMoreTimerRef.current)
+      }
+    }
+  }, [])
+
+  const visibleRows = useMemo(
+    () => queryRows.slice(0, visibleCount),
+    [queryRows, visibleCount],
+  )
+  const hasMore = visibleCount < queryRows.length
+
+  const loadMore = () => {
+    if (isLoadingMore || !hasMore) return
+    setIsLoadingMore(true)
+    if (loadMoreTimerRef.current != null) {
+      window.clearTimeout(loadMoreTimerRef.current)
+    }
+    loadMoreTimerRef.current = window.setTimeout(() => {
+      setVisibleCount((count) => Math.min(count + EVENT_LOGS_BATCH, queryRows.length, MAX_EVENT_LOGS))
+      setIsLoadingMore(false)
+      loadMoreTimerRef.current = null
+    }, LOAD_MORE_DELAY_MS)
+  }
 
   const canExport = queryStatus === 'ready' && queryRows.length > 0
 
@@ -617,13 +637,13 @@ export function EventLogsContent() {
           />
         </Box>
 
-        {/* Search */}
-        <Box style={{ maxWidth: 500, marginBottom: 16 }}>
+        {/* Free-text search across table + detail fields */}
+        <Box style={{ maxWidth: 720, marginBottom: 16 }}>
           <InputBase
-            placeholder="Search by actor, action or resource"
+            placeholder="Search event logs"
             aria-label="Search event logs"
-            value={search}
-            onChange={(e) => setSearch((e.target as HTMLInputElement).value)}
+            value={searchInput}
+            onChange={(e) => setSearchInput((e.target as HTMLInputElement).value)}
             endAdornment={<Icon icon={searchIcon} color="muted" style={{ width: 16, height: 16 }} />}
           />
         </Box>
@@ -643,6 +663,8 @@ export function EventLogsContent() {
               aria-label="Date and time range"
               granularity="minute"
               value={dateRange ?? undefined}
+              minValue={EVENT_LOG_MIN_DATE}
+              maxValue={EVENT_LOG_MAX_DATE}
               reserveSpaceForError={false}
               shouldCloseOnSelect={false}
               onChange={(val) => {
@@ -663,28 +685,29 @@ export function EventLogsContent() {
             </DateTimeRangePicker>
 
             <CheckboxFilter
-              label="Actor"
-              options={ACTOR_OPTIONS}
-              selected={filters.actors}
-              onChange={(actors) => setFilters((f) => ({ ...f, actors }))}
+              label="User"
+              groups={USER_OPTION_GROUPS}
+              selected={filters.users}
+              onChange={(users) => setFilters((f) => ({ ...f, users }))}
             />
-            <CheckboxFilter
-              label="Event type"
-              options={EVENT_TYPE_OPTIONS}
-              selected={filters.eventTypes}
-              onChange={(eventTypes) => setFilters((f) => ({ ...f, eventTypes }))}
-            />
-            <CheckboxFilter
-              label="Resource"
-              options={RESOURCE_OPTIONS}
-              selected={filters.resources}
-              onChange={(resources) => setFilters((f) => ({ ...f, resources }))}
-            />
+            {/* Event type filter hidden for now — restore with EVENT_TYPE_OPTIONS + filters.eventTypes. */}
             <CheckboxFilter
               label="Project"
               options={PROJECT_OPTIONS}
               selected={filters.projects}
               onChange={(projects) => setFilters((f) => ({ ...f, projects }))}
+            />
+            <CheckboxFilter
+              label="Organization unit"
+              options={ORGANIZATION_UNIT_OPTIONS}
+              selected={filters.organizationUnits}
+              onChange={(organizationUnits) => setFilters((f) => ({ ...f, organizationUnits }))}
+            />
+            <CheckboxFilter
+              label="Billing group"
+              options={BILLING_GROUP_OPTIONS}
+              selected={filters.billingGroups}
+              onChange={(billingGroups) => setFilters((f) => ({ ...f, billingGroups }))}
             />
             <AllFiltersButton filters={filters} setFilters={setFilters} />
           </Box>
@@ -702,7 +725,7 @@ export function EventLogsContent() {
 
         {/* Collapsible data list */}
         {queryStatus === 'loading' ? (
-          <DataList.Skeleton columns={4} rows={6} />
+          <DataList.Skeleton columns={5} rows={6} />
         ) : queryStatus === 'error' ? (
           <Box style={{ padding: '16px 4px', color: 'var(--aquarium-text-color-error, #b3261e)' }}>
             <Typography.Default>{queryError ?? 'Failed to run the logs query.'}</Typography.Default>
@@ -716,10 +739,17 @@ export function EventLogsContent() {
           </Box>
         ) : (
           <DataList
-            rows={queryRows}
+            rows={visibleRows}
             sticky={false}
             defaultSort={{ headerName: 'Date and time', direction: 'descending' }}
-            pagination={{ initialPageSize: 10, pageSizes: [5, 10, 20, 50] }}
+            hasMore={hasMore}
+            isLoading={isLoadingMore}
+            next={loadMore}
+            loadingIndicator={
+              <Box style={{ padding: '12px 4px', textAlign: 'center' }}>
+                <Typography.Small color="muted">Loading more event logs…</Typography.Small>
+              </Box>
+            }
             rowDetails={(row) => <EventDetails row={row} />}
             columns={[
               {
@@ -732,10 +762,10 @@ export function EventLogsContent() {
               },
               {
                 type: 'custom',
-                headerName: 'Actor',
-                width: COLUMN_WIDTHS.actor,
+                headerName: 'User',
+                width: COLUMN_WIDTHS.user,
                 sort: (a, b, direction) => dir(a.actor.localeCompare(b.actor), direction === 'descending'),
-                UNSAFE_render: (row) => <ActorCell row={row} />,
+                UNSAFE_render: (row) => <UserCell row={row} />,
               },
               {
                 type: 'custom',
@@ -747,11 +777,25 @@ export function EventLogsContent() {
               },
               {
                 type: 'custom',
-                headerName: 'Resource',
-                width: COLUMN_WIDTHS.resource,
+                headerName: 'Project',
+                width: COLUMN_WIDTHS.project,
                 sort: (a, b, direction) =>
-                  dir(a.resourceName.localeCompare(b.resourceName), direction === 'descending'),
-                UNSAFE_render: (row) => <ResourceCell row={row} />,
+                  dir(
+                    (a.projectId ?? '').localeCompare(b.projectId ?? ''),
+                    direction === 'descending',
+                  ),
+                UNSAFE_render: (row) => <ProjectCell row={row} />,
+              },
+              {
+                type: 'custom',
+                headerName: 'Service',
+                width: COLUMN_WIDTHS.service,
+                sort: (a, b, direction) =>
+                  dir(
+                    (a.serviceId ?? '').localeCompare(b.serviceId ?? ''),
+                    direction === 'descending',
+                  ),
+                UNSAFE_render: (row) => <ServiceCell row={row} />,
               },
             ]}
           />
