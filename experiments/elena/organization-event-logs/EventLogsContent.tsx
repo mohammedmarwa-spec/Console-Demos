@@ -9,14 +9,17 @@ import {
   useState,
   type ReactNode,
 } from 'react'
-import { CalendarDateTime } from '@internationalized/date'
+import { CalendarDate } from '@internationalized/date'
 import { DateRangePickerStateContext as AriaDateRangePickerStateContext } from 'react-aria-components'
 import {
   Box,
   Breadcrumbs,
   Button,
+  Checkbox,
+  CheckboxGroup,
   DataList,
-  DateTimeRangePicker,
+  DateRangePicker,
+  Divider,
   Drawer,
   DropdownMenu,
   Filter,
@@ -25,6 +28,7 @@ import {
   Link,
   MultiSelect,
   PageHeader,
+  Popover,
   Typography,
 } from '@aivenio/aquarium'
 import filterIcon from '@aivenio/aquarium/icons/filter'
@@ -44,7 +48,8 @@ import {
   MOCK_EVENT_LOGS,
   USER_OPTIONS,
   USER_OPTION_GROUPS,
-  calendarDateTimeToUtcMs,
+  calendarDateToUtcEndMs,
+  calendarDateToUtcStartMs,
   downloadEventLogsJson,
   eventLogSearchBlob,
   eventLogToJson,
@@ -55,6 +60,18 @@ import {
 
 type QueryStatus = 'loading' | 'ready' | 'error'
 type FilterOption = { value: string; label: string }
+
+type ColumnId = 'dateTime' | 'user' | 'action' | 'project' | 'service'
+
+const COLUMN_OPTIONS: { id: ColumnId; label: string }[] = [
+  { id: 'dateTime', label: 'Date and time' },
+  { id: 'user', label: 'User' },
+  { id: 'action', label: 'Action' },
+  { id: 'project', label: 'Project' },
+  { id: 'service', label: 'Service' },
+]
+
+const DEFAULT_VISIBLE_COLUMNS: ColumnId[] = COLUMN_OPTIONS.map((c) => c.id)
 
 const COLUMN_WIDTHS = {
   dateTime: 260,
@@ -344,22 +361,30 @@ function UserAvatar({ kind }: { kind: EventLog['actorKind'] }) {
 
 // ─── Expanded detail rows ──────────────────────────────────────────────────────
 
-const EMPHASIZED_TEXT_PATTERN =
-  /(\d{1,3}(?:\.\d{1,3}){3}(?:\.\d+)?|\d+(?:[.,:/]\d+)*|(?:log_|usr_)[\w]+|(?:org|ou|acc|bg|prj|svc|vpce|plc|pcx|ups|pl)-[\w-]+)/g
+/**
+ * Identifiers in Action column copy (DataList only): emails, IPs, prefixed IDs
+ * (prj-/bg-/vpc-/…), cloud regions, hyphenated resource names, plan codes, roles.
+ */
+const ACTION_IDENTIFIER_PATTERN =
+  /(\b[\w.+-]+@[\w.-]+\.\w+\b|\b\d{1,3}(?:\.\d{1,3}){3}\b|\b(?:org|ou|acc|bg|prj|svc|vpce|vpc|plc|pcx|ups|pl)-[\w.-]+\b|\b(?:aws|gcp|azure)-[a-z0-9-]+\b|\b[A-Z][a-zA-Z]*-\d+\b|\b(?:Admin|Developer|Operator|Owner|Member|Viewer)\b|\b[a-z][a-z0-9]*(?:-[a-z0-9]+)+\b)/g
 
-function isEmphasizedSegment(part: string): boolean {
+function isActionIdentifier(part: string): boolean {
   return (
-    /^\d{1,3}(?:\.\d{1,3}){3}(?:\.\d+)?$/.test(part) ||
-    /^\d+(?:[.,:/]\d+)*$/.test(part) ||
-    /^(?:log_|usr_)[\w]+$/.test(part) ||
-    /^(?:org|ou|acc|bg|prj|svc|vpce|plc|pcx|ups|pl)-[\w-]+$/.test(part)
+    /^[\w.+-]+@[\w.-]+\.\w+$/.test(part) ||
+    /^\d{1,3}(?:\.\d{1,3}){3}$/.test(part) ||
+    /^(?:org|ou|acc|bg|prj|svc|vpce|vpc|plc|pcx|ups|pl)-[\w.-]+$/.test(part) ||
+    /^(?:aws|gcp|azure)-[a-z0-9-]+$/.test(part) ||
+    /^[A-Z][a-zA-Z]*-\d+$/.test(part) ||
+    /^(?:Admin|Developer|Operator|Owner|Member|Viewer)$/.test(part) ||
+    /^[a-z][a-z0-9]*(?:-[a-z0-9]+)+$/.test(part)
   )
 }
 
-function emphasizeIdsAndNumbers(text: string): ReactNode {
-  return text.split(EMPHASIZED_TEXT_PATTERN).map((part, index) => {
+/** Bold identifiers in Action column text. Not used in expanded details. */
+function emphasizeActionIdentifiers(text: string): ReactNode {
+  return text.split(ACTION_IDENTIFIER_PATTERN).map((part, index) => {
     if (!part) return null
-    if (isEmphasizedSegment(part)) {
+    if (isActionIdentifier(part)) {
       return (
         <span key={`${part}-${index}`} style={{ fontWeight: 600 }}>
           {part}
@@ -516,12 +541,118 @@ function EventDetails({ row }: { row: EventLog }) {
 /** Direction-aware comparators for sortable DataList headers. */
 const dir = (n: number, descending: boolean) => (descending ? -n : n)
 
+function buildEventLogColumns(visibleIds: ColumnId[]) {
+  const visible = new Set(visibleIds)
+  const columns = []
+
+  if (visible.has('dateTime')) {
+    columns.push({
+      type: 'text' as const,
+      headerName: 'Date and time',
+      field: 'dateTimeLabel' as const,
+      width: COLUMN_WIDTHS.dateTime,
+      sort: (a: EventLog, b: EventLog, direction: 'ascending' | 'descending' | 'none' | undefined) =>
+        dir(a.occurredAt.getTime() - b.occurredAt.getTime(), direction === 'descending'),
+    })
+  }
+  if (visible.has('user')) {
+    columns.push({
+      type: 'custom' as const,
+      headerName: 'User',
+      width: COLUMN_WIDTHS.user,
+      sort: (a: EventLog, b: EventLog, direction: 'ascending' | 'descending' | 'none' | undefined) =>
+        dir(a.actor.localeCompare(b.actor), direction === 'descending'),
+      UNSAFE_render: (row: EventLog) => <UserCell row={row} />,
+    })
+  }
+  if (visible.has('action')) {
+    columns.push({
+      type: 'custom' as const,
+      headerName: 'Action',
+      sort: (a: EventLog, b: EventLog, direction: 'ascending' | 'descending' | 'none' | undefined) =>
+        dir(a.action.localeCompare(b.action), direction === 'descending'),
+      UNSAFE_render: (row: EventLog) => (
+        <Typography.Default>{emphasizeActionIdentifiers(row.action)}</Typography.Default>
+      ),
+    })
+  }
+  if (visible.has('project')) {
+    columns.push({
+      type: 'custom' as const,
+      headerName: 'Project',
+      width: COLUMN_WIDTHS.project,
+      sort: (a: EventLog, b: EventLog, direction: 'ascending' | 'descending' | 'none' | undefined) =>
+        dir((a.projectId ?? '').localeCompare(b.projectId ?? ''), direction === 'descending'),
+      UNSAFE_render: (row: EventLog) => <ProjectCell row={row} />,
+    })
+  }
+  if (visible.has('service')) {
+    columns.push({
+      type: 'custom' as const,
+      headerName: 'Service',
+      width: COLUMN_WIDTHS.service,
+      sort: (a: EventLog, b: EventLog, direction: 'ascending' | 'descending' | 'none' | undefined) =>
+        dir((a.serviceId ?? '').localeCompare(b.serviceId ?? ''), direction === 'descending'),
+      UNSAFE_render: (row: EventLog) => <ServiceCell row={row} />,
+    })
+  }
+
+  // Mixed column defs need an assertion; Aquarium's DataListColumn is a discriminative union.
+  return columns as never
+}
+
+function ColumnConfigurer({
+  visibleIds,
+  onChange,
+}: {
+  visibleIds: ColumnId[]
+  onChange: (next: ColumnId[]) => void
+}) {
+  const onlyOneVisible = visibleIds.length === 1
+
+  return (
+    <Popover placement="bottom-end">
+      <Popover.Trigger>
+        <Button.Dropdown kind="ghost" type="button">
+          Configure columns
+        </Button.Dropdown>
+      </Popover.Trigger>
+      <Popover.Panel>
+        <Box style={{ padding: 12, width: 'max-content' }}>
+          <CheckboxGroup
+            labelText="Visible columns"
+            reserveSpaceForError={false}
+            value={visibleIds}
+            onChange={(val) => {
+              const selected = new Set(val ?? [])
+              const next = COLUMN_OPTIONS.map((opt) => opt.id).filter((id) => selected.has(id))
+              if (next.length === 0) return
+              onChange(next)
+            }}
+          >
+            {COLUMN_OPTIONS.map((opt) => (
+              <Checkbox
+                key={opt.id}
+                value={opt.id}
+                disabled={onlyOneVisible && visibleIds.includes(opt.id)}
+              >
+                {opt.label}
+              </Checkbox>
+            ))}
+          </CheckboxGroup>
+        </Box>
+      </Popover.Panel>
+    </Popover>
+  )
+}
+
 // ─── Main content ──────────────────────────────────────────────────────────────
 
 export function EventLogsContent() {
   const [dateRange, setDateRange] = useState<EventDateRange | null>(DEFAULT_PRESET_RANGE)
   const [filters, setFilters] = useState<FilterState>({ ...EMPTY_FILTERS })
   const [searchInput, setSearchInput] = useState('')
+  const [visibleColumnIds, setVisibleColumnIds] = useState<ColumnId[]>(DEFAULT_VISIBLE_COLUMNS)
   const [queryStatus, setQueryStatus] = useState<QueryStatus>('loading')
   const [queryError, setQueryError] = useState<string>()
   const [queryRows, setQueryRows] = useState<EventLog[]>([])
@@ -529,13 +660,18 @@ export function EventLogsContent() {
   const [isLoadingMore, setIsLoadingMore] = useState(false)
   const loadMoreTimerRef = useRef<number | null>(null)
 
+  const visibleColumns = useMemo(
+    () => buildEventLogColumns(visibleColumnIds),
+    [visibleColumnIds],
+  )
+
   const filteredRows = useMemo(() => {
     const q = searchInput.trim().toLowerCase()
     let startMs = -8.64e15
     let endMs = 8.64e15
     if (dateRange?.start && dateRange?.end) {
-      startMs = calendarDateTimeToUtcMs(dateRange.start)
-      endMs = calendarDateTimeToUtcMs(dateRange.end)
+      startMs = calendarDateToUtcStartMs(dateRange.start)
+      endMs = calendarDateToUtcEndMs(dateRange.end)
     }
     return MOCK_EVENT_LOGS.filter((row) => {
       const t = row.occurredAt.getTime()
@@ -565,7 +701,7 @@ export function EventLogsContent() {
     if (
       dateRange?.start &&
       dateRange?.end &&
-      calendarDateTimeToUtcMs(dateRange.start) > calendarDateTimeToUtcMs(dateRange.end)
+      calendarDateToUtcStartMs(dateRange.start) > calendarDateToUtcEndMs(dateRange.end)
     ) {
       setQueryRows([])
       setQueryStatus('error')
@@ -659,9 +795,8 @@ export function EventLogsContent() {
           }}
         >
           <Box style={{ display: 'flex', alignItems: 'flex-start', gap: 8, flexWrap: 'wrap', flex: '1 1 auto', minWidth: 0 }}>
-            <DateTimeRangePicker
-              aria-label="Date and time range"
-              granularity="minute"
+            <DateRangePicker
+              aria-label="Date range"
               value={dateRange ?? undefined}
               minValue={EVENT_LOG_MIN_DATE}
               maxValue={EVENT_LOG_MAX_DATE}
@@ -670,8 +805,8 @@ export function EventLogsContent() {
               onChange={(val) => {
                 if (val?.start && val?.end) {
                   setDateRange({
-                    start: val.start as CalendarDateTime,
-                    end: val.end as CalendarDateTime,
+                    start: val.start as CalendarDate,
+                    end: val.end as CalendarDate,
                   })
                 } else {
                   setDateRange(null)
@@ -681,8 +816,8 @@ export function EventLogsContent() {
               <DateRangeFilterTrigger
                 onClear={dateRange ? () => setDateRange(null) : undefined}
               />
-              <DateTimeRangePicker.Calendar presets={DATE_RANGE_PRESETS} />
-            </DateTimeRangePicker>
+              <DateRangePicker.Calendar presets={DATE_RANGE_PRESETS} />
+            </DateRangePicker>
 
             <CheckboxFilter
               label="User"
@@ -711,21 +846,42 @@ export function EventLogsContent() {
             />
             <AllFiltersButton filters={filters} setFilters={setFilters} />
           </Box>
-
-          <Box style={{ marginLeft: 'auto', flexShrink: 0 }}>
-            <Button.Secondary
-              icon={exportIcon}
-              disabled={!canExport}
-              onClick={() => downloadEventLogsJson(queryRows)}
-            >
-              Export logs
-            </Button.Secondary>
-          </Box>
         </Box>
+
+        {/* Table control panel — result count + column/export actions */}
+        {(queryStatus === 'loading' || (queryStatus === 'ready' && queryRows.length > 0)) && (
+          <Box style={{ marginBottom: 12 }}>
+            <Box
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                gap: 12,
+                marginBottom: 12,
+              }}
+            >
+              <Typography.Default color="muted">
+                {queryStatus === 'loading' ? '…' : 'Showing last 100 entries'}
+              </Typography.Default>
+              <Box style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
+                <ColumnConfigurer visibleIds={visibleColumnIds} onChange={setVisibleColumnIds} />
+                <Button.Secondary
+                  dense
+                  icon={exportIcon}
+                  disabled={!canExport}
+                  onClick={() => downloadEventLogsJson(queryRows)}
+                >
+                  Export logs
+                </Button.Secondary>
+              </Box>
+            </Box>
+            <Divider />
+          </Box>
+        )}
 
         {/* Collapsible data list */}
         {queryStatus === 'loading' ? (
-          <DataList.Skeleton columns={5} rows={6} />
+          <DataList.Skeleton columns={visibleColumnIds.length} rows={6} />
         ) : queryStatus === 'error' ? (
           <Box style={{ padding: '16px 4px', color: 'var(--aquarium-text-color-error, #b3261e)' }}>
             <Typography.Default>{queryError ?? 'Failed to run the logs query.'}</Typography.Default>
@@ -741,7 +897,11 @@ export function EventLogsContent() {
           <DataList
             rows={visibleRows}
             sticky={false}
-            defaultSort={{ headerName: 'Date and time', direction: 'descending' }}
+            defaultSort={
+              visibleColumnIds.includes('dateTime')
+                ? { headerName: 'Date and time', direction: 'descending' }
+                : undefined
+            }
             hasMore={hasMore}
             isLoading={isLoadingMore}
             next={loadMore}
@@ -751,53 +911,7 @@ export function EventLogsContent() {
               </Box>
             }
             rowDetails={(row) => <EventDetails row={row} />}
-            columns={[
-              {
-                type: 'text',
-                headerName: 'Date and time',
-                field: 'dateTimeLabel',
-                width: COLUMN_WIDTHS.dateTime,
-                sort: (a, b, direction) =>
-                  dir(a.occurredAt.getTime() - b.occurredAt.getTime(), direction === 'descending'),
-              },
-              {
-                type: 'custom',
-                headerName: 'User',
-                width: COLUMN_WIDTHS.user,
-                sort: (a, b, direction) => dir(a.actor.localeCompare(b.actor), direction === 'descending'),
-                UNSAFE_render: (row) => <UserCell row={row} />,
-              },
-              {
-                type: 'custom',
-                headerName: 'Action (Human-readable)',
-                sort: (a, b, direction) => dir(a.action.localeCompare(b.action), direction === 'descending'),
-                UNSAFE_render: (row) => (
-                  <Typography.Default>{emphasizeIdsAndNumbers(row.action)}</Typography.Default>
-                ),
-              },
-              {
-                type: 'custom',
-                headerName: 'Project',
-                width: COLUMN_WIDTHS.project,
-                sort: (a, b, direction) =>
-                  dir(
-                    (a.projectId ?? '').localeCompare(b.projectId ?? ''),
-                    direction === 'descending',
-                  ),
-                UNSAFE_render: (row) => <ProjectCell row={row} />,
-              },
-              {
-                type: 'custom',
-                headerName: 'Service',
-                width: COLUMN_WIDTHS.service,
-                sort: (a, b, direction) =>
-                  dir(
-                    (a.serviceId ?? '').localeCompare(b.serviceId ?? ''),
-                    direction === 'descending',
-                  ),
-                UNSAFE_render: (row) => <ServiceCell row={row} />,
-              },
-            ]}
+            columns={visibleColumns}
           />
         )}
       </Box>

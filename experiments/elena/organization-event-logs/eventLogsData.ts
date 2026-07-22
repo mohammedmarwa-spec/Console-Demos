@@ -1,8 +1,8 @@
-import { CalendarDateTime } from '@internationalized/date'
+import { CalendarDate } from '@internationalized/date'
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 
-export type EventDateRange = { start: CalendarDateTime; end: CalendarDateTime }
+export type EventDateRange = { start: CalendarDate; end: CalendarDate }
 
 export type ActorKind = 'user' | 'automation' | 'system'
 
@@ -82,26 +82,25 @@ export type EventLog = {
 
 // ─── Date helpers (shared pattern with src/screens/ProjectServices.tsx) ───────
 
-export function utcDateToCalendarDateTime(date: Date): CalendarDateTime {
-  return new CalendarDateTime(
-    date.getUTCFullYear(),
-    date.getUTCMonth() + 1,
-    date.getUTCDate(),
-    date.getUTCHours(),
-    date.getUTCMinutes(),
-    date.getUTCSeconds(),
-  )
+export function utcDateToCalendarDate(date: Date): CalendarDate {
+  return new CalendarDate(date.getUTCFullYear(), date.getUTCMonth() + 1, date.getUTCDate())
 }
 
-export function calendarDateTimeToUtcMs(cdt: CalendarDateTime): number {
-  return Date.UTC(cdt.year, cdt.month - 1, cdt.day, cdt.hour, cdt.minute, cdt.second)
+/** Start of calendar day in UTC (inclusive filter bound). */
+export function calendarDateToUtcStartMs(date: CalendarDate): number {
+  return Date.UTC(date.year, date.month - 1, date.day, 0, 0, 0, 0)
 }
 
-/** Formats a CalendarDateTime as dd/mm/yyyy for the Date range filter chip. */
-export function formatDayMonthYear(cdt: CalendarDateTime): string {
-  const dd = String(cdt.day).padStart(2, '0')
-  const mm = String(cdt.month).padStart(2, '0')
-  return `${dd}/${mm}/${cdt.year}`
+/** End of calendar day in UTC (inclusive filter bound). */
+export function calendarDateToUtcEndMs(date: CalendarDate): number {
+  return Date.UTC(date.year, date.month - 1, date.day, 23, 59, 59, 999)
+}
+
+/** Formats a CalendarDate as dd/mm/yyyy for the Date range filter chip. */
+export function formatDayMonthYear(date: CalendarDate): string {
+  const dd = String(date.day).padStart(2, '0')
+  const mm = String(date.month).padStart(2, '0')
+  return `${dd}/${mm}/${date.year}`
 }
 
 function formatEventTimestamp(d: Date): string {
@@ -982,40 +981,34 @@ export const EVENT_LOG_RETENTION_DAYS = 30
  */
 export type DateRangePreset = {
   label: string
-  value: { start: CalendarDateTime; end: CalendarDateTime }
+  value: { start: CalendarDate; end: CalendarDate }
 }
 
-const startOfDay = (cdt: CalendarDateTime) =>
-  new CalendarDateTime(cdt.year, cdt.month, cdt.day, 0, 0, 0)
-
-const endOfDay = (cdt: CalendarDateTime) =>
-  new CalendarDateTime(cdt.year, cdt.month, cdt.day, 23, 59, 59)
-
-/** Latest mock event — used as "now" for presets and retention bounds. */
-const EVENT_LOG_ANCHOR = utcDateToCalendarDateTime(
+/** Latest mock event day — used as "now" for presets and retention bounds. */
+const EVENT_LOG_ANCHOR = utcDateToCalendarDate(
   new Date(Math.max(...MOCK_EVENT_LOGS.map((e) => e.occurredAt.getTime()))),
 )
 
-/** Earliest selectable instant (start of day, retention days before the anchor). */
-export const EVENT_LOG_MIN_DATE: CalendarDateTime = startOfDay(
-  EVENT_LOG_ANCHOR.subtract({ days: EVENT_LOG_RETENTION_DAYS }),
-)
+/** Earliest selectable day (retention days before the anchor). */
+export const EVENT_LOG_MIN_DATE: CalendarDate = EVENT_LOG_ANCHOR.subtract({
+  days: EVENT_LOG_RETENTION_DAYS,
+})
 
-/** Latest selectable instant (end of the anchor day). */
-export const EVENT_LOG_MAX_DATE: CalendarDateTime = endOfDay(EVENT_LOG_ANCHOR)
+/** Latest selectable day (the anchor day). */
+export const EVENT_LOG_MAX_DATE: CalendarDate = EVENT_LOG_ANCHOR
 
 export const DATE_RANGE_PRESETS: DateRangePreset[] = [
   {
     label: 'Last 3 days',
     value: {
-      start: startOfDay(EVENT_LOG_ANCHOR.subtract({ days: 3 })),
+      start: EVENT_LOG_ANCHOR.subtract({ days: 3 }),
       end: EVENT_LOG_MAX_DATE,
     },
   },
   {
     label: 'Last week',
     value: {
-      start: startOfDay(EVENT_LOG_ANCHOR.subtract({ days: 7 })),
+      start: EVENT_LOG_ANCHOR.subtract({ days: 7 }),
       end: EVENT_LOG_MAX_DATE,
     },
   },
