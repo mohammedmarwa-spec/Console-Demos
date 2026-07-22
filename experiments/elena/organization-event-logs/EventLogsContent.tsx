@@ -21,12 +21,11 @@ import {
   DateRangePicker,
   Divider,
   Drawer,
-  DropdownMenu,
   Filter,
   Icon,
+  Input,
   InputBase,
   Link,
-  MultiSelect,
   PageHeader,
   Popover,
   Typography,
@@ -38,16 +37,11 @@ import automaticUpdatesIcon from '@aivenio/aquarium/icons/automaticUpdates'
 import consoleIcon from '@aivenio/aquarium/icons/console'
 import personIcon from '@aivenio/aquarium/icons/person'
 import {
-  BILLING_GROUP_OPTIONS,
   DATE_RANGE_PRESETS,
   EVENT_LOG_MAX_DATE,
   EVENT_LOG_MIN_DATE,
-  ORGANIZATION_UNIT_OPTIONS,
-  PROJECT_OPTIONS,
   DEFAULT_PRESET_RANGE,
   MOCK_EVENT_LOGS,
-  USER_OPTIONS,
-  USER_OPTION_GROUPS,
   calendarDateToUtcEndMs,
   calendarDateToUtcStartMs,
   downloadEventLogsJson,
@@ -55,11 +49,9 @@ import {
   eventLogToJson,
   type EventDateRange,
   type EventLog,
-  type UserOptionGroup,
 } from './eventLogsData'
 
 type QueryStatus = 'loading' | 'ready' | 'error'
-type FilterOption = { value: string; label: string }
 
 type ColumnId = 'dateTime' | 'user' | 'action' | 'project' | 'service'
 
@@ -103,118 +95,136 @@ function DateRangeFilterTrigger({ onClear }: { onClear?: () => void }) {
   )
 }
 
-// ─── Reusable searchable multi-select filter (DS DropdownMenu) ────────────────
+// ─── Free-text ID filter (Filter.Trigger + local panel) ───────────────────────
 
 /**
- * Pairs the DS `Filter.Trigger` with a searchable `DropdownMenu`. The dropdown's
- * built-in search box filters options as you type; `maxHeight` caps the menu so
- * roughly the first ten options are visible and the rest scroll.
+ * ID filters use typed strings (not selects) so users can filter by deleted
+ * resources whose names/IDs are no longer in a live options catalog.
+ * Uses a local absolute panel (not Aquarium Popover) so Filter.Trigger clear/toggle
+ * does not fight Popover outside-click / Pressable wrapping.
  */
-function CheckboxFilter({
+function IdStringFilter({
   label,
-  options,
-  groups,
-  selected,
+  value,
   onChange,
+  placeholder,
 }: {
   label: string
-  options?: FilterOption[]
-  groups?: UserOptionGroup[]
-  selected: string[]
-  onChange: (next: string[]) => void
+  value: string
+  onChange: (next: string) => void
+  placeholder: string
 }) {
-  // Controlled open state: Filter.Trigger must NOT sit inside DropdownMenu.Trigger.
-  // That Trigger wraps children in Pressable, which swallows the clear (×) press and
-  // opens the menu instead of calling onClear.
   const [open, setOpen] = useState(false)
-  const flatOptions = groups?.flatMap((group) => group.options) ?? options ?? []
-  const active = selected.length > 0
-  const valueText = active
-    ? selected.length === 1
-      ? flatOptions.find((o) => o.value === selected[0])?.label ?? selected[0]
-      : `${selected.length} selected`
-    : undefined
+  const rootRef = useRef<HTMLDivElement>(null)
+  const active = value.trim().length > 0
 
-  const clear = () => {
-    onChange([])
-    setOpen(false)
-  }
+  useEffect(() => {
+    if (!open) return
+
+    const closeOnOutside = (event: MouseEvent) => {
+      if (!(event.target instanceof Node)) return
+      if (rootRef.current?.contains(event.target)) return
+      setOpen(false)
+    }
+
+    document.addEventListener('mousedown', closeOnOutside)
+    return () => document.removeEventListener('mousedown', closeOnOutside)
+  }, [open])
 
   return (
-    <div style={{ display: 'inline-flex', position: 'relative' }}>
+    <div ref={rootRef} style={{ display: 'inline-flex', position: 'relative' }}>
       <Filter.Trigger
         labelText={label}
         icon={filterIcon}
-        value={valueText}
-        onClear={active ? clear : undefined}
+        value={active ? value.trim() : undefined}
+        onClear={
+          active
+            ? () => {
+                onChange('')
+                setOpen(false)
+              }
+            : undefined
+        }
         onClick={() => setOpen((prev) => !prev)}
       />
-      <DropdownMenu
-        searchable
-        selectionMode="multiple"
-        selection={selected}
-        isOpen={open}
-        onOpenChange={setOpen}
-        onSelectionChange={(keys) =>
-          onChange(keys === 'all' ? flatOptions.map((o) => o.value) : Array.from(keys, String))
-        }
-        emptyState={<Typography.Small color="muted">No matches</Typography.Small>}
-        placement="bottom-left"
-        minWidth={260}
-        maxWidth={340}
-        maxHeight={500}
-      >
-        {/* Invisible anchor so the popover positions to this chip without Pressable
-            owning the Filter.Trigger (which would break clear). */}
-        <DropdownMenu.Trigger>
-          <span
-            aria-hidden
-            style={{
-              position: 'absolute',
-              inset: 0,
-              pointerEvents: 'none',
+      {open ? (
+        <Box
+          style={{
+            position: 'absolute',
+            top: 'calc(100% + 8px)',
+            left: 0,
+            zIndex: 200,
+            minWidth: 280,
+            padding: 12,
+            backgroundColor: 'var(--aquarium-background-color-layer)',
+            border: '1px solid var(--aquarium-border-color-muted)',
+            borderRadius: 8,
+            boxShadow: '0 4px 24px rgba(0, 0, 0, 0.12)',
+          }}
+        >
+          <Input
+            labelText={label}
+            placeholder={placeholder}
+            value={value}
+            reserveSpaceForError={false}
+            autoFocus
+            onChange={(event) => onChange(event.currentTarget.value)}
+            onKeyDown={(event) => {
+              if (event.key === 'Escape') setOpen(false)
+              if (event.key === 'Enter') setOpen(false)
             }}
           />
-        </DropdownMenu.Trigger>
-        <DropdownMenu.Items>
-          {groups
-            ? groups.map((group) => (
-                <DropdownMenu.Section key={group.title} title={group.title}>
-                  {group.options.map((opt) => (
-                    <DropdownMenu.Item key={opt.value} id={opt.value} textValue={opt.label}>
-                      {opt.label}
-                    </DropdownMenu.Item>
-                  ))}
-                </DropdownMenu.Section>
-              ))
-            : flatOptions.map((opt) => (
-                <DropdownMenu.Item key={opt.value} id={opt.value} textValue={opt.label}>
-                  {opt.label}
-                </DropdownMenu.Item>
-              ))}
-        </DropdownMenu.Items>
-      </DropdownMenu>
+        </Box>
+      ) : null}
     </div>
   )
 }
 
-// ─── "All filters" combined popover ────────────────────────────────────────────
+/** True when filter is empty, or row value matches (comma-separated IDs allowed). */
+function matchesIdFilter(filterValue: string, rowValue: string | null | undefined): boolean {
+  const tokens = filterValue
+    .split(',')
+    .map((part) => part.trim())
+    .filter(Boolean)
+  if (tokens.length === 0) return true
+  if (!rowValue) return false
+  return tokens.includes(rowValue)
+}
+
+// ─── "All filters" combined drawer ─────────────────────────────────────────────
 
 type FilterState = {
-  users: string[]
+  /** Free-text schema ID fields — supports deleted resources not in any options list. */
+  actorUserId: string
   /** Kept for a possible return of the Event type chip; UI currently hidden. */
   eventTypes: string[]
-  projects: string[]
-  organizationUnits: string[]
-  billingGroups: string[]
+  accountId: string
+  organizationUnitId: string
+  projectId: string
+  billingGroupId: string
+  serviceId: string
 }
 
 const EMPTY_FILTERS: FilterState = {
-  users: [],
+  actorUserId: '',
   eventTypes: [],
-  projects: [],
-  organizationUnits: [],
-  billingGroups: [],
+  accountId: '',
+  organizationUnitId: '',
+  projectId: '',
+  billingGroupId: '',
+  serviceId: '',
+}
+
+function countActiveIdFilters(filters: FilterState): number {
+  return (
+    Number(Boolean(filters.actorUserId.trim())) +
+    filters.eventTypes.length +
+    Number(Boolean(filters.accountId.trim())) +
+    Number(Boolean(filters.organizationUnitId.trim())) +
+    Number(Boolean(filters.projectId.trim())) +
+    Number(Boolean(filters.billingGroupId.trim())) +
+    Number(Boolean(filters.serviceId.trim()))
+  )
 }
 
 function AllFiltersButton({
@@ -227,13 +237,7 @@ function AllFiltersButton({
   const [open, setOpen] = useState(false)
   const triggerRef = useRef<HTMLDivElement>(null)
 
-  const activeCount =
-    filters.users.length +
-    filters.eventTypes.length +
-    filters.projects.length +
-    filters.organizationUnits.length +
-    filters.billingGroups.length
-
+  const activeCount = countActiveIdFilters(filters)
   const clearAll = () => setFilters({ ...EMPTY_FILTERS })
 
   useEffect(() => {
@@ -270,8 +274,8 @@ function AllFiltersButton({
           instead of over the whole viewport. Offsetting the top also requires capping
           the panel height so its footer buttons stay on-screen. The overlay is made
           non-blocking (no backdrop, pointer-events pass through) so the log table and
-          filter chips stay interactive while the drawer is open. Empty MultiSelect
-          helper-text slots are collapsed so the filter gap reads as the intended 16px.
+          filter chips stay interactive while the drawer is open. Empty helper-text
+          slots are collapsed so the filter gap reads as the intended 16px.
           The real Console has no lab chrome. */}
       <style>{`
         .Aquarium-Drawer:has(.event-logs-filter-grid) {
@@ -301,35 +305,62 @@ function AllFiltersButton({
         secondaryActions={{ text: 'Clear filters', onClick: clearAll }}
       >
         <Box className="event-logs-filter-grid" style={{ display: 'grid', rowGap: 16 }}>
-          <MultiSelect
-            labelText="User [multiselect]"
-            placeholder="All users"
-            options={USER_OPTIONS.map((o) => o.value)}
-            value={filters.users}
-            onChange={(items) => setFilters({ ...filters, users: items ?? [] })}
+          {/* Order follows Aiven entity hierarchy, then actor. */}
+          <Input
+            labelText="account_id [string]"
+            placeholder="Enter account_id"
+            value={filters.accountId}
+            reserveSpaceForError={false}
+            onChange={(event) =>
+              setFilters({ ...filters, accountId: event.currentTarget.value })
+            }
           />
-          {/* Event type filter hidden for now — keep EVENT_TYPE_OPTIONS + filters.eventTypes to restore. */}
-          <MultiSelect
-            labelText="Project [multiselect]"
-            placeholder="All projects"
-            options={PROJECT_OPTIONS.map((o) => o.value)}
-            value={filters.projects}
-            onChange={(items) => setFilters({ ...filters, projects: items ?? [] })}
+          <Input
+            labelText="organization_unit_id [string]"
+            placeholder="Enter organization_unit_id"
+            value={filters.organizationUnitId}
+            reserveSpaceForError={false}
+            onChange={(event) =>
+              setFilters({ ...filters, organizationUnitId: event.currentTarget.value })
+            }
           />
-          <MultiSelect
-            labelText="Organization unit [multiselect]"
-            placeholder="All organization units"
-            options={ORGANIZATION_UNIT_OPTIONS.map((o) => o.value)}
-            value={filters.organizationUnits}
-            onChange={(items) => setFilters({ ...filters, organizationUnits: items ?? [] })}
+          <Input
+            labelText="billing_group_id [string]"
+            placeholder="Enter billing_group_id"
+            value={filters.billingGroupId}
+            reserveSpaceForError={false}
+            onChange={(event) =>
+              setFilters({ ...filters, billingGroupId: event.currentTarget.value })
+            }
           />
-          <MultiSelect
-            labelText="Billing group [multiselect]"
-            placeholder="All billing groups"
-            options={BILLING_GROUP_OPTIONS.map((o) => o.value)}
-            value={filters.billingGroups}
-            onChange={(items) => setFilters({ ...filters, billingGroups: items ?? [] })}
+          <Input
+            labelText="project_id [string]"
+            placeholder="Enter project_id"
+            value={filters.projectId}
+            reserveSpaceForError={false}
+            onChange={(event) =>
+              setFilters({ ...filters, projectId: event.currentTarget.value })
+            }
           />
+          <Input
+            labelText="service_id [string]"
+            placeholder="Enter service_id"
+            value={filters.serviceId}
+            reserveSpaceForError={false}
+            onChange={(event) =>
+              setFilters({ ...filters, serviceId: event.currentTarget.value })
+            }
+          />
+          <Input
+            labelText="actor_user_id [string]"
+            placeholder="Enter actor_user_id"
+            value={filters.actorUserId}
+            reserveSpaceForError={false}
+            onChange={(event) =>
+              setFilters({ ...filters, actorUserId: event.currentTarget.value })
+            }
+          />
+          {/* Event type filter hidden for now — keep filters.eventTypes to restore. */}
         </Box>
       </Drawer>
     </>
@@ -463,9 +494,21 @@ function EventDetails({ row }: { row: EventLog }) {
   const detailRows: DetailRow[] = [
     { id: 'log_entry_id', label: 'log_entry_id', value: row.logEntryId },
     { id: 'event_type', label: 'event_type', value: row.eventType },
-    { id: 'summary', label: 'summary', value: row.action },
-    { id: 'create_time', label: 'create_time', value: row.occurredAt.toISOString() },
-    { id: 'organization_unit_id', label: 'organization_unit_id', value: nullable(row.organizationUnitId) },
+    {
+      id: 'actor',
+      label: 'actor',
+      value: entityLink(row.actor, 'Link to user'),
+    },
+    {
+      id: 'actor_user_id',
+      label: 'actor_user_id',
+      value: entityLink(row.actorUserId, 'Link to user'),
+    },
+    ...(row.internalActor
+      ? [{ id: 'internal_actor', label: 'internal_actor', value: row.internalActor } satisfies DetailRow]
+      : []),
+    { id: 'account_id', label: 'account_id', value: row.accountId },
+    { id: 'organization_id', label: 'organization_id', value: row.organizationId },
     {
       id: 'billing_group_id',
       label: 'billing_group_id',
@@ -481,13 +524,10 @@ function EventDetails({ row }: { row: EventLog }) {
       label: 'service_id',
       value: nullableEntityLink(row.serviceId, 'Link to service'),
     },
-    {
-      id: 'actor_user_id',
-      label: 'actor_user_id',
-      value: entityLink(row.actorUserId, 'Link to user'),
-    },
-    { id: 'user', label: 'user', value: entityLink(row.actor, 'Link to user') },
+    { id: 'asset_type', label: 'asset_type', value: row.assetType },
+    { id: 'asset_id', label: 'asset_id', value: nullable(row.assetId) },
     { id: 'metadata', label: 'metadata', value: JSON.stringify(row.metadata) },
+    { id: 'additional_properties', label: 'additional_properties', value: row.additionalProperties },
   ]
 
   return (
@@ -676,20 +716,13 @@ export function EventLogsContent() {
     return MOCK_EVENT_LOGS.filter((row) => {
       const t = row.occurredAt.getTime()
       if (t < startMs || t > endMs) return false
-      if (filters.users.length > 0 && !filters.users.includes(row.actor)) return false
+      if (!matchesIdFilter(filters.actorUserId, row.actorUserId)) return false
       if (filters.eventTypes.length > 0 && !filters.eventTypes.includes(row.eventType)) return false
-      if (filters.projects.length > 0 && !(row.projectId && filters.projects.includes(row.projectId)))
-        return false
-      if (
-        filters.organizationUnits.length > 0 &&
-        !(row.organizationUnitId && filters.organizationUnits.includes(row.organizationUnitId))
-      )
-        return false
-      if (
-        filters.billingGroups.length > 0 &&
-        !(row.billingGroupId && filters.billingGroups.includes(row.billingGroupId))
-      )
-        return false
+      if (!matchesIdFilter(filters.accountId, row.accountId)) return false
+      if (!matchesIdFilter(filters.organizationUnitId, row.organizationUnitId)) return false
+      if (!matchesIdFilter(filters.projectId, row.projectId)) return false
+      if (!matchesIdFilter(filters.billingGroupId, row.billingGroupId)) return false
+      if (!matchesIdFilter(filters.serviceId, row.serviceId)) return false
       if (!q) return true
       return eventLogSearchBlob(row).includes(q)
     })
@@ -819,31 +852,31 @@ export function EventLogsContent() {
               <DateRangePicker.Calendar presets={DATE_RANGE_PRESETS} />
             </DateRangePicker>
 
-            <CheckboxFilter
-              label="User"
-              groups={USER_OPTION_GROUPS}
-              selected={filters.users}
-              onChange={(users) => setFilters((f) => ({ ...f, users }))}
+            <IdStringFilter
+              label="account_id"
+              placeholder="Enter account_id"
+              value={filters.accountId}
+              onChange={(accountId) => setFilters((f) => ({ ...f, accountId }))}
             />
-            {/* Event type filter hidden for now — restore with EVENT_TYPE_OPTIONS + filters.eventTypes. */}
-            <CheckboxFilter
-              label="Project"
-              options={PROJECT_OPTIONS}
-              selected={filters.projects}
-              onChange={(projects) => setFilters((f) => ({ ...f, projects }))}
+            <IdStringFilter
+              label="organization_unit_id"
+              placeholder="Enter organization_unit_id"
+              value={filters.organizationUnitId}
+              onChange={(organizationUnitId) => setFilters((f) => ({ ...f, organizationUnitId }))}
             />
-            <CheckboxFilter
-              label="Organization unit"
-              options={ORGANIZATION_UNIT_OPTIONS}
-              selected={filters.organizationUnits}
-              onChange={(organizationUnits) => setFilters((f) => ({ ...f, organizationUnits }))}
+            <IdStringFilter
+              label="project_id"
+              placeholder="Enter project_id"
+              value={filters.projectId}
+              onChange={(projectId) => setFilters((f) => ({ ...f, projectId }))}
             />
-            <CheckboxFilter
-              label="Billing group"
-              options={BILLING_GROUP_OPTIONS}
-              selected={filters.billingGroups}
-              onChange={(billingGroups) => setFilters((f) => ({ ...f, billingGroups }))}
+            <IdStringFilter
+              label="actor_user_id"
+              placeholder="Enter actor_user_id"
+              value={filters.actorUserId}
+              onChange={(actorUserId) => setFilters((f) => ({ ...f, actorUserId }))}
             />
+            {/* Event type filter hidden for now — restore with filters.eventTypes. */}
             <AllFiltersButton filters={filters} setFilters={setFilters} />
           </Box>
         </Box>

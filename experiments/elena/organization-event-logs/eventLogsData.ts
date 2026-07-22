@@ -55,7 +55,7 @@ export const EVENT_TYPE_VALUES = [
 
 export type EventType = (typeof EVENT_TYPE_VALUES)[number]
 
-/** A single organization event-log entry. Mirrors the schema shown in the design. */
+/** A single organization event-log entry. Mirrors the API schema. */
 export type EventLog = {
   id: string
   occurredAt: Date
@@ -65,19 +65,60 @@ export type EventLog = {
   actorKind: ActorKind
   /** Present for real users — renders the actor as a DS Link. */
   actorHref?: string
-  /** Human summary rendered in the Action column. */
+  /** Human summary rendered in the Action column (`summary` in the API). */
   action: string
   eventType: EventType
+  /** Generation helper — not shown in details UI (use assetType / assetId). */
   resourceKind: ResourceKind
+  /** Generation helper — not shown in details UI (use assetType / assetId). */
   resourceName: string
-  // ── Detail fields (mirror the API schema in the Figma expanded row) ──────────
+  // ── API detail fields ──────────────────────────────────────────────────────
   logEntryId: string
+  /** Prototype filter only — not part of the public event-log schema. */
   organizationUnitId: string | null
+  accountId: string
+  organizationId: string
   billingGroupId: string | null
   projectId: string | null
   serviceId: string | null
+  assetType: string
+  assetId: string | null
   actorUserId: string
+  /** Present for automation/system actors; null for human users. */
+  internalActor: string | null
   metadata: Record<string, string | number | boolean | null>
+  /** Opaque string blob (JSON) per schema. */
+  additionalProperties: string
+}
+
+const MOCK_ACCOUNT_ID = 'acc-bigco-001'
+const MOCK_ORGANIZATION_ID = 'org-bigco-ltd'
+
+export { MOCK_ACCOUNT_ID, MOCK_ORGANIZATION_ID }
+
+function deriveAssetFields(seed: {
+  resourceKind: ResourceKind
+  resourceName: string
+  serviceId: string | null
+  projectId: string | null
+  billingGroupId: string | null
+}): { assetType: string; assetId: string | null } {
+  switch (seed.resourceKind) {
+    case 'Service':
+      return { assetType: 'service', assetId: seed.serviceId ?? seed.resourceName }
+    case 'Project':
+      return { assetType: 'project', assetId: seed.projectId ?? seed.resourceName }
+    case 'Organization':
+      return { assetType: 'organization', assetId: MOCK_ORGANIZATION_ID }
+    case 'Network':
+      return { assetType: 'network', assetId: seed.resourceName }
+    case 'Billing':
+      return { assetType: 'billing_group', assetId: seed.billingGroupId ?? seed.resourceName }
+  }
+}
+
+function deriveInternalActor(actorKind: ActorKind, actorUserId: string): string | null {
+  return actorKind === 'user' ? null : actorUserId
 }
 
 // ─── Date helpers (shared pattern with src/screens/ProjectServices.tsx) ───────
@@ -109,7 +150,16 @@ function formatEventTimestamp(d: Date): string {
 
 // ─── Mock data ────────────────────────────────────────────────────────────────
 
-type Seed = Omit<EventLog, 'dateTimeLabel'>
+type Seed = Omit<
+  EventLog,
+  | 'dateTimeLabel'
+  | 'accountId'
+  | 'organizationId'
+  | 'assetType'
+  | 'assetId'
+  | 'additionalProperties'
+  | 'internalActor'
+>
 
 /** Deterministic, mock-only dataset scoped to Aug 2024 (within the 30-day retention window). */
 function createMockEventLogs(): EventLog[] {
@@ -813,10 +863,23 @@ function createMockEventLogs(): EventLog[] {
     })
   }
 
-  return [...seeds, ...generated].map((seed) => ({
-    ...seed,
-    dateTimeLabel: formatEventTimestamp(seed.occurredAt),
-  }))
+  return [...seeds, ...generated].map((seed) => {
+    const { assetType, assetId } = deriveAssetFields(seed)
+    return {
+      ...seed,
+      dateTimeLabel: formatEventTimestamp(seed.occurredAt),
+      accountId: MOCK_ACCOUNT_ID,
+      organizationId: MOCK_ORGANIZATION_ID,
+      assetType,
+      assetId,
+      internalActor: deriveInternalActor(seed.actorKind, seed.actorUserId),
+      additionalProperties: JSON.stringify(
+        seed.metadata.generated
+          ? { source: 'generator', sequence: seed.metadata.sequence ?? null }
+          : { source: 'console' },
+      ),
+    }
+  })
 }
 
 export const MOCK_EVENT_LOGS: EventLog[] = createMockEventLogs()
@@ -828,28 +891,28 @@ function unique<T>(values: T[]): T[] {
 }
 
 // The option catalogs below intentionally include more values than appear in the
-// mock rows. Real Console filter dropdowns list every possible value in the org
-// (most of which aren't on the current page), so padding these lets us exercise
-// the searchable dropdown's in-menu search and >10-item scroll behaviour.
+// mock rows. Real Console filter dropdowns list IDs seen in logs (and related
+// historical IDs), not live resource display names — deleted resources may have
+// no resolvable name, but their IDs remain on the event.
 
-/** Human users that don't exist in MOCK_EVENT_LOGS but round out the filter dropdown. */
-const EXTRA_USER_OPTIONS = [
-  'Sofia Rossi',
-  'Liam O’Connor',
-  'Yuki Tanaka',
-  'Noah Schmidt',
-  'Amara Okafor',
-  'Diego Fernández',
-  'Mei Lin',
-  'Oliver Brown',
-  'Fatima Al-Sayed',
-  'Lucas Silva',
+/** Actor user IDs that don't exist in MOCK_EVENT_LOGS but round out the filter dropdown. */
+const EXTRA_ACTOR_USER_ID_OPTIONS = [
+  'usr_sofia_rossi',
+  'usr_liam_oconnor',
+  'usr_yuki_tanaka',
+  'usr_noah_schmidt',
+  'usr_amara_okafor',
+  'usr_diego_fernandez',
+  'usr_mei_lin',
+  'usr_oliver_brown',
+  'usr_fatima_alsayed',
+  'usr_lucas_silva',
 ]
 
-/** Automation identities that don't exist in MOCK_EVENT_LOGS but round out the dropdown. */
-const EXTRA_AUTOMATION_OPTIONS = ['terraform@aiven.io', 'ci-bot@bigco.example']
+/** Automation / system actor_user_id values that don't exist in MOCK_EVENT_LOGS. */
+const EXTRA_AUTOMATION_ACTOR_USER_ID_OPTIONS = ['svc_terraform', 'svc_ci_bot', 'system']
 
-export type UserOptionGroup = {
+export type IdOptionGroup = {
   title: string
   options: { value: string; label: string }[]
 }
@@ -860,31 +923,60 @@ function toOptions(values: string[]): { value: string; label: string }[] {
     .map((value) => ({ value, label: value }))
 }
 
-/** Grouped User filter options: people vs Aiven automation / system actors. */
-export const USER_OPTION_GROUPS: UserOptionGroup[] = [
+/** Grouped actor_user_id filter options: people vs Aiven automation / system. */
+export const ACTOR_USER_ID_OPTION_GROUPS: IdOptionGroup[] = [
   {
     title: 'Users',
     options: toOptions([
-      ...MOCK_EVENT_LOGS.filter((e) => e.actorKind === 'user').map((e) => e.actor),
-      ...EXTRA_USER_OPTIONS,
+      ...MOCK_EVENT_LOGS.filter((e) => e.actorKind === 'user').map((e) => e.actorUserId),
+      ...EXTRA_ACTOR_USER_ID_OPTIONS,
     ]),
   },
   {
     title: 'Aiven automation',
     options: toOptions([
-      ...MOCK_EVENT_LOGS.filter((e) => e.actorKind !== 'user').map((e) => e.actor),
-      ...EXTRA_AUTOMATION_OPTIONS,
+      ...MOCK_EVENT_LOGS.filter((e) => e.actorKind !== 'user').map((e) => e.actorUserId),
+      ...EXTRA_AUTOMATION_ACTOR_USER_ID_OPTIONS,
     ]),
   },
 ]
 
-/** Flat list for drawer MultiSelect and value→label lookups. */
-export const USER_OPTIONS: { value: string; label: string }[] = USER_OPTION_GROUPS.flatMap(
-  (group) => group.options,
-)
+/** Flat list for drawer MultiSelect. */
+export const ACTOR_USER_ID_OPTIONS: { value: string; label: string }[] =
+  ACTOR_USER_ID_OPTION_GROUPS.flatMap((group) => group.options)
+
+/** @deprecated Use ACTOR_USER_ID_OPTION_GROUPS — kept for any leftover imports. */
+export type UserOptionGroup = IdOptionGroup
+/** @deprecated Use ACTOR_USER_ID_OPTION_GROUPS */
+export const USER_OPTION_GROUPS = ACTOR_USER_ID_OPTION_GROUPS
+/** @deprecated Use ACTOR_USER_ID_OPTIONS */
+export const USER_OPTIONS = ACTOR_USER_ID_OPTIONS
 
 export const EVENT_TYPE_OPTIONS: { value: EventType; label: string }[] =
   EVENT_TYPE_VALUES.map((value) => ({ value, label: value }))
+
+const EXTRA_ACCOUNT_ID_OPTIONS = ['acc-partner-002', 'acc-trial-003', 'acc-legacy-004', 'acc-sandbox-005']
+
+export const ACCOUNT_ID_OPTIONS: { value: string; label: string }[] = unique([
+  ...MOCK_EVENT_LOGS.map((e) => e.accountId),
+  ...EXTRA_ACCOUNT_ID_OPTIONS,
+])
+  .sort()
+  .map((value) => ({ value, label: value }))
+
+const EXTRA_ORGANIZATION_ID_OPTIONS = [
+  'org-partner-eu',
+  'org-acme-holdings',
+  'org-legacy-archive',
+  'org-sandbox',
+]
+
+export const ORGANIZATION_ID_OPTIONS: { value: string; label: string }[] = unique([
+  ...MOCK_EVENT_LOGS.map((e) => e.organizationId),
+  ...EXTRA_ORGANIZATION_ID_OPTIONS,
+])
+  .sort()
+  .map((value) => ({ value, label: value }))
 
 /** Projects that don't exist in MOCK_EVENT_LOGS but round out the filter dropdown. */
 const EXTRA_PROJECT_OPTIONS = [
@@ -945,6 +1037,24 @@ export const BILLING_GROUP_OPTIONS: { value: string; label: string }[] = unique(
   .sort()
   .map((value) => ({ value, label: value }))
 
+/** Service IDs that don't exist in MOCK_EVENT_LOGS but round out the filter dropdown. */
+const EXTRA_SERVICE_OPTIONS = [
+  'svc-pg-staging',
+  'svc-mysql-orders',
+  'svc-redis-sessions',
+  'svc-flink-jobs',
+  'svc-grafana-dashboards',
+  'svc-cassandra-metrics',
+  'svc-clickhouse-analytics',
+]
+
+export const SERVICE_OPTIONS: { value: string; label: string }[] = unique([
+  ...MOCK_EVENT_LOGS.map((e) => e.serviceId).filter((id): id is string => Boolean(id)),
+  ...EXTRA_SERVICE_OPTIONS,
+])
+  .sort()
+  .map((value) => ({ value, label: value }))
+
 /** Lowercased blob of all row + detail fields for free-text search. */
 export function eventLogSearchBlob(row: EventLog): string {
   const metadataBlob = Object.entries(row.metadata)
@@ -958,11 +1068,17 @@ export function eventLogSearchBlob(row: EventLog): string {
     row.resourceName,
     row.dateTimeLabel,
     row.logEntryId,
+    row.accountId,
+    row.organizationId,
     row.organizationUnitId,
     row.billingGroupId,
     row.projectId,
     row.serviceId,
+    row.assetType,
+    row.assetId,
     row.actorUserId,
+    row.internalActor,
+    row.additionalProperties,
     metadataBlob,
   ]
     .filter(Boolean)
@@ -1034,14 +1150,18 @@ export function eventLogToJson(row: EventLog) {
     event_type: row.eventType,
     summary: row.action,
     create_time: row.occurredAt.toISOString(),
-    organization_unit_id: row.organizationUnitId,
+    actor: row.actor,
+    actor_user_id: row.actorUserId,
+    internal_actor: row.internalActor,
+    account_id: row.accountId,
+    organization_id: row.organizationId,
     billing_group_id: row.billingGroupId,
     project_id: row.projectId,
     service_id: row.serviceId,
-    actor: row.actor,
-    actor_user_id: row.actorUserId,
-    resource: `${row.resourceKind}: ${row.resourceName}`,
-    metadata: row.metadata,
+    asset_type: row.assetType,
+    asset_id: row.assetId,
+    metadata: JSON.stringify(row.metadata),
+    additional_properties: row.additionalProperties,
   }
 }
 
