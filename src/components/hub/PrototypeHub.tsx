@@ -56,7 +56,18 @@ export function PrototypeHub({ experiments, templates }: PrototypeHubProps) {
 
     return [...byOwner.entries()]
       .sort(([a], [b]) => getOwnerDisplayName(a).localeCompare(getOwnerDisplayName(b)))
-      .map(([ownerSlug, entries]) => ({ ownerSlug, entries }))
+      .map(([ownerSlug, entries]) => ({
+        ownerSlug,
+        entries: [...entries].sort((a, b) => {
+          const aTime = a.updatedAt ? Date.parse(a.updatedAt) : NaN
+          const bTime = b.updatedAt ? Date.parse(b.updatedAt) : NaN
+          const aValid = Number.isFinite(aTime)
+          const bValid = Number.isFinite(bTime)
+          if (aValid && bValid && aTime !== bTime) return bTime - aTime
+          if (aValid !== bValid) return aValid ? -1 : 1
+          return a.slug.localeCompare(b.slug)
+        }),
+      }))
   }, [experiments, query, ownerFilter])
 
   const filteredTemplates = useMemo(() => {
@@ -141,7 +152,7 @@ export function PrototypeHub({ experiments, templates }: PrototypeHubProps) {
                 style={{
                   display: 'grid',
                   gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))',
-                  gap: 16,
+                  gap: 24,
                 }}
               >
                 {entries.map((entry) => (
@@ -156,7 +167,7 @@ export function PrototypeHub({ experiments, templates }: PrototypeHubProps) {
             style={{
               display: 'grid',
               gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))',
-              gap: 16,
+              gap: 24,
             }}
           >
             {filteredTemplates.map((entry) => (

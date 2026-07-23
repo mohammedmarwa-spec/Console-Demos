@@ -4,6 +4,7 @@
 // (e.g. app/page.tsx, app/experiments/[owner]/[slug]/page.tsx). It uses
 // node:fs and is not safe to bundle into client components.
 
+import { execFileSync } from 'node:child_process'
 import { existsSync, readdirSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import type { ComponentType } from 'react'
@@ -15,6 +16,30 @@ const PREVIEWS_ROOT = join(process.cwd(), 'public', 'experiment-previews')
 const TEMPLATES_DIR = '_templates'
 const RESERVED = new Set([TEMPLATES_DIR])
 const PAGE_EXTENSIONS = ['tsx', 'ts']
+
+/** Avoid re-spawning git on every homepage render during `next dev`. */
+const lastCommitCache = new Map<string, string | undefined>()
+
+function getLastCommitIso(relativePath: string): string | undefined {
+  if (lastCommitCache.has(relativePath)) {
+    return lastCommitCache.get(relativePath)
+  }
+
+  let iso: string | undefined
+  try {
+    const out = execFileSync('git', ['log', '-1', '--format=%cI', '--', relativePath], {
+      cwd: process.cwd(),
+      encoding: 'utf8',
+      stdio: ['ignore', 'pipe', 'ignore'],
+    }).trim()
+    iso = out || undefined
+  } catch {
+    iso = undefined
+  }
+
+  lastCommitCache.set(relativePath, iso)
+  return iso
+}
 
 function listSubdirectories(dir: string): string[] {
   if (!existsSync(dir)) return []
@@ -103,6 +128,7 @@ export function discoverExperiments(): DiscoveredPage[] {
         ownerSlug,
         route: `/experiments/${ownerSlug}/${slug}`,
         thumbnail: experimentThumbnail(ownerSlug, slug),
+        updatedAt: getLastCommitIso(`experiments/${ownerSlug}/${slug}`),
       })
     }
   }

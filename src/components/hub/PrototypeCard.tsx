@@ -13,6 +13,19 @@ import {
 } from '@/lib/cursorDeeplink'
 import { StartInCursorModal } from './StartInCursorModal'
 
+const updatedAtFormatter = new Intl.DateTimeFormat('en-US', {
+  month: 'short',
+  day: 'numeric',
+  year: 'numeric',
+  hour: 'numeric',
+  minute: '2-digit',
+  hour12: true,
+})
+
+function formatUpdatedAt(iso: string): string {
+  return updatedAtFormatter.format(new Date(iso))
+}
+
 export function PrototypeCard({ entry }: { entry: DiscoveredPage }) {
   const router = useRouter()
   const [cursorModalOpen, setCursorModalOpen] = useState(false)
@@ -57,39 +70,19 @@ export function PrototypeCard({ entry }: { entry: DiscoveredPage }) {
       >
         <Card
           fullWidth
-          title={
-            <Card.Title>
-              <Box style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 8, width: '100%' }}>
-                <Typography.DefaultStrong color="intense">{entry.title}</Typography.DefaultStrong>
-              </Box>
-            </Card.Title>
-          }
+          title={entry.title}
+          {...(entry.thumbnail
+            ? {
+                image: entry.thumbnail,
+                imageAlt: `${entry.title} preview`,
+              }
+            : {})}
         >
           <Box style={{ display: 'flex', flexDirection: 'column', gap: 12, flex: 1, minHeight: 0 }}>
-            {entry.thumbnail && (
-              <Box
-                style={{
-                  width: '100%',
-                  aspectRatio: '16 / 10',
-                  borderRadius: 8,
-                  overflow: 'hidden',
-                  background: 'var(--aquarium-background-color-muted)',
-                }}
-              >
-                <img
-                  src={entry.thumbnail}
-                  alt={`${entry.title} preview`}
-                  style={{
-                    width: '100%',
-                    height: '100%',
-                    objectFit: 'cover',
-                    objectPosition: 'top center',
-                    display: 'block',
-                  }}
-                />
-              </Box>
-            )}
             <Typography.Small color="muted">{entry.description}</Typography.Small>
+            {entry.updatedAt && (
+              <Typography.Small color="muted">{formatUpdatedAt(entry.updatedAt)}</Typography.Small>
+            )}
             <Box
               style={{
                 marginTop: 'auto',

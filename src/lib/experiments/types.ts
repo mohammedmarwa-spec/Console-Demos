@@ -20,4 +20,6 @@ export type DiscoveredPage = PageMeta & {
   ownerSlug?: string
   /** Public path to a committed preview screenshot, when available */
   thumbnail?: string
+  /** ISO-8601 from last git commit that touched the experiment folder */
+  updatedAt?: string
 }
