@@ -502,13 +502,13 @@ function EventDetails({ row }: { row: EventLog }) {
     {
       id: 'actor_user_id',
       label: 'actor_user_id',
-      value: entityLink(row.actorUserId, 'Link to user'),
+      value: nullableEntityLink(row.actorUserId, 'Link to user'),
     },
     ...(row.internalActor
       ? [{ id: 'internal_actor', label: 'internal_actor', value: row.internalActor } satisfies DetailRow]
       : []),
-    { id: 'account_id', label: 'account_id', value: row.accountId },
-    { id: 'organization_id', label: 'organization_id', value: row.organizationId },
+    { id: 'account_id', label: 'account_id', value: nullable(row.accountId) },
+    { id: 'organization_id', label: 'organization_id', value: nullable(row.organizationId) },
     {
       id: 'billing_group_id',
       label: 'billing_group_id',
