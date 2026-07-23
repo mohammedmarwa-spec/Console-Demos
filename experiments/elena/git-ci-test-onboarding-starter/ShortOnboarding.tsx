@@ -1,3 +1,5 @@
+'use client'
+
 import { useEffect, useMemo, useState } from 'react'
 import {
   Box,
@@ -12,14 +14,14 @@ import {
   Typography,
 } from '@aivenio/aquarium'
 import infoSignIcon from '@aivenio/aquarium/icons/infoSign'
-import { ServiceIcon } from '../../components/ServiceIcon'
-import { CloudProviderIcon } from '../CloudProviderIcon'
-import type { CloudProviderId } from '../serviceRegions'
+import { ServiceIcon } from '@experiments/_shared/components/ServiceIcon'
+import { CloudProviderIcon } from '@experiments/_shared/components/CloudProviderIcon'
+import type { CloudProviderId } from '@experiments/_shared/lib/serviceRegions'
 import {
   ONBOARDING_CHECKABLE_CARD_CSS,
   ONBOARDING_CHECKABLE_CARD_RING_CSS,
-} from './playgroundShared'
-import { OnboardingTestEnvShell } from './OnboardingTestEnvShell'
+} from '@experiments/_shared/lib/playgroundShared'
+import { OnboardingTestEnvShell } from '@experiments/_shared/components/OnboardingTestEnvShell'
 import {
   DEFAULT_TEST_ENV_SERVICE_ID,
   TEST_ENV_LOCATION_OPTIONS,
@@ -27,20 +29,20 @@ import {
   type TestEnvLocationId,
   type TestEnvServiceId,
   type TestEnvServiceOption,
-} from './testEnvServicesCatalog'
+} from '@experiments/_shared/lib/testEnvServicesCatalog'
 
-export type OnboardingTestEnvCreatePayload = {
+export type ShortOnboardingCreatePayload = {
   serviceTypeId: TestEnvServiceId
   serviceName: string
   projectName: string
   location: TestEnvLocationId
 }
 
-export type OnboardingTestEnvProps = {
+export type ShortOnboardingProps = {
   userInitials: string
   defaultProjectName: string
   onSkip: () => void
-  onCreate: (payload: OnboardingTestEnvCreatePayload) => void
+  onCreate: (payload: ShortOnboardingCreatePayload) => void
   onCustomizePlan: (serviceTypeId: TestEnvServiceId) => void
 }
 
@@ -50,7 +52,6 @@ const MONO_STYLE = {
   lineHeight: 1.42,
 } as const
 
-/** Outer height of Aquarium `Button.Secondary` with `dense` (py-2 + typography-default-strong). */
 const DENSE_SECONDARY_BUTTON_SIZE = 32
 
 const CLOUD_PROVIDER_STACK: Array<{ id: CloudProviderId; label: string }> = [
@@ -61,7 +62,6 @@ const CLOUD_PROVIDER_STACK: Array<{ id: CloudProviderId; label: string }> = [
   { id: 'digitalocean', label: 'DigitalOcean' },
 ]
 
-/** Overlap between stacked cloud badges — lower = more spread, easier to read. */
 const CLOUD_ICON_OVERLAP = 10
 
 function CloudProviderStack({
@@ -154,19 +154,24 @@ function PlanDetailRow({ label, value, info }: { label: string; value: string; i
 
 PlanDetailRow.displayName = 'PlanDetailRow'
 
-export function OnboardingTestEnv({
+/**
+ * Shorter create-test-env flow: advanced plan/cloud customization is collapsed by default.
+ * Keeps recommended Free plan pricing and create/skip wiring from playground state.
+ */
+export function ShortOnboarding({
   userInitials,
   defaultProjectName,
   onSkip,
   onCreate,
   onCustomizePlan,
-}: OnboardingTestEnvProps) {
+}: ShortOnboardingProps) {
   const [projectName, setProjectName] = useState(defaultProjectName)
   const [location, setLocation] = useState<TestEnvLocationId>('finland')
   const [selectedServiceId, setSelectedServiceId] = useState<TestEnvServiceId>(DEFAULT_TEST_ENV_SERVICE_ID)
   const [serviceName, setServiceName] = useState(
     () => TEST_ENV_SERVICES.find((s) => s.id === DEFAULT_TEST_ENV_SERVICE_ID)!.defaultServiceName,
   )
+  const [showAdvanced, setShowAdvanced] = useState(false)
 
   const selectedService = useMemo(
     () => TEST_ENV_SERVICES.find((s) => s.id === selectedServiceId) ?? TEST_ENV_SERVICES[0],
@@ -176,10 +181,6 @@ export function OnboardingTestEnv({
   useEffect(() => {
     setServiceName(selectedService.defaultServiceName)
   }, [selectedService])
-
-  function handleCustomizePlan() {
-    onCustomizePlan(selectedServiceId)
-  }
 
   function handleCreate() {
     onCreate({
@@ -204,9 +205,10 @@ export function OnboardingTestEnv({
         }}
       >
         <Box style={{ display: 'flex', flexDirection: 'column', gap: 8, alignItems: 'flex-start' }}>
-          <Typography.Heading color="intense">
-            Welcome to Aiven! Create your test environment in minutes
-          </Typography.Heading>
+          <Typography.Heading color="intense">Create your test environment</Typography.Heading>
+          <Typography.Default color="muted">
+            Pick a service and launch with the recommended Free plan — advanced options stay out of the way.
+          </Typography.Default>
           <Box style={{ display: 'inline-flex', maxWidth: '100%' }}>
             <StatusChip text="$50 trial credits active · No card needed" status="success" />
           </Box>
@@ -286,84 +288,56 @@ export function OnboardingTestEnv({
               position: 'sticky',
               top: 0,
             }}
-            className="onboarding-summary-section"
           >
-            <style>{`
-              .onboarding-summary-section {
-                position: relative;
-              }
-              .onboarding-summary-section .Aquarium-Section > div:first-child {
-                position: relative;
-              }
-              .onboarding-summary-section .Aquarium-Section > div:first-child > div:first-child {
-                max-width: calc(100% - 340px);
-              }
-              .onboarding-summary-section__header-actions {
-                position: absolute;
-                top: 0;
-                right: 20px;
-                height: 62px;
-                display: flex;
-                align-items: center;
-                gap: 8px;
-                z-index: 1;
-              }
-            `}</style>
-            <Box className="onboarding-summary-section__header-actions">
-              <Button.Secondary dense type="button" onClick={handleCustomizePlan}>
-                Customize plan and cloud
-              </Button.Secondary>
-              <CloudProviderStack />
-            </Box>
             <Section title={selectedService.title}>
-                <Box style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-                  <Box
-                    style={{
-                      padding: 16,
-                      borderRadius: 8,
-                      backgroundColor: 'var(--aquarium-background-color-muted)',
-                      display: 'flex',
-                      flexDirection: 'column',
-                      gap: 8,
-                      width: '100%',
-                    }}
-                  >
-                    <Box style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
-                      <Typography.DefaultStrong>Recommended plan</Typography.DefaultStrong>
-                      <StatusChip text="Free" status="neutral" dense />
-                    </Box>
-                    <PlanDetailRow
-                      label="Cloud & region"
-                      value={selectedService.cloudRegionLabel}
-                      info="You can select a specific cloud provider and region on the Professional tier"
-                    />
-                    <PlanDetailRow label="Resources" value={selectedService.planResources} />
+              <Box style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+                <Box
+                  style={{
+                    padding: 16,
+                    borderRadius: 8,
+                    backgroundColor: 'var(--aquarium-background-color-muted)',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: 8,
+                    width: '100%',
+                  }}
+                >
+                  <Box style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
+                    <Typography.DefaultStrong>Recommended plan</Typography.DefaultStrong>
+                    <StatusChip text="Free" status="neutral" dense />
                   </Box>
+                  <PlanDetailRow
+                    label="Cloud & region"
+                    value={selectedService.cloudRegionLabel}
+                    info="You can select a specific cloud provider and region on the Professional tier"
+                  />
+                  <PlanDetailRow label="Resources" value={selectedService.planResources} />
+                </Box>
 
-                  <Box
-                    style={{
-                      padding: '12px 16px',
-                      borderRadius: 8,
-                      border: '1px solid var(--aquarium-border-color-muted)',
-                      display: 'flex',
-                      flexDirection: 'column',
-                      gap: 4,
-                      width: '100%',
-                    }}
-                  >
-                    <Box style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
-                      <Typography.DefaultStrong>
-                        Price{' '}
-                        <Typography.Small color="muted" htmlTag="span">
-                          /per month
-                        </Typography.Small>
-                      </Typography.DefaultStrong>
-                      <Typography.Subheading color="intense">Free</Typography.Subheading>
-                    </Box>
-                    <Typography.Small color="muted">
-                      No credit card. No expiry. Auto-pauses when idle
-                    </Typography.Small>
+                <Box
+                  style={{
+                    padding: '12px 16px',
+                    borderRadius: 8,
+                    border: '1px solid var(--aquarium-border-color-muted)',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: 4,
+                    width: '100%',
+                  }}
+                >
+                  <Box style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
+                    <Typography.DefaultStrong>
+                      Price{' '}
+                      <Typography.Small color="muted" htmlTag="span">
+                        /per month
+                      </Typography.Small>
+                    </Typography.DefaultStrong>
+                    <Typography.Subheading color="intense">Free</Typography.Subheading>
                   </Box>
+                  <Typography.Small color="muted">
+                    No credit card. No expiry. Auto-pauses when idle
+                  </Typography.Small>
+                </Box>
 
                 <Input
                   labelText="Service name"
@@ -376,12 +350,40 @@ export function OnboardingTestEnv({
                     Create {selectedService.title} service
                   </Button.Primary>
                   <Box style={{ textAlign: 'center' }}>
-                    <Typography.Caption color="muted">
-                      Usually takes 2–5 minutes to provision
-                    </Typography.Caption>
+                    <Typography.Caption color="muted">Usually takes 2–5 minutes to provision</Typography.Caption>
                   </Box>
                 </Box>
+
+                <Box
+                  style={{
+                    borderTop: '1px solid var(--aquarium-border-color-muted)',
+                    paddingTop: 12,
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: 12,
+                  }}
+                >
+                  <Button.Ghost type="button" onClick={() => setShowAdvanced((open) => !open)}>
+                    {showAdvanced ? 'Hide advanced settings' : 'Show advanced settings'}
+                  </Button.Ghost>
+                  {showAdvanced && (
+                    <Box
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        gap: 8,
+                        flexWrap: 'wrap',
+                      }}
+                    >
+                      <Button.Secondary dense type="button" onClick={() => onCustomizePlan(selectedServiceId)}>
+                        Customize plan and cloud
+                      </Button.Secondary>
+                      <CloudProviderStack />
+                    </Box>
+                  )}
                 </Box>
+              </Box>
             </Section>
           </Box>
         </Box>
@@ -390,4 +392,4 @@ export function OnboardingTestEnv({
   )
 }
 
-OnboardingTestEnv.displayName = 'OnboardingTestEnv'
+ShortOnboarding.displayName = 'ShortOnboarding'

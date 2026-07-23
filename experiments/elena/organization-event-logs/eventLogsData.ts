@@ -408,7 +408,7 @@ export function eventLogToJson(row: EventLog) {
     service_id: row.serviceId,
     asset_type: row.assetType,
     asset_id: row.assetId,
-    metadata: JSON.stringify(row.metadata),
+    metadata: row.metadata,
     additional_properties: row.additionalProperties,
   }
 }
