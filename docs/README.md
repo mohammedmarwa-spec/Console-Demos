@@ -33,7 +33,7 @@ See [how-to-run.md](./how-to-run.md) for full setup (designers: start with [SETU
 | [how-to-run.md](./how-to-run.md) | Local development |
 | [how-to-create-prototype.md](./how-to-create-prototype.md) | Create experiments from reusable scenarios |
 | [how-to-deploy.md](./how-to-deploy.md) | Deploy to Aiven Application |
-| [contribution-guide.md](./contribution-guide.md) | Share work with the team |
+| [contribution-guide.md](./contribution-guide.md) | Minimal Gitflow + how to share work with the team |
 | [agent-rules.md](./agent-rules.md) | Cursor Agent prompts and safety rules |
 
 ## Experiment preview thumbnails

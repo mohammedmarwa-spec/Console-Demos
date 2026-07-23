@@ -73,7 +73,9 @@ Open `?scenario=experiment/your-name/my-experiment` or select it in the scenario
 
 ## 5. Share with the team
 
-See [how-to-deploy.md](./how-to-deploy.md) and [contribution-guide.md](./contribution-guide.md).
+Follow the minimal Gitflow in [contribution-guide.md](./contribution-guide.md#minimal-gitflow-for-a-first-experiment): branch `experiment/<owner>/<slug>` → edit only your folder → PR → merge → redeploy.
+
+Deploy details: [how-to-deploy.md](./how-to-deploy.md).
 
 ## Rules
 
