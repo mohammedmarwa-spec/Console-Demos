@@ -1,0 +1,24 @@
+name: Experiment PR scope
+
+on:
+  pull_request:
+    branches: [main]
+    types: [opened, synchronize, reopened, labeled, unlabeled]
+
+jobs:
+  experiment-scope:
+    name: experiment-scope
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Check PR path scope
+        env:
+          BASE_REF: ${{ github.base_ref }}
+          ALLOW_SHARED_PATHS: ${{ contains(github.event.pull_request.labels.*.name, 'allow-shared-paths') }}
+        run: |
+          git fetch origin "$BASE_REF" --depth=1
+          node scripts/check-experiment-pr-scope.mjs

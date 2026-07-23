@@ -55,6 +55,7 @@ Two designers rarely collide if each only touches `experiments/<their-owner>/<sl
 5. **PR → `main`** (lightweight review)
 
    - Title: what is being tested
+   - Wait for the **`experiment-scope`** CI check to pass (see below)
    - Checklist below before merge
 
 6. **Merge + redeploy** the shared Aiven Application from `main` — see [how-to-deploy.md](./how-to-deploy.md)
@@ -71,13 +72,40 @@ Optional WIP share without touching the team app: push the feature branch and de
 | Pull / rebase `main` before merge if PR is stale | Change shared shell / `src/` without asking |
 | One experiment = one PR when possible | Bundle unrelated experiments in one PR |
 
+### CI path guard (`experiment-scope`)
+
+Every PR to `main` runs [`.github/workflows/pr-experiment-scope.yml`](../.github/workflows/pr-experiment-scope.yml).
+
+**Always blocked** (unless escape hatch): edits under `experiments/_templates/`.
+
+**When the PR touches** `experiments/` or `public/experiment-previews/`, it must:
+
+- Stay under a **single** known owner folder (`design-team-owners.json`)
+- Not touch `experiments/_shared/`
+- Not mix in `src/` or other shared/app paths
+
+**Infra / docs-only PRs** (no experiment paths) pass without a label.
+
+Allowed on a normal experiment PR: `experiments/<owner>/**` and matching `public/experiment-previews/<owner>/**`.
+
+**Local dry-run** (before opening a PR):
+
+```bash
+git fetch origin main
+npm run check:experiment-scope
+```
+
+**Maintainer escape hatch:** add the PR label `allow-shared-paths` (or run with `ALLOW_SHARED_PATHS=1`) for intentional template / `_shared` / mixed shared changes. Those PRs still need human review.
+
+**Repo setting (once):** GitHub → Settings → Branches → protect `main` → require status check **`experiment-scope`** so the guard cannot be ignored on merge.
+
 ### What this flow skips
 
 - No `develop` branch or release trains
 - No required CI auto-deploy (redeploy is manual today)
 - No force-push to `main`
 
-**One-liner:** Pull `main` → branch `experiment/<your-name>/<slug>` → scaffold under `experiments/<your-name>/<slug>/` only → PR → merge → redeploy shared app.
+**One-liner:** Pull `main` → branch `experiment/<your-name>/<slug>` → scaffold under `experiments/<your-name>/<slug>/` only → PR → CI `experiment-scope` must pass → merge → redeploy shared app.
 
 ## Publishing levels
 
@@ -110,6 +138,7 @@ Before merging a prototype to `main`:
 - [ ] `sourceScenarioId` if copied from a reusable scenario
 - [ ] No production data or API dependencies
 - [ ] No accidental edits to unrelated prototypes or reusable scenarios
+- [ ] `experiment-scope` CI check is green (or PR has `allow-shared-paths` for intentional shared edits)
 - [ ] `npm run build` passes
 - [ ] Shared shell still works
 

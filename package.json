@@ -12,6 +12,7 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "preview:shot": "node scripts/generate-experiment-previews.mjs",
+    "check:experiment-scope": "node scripts/check-experiment-pr-scope.mjs",
     "prepare": "husky",
     "process-designer-avatars": ".venv-avatars/bin/python scripts/process-designer-avatars.py"
   },
