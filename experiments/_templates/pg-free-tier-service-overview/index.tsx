@@ -11,7 +11,7 @@ import { ORG_NAME } from './overviewData'
 export const pageMeta: PageMeta = {
   title: 'PG — Free tier — Service overview',
   description:
-    'Free-tier PostgreSQL service overview facsimile from a production DOM capsule — upgrade banner, plan usage, and gated replica/integrations.',
+    'Template: Free-tier PostgreSQL service overview — upgrade banner, plan usage, gated replica/integrations. Fork to start a new experiment.',
 }
 
 export default function Page() {
@@ -46,7 +46,7 @@ export default function Page() {
             </Typography.LargeHeading>
             <Box style={{ marginTop: 8 }}>
               <Typography.Default color="muted">
-                Placeholder — this experiment focuses on the Free-tier Overview from the DOM capsule.
+                Placeholder — this template focuses on the Free-tier Overview.
               </Typography.Default>
             </Box>
           </Box>
