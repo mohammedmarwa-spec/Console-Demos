@@ -83,3 +83,17 @@
   color: rgba(255, 255, 255, 0.55);
   font-size: 12px;
 }
+
+.playground-shell-loading {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.playground-shell-loading__body {
+  flex: 1;
+  min-height: 0;
+  width: 100%;
+  padding: 48px 24px;
+  box-sizing: border-box;
+}
