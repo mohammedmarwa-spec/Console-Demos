@@ -49,18 +49,6 @@ export const PROTOTYPE_SCENARIOS: PrototypeScenario[] = [
     owner: 'Elena',
   },
   {
-    id: 'free-dev-upgrade-v2',
-    title: 'Free & Dev: Quick Upgrade V2',
-    description: 'Same services, V2 modal with tier headers',
-    owner: 'Elena',
-  },
-  {
-    id: 'free-dev-upgrade-v3',
-    title: 'Free & Dev: Quick Upgrade V3',
-    description: 'Same services, V2 modal with Hobbyist and Startup-4 plans',
-    owner: 'Elena',
-  },
-  {
     id: 'free-dev-upgrade-v4',
     title: 'Free & Dev: Quick Upgrade V4',
     description: 'Developer + Hobbyist on AWS and GCP (europe-west-1)',

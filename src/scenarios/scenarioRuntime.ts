@@ -124,28 +124,6 @@ function buildRuntimeForKey(runtimeKey: string): ScenarioRuntime {
         consoleContext: TEAM_CONSOLE_CONTEXT,
       }
 
-    case 'free-dev-upgrade-v2':
-      return {
-        initialView: 'project-services',
-        getInitialServices: () => withRandomCreatedByAvatars([...FREE_DEV_UPGRADE_SERVICES]),
-        consoleContext: TEAM_CONSOLE_CONTEXT,
-        flags: {
-          hideSwitchToNewPricingAlert: true,
-          upgradePlanVariant: 'startup-business',
-        },
-      }
-
-    case 'free-dev-upgrade-v3':
-      return {
-        initialView: 'project-services',
-        getInitialServices: () => withRandomCreatedByAvatars([...FREE_DEV_UPGRADE_SERVICES]),
-        consoleContext: TEAM_CONSOLE_CONTEXT,
-        flags: {
-          hideSwitchToNewPricingAlert: true,
-          upgradePlanVariant: 'hobbyist-startup-4',
-        },
-      }
-
     case 'free-dev-upgrade-v4':
       return {
         initialView: 'project-services',

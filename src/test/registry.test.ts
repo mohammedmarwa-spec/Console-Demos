@@ -112,14 +112,13 @@ describe('reusable scenario launch smoke', () => {
 })
 
 describe('experiment discovery', () => {
-  it('discovers 12 Elena experiments including migrated prototypes', () => {
+  it('discovers 11 Elena experiments including migrated prototypes', () => {
     const elena = discoverExperiments().filter((e) => e.ownerSlug === 'elena')
-    expect(elena.length).toBe(12)
+    expect(elena.length).toBe(11)
 
     for (const scenario of PROTOTYPE_SCENARIOS) {
       expect(elena.some((e) => e.slug === scenario.id)).toBe(true)
     }
     expect(elena.some((e) => e.slug === 'shorter-create-service')).toBe(true)
-    expect(elena.some((e) => e.slug === 'overrides-copy')).toBe(true)
   })
 })

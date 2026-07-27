@@ -81,16 +81,6 @@ const PROTOTYPE_EXPECTATIONS: Record<string, () => Promise<void> | void> = {
       expect(screen.getByText('mysql-both-acu')).toBeInTheDocument()
     })
   },
-  'free-dev-upgrade-v2': async () => {
-    await waitFor(() => {
-      expect(screen.getByText('pg-free-01')).toBeInTheDocument()
-    })
-  },
-  'free-dev-upgrade-v3': async () => {
-    await waitFor(() => {
-      expect(screen.getByText('mysql-dev-01')).toBeInTheDocument()
-    })
-  },
   'free-dev-upgrade-v4': async () => {
     await waitFor(() => {
       expect(screen.getByText('valkey-free-01')).toBeInTheDocument()
