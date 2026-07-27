@@ -57,7 +57,8 @@ function playgroundRulesBlock(): string {
   return `- Modify only the experiment folder for new work.
 - Reuse existing mock data from src/mocks/.
 - Keep the Console-like shell and existing price calculation logic.
-- Follow cursor/rules/ and docs/agent-rules.md.`
+- Create or update component-manifest.ts when Aquarium or prototype UI changes.
+- Follow .cursor/rules/ and docs/agent-rules.md.`
 }
 
 export function buildForkCursorPrompt({
@@ -79,6 +80,7 @@ Preview route: /experiments/${ownerSlug}/${experimentSlug}
 
 Goal:
 Update pageMeta (title, description) in ${folder}/index.tsx, then implement your design changes only inside ${folder}/.
+Create or update ${folder}/component-manifest.ts for Aquarium vs prototype components.
 
 Rules:
 ${playgroundRulesBlock()}`
@@ -94,6 +96,7 @@ Preview route: ${entry.route}
 
 Goal:
 Implement design changes only inside ${folder}/.
+Create or update ${folder}/component-manifest.ts for Aquarium vs prototype components.
 
 Rules:
 ${playgroundRulesBlock()}`

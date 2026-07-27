@@ -83,4 +83,7 @@ cpSync(sourceDir, targetDir, { recursive: true })
 console.log(`Created experiment: ${owner}/${slug}`)
 console.log(`Folder: experiments/${owner}/${slug}/`)
 console.log(`Update pageMeta (title, description) in ${join('experiments', owner, slug, 'index.tsx')}`)
+console.log(
+  `Update component-manifest.ts (Aquarium vs prototype) — see .cursor/rules/component-map.md`,
+)
 console.log(`Open: /experiments/${owner}/${slug}`)

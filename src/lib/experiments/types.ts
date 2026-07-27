@@ -23,3 +23,24 @@ export type DiscoveredPage = PageMeta & {
   /** ISO-8601 from last git commit that touched the experiment folder */
   updatedAt?: string
 }
+
+// ─── Component map (manual manifests) ─────────────────────────────────────────
+// Colocated as experiments/<owner>/<slug>/component-manifest.ts
+
+export type AquariumComponentEntry = {
+  name: string
+  /** Aquarium Storybook docs URL — omit when unresolved; never invent */
+  storybookUrl?: string
+  usage?: string
+}
+
+export type PrototypeComponentEntry = {
+  name: string
+  reason?: string
+}
+
+export type ComponentManifest = {
+  aquariumComponents: AquariumComponentEntry[]
+  prototypeComponents: PrototypeComponentEntry[]
+  notes?: string[]
+}

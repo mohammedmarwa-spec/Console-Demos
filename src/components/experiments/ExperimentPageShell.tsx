@@ -1,9 +1,13 @@
 'use client'
 
 import { useEffect } from 'react'
-import { useRouter } from 'next/navigation'
+import { usePathname, useRouter } from 'next/navigation'
 import { useScenario } from '../../scenarios'
 import { getInitialPathForScenario } from '../../lib/navigation'
+import {
+  fromExperimentQuery,
+  FROM_EXPERIMENT_PARAM,
+} from '../../lib/experiments/fromExperiment'
 
 /** Sets the active scenario if it isn't already, without navigating away. */
 export function useEnsureScenario(scenarioId: string): void {
@@ -30,6 +34,7 @@ export type ExperimentPageShellProps = {
  */
 export function ExperimentPageShell({ scenarioId }: ExperimentPageShellProps) {
   const router = useRouter()
+  const pathname = usePathname()
   const { activeScenarioId, setScenario } = useScenario()
 
   useEffect(() => {
@@ -37,8 +42,12 @@ export function ExperimentPageShell({ scenarioId }: ExperimentPageShellProps) {
       setScenario(scenarioId)
     }
     const path = getInitialPathForScenario(scenarioId)
-    router.replace(`${path}?scenario=${encodeURIComponent(scenarioId)}`)
-  }, [scenarioId, activeScenarioId, setScenario, router])
+    const params = new URLSearchParams()
+    params.set('scenario', scenarioId)
+    const fromExperiment = fromExperimentQuery(pathname)
+    if (fromExperiment) params.set(FROM_EXPERIMENT_PARAM, fromExperiment)
+    router.replace(`${path}?${params.toString()}`)
+  }, [scenarioId, activeScenarioId, setScenario, router, pathname])
 
   return null
 }

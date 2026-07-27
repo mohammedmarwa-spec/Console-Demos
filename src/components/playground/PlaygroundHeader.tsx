@@ -1,7 +1,9 @@
 'use client'
 
+import { useState } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
+import { Button } from '@aivenio/aquarium'
 import { getEntryById } from '../../registry'
 import { getPrototypeScenarioOrNull } from '../../content/prototype-scenarios'
 import { ROUTES } from '../../lib/navigation'
@@ -9,15 +11,19 @@ import {
   isExperimentRoute,
   useExperimentRouteMeta,
 } from '../../lib/experiments/useExperimentRouteMeta'
+import { useExperimentComponentManifest } from '../../lib/experiments/useExperimentComponentManifest'
 import { useScenario } from '../../scenarios'
 import { AppearanceSwitcher } from '../AppearanceSwitcher'
+import { ComponentMapDrawer } from './ComponentMapDrawer'
 import './playground-header.css'
 
 export function PlaygroundHeader() {
   const pathname = usePathname()
   const experimentMeta = useExperimentRouteMeta()
+  const componentManifest = useExperimentComponentManifest()
   const onExperimentRoute = isExperimentRoute(pathname)
   const { activeScenarioId } = useScenario()
+  const [componentMapOpen, setComponentMapOpen] = useState(false)
   const entry = !onExperimentRoute && activeScenarioId ? getEntryById(activeScenarioId) : null
   const prototype =
     !onExperimentRoute && activeScenarioId && !entry
@@ -27,23 +33,45 @@ export function PlaygroundHeader() {
   const owner = experimentMeta?.owner ?? entry?.owner ?? prototype?.owner
 
   return (
-    <header className="playground-header">
-      <div className="playground-header__inner">
-        <div className="playground-header__start">
-          <Link href={ROUTES.hub} className="playground-header__back">
-            ← Back
-          </Link>
-          {title && (
-            <div className="playground-header__meta">
-              <span className="playground-header__title">{title}</span>
-              {owner && <span className="playground-header__owner">· {owner}</span>}
-            </div>
-          )}
-        </div>
+    <>
+      <header className="playground-header">
+        <div className="playground-header__inner">
+          <div className="playground-header__start">
+            <Link href={ROUTES.hub} className="playground-header__back">
+              ← Back
+            </Link>
+            {title && (
+              <div className="playground-header__meta">
+                <span className="playground-header__title">{title}</span>
+                {owner && <span className="playground-header__owner">· {owner}</span>}
+              </div>
+            )}
+          </div>
 
-        <AppearanceSwitcher />
-      </div>
-    </header>
+          <div className="playground-header__actions">
+            {componentManifest && (
+              <Button.Text
+                dense
+                type="button"
+                className="playground-header__component-map"
+                onClick={() => setComponentMapOpen(true)}
+              >
+                👀 Component mapping
+              </Button.Text>
+            )}
+            <AppearanceSwitcher />
+          </div>
+        </div>
+      </header>
+
+      {componentManifest && (
+        <ComponentMapDrawer
+          open={componentMapOpen}
+          onClose={() => setComponentMapOpen(false)}
+          manifest={componentManifest}
+        />
+      )}
+    </>
   )
 }
 

@@ -22,11 +22,13 @@ node scripts/create-experiment.mjs --owner <owner> --name <experiment-slug> --te
 
 3. Update `pageMeta` (title, description) in `index.tsx`.
 
-4. Confirm the experiment appears in the hub and opens at `/experiments/<owner>/<experiment-slug>`.
+4. Create or update `component-manifest.ts` listing Aquarium components (with Storybook links when known) and prototype components. See `.cursor/rules/component-map.md`.
+
+5. Confirm the experiment appears in the hub and opens at `/experiments/<owner>/<experiment-slug>`.
 
 ## Rules
 
 - Do not edit reusable scenarios in `src/registry/scenarios.ts`.
 - Reuse domain code from `experiments/_shared/` first; copy from `src/` into `_shared` if missing.
 - Keep the app-shell contract on `@/` (`PlaygroundStateContext`, `ThemeProvider`, `ExperimentPageShell`).
-- Follow `cursor/rules/` and `docs/agent-rules.md`.
+- Follow `.cursor/rules/` and `docs/agent-rules.md`.

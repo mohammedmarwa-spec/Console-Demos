@@ -84,6 +84,24 @@
   font-size: 12px;
 }
 
+.playground-header__actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-shrink: 0;
+}
+
+/* Dark lab chrome: keep DS text/ghost silhouette (no fill), only invert label color */
+.playground-header__component-map {
+  color: rgba(255, 255, 255, 0.88) !important;
+}
+
+.playground-header__component-map:hover,
+.playground-header__component-map:focus-visible {
+  color: rgba(255, 255, 255, 0.98) !important;
+  background-color: transparent !important;
+}
+
 .playground-shell-loading {
   min-height: 100vh;
   display: flex;

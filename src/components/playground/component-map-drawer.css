@@ -1,0 +1,4 @@
+/* Aquarium Section.Body defaults to p-5; keep vertical padding, drop horizontal. */
+.component-map-drawer section > div:last-child > div > div {
+  padding: 20px 0;
+}
