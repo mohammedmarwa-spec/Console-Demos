@@ -65,17 +65,6 @@ const PROTOTYPE_EXPECTATIONS: Record<string, () => Promise<void> | void> = {
       expect(screen.getByRole('dialog', { name: /New configuration and pricing for MySQL/i })).toBeInTheDocument()
     })
   },
-  'invoice-mixed-services': async () => {
-    await waitFor(() => {
-      expect(screen.getByRole('heading', { name: /Invoice for 1 February/i })).toBeInTheDocument()
-    })
-  },
-  'invoice-plan-acumixed': async () => {
-    await waitFor(() => {
-      expect(screen.getByText(/Project: aiven-production/i)).toBeInTheDocument()
-    })
-    expect(screen.getByText(/Total: \$1,612\.45 USD/i)).toBeInTheDocument()
-  },
   'replica-mixed-pricing': async () => {
     await waitFor(() => {
       expect(screen.getByText('mysql-both-acu')).toBeInTheDocument()

@@ -31,18 +31,6 @@ export const PROTOTYPE_SCENARIOS: PrototypeScenario[] = [
     owner: 'Elena',
   },
   {
-    id: 'invoice-mixed-services',
-    title: 'Mixed-service invoice',
-    description: 'Invoice with PG, MySQL, Kafka, OpenSearch across two projects (shuffled)',
-    owner: 'Elena',
-  },
-  {
-    id: 'invoice-plan-acumixed',
-    title: 'Invoice: ACU + Plan — $1,612.45',
-    description: 'Two projects with ACU and Plan (legacy) services, total $1,612.45',
-    owner: 'Elena',
-  },
-  {
     id: 'replica-mixed-pricing',
     title: 'Read replicas: mixed pricing',
     description: '4 MySQL primaries covering all ACU/legacy replica combos',

@@ -135,14 +135,6 @@ function buildRuntimeForKey(runtimeKey: string): ScenarioRuntime {
         },
       }
 
-    case 'invoice-mixed-services':
-    case 'invoice-plan-acumixed':
-      return {
-        initialView: 'billing-invoice',
-        getInitialServices: () => INITIAL_SERVICES,
-        consoleContext: TEAM_CONSOLE_CONTEXT,
-      }
-
     case 'deeptrace-demo':
       return {
         initialView: 'service-overview',

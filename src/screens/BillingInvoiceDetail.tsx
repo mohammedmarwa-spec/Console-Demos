@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useState } from 'react'
 import {
   Box,
   Breadcrumbs,
@@ -17,7 +17,6 @@ import infoIcon from '@aivenio/aquarium/icons/infoSign'
 import nodesIcon from '@aivenio/aquarium/icons/nodes'
 import { ConsoleHeader } from '../components/ConsoleHeader'
 import { BillingSidebar } from '../components/BillingSidebar'
-import { useScenario } from '../scenarios'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -200,109 +199,6 @@ const PROJECT_CHARGE_GROUPS: ProjectChargeGroup[] = [
       },
     ],
   },
-]
-
-// ─── Scenario: mixed-service invoice ─────────────────────────────────────────
-
-function shuffle<T>(arr: T[]): T[] {
-  const out = [...arr]
-  for (let i = out.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1))
-    ;[out[i], out[j]] = [out[j], out[i]]
-  }
-  return out
-}
-
-const MIXED_SERVICE_SUMMARIES: ServiceTypeSummary[] = [
-  { serviceType: 'PostgreSQL',    total: '$23.80 USD', color: '#4e4fce' },
-  { serviceType: 'MySQL',         total: '$12.40 USD', color: '#f59e0b' },
-  { serviceType: 'Apache Kafka',  total: '$6.20 USD',  color: '#8b5cf6' },
-  { serviceType: 'OpenSearch',    total: '$1.80 USD',  color: '#0ea5e9' },
-]
-
-// prettier-ignore
-const MIXED_SERVICES_P1: ServiceChargeRow[] = [
-  // ACU services — expandable with breakdown
-  { id: 'pg-34dc00e8-startup-4',     name: 'pg-34dc00e8: PostgreSQL Startup-4 do-syd',                serviceType: 'PostgreSQL',         pricing: 'ACU', plan: 'Startup-4',   computeType: 'Standard',         cloud: 'do-syd',             period: '4–12 Feb 2026',  total: '$20.91 USD', breakdown: makeAcuBreakdown('pg-34dc00e8-startup-4',    '$20.91 USD', 'do-syd',             '4–12 Feb 2026') },
-  { id: 'pg-34dc00e8-developer-1',   name: 'pg-34dc00e8: PostgreSQL Developer-1 do-syd',              serviceType: 'PostgreSQL',         pricing: 'ACU', plan: 'Developer-1', computeType: 'Standard',         cloud: 'do-syd',             period: '12–28 Feb 2026', total: '$2.89 USD',  breakdown: makeAcuBreakdown('pg-34dc00e8-developer-1',  '$2.89 USD',  'do-syd',             '12–28 Feb 2026') },
-  { id: 'mysql-a1b2c3d4-business-4', name: 'mysql-a1b2c3d4: MySQL Business-4 do-syd',                serviceType: 'MySQL',              pricing: 'ACU', plan: 'Business-4',  computeType: 'Memory-optimized', cloud: 'do-syd',             period: '1–28 Feb 2026',  total: '$12.40 USD', breakdown: makeAcuBreakdown('mysql-a1b2c3d4-business-4', '$12.40 USD', 'do-syd',             '1–28 Feb 2026') },
-  { id: 'pg-2d4b35ac-free',          name: 'pg-2d4b35ac: PostgreSQL Free-1-1gb upcloud-sg-sin',       serviceType: 'PostgreSQL',         pricing: 'ACU', plan: 'Free-1-1gb',  computeType: 'Standard',         cloud: 'upcloud-sg-sin',     period: '13–14 Feb 2026', total: '$0.00 USD',  breakdown: makeAcuBreakdown('pg-2d4b35ac-free',         '$0.00 USD',  'upcloud-sg-sin',     '13–14 Feb 2026') },
-  { id: 'pg-9a8b7c6d-business-4',    name: 'pg-9a8b7c6d: PostgreSQL Business-4 aws-eu-west-1',       serviceType: 'PostgreSQL',         pricing: 'ACU', plan: 'Business-4',  computeType: 'Memory-optimized', cloud: 'aws-eu-west-1',      period: '1–28 Feb 2026',  total: '$8.44 USD',  breakdown: makeAcuBreakdown('pg-9a8b7c6d-business-4',   '$8.44 USD',  'aws-eu-west-1',      '1–28 Feb 2026') },
-  { id: 'mysql-d4e5f6a7-startup-4',  name: 'mysql-d4e5f6a7: MySQL Startup-4 aws-eu-west-1',          serviceType: 'MySQL',              pricing: 'ACU', plan: 'Startup-4',   computeType: 'Standard',         cloud: 'aws-eu-west-1',      period: '1–28 Feb 2026',  total: '$4.80 USD',  breakdown: makeAcuBreakdown('mysql-d4e5f6a7-startup-4', '$4.80 USD',  'aws-eu-west-1',      '1–28 Feb 2026') },
-  { id: 'pg-b1c2d3e4-hobbyist',      name: 'pg-b1c2d3e4: PostgreSQL Hobbyist do-syd',                serviceType: 'PostgreSQL',         pricing: 'ACU', plan: 'Hobbyist',    computeType: 'Standard',         cloud: 'do-syd',             period: '4 Feb 2026',     total: '$0.02 USD',  breakdown: makeAcuBreakdown('pg-b1c2d3e4-hobbyist',     '$0.02 USD',  'do-syd',             '4 Feb 2026') },
-  { id: 'mysql-e5f6a7b8-free',       name: 'mysql-e5f6a7b8: MySQL Free-1-1gb do-syd',                serviceType: 'MySQL',              pricing: 'ACU', plan: 'Free-1-1gb',  computeType: 'Standard',         cloud: 'do-syd',             period: '3 Feb 2026',     total: '$0.00 USD',  breakdown: makeAcuBreakdown('mysql-e5f6a7b8-free',      '$0.00 USD',  'do-syd',             '3 Feb 2026') },
-  { id: 'pg-c5d6e7f8-developer-1',   name: 'pg-c5d6e7f8: PostgreSQL Developer-1 google-us-central1', serviceType: 'PostgreSQL',         pricing: 'ACU', plan: 'Developer-1', computeType: 'CPU-optimized',    cloud: 'google-us-central1', period: '1–28 Feb 2026',  total: '$1.20 USD',  breakdown: makeAcuBreakdown('pg-c5d6e7f8-developer-1',  '$1.20 USD',  'google-us-central1', '1–28 Feb 2026') },
-  // Legacy / no-pricing services — flat rows, no breakdown
-  { id: 'kafka-events-p1',           name: 'kafka-1a2b3c4d: Apache Kafka Startup-2 do-syd',          serviceType: 'Apache Kafka',       pricing: 'Plan', plan: 'Startup-2',   cloud: 'do-syd',             period: '1–28 Feb 2026',  total: '$3.20 USD' },
-  { id: 'redis-c3d4e5f6-startup-4',  name: 'redis-c3d4e5f6: Caching & ValkeyDB Startup-4 do-syd',   serviceType: 'Caching & ValkeyDB', plan: 'Startup-4',   cloud: 'do-syd',             period: '1–28 Feb 2026',  total: '$2.10 USD' },
-  { id: 'kafka-telemetry-p1',        name: 'kafka-2b3c4d5e: Apache Kafka Business-4 aws-eu-west-1', serviceType: 'Apache Kafka',       pricing: 'Plan', plan: 'Business-4',  cloud: 'aws-eu-west-1',      period: '1–28 Feb 2026',  total: '$0.00 USD' },
-  { id: 'os-a2b3c4d5-developer-1',   name: 'os-a2b3c4d5: OpenSearch Developer-1 aws-eu-west-1',     serviceType: 'OpenSearch',         plan: 'Developer-1', cloud: 'aws-eu-west-1',      period: '1–28 Feb 2026',  total: '$1.50 USD' },
-  { id: 'grafana-f1e2d3c4-startup-1',name: 'grafana-f1e2d3c4: Grafana Startup-1 aws-eu-west-1',     serviceType: 'Grafana',            plan: 'Startup-1',   cloud: 'aws-eu-west-1',      period: '1–28 Feb 2026',  total: '$0.80 USD' },
-]
-
-// prettier-ignore
-const MIXED_SERVICES_P2: ServiceChargeRow[] = [
-  // ACU services
-  { id: 'pg-d7e8f9a0-business-4',   name: 'pg-d7e8f9a0: PostgreSQL Business-4 azure-eastus',          serviceType: 'PostgreSQL',         pricing: 'ACU', plan: 'Business-4',  computeType: 'Memory-optimized', cloud: 'azure-eastus',       period: '1–28 Feb 2026',  total: '$7.30 USD',  breakdown: makeAcuBreakdown('pg-d7e8f9a0-business-4',   '$7.30 USD',  'azure-eastus',       '1–28 Feb 2026') },
-  { id: 'mysql-a0b1c2d3-business-4',name: 'mysql-a0b1c2d3: MySQL Business-4 google-us-central1',      serviceType: 'MySQL',              pricing: 'ACU', plan: 'Business-4',  computeType: 'Standard',         cloud: 'google-us-central1', period: '1–28 Feb 2026',  total: '$6.90 USD',  breakdown: makeAcuBreakdown('mysql-a0b1c2d3-business-4','$6.90 USD',  'google-us-central1', '1–28 Feb 2026') },
-  { id: 'pg-c4d5e6f7-startup-4',    name: 'pg-c4d5e6f7: PostgreSQL Startup-4 azure-eastus',           serviceType: 'PostgreSQL',         pricing: 'ACU', plan: 'Startup-4',   computeType: 'Standard',         cloud: 'azure-eastus',       period: '1–28 Feb 2026',  total: '$2.10 USD',  breakdown: makeAcuBreakdown('pg-c4d5e6f7-startup-4',    '$2.10 USD',  'azure-eastus',       '1–28 Feb 2026') },
-  { id: 'mysql-f9e8d7c6-hobbyist',  name: 'mysql-f9e8d7c6: MySQL Hobbyist aws-eu-west-1',             serviceType: 'MySQL',              pricing: 'ACU', plan: 'Hobbyist',    computeType: 'Standard',         cloud: 'aws-eu-west-1',      period: '3 Feb 2026',     total: '$0.00 USD',  breakdown: makeAcuBreakdown('mysql-f9e8d7c6-hobbyist',  '$0.00 USD',  'aws-eu-west-1',      '3 Feb 2026') },
-  { id: 'pg-f8a9b0c1-developer-1',  name: 'pg-f8a9b0c1: PostgreSQL Developer-1 google-us-central1',   serviceType: 'PostgreSQL',         pricing: 'ACU', plan: 'Developer-1', computeType: 'CPU-optimized',    cloud: 'google-us-central1', period: '1–28 Feb 2026',  total: '$0.90 USD',  breakdown: makeAcuBreakdown('pg-f8a9b0c1-developer-1',  '$0.90 USD',  'google-us-central1', '1–28 Feb 2026') },
-  // Legacy services
-  { id: 'kafka-5a4b3c2d-business-4',name: 'kafka-5a4b3c2d: Apache Kafka Business-4 google-us-central1', serviceType: 'Apache Kafka',    pricing: 'Plan', plan: 'Business-4',  cloud: 'google-us-central1', period: '1–28 Feb 2026',  total: '$6.20 USD' },
-  { id: 'ch-analytics-p2',          name: 'ch-a1b2c3d4: ClickHouse Business-8 aws-eu-west-1',          serviceType: 'ClickHouse',         plan: 'Business-8',  cloud: 'aws-eu-west-1',      period: '1–28 Feb 2026',  total: '$15.60 USD' },
-  { id: 'kafka-payments-p2',        name: 'kafka-c5d6e7f8: Apache Kafka Premium-6 aws-eu-west-1',      serviceType: 'Apache Kafka',       pricing: 'Plan', plan: 'Premium-6',   cloud: 'aws-eu-west-1',      period: '1–28 Feb 2026',  total: '$12.80 USD' },
-  { id: 'redis-e8f9a0b1-business-4',name: 'redis-e8f9a0b1: Caching & ValkeyDB Business-4 aws-eu-west-1', serviceType: 'Caching & ValkeyDB', plan: 'Business-4', cloud: 'aws-eu-west-1',     period: '1–28 Feb 2026',  total: '$4.20 USD' },
-  { id: 'os-b2c3d4e5-business-4',   name: 'os-b2c3d4e5: OpenSearch Business-4 aws-eu-west-1',          serviceType: 'OpenSearch',         plan: 'Business-4',  cloud: 'aws-eu-west-1',      period: '1–28 Feb 2026',  total: '$3.40 USD' },
-  { id: 'kafka-cdc-p2',             name: 'kafka-d6e7f8a9: Apache Kafka Startup-2 aws-eu-west-1',      serviceType: 'Apache Kafka',       pricing: 'Plan', plan: 'Startup-2',   cloud: 'aws-eu-west-1',      period: '1–28 Feb 2026',  total: '$1.80 USD' },
-  { id: 'os-7f6e5d4c-startup-4',    name: 'os-7f6e5d4c: OpenSearch Startup-4 aws-eu-west-1',           serviceType: 'OpenSearch',         plan: 'Startup-4',   cloud: 'aws-eu-west-1',      period: '1–28 Feb 2026',  total: '$1.80 USD' },
-  { id: 'flink-jobs-p2',            name: 'flink-e7f8a9b0: Apache Flink Business-4 aws-eu-west-1',     serviceType: 'Apache Flink',       plan: 'Business-4',  cloud: 'aws-eu-west-1',      period: '1–28 Feb 2026',  total: '$5.40 USD' },
-  { id: 'kafka-inkless-premium',    name: 'kafka-b3c4d5e6: Apache Kafka Premium-6 aws-eu-west-1',      serviceType: 'Apache Kafka',       pricing: 'Plan', plan: 'Premium-6',   cloud: 'aws-eu-west-1',      period: '14–28 Feb 2026', total: '$0.00 USD' },
-]
-
-const MIXED_PROJECT_GROUPS: ProjectChargeGroup[] = [
-  {
-    id: 'project-psychedelicshoe-8825',
-    projectName: 'psychedelicshoe-8825',
-    total: '$58.26 USD',
-    services: MIXED_SERVICES_P1,
-  },
-  {
-    id: 'project-aiven-prod-eu',
-    projectName: 'aiven-prod-eu',
-    total: '$68.40 USD',
-    services: MIXED_SERVICES_P2,
-  },
-]
-
-// ─── Scenario: ACU + Plan mixed invoice ($1,612.45) ───────────────────────────
-
-const PLAN_MIXED_SUMMARIES: ServiceTypeSummary[] = [
-  { serviceType: 'PostgreSQL',   total: '$1,018.45 USD', color: '#4e4fce' },
-  { serviceType: 'MySQL',        total: '$180.00 USD',   color: '#f59e0b' },
-  { serviceType: 'Apache Kafka', total: '$260.00 USD',   color: '#8b5cf6' },
-  { serviceType: 'Apache Flink', total: '$80.00 USD',    color: '#10b981' },
-  { serviceType: 'OpenSearch',   total: '$74.00 USD',    color: '#0ea5e9' },
-]
-
-// prettier-ignore
-const PLAN_MIXED_P1: ServiceChargeRow[] = [
-  { id: 'pg-8f3a2b-prod',      name: 'pg-8f3a2b: PostgreSQL Business-8 aws-eu-west-1',   serviceType: 'PostgreSQL',   pricing: 'ACU',  plan: 'Business-8',  computeType: 'Memory-optimized', cloud: 'aws-eu-west-1', period: '1–28 Feb 2026', total: '$820.00 USD', breakdown: makeAcuBreakdown('pg-8f3a2b-prod',    '$820.00 USD', 'aws-eu-west-1', '1–28 Feb 2026') },
-  { id: 'mysql-4c9d1e-prod',   name: 'mysql-4c9d1e: MySQL Business-4 aws-eu-west-1',     serviceType: 'MySQL',        pricing: 'ACU',  plan: 'Business-4',  computeType: 'Standard',         cloud: 'aws-eu-west-1', period: '1–28 Feb 2026', total: '$180.00 USD', breakdown: makeAcuBreakdown('mysql-4c9d1e-prod', '$180.00 USD', 'aws-eu-west-1', '1–28 Feb 2026') },
-  { id: 'kafka-3b7f2a-prod',   name: 'kafka-3b7f2a: Apache Kafka Business-8 aws-eu-west-1', serviceType: 'Apache Kafka', pricing: 'Plan', plan: 'Business-8', cloud: 'aws-eu-west-1', period: '1–28 Feb 2026', total: '$120.00 USD' },
-  { id: 'flink-9d4c1b-prod',   name: 'flink-9d4c1b: Apache Flink Startup-4 aws-eu-west-1',  serviceType: 'Apache Flink', plan: 'Startup-4',  cloud: 'aws-eu-west-1', period: '1–28 Feb 2026', total: '$80.00 USD' },
-]
-
-// prettier-ignore
-const PLAN_MIXED_P2: ServiceChargeRow[] = [
-  { id: 'pg-2e5a3f-staging',   name: 'pg-2e5a3f: PostgreSQL Startup-4 do-ams3',   serviceType: 'PostgreSQL',   pricing: 'ACU',  plan: 'Startup-4',  computeType: 'Standard', cloud: 'do-ams3', period: '1–28 Feb 2026', total: '$198.45 USD', breakdown: makeAcuBreakdown('pg-2e5a3f-staging', '$198.45 USD', 'do-ams3', '1–28 Feb 2026') },
-  { id: 'kafka-6a1e7d-staging', name: 'kafka-6a1e7d: Apache Kafka Startup-8 do-ams3', serviceType: 'Apache Kafka', pricing: 'Plan', plan: 'Startup-8', cloud: 'do-ams3', period: '1–28 Feb 2026', total: '$140.00 USD' },
-  { id: 'os-7c3b4f-staging',   name: 'os-7c3b4f: OpenSearch Business-4 do-ams3',  serviceType: 'OpenSearch',   plan: 'Business-4', cloud: 'do-ams3', period: '1–28 Feb 2026', total: '$74.00 USD' },
-]
-
-const PLAN_MIXED_PROJECT_GROUPS: ProjectChargeGroup[] = [
-  { id: 'project-aiven-production', projectName: 'aiven-production', total: '$1,200.00 USD', services: PLAN_MIXED_P1 },
-  { id: 'project-aiven-staging',    projectName: 'aiven-staging',    total: '$412.45 USD',   services: PLAN_MIXED_P2 },
 ]
 
 // ─── Details of charges table ─────────────────────────────────────────────────
@@ -756,25 +652,10 @@ export type BillingInvoiceDetailProps = {
 }
 
 function BillingInvoiceDetail({ onBack, onOrgHomeClick, onBillingClick }: BillingInvoiceDetailProps) {
-  const { activeScenarioId } = useScenario()
-  const isMixed = activeScenarioId === 'invoice-mixed-services'
-  const isPlanMixed = activeScenarioId === 'invoice-plan-acumixed'
-
-  // Shuffle service rows within each project group once on mount / scenario change.
-  const chargeGroups = useMemo<ProjectChargeGroup[]>(() => {
-    if (isPlanMixed) return PLAN_MIXED_PROJECT_GROUPS
-    if (!isMixed) return PROJECT_CHARGE_GROUPS
-    return MIXED_PROJECT_GROUPS.map((g) => ({ ...g, services: shuffle(g.services) }))
-  }, [isMixed, isPlanMixed])
-
-  const summaries = isPlanMixed
-    ? PLAN_MIXED_SUMMARIES
-    : isMixed
-      ? MIXED_SERVICE_SUMMARIES
-      : SERVICE_SUMMARIES
-
-  const invoiceTotal = isPlanMixed ? '$1,612.45 USD' : '$0.00 USD'
-  const invoicePaid = !isPlanMixed
+  const chargeGroups = PROJECT_CHARGE_GROUPS
+  const summaries = SERVICE_SUMMARIES
+  const invoiceTotal = '$0.00 USD'
+  const invoicePaid = true
 
   return (
     <Box style={{ minHeight: '100vh', backgroundColor: 'var(--aquarium-background-color-body)', display: 'flex', flexDirection: 'column' }}>
@@ -814,7 +695,7 @@ function BillingInvoiceDetail({ onBack, onOrgHomeClick, onBillingClick }: Billin
                 </Breadcrumbs.Crumb>,
               ]}
             />
-            <InvoiceStatusRow total={invoiceTotal} paid={invoicePaid} dueDate={isPlanMixed ? '15 March 2026' : '1 March 2026'} />
+            <InvoiceStatusRow total={invoiceTotal} paid={invoicePaid} dueDate="1 March 2026" />
           </Box>
 
           {/* Sections */}

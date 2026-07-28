@@ -48,7 +48,7 @@ import { billingInvoiceScreenManifest } from '@/lib/experiments/sharedScreenMani
 export const componentManifest: ComponentManifest = {
   ...billingInvoiceScreenManifest,
   notes: [
-    'ExperimentPageShell launcher for scenario "invoice-plan-acumixed".',
+    'ExperimentPageShell launcher for a billing invoice scenario.',
     'Map describes shared BillingInvoiceDetail (src/screens), not this folder.',
   ],
 }
