@@ -27,6 +27,7 @@ git add public/experiment-previews/_templates/onboarding-starter.png
 
 ## Notes
 
+- Previews are captured in **light mode** by default (Playwright sets theme preference + `colorScheme`).
 - Pre-commit hook also runs this automatically for staged experiment/template changes.
 - Use `git commit --no-verify` to skip preview generation when needed.
 - One-time setup: `npx playwright install chromium` (after `npm install`).

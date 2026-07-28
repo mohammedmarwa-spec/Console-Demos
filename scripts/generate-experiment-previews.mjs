@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 /**
  * Capture experiment preview thumbnails with Playwright.
+ * Previews are captured in light mode by default.
  *
  * Usage:
  *   node scripts/generate-experiment-previews.mjs --staged
@@ -288,6 +289,12 @@ async function waitForExperimentReady(page) {
   await waitForShellLoaded(page)
   await waitForNextDevIdle(page)
   await waitForVisibleContent(page)
+  // ThemeProvider hydrates as dark, then restores light from localStorage — wait for that.
+  await page.waitForFunction(
+    () => !document.documentElement.classList.contains('aquarium-theme-dark'),
+    undefined,
+    { timeout: READY_TIMEOUT_MS, polling: 100 },
+  )
   // Soft: ignore if the page keeps long-polling
   await page.waitForLoadState('networkidle', { timeout: 10_000 }).catch(() => {})
   await sleep(SETTLE_MS)
@@ -349,6 +356,15 @@ async function generatePreviews(experiments) {
     const context = await browser.newContext({
       viewport: VIEWPORT,
       deviceScaleFactor: DEVICE_SCALE_FACTOR,
+      // Match ThemeProvider storage + OS media queries so previews are light by default.
+      colorScheme: 'light',
+    })
+    await context.addInitScript(() => {
+      try {
+        localStorage.setItem('design-police-playground:aquarium-appearance', 'light')
+      } catch {
+        // private mode / blocked storage — ThemeProvider still defaults dark without this
+      }
     })
     const page = await context.newPage()
     page.setDefaultTimeout(READY_TIMEOUT_MS)
