@@ -1,10 +1,16 @@
-import { Box, DropdownMenu, Icon } from '@aivenio/aquarium'
+'use client'
+
+import type { CSSProperties } from 'react'
+import { Box, Divider, DropdownMenu, Icon, InlineIcon } from '@aivenio/aquarium'
 import notificationsIcon from '@aivenio/aquarium/icons/notifications'
 import helpIcon from '@aivenio/aquarium/icons/help'
-import officeIcon from '@aivenio/aquarium/icons/office'
 import chevronDownIcon from '@aivenio/aquarium/icons/chevronDown'
+import linkExternalIcon from '@aivenio/aquarium/icons/linkExternal'
 import { getAivenIcon } from '../assets/icons/aivenIcon'
 import { useResolvedTheme } from '../theme/ThemeProvider'
+import { OrganizationSelector } from './header/OrganizationSelector'
+import { ProjectsPopover } from './header/ProjectsPopover'
+import { DEFAULT_ACTIVE_PROJECT_ID } from './header/shellNavMockData'
 
 export type NavItem = 'home' | 'projects' | 'tools' | 'billing' | 'support' | 'admin'
 
@@ -13,15 +19,17 @@ export type ConsoleHeaderProps = {
   activeNav?: NavItem
   /** Organization name shown in the org selector. */
   orgName?: string
-  /** Sub-label (e.g. project name) shown below org name. */
+  /** Sub-label (e.g. unit name) shown below org name. */
   orgSublabel?: string
   /** User initials shown in the avatar. */
   userInitials?: string
+  /** Selected project id for the Projects panel checkmark. */
+  activeProjectId?: string
   /** Called when the Home nav item is clicked. */
   onHomeClick?: () => void
   /** Called when the Billing nav item is clicked. */
   onBillingClick?: () => void
-  /** Called when the Projects nav item is clicked. */
+  /** Called when View all projects is clicked (shell callback, no route). */
   onProjectsClick?: () => void
 }
 
@@ -51,106 +59,93 @@ export function AivenConsoleLogo({ width = 32 }: { width?: number }) {
   )
 }
 
-// ─── Nav items ────────────────────────────────────────────────────────────────
+// ─── Nav chrome ───────────────────────────────────────────────────────────────
+
+const navButtonStyle = (active: boolean): CSSProperties => ({
+  backgroundColor: 'transparent',
+  border: 'none',
+  cursor: 'pointer',
+  padding: '8px 12px',
+  height: 40,
+  display: 'flex',
+  alignItems: 'center',
+  gap: 4,
+  color: active
+    ? 'var(--aquarium-text-color-default)'
+    : 'var(--aquarium-text-color-muted)',
+  fontWeight: active ? 600 : 400,
+  fontSize: 14,
+  lineHeight: '20px',
+  borderRadius: 2,
+  flexShrink: 0,
+  boxSizing: 'border-box',
+})
 
 type NavButtonProps = {
   label: string
   active?: boolean
   hasDropdown?: boolean
+  external?: boolean
+  onClick?: () => void
+  /** Use span when nested inside DropdownMenu.Trigger (avoids button-in-button). */
+  as?: 'button' | 'span'
 }
 
-function NavButton({ label, active = false, hasDropdown = false }: NavButtonProps) {
+function NavButton({
+  label,
+  active = false,
+  hasDropdown = false,
+  external = false,
+  onClick,
+  as = 'button',
+}: NavButtonProps) {
   return (
     <Box
-      component="button"
-      style={{
-        backgroundColor: 'transparent',
-        border: 'none',
-        borderBottom: 'none',
-        cursor: 'pointer',
-        padding: '8px 12px',
-        height: 40,
-        display: 'flex',
-        alignItems: 'center',
-        gap: 4,
-        color: active
-          ? 'var(--aquarium-text-color-default)'
-          : 'var(--aquarium-text-color-muted)',
-        fontWeight: active ? 600 : 400,
-        fontSize: 14,
-        lineHeight: '20px',
-        borderRadius: 0,
-        flexShrink: 0,
-        boxSizing: 'border-box',
-      }}
+      component={as}
+      role={as === 'span' ? 'button' : undefined}
+      tabIndex={as === 'span' ? 0 : undefined}
+      onClick={onClick}
+      style={navButtonStyle(active)}
     >
       {label}
       {hasDropdown && (
         <Icon icon={chevronDownIcon} style={{ width: 12, height: 12, opacity: 0.6 }} />
       )}
+      {external && (
+        <InlineIcon icon={linkExternalIcon} style={{ width: 12, height: 12, opacity: 0.6 }} />
+      )}
     </Box>
   )
 }
 
-// ─── Org selector button ──────────────────────────────────────────────────────
-
-type OrgSelectorProps = {
-  orgName: string
-  orgSublabel: string
+type IconActionProps = {
+  label: string
+  icon: typeof notificationsIcon
+  as?: 'button' | 'span'
 }
 
-function OrgSelector({ orgName, orgSublabel }: OrgSelectorProps) {
+function IconAction({ label, icon, as = 'button' }: IconActionProps) {
   return (
-    <DropdownMenu>
-      <DropdownMenu.Trigger>
-        <Box
-          component="button"
-          style={{
-            backgroundColor: 'transparent',
-            border: 'none',
-            cursor: 'pointer',
-            padding: '8px 12px',
-            height: 40,
-            display: 'flex',
-            alignItems: 'center',
-            gap: 8,
-            borderRadius: 4,
-            flexShrink: 0,
-          }}
-        >
-          <Box style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-            <Icon icon={officeIcon} color="muted" style={{ width: 20, height: 20 }} />
-          </Box>
-          <Box style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 0 }}>
-            <Box
-              component="span"
-              style={{
-                color: 'var(--aquarium-text-color-default)',
-                fontSize: 13,
-                lineHeight: '16px',
-                fontWeight: 600,
-              }}
-            >
-              {orgName}
-            </Box>
-            <Box
-              component="span"
-              style={{
-                color: 'var(--aquarium-text-color-muted)',
-                fontSize: 11,
-                lineHeight: '14px',
-              }}
-            >
-              {orgSublabel}
-            </Box>
-          </Box>
-          <Icon icon={chevronDownIcon} color="muted" style={{ width: 12, height: 12 }} />
-        </Box>
-      </DropdownMenu.Trigger>
-      <DropdownMenu.Items>
-        <DropdownMenu.Item id="switch-org">Switch organization</DropdownMenu.Item>
-      </DropdownMenu.Items>
-    </DropdownMenu>
+    <Box
+      component={as}
+      role={as === 'span' ? 'button' : undefined}
+      tabIndex={as === 'span' ? 0 : undefined}
+      aria-label={label}
+      style={{
+        backgroundColor: 'transparent',
+        border: 'none',
+        cursor: 'pointer',
+        width: 36,
+        height: 40,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        borderRadius: 4,
+        color: 'var(--aquarium-text-color-muted)',
+      }}
+    >
+      <Icon icon={icon} color="muted" style={{ width: 20, height: 20 }} />
+    </Box>
   )
 }
 
@@ -181,34 +176,24 @@ function Avatar({ initials }: AvatarProps) {
   )
 }
 
-// ─── ConsoleHeader ────────────────────────────────────────────────────────────
-
-const NAV_ITEMS: { id: NavItem; label: string; hasDropdown: boolean }[] = [
-  { id: 'home', label: 'Home', hasDropdown: false },
-  { id: 'projects', label: 'Projects', hasDropdown: true },
-  { id: 'tools', label: 'Tools', hasDropdown: true },
-  { id: 'billing', label: 'Billing', hasDropdown: false },
-  { id: 'support', label: 'Support', hasDropdown: false },
-  { id: 'admin', label: 'Admin', hasDropdown: false },
-]
-
 /**
  * Console-wide top navigation header.
- * Matches the "Console Header (New)" frame from the Figma design
- * (Pricing model UX 2025 / Forking, read-replica etc, node 10058:41546).
+ * Visual IA mirrors production HeadingPanel + OrganizationNavigation + ProfileUserActionPanel.
  */
 export function ConsoleHeader({
   activeNav = 'projects',
   orgName = 'BigCo Ltd.',
   orgSublabel = 'Engineering',
   userInitials = 'LI',
+  activeProjectId = DEFAULT_ACTIVE_PROJECT_ID,
   onHomeClick,
   onBillingClick,
   onProjectsClick,
 }: ConsoleHeaderProps) {
   return (
     <Box
-      component="header"
+      component="nav"
+      aria-label="Main navigation"
       style={{
         height: 66,
         backgroundColor: 'var(--aquarium-background-color-body)',
@@ -216,7 +201,7 @@ export function ConsoleHeader({
         display: 'flex',
         alignItems: 'center',
         paddingInline: 16,
-        gap: 46,
+        gap: 16,
         position: 'sticky',
         top: 0,
         zIndex: 100,
@@ -224,100 +209,87 @@ export function ConsoleHeader({
         boxSizing: 'border-box',
       }}
     >
-      {/* Logo */}
-      <AivenConsoleLogo />
+      <AivenConsoleLogo width={28} />
 
-      {/* Nav */}
       <Box
-        component="nav"
-        aria-label="Main navigation"
         style={{
           display: 'flex',
           alignItems: 'center',
-          gap: 12,
+          gap: 4,
           flex: 1,
           minWidth: 0,
           height: 40,
         }}
       >
-        {NAV_ITEMS.map((item) => (
-          <Box
-            key={item.id}
-            component="span"
-            onClick={() => {
-              if (item.id === 'home') onHomeClick?.()
-              if (item.id === 'billing') onBillingClick?.()
-              if (item.id === 'projects') onProjectsClick?.()
-            }}
-            style={{
-              cursor: (item.id === 'home' || item.id === 'billing' || item.id === 'projects')
-                ? 'pointer'
-                : undefined,
-            }}
-          >
-            <NavButton
-              label={item.label}
-              active={activeNav === item.id}
-              hasDropdown={item.hasDropdown}
-            />
-          </Box>
-        ))}
+        <NavButton label="Home" active={activeNav === 'home'} onClick={onHomeClick} />
+
+        <ProjectsPopover
+          active={activeNav === 'projects'}
+          activeProjectId={activeProjectId}
+          onViewAllProjects={onProjectsClick}
+        />
+
+        <DropdownMenu>
+          <DropdownMenu.Trigger>
+            <NavButton label="Tools" active={activeNav === 'tools'} hasDropdown as="span" />
+          </DropdownMenu.Trigger>
+          <DropdownMenu.Items>
+            <DropdownMenu.Item id="topic-catalog">Topic catalog</DropdownMenu.Item>
+            <DropdownMenu.Item id="data-flow">Data flow</DropdownMenu.Item>
+            <DropdownMenu.Item id="sql-optimizer">SQL query optimizer</DropdownMenu.Item>
+            <DropdownMenu.Item id="mcp-use-cases">Aiven MCP use cases</DropdownMenu.Item>
+          </DropdownMenu.Items>
+        </DropdownMenu>
+
+        <NavButton label="Billing" active={activeNav === 'billing'} onClick={onBillingClick} />
+        <NavButton label="Support" active={activeNav === 'support'} external />
+        <NavButton label="Admin" active={activeNav === 'admin'} />
       </Box>
 
-      {/* Actions */}
-      <Box
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: 8,
-          flexShrink: 0,
-        }}
-      >
-        {/* Organization selector */}
-        <OrgSelector orgName={orgName} orgSublabel={orgSublabel} />
+      <Box style={{ display: 'flex', alignItems: 'center', gap: 4, flexShrink: 0 }}>
+        <OrganizationSelector orgName={orgName} orgSublabel={orgSublabel} />
 
-        {/* Notification icon */}
-        <Box
-          component="button"
-          aria-label="Notifications"
-          style={{
-            backgroundColor: 'transparent',
-            border: 'none',
-            cursor: 'pointer',
-            width: 36,
-            height: 40,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            borderRadius: 4,
-            color: 'var(--aquarium-text-color-muted)',
-          }}
-        >
-          <Icon icon={notificationsIcon} color="muted" style={{ width: 20, height: 20 }} />
+        <Box style={{ height: 40, marginLeft: 6, marginRight: 6 }}>
+          <Divider direction="vertical" size={2} />
         </Box>
 
-        {/* Help icon */}
-        <Box
-          component="button"
-          aria-label="Help"
-          style={{
-            backgroundColor: 'transparent',
-            border: 'none',
-            cursor: 'pointer',
-            width: 36,
-            height: 40,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            borderRadius: 4,
-            color: 'var(--aquarium-text-color-muted)',
-          }}
-        >
-          <Icon icon={helpIcon} color="muted" style={{ width: 20, height: 20 }} />
-        </Box>
+        <IconAction label="Notifications" icon={notificationsIcon} />
 
-        {/* User avatar */}
-        <Avatar initials={userInitials} />
+        <DropdownMenu>
+          <DropdownMenu.Trigger>
+            <IconAction label="Support" icon={helpIcon} as="span" />
+          </DropdownMenu.Trigger>
+          <DropdownMenu.Items>
+            <DropdownMenu.Item id="help-center">Help center</DropdownMenu.Item>
+            <DropdownMenu.Item id="support-tickets">Support tickets</DropdownMenu.Item>
+            <DropdownMenu.Item id="status">Status page</DropdownMenu.Item>
+          </DropdownMenu.Items>
+        </DropdownMenu>
+
+        <DropdownMenu>
+          <DropdownMenu.Trigger>
+            <Box
+              component="button"
+              type="button"
+              aria-label="User menu"
+              style={{
+                backgroundColor: 'transparent',
+                border: 'none',
+                cursor: 'pointer',
+                padding: 0,
+                display: 'flex',
+                alignItems: 'center',
+              }}
+            >
+              <Avatar initials={userInitials} />
+            </Box>
+          </DropdownMenu.Trigger>
+          <DropdownMenu.Items>
+            <DropdownMenu.Item id="profile">Profile</DropdownMenu.Item>
+            <DropdownMenu.Item id="appearance">Appearance</DropdownMenu.Item>
+            <DropdownMenu.Item id="log-out">Log out</DropdownMenu.Item>
+          </DropdownMenu.Items>
+        </DropdownMenu>
       </Box>
     </Box>
   )

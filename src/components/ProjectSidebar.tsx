@@ -1,37 +1,47 @@
 import { Box, Navigation } from '@aivenio/aquarium'
-import clipboardCheckIcon from '@aivenio/aquarium/icons/clipboardCheck'
+import endorsedIcon from '@aivenio/aquarium/icons/endorsed'
 import databaseIcon from '@aivenio/aquarium/icons/database'
-import applicationsIcon from '@aivenio/aquarium/icons/applications'
-import integrationsIcon from '@aivenio/aquarium/icons/integrations'
-import cloudIcon from '@aivenio/aquarium/icons/cloud'
-import listIcon from '@aivenio/aquarium/icons/list'
-import appUsersIcon from '@aivenio/aquarium/icons/appUsers'
-import bankAccountIcon from '@aivenio/aquarium/icons/bankAccount'
+import consoleIcon from '@aivenio/aquarium/icons/console'
 import pulseIcon from '@aivenio/aquarium/icons/pulse'
-import settingsIcon from '@aivenio/aquarium/icons/settings'
+import codeBlockIcon from '@aivenio/aquarium/icons/codeBlock'
+import cloudIcon from '@aivenio/aquarium/icons/cloud'
+import propertyIcon from '@aivenio/aquarium/icons/property'
+import peopleIcon from '@aivenio/aquarium/icons/people'
+import performanceIcon from '@aivenio/aquarium/icons/performance'
+import proPlansIcon from '@aivenio/aquarium/icons/proPlans'
+import cogIcon from '@aivenio/aquarium/icons/cog'
 import type { IconifyIcon } from '@iconify/react'
 
-const NAV_ITEMS: { label: string; icon: IconifyIcon; id: string }[] = [
-  { id: 'get-started', label: 'Get started', icon: clipboardCheckIcon },
-  { id: 'services', label: 'Project overview', icon: databaseIcon },
-  { id: 'applications', label: 'Applications', icon: applicationsIcon },
-  { id: 'integration-endpoints', label: 'Integration endpoints', icon: integrationsIcon },
+/**
+ * Production ProjectNavItems order/labels
+ * (ui/console/src/ui/screens/partials/ProjectNavigation.tsx).
+ */
+const PRIMARY_NAV_ITEMS: { label: string; icon: IconifyIcon; id: string }[] = [
+  { id: 'get-started', label: 'Get started', icon: endorsedIcon },
+  { id: 'services', label: 'Services', icon: databaseIcon },
+  { id: 'applications', label: 'Applications', icon: consoleIcon },
+  { id: 'agents', label: 'Agents', icon: pulseIcon },
+  { id: 'integration-endpoints', label: 'Integration endpoints', icon: codeBlockIcon },
   { id: 'vpcs', label: 'VPCs', icon: cloudIcon },
-  { id: 'observability', label: 'Observability', icon: pulseIcon },
-  { id: 'audit-logs', label: 'Audit logs', icon: listIcon },
-  { id: 'permissions', label: 'Permissions', icon: appUsersIcon },
-  { id: 'billing', label: 'Billing', icon: bankAccountIcon },
-  { id: 'project-ai-insights', label: 'Project AI insights', icon: pulseIcon },
+  { id: 'event-log', label: 'Event log', icon: propertyIcon },
+  { id: 'permissions', label: 'Permissions', icon: peopleIcon },
+  { id: 'project-ai-insights', label: 'Project AI insights', icon: performanceIcon },
+  { id: 'app-builder', label: 'App Builder', icon: proPlansIcon },
 ]
 
 export type ProjectSidebarProps = {
   projectName: string
   activeItem?: string
+  /** @deprecated Billing lives in the org header; kept for caller compatibility. */
   onBillingClick?: () => void
   onItemClick?: (itemId: string) => void
 }
 
-export function ProjectSidebar({ projectName, activeItem = 'services', onBillingClick, onItemClick }: ProjectSidebarProps) {
+export function ProjectSidebar({
+  projectName,
+  activeItem = 'services',
+  onItemClick,
+}: ProjectSidebarProps) {
   return (
     <Box
       style={{
@@ -44,10 +54,11 @@ export function ProjectSidebar({ projectName, activeItem = 'services', onBilling
     >
       <Navigation>
         <Navigation.Header>
-          <Navigation.Header.Title>PROJECT</Navigation.Header.Title>
+          <Navigation.Header.Title>Project</Navigation.Header.Title>
           <Navigation.Header.Subtitle>{projectName}</Navigation.Header.Subtitle>
         </Navigation.Header>
-        {NAV_ITEMS.map(({ id, label, icon }) => (
+        <Navigation.Divider />
+        {PRIMARY_NAV_ITEMS.map(({ id, label, icon }) => (
           <Navigation.Item
             key={id}
             icon={icon}
@@ -55,10 +66,6 @@ export function ProjectSidebar({ projectName, activeItem = 'services', onBilling
             href="#"
             onClick={(e) => {
               e.preventDefault()
-              if (id === 'billing') {
-                onBillingClick?.()
-                return
-              }
               onItemClick?.(id)
             }}
           >
@@ -66,7 +73,15 @@ export function ProjectSidebar({ projectName, activeItem = 'services', onBilling
           </Navigation.Item>
         ))}
         <Navigation.Divider />
-        <Navigation.Item icon={settingsIcon} active={activeItem === 'settings'} href="#">
+        <Navigation.Item
+          icon={cogIcon}
+          active={activeItem === 'settings'}
+          href="#"
+          onClick={(e) => {
+            e.preventDefault()
+            onItemClick?.('settings')
+          }}
+        >
           Settings
         </Navigation.Item>
       </Navigation>

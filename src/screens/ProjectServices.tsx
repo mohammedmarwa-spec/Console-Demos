@@ -911,7 +911,7 @@ type ProjectServicesProps = {
   onOrgHomeClick?: () => void
 }
 
-type ProjectPageId = 'services' | 'observability' | 'audit-logs'
+type ProjectPageId = 'services' | 'event-log' | 'observability' | 'audit-logs'
 
 function ProjectServices({ services, onCreateServiceClick, onServiceClick, onDeleteService, onPlanAction, onBillingClick, onOrgHomeClick }: ProjectServicesProps) {
   const activeScenarioId = useContext(ScenarioContext)?.activeScenarioId ?? null
@@ -998,9 +998,20 @@ function ProjectServices({ services, onCreateServiceClick, onServiceClick, onDel
   }, [])
 
   function handleProjectSidebarItemClick(itemId: string) {
-    if (itemId === 'services' || itemId === 'observability' || itemId === 'audit-logs') {
+    if (itemId === 'services' || itemId === 'event-log') {
       setActiveProjectPage(itemId)
+      return
     }
+    // Legacy ids kept for older deep-links / callers
+    if (itemId === 'observability' || itemId === 'audit-logs') {
+      setActiveProjectPage(itemId === 'audit-logs' ? 'event-log' : itemId)
+    }
+  }
+
+  function projectPageTitle(page: ProjectPageId): string {
+    if (page === 'services') return 'Services'
+    if (page === 'event-log' || page === 'audit-logs') return 'Event log'
+    return 'Observability'
   }
 
   return (
@@ -1044,13 +1055,7 @@ function ProjectServices({ services, onCreateServiceClick, onServiceClick, onDel
           {!showPlaygroundEcosystem && (
           <Box style={{ marginBottom: 24 }}>
             <PageHeader
-              title={
-                activeProjectPage === 'services'
-                  ? 'Project overview'
-                  : activeProjectPage === 'observability'
-                  ? 'Observability'
-                  : 'Audit logs'
-              }
+              title={projectPageTitle(activeProjectPage)}
               breadcrumbs={[
                 <Breadcrumbs.Crumb key="org" href="#" onClick={(e) => { e.preventDefault(); onOrgHomeClick?.() }}>
                   My Organization
@@ -1060,11 +1065,7 @@ function ProjectServices({ services, onCreateServiceClick, onServiceClick, onDel
                 </Breadcrumbs.Crumb>,
                 <Breadcrumbs.Crumb key="project">{projectName}</Breadcrumbs.Crumb>,
                 <Breadcrumbs.Crumb key="page">
-                  {activeProjectPage === 'services'
-                    ? 'Project overview'
-                    : activeProjectPage === 'observability'
-                    ? 'Observability'
-                    : 'Audit logs'}
+                  {projectPageTitle(activeProjectPage)}
                 </Breadcrumbs.Crumb>,
               ]}
               primaryAction={
