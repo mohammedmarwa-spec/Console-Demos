@@ -12,13 +12,6 @@ import {
 } from '../../lib/experiments/useExperimentRouteMeta'
 import { useExperimentComponentManifest } from '../../lib/experiments/useExperimentComponentManifest'
 import { useActiveExperimentPage } from '../../lib/experiments/useActiveExperimentPage'
-import {
-  buildCursorPrompt,
-  getCursorPromptIntent,
-  storeOwnerSlug,
-  suggestExperimentSlug,
-  suggestOwnerSlug,
-} from '../../lib/cursorDeeplink'
 import { useScenario } from '../../scenarios'
 import { AppearanceSwitcher } from '../AppearanceSwitcher'
 import { ComponentMapDrawer } from './ComponentMapDrawer'
@@ -54,17 +47,8 @@ export function PlaygroundHeader() {
 
   function handleStartInCursor() {
     if (!experimentPage) return
-    const intent = getCursorPromptIntent(experimentPage)
-    if (intent === 'edit') {
-      const ownerSlug = suggestOwnerSlug(experimentPage)
-      const experimentSlug = suggestExperimentSlug(experimentPage)
-      const result = buildCursorPrompt(experimentPage, { ownerSlug, experimentSlug })
-      if (result.withinLimit) {
-        storeOwnerSlug(ownerSlug)
-        window.open(result.url, '_blank', 'noopener,noreferrer')
-        return
-      }
-    }
+    // Always open the modal so templates can pick owner/name (fork) and experiments
+    // can review/copy the prompt before launching Cursor.
     setCursorModalOpen(true)
   }
 
