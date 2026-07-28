@@ -12,7 +12,7 @@ Recommended starters:
 
 ## 2. Scaffold an experiment folder
 
-**From the hub:** click **Start in Cursor** on a card. For reusable scenarios, enter your owner slug and experiment name; Cursor opens with a pre-filled agent prompt. Use **Copy prompt** if the deeplink does not open Cursor.
+**From an open experiment or template:** click **Start in Cursor** in the top playground bar. For templates, enter your owner slug and experiment name; Cursor opens with a pre-filled agent prompt. Use **Copy prompt** if the deeplink does not open Cursor.
 
 **From the terminal:**
 
@@ -29,7 +29,7 @@ node scripts/create-experiment.mjs --owner your-name --name my-experiment --from
 - Open the repo as your Cursor workspace before confirming the agent prompt
 - Node.js installed (for `create-experiment.mjs`)
 
-If the browser does not open Cursor, use **Copy prompt** on the hub modal and paste into Cursor chat manually.
+If the browser does not open Cursor, use **Copy prompt** on the modal and paste into Cursor chat manually.
 
 This creates:
 

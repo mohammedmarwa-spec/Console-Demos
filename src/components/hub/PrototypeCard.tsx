@@ -1,17 +1,8 @@
 'use client'
 
-import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { Box, Button, Card, Typography } from '@aivenio/aquarium'
+import { Box, Card, Typography } from '@aivenio/aquarium'
 import type { DiscoveredPage } from '@/lib/experiments/types'
-import {
-  buildCursorPrompt,
-  getCursorPromptIntent,
-  storeOwnerSlug,
-  suggestExperimentSlug,
-  suggestOwnerSlug,
-} from '@/lib/cursorDeeplink'
-import { StartInCursorModal } from './StartInCursorModal'
 
 const updatedAtFormatter = new Intl.DateTimeFormat('en-US', {
   month: 'short',
@@ -20,6 +11,7 @@ const updatedAtFormatter = new Intl.DateTimeFormat('en-US', {
   hour: 'numeric',
   minute: '2-digit',
   hour12: true,
+  timeZone: 'UTC',
 })
 
 function formatUpdatedAt(iso: string): string {
@@ -28,26 +20,9 @@ function formatUpdatedAt(iso: string): string {
 
 export function PrototypeCard({ entry }: { entry: DiscoveredPage }) {
   const router = useRouter()
-  const [cursorModalOpen, setCursorModalOpen] = useState(false)
 
   function handleOpenPrototype() {
     router.push(entry.route)
-  }
-
-  function handleStartInCursor(event: React.MouseEvent) {
-    event.stopPropagation()
-    const intent = getCursorPromptIntent(entry)
-    if (intent === 'edit') {
-      const ownerSlug = suggestOwnerSlug(entry)
-      const experimentSlug = suggestExperimentSlug(entry)
-      const result = buildCursorPrompt(entry, { ownerSlug, experimentSlug })
-      if (result.withinLimit) {
-        storeOwnerSlug(ownerSlug)
-        window.open(result.url, '_blank', 'noopener,noreferrer')
-        return
-      }
-    }
-    setCursorModalOpen(true)
   }
 
   function handleCardKeyDown(event: React.KeyboardEvent) {
@@ -59,52 +34,32 @@ export function PrototypeCard({ entry }: { entry: DiscoveredPage }) {
   }
 
   return (
-    <>
-      <Box
-        role="button"
-        tabIndex={0}
-        aria-label={`Open ${entry.title}`}
-        onClick={handleOpenPrototype}
-        onKeyDown={handleCardKeyDown}
-        style={{ height: '100%', display: 'flex', cursor: 'pointer' }}
+    <Box
+      role="button"
+      tabIndex={0}
+      aria-label={`Open ${entry.title}`}
+      onClick={handleOpenPrototype}
+      onKeyDown={handleCardKeyDown}
+      style={{ height: '100%', display: 'flex', cursor: 'pointer' }}
+    >
+      <Card
+        fullWidth
+        title={entry.title}
+        {...(entry.thumbnail
+          ? {
+              image: entry.thumbnail,
+              imageAlt: `${entry.title} preview`,
+            }
+          : {})}
       >
-        <Card
-          fullWidth
-          title={entry.title}
-          {...(entry.thumbnail
-            ? {
-                image: entry.thumbnail,
-                imageAlt: `${entry.title} preview`,
-              }
-            : {})}
-        >
-          <Box style={{ display: 'flex', flexDirection: 'column', gap: 12, flex: 1, minHeight: 0 }}>
-            <Typography.Small color="muted">{entry.description}</Typography.Small>
-            {entry.updatedAt && (
-              <Typography.Small color="muted">{formatUpdatedAt(entry.updatedAt)}</Typography.Small>
-            )}
-            <Box
-              style={{
-                marginTop: 'auto',
-                paddingTop: 8,
-                display: 'flex',
-                flexWrap: 'wrap',
-                gap: 8,
-              }}
-            >
-              <Button.Secondary dense type="button" onClick={handleStartInCursor}>
-                Start in Cursor
-              </Button.Secondary>
-            </Box>
-          </Box>
-        </Card>
-      </Box>
-      <StartInCursorModal
-        entry={entry}
-        open={cursorModalOpen}
-        onClose={() => setCursorModalOpen(false)}
-      />
-    </>
+        <Box style={{ display: 'flex', flexDirection: 'column', gap: 12, flex: 1, minHeight: 0 }}>
+          <Typography.Small color="muted">{entry.description}</Typography.Small>
+          {entry.updatedAt && (
+            <Typography.Small color="muted">{formatUpdatedAt(entry.updatedAt)}</Typography.Small>
+          )}
+        </Box>
+      </Card>
+    </Box>
   )
 }
 

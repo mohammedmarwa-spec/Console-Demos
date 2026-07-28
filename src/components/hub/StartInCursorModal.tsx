@@ -22,31 +22,36 @@ export type StartInCursorModalProps = {
 }
 
 export function StartInCursorModal({ entry, open, onClose }: StartInCursorModalProps) {
-  const [ownerSlug, setOwnerSlug] = useState('')
-  const [experimentName, setExperimentName] = useState('')
-  const [copyState, setCopyState] = useState<'idle' | 'copied' | 'error'>('idle')
-
   const ownerOptions = useMemo(
     () => listOwnerSlugs().map((slug) => ({ label: getOwnerDisplayName(slug), value: slug })),
     [],
   )
+  const fallbackOwner = ownerOptions[0]?.value ?? ''
+
+  // Always start controlled with a real option value — empty string makes Aquarium Select
+  // flip Downshift between uncontrolled and controlled.
+  const [ownerSlug, setOwnerSlug] = useState(fallbackOwner)
+  const [experimentName, setExperimentName] = useState('')
+  const [copyState, setCopyState] = useState<'idle' | 'copied' | 'error'>('idle')
 
   useEffect(() => {
     if (!entry || !open) return
-    setOwnerSlug(suggestOwnerSlug(entry))
+    const suggested = suggestOwnerSlug(entry)
+    setOwnerSlug(suggested || fallbackOwner)
     setExperimentName(suggestExperimentSlug(entry))
     setCopyState('idle')
-  }, [entry, open])
+  }, [entry, open, fallbackOwner])
 
   if (!entry) return null
 
   const intent = getCursorPromptIntent(entry)
   const normalizedExperiment = slugify(experimentName)
-  const canSubmit = ownerSlug.length > 0 && normalizedExperiment.length > 0
+  const resolvedOwner = ownerSlug || fallbackOwner
+  const canSubmit = resolvedOwner.length > 0 && normalizedExperiment.length > 0
 
   const result = canSubmit
     ? buildCursorPrompt(entry, {
-        ownerSlug,
+        ownerSlug: resolvedOwner,
         experimentSlug: normalizedExperiment,
       })
     : null
@@ -58,7 +63,7 @@ export function StartInCursorModal({ entry, open, onClose }: StartInCursorModalP
 
   function handleOpenInCursor() {
     if (!result?.withinLimit) return
-    storeOwnerSlug(ownerSlug)
+    storeOwnerSlug(resolvedOwner)
     window.open(result.url, '_blank', 'noopener,noreferrer')
     handleClose()
   }
@@ -67,10 +72,11 @@ export function StartInCursorModal({ entry, open, onClose }: StartInCursorModalP
     if (!result) return
     try {
       await navigator.clipboard.writeText(result.prompt)
-      setCopyState('copied')
     } catch {
       setCopyState('error')
+      return
     }
+    setCopyState('copied')
   }
 
   const isFork = intent === 'fork'
@@ -96,13 +102,14 @@ export function StartInCursorModal({ entry, open, onClose }: StartInCursorModalP
       secondaryActions={{ text: 'Cancel', onClick: handleClose }}
     >
       <Box style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-        {isFork && (
+        {isFork && open && (
           <>
             <Select
+              key={`owner-${entry.id}`}
               labelText="Owner"
               options={ownerOptions}
-              value={ownerSlug}
-              onChange={(selected) => setOwnerSlug(aquariumSelectValue(selected))}
+              value={resolvedOwner}
+              onChange={(selected) => setOwnerSlug(aquariumSelectValue(selected, fallbackOwner))}
             />
             <Input
               labelText="Experiment name"

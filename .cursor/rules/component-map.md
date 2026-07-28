@@ -61,4 +61,4 @@ experiments/<owner>/<slug>/component-manifest.ts
 experiments/_templates/<slug>/component-manifest.ts
 ```
 
-The playground header shows a **Component map** button when a valid manifest is available for the current experiment (including after redirect into `/console` via `fromExperiment`).
+The playground header shows a **View DS components** button when a valid manifest is available for the current experiment (including after redirect into `/console` via `fromExperiment`).

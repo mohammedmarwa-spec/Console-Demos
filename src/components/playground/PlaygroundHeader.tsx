@@ -3,7 +3,6 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { Button } from '@aivenio/aquarium'
 import { getEntryById } from '../../registry'
 import { getPrototypeScenarioOrNull } from '../../content/prototype-scenarios'
 import { ROUTES } from '../../lib/navigation'
@@ -12,25 +11,62 @@ import {
   useExperimentRouteMeta,
 } from '../../lib/experiments/useExperimentRouteMeta'
 import { useExperimentComponentManifest } from '../../lib/experiments/useExperimentComponentManifest'
+import { useActiveExperimentPage } from '../../lib/experiments/useActiveExperimentPage'
+import {
+  buildCursorPrompt,
+  getCursorPromptIntent,
+  storeOwnerSlug,
+  suggestExperimentSlug,
+  suggestOwnerSlug,
+} from '../../lib/cursorDeeplink'
 import { useScenario } from '../../scenarios'
 import { AppearanceSwitcher } from '../AppearanceSwitcher'
 import { ComponentMapDrawer } from './ComponentMapDrawer'
+import { StartInCursorModal } from '../hub/StartInCursorModal'
+import { getOwnerDisplayName } from '../../lib/designTeamOwners'
 import './playground-header.css'
 
 export function PlaygroundHeader() {
   const pathname = usePathname()
   const experimentMeta = useExperimentRouteMeta()
+  const experimentPage = useActiveExperimentPage()
   const componentManifest = useExperimentComponentManifest()
   const onExperimentRoute = isExperimentRoute(pathname)
   const { activeScenarioId } = useScenario()
   const [componentMapOpen, setComponentMapOpen] = useState(false)
+  const [cursorModalOpen, setCursorModalOpen] = useState(false)
   const entry = !onExperimentRoute && activeScenarioId ? getEntryById(activeScenarioId) : null
   const prototype =
     !onExperimentRoute && activeScenarioId && !entry
       ? getPrototypeScenarioOrNull(activeScenarioId)
       : null
-  const title = experimentMeta?.title ?? entry?.title ?? prototype?.title
-  const owner = experimentMeta?.owner ?? entry?.owner ?? prototype?.owner
+  const title = experimentMeta?.title ?? experimentPage?.title ?? entry?.title ?? prototype?.title
+  const owner =
+    experimentMeta?.owner ??
+    (experimentPage
+      ? experimentPage.kind === 'template'
+        ? 'Template'
+        : getOwnerDisplayName(experimentPage.ownerSlug ?? '')
+      : null) ??
+    entry?.owner ??
+    prototype?.owner
+  const showActionButtons = Boolean(experimentPage || componentManifest)
+
+  function handleStartInCursor() {
+    if (!experimentPage) return
+    const intent = getCursorPromptIntent(experimentPage)
+    if (intent === 'edit') {
+      const ownerSlug = suggestOwnerSlug(experimentPage)
+      const experimentSlug = suggestExperimentSlug(experimentPage)
+      const result = buildCursorPrompt(experimentPage, { ownerSlug, experimentSlug })
+      if (result.withinLimit) {
+        storeOwnerSlug(ownerSlug)
+        window.open(result.url, '_blank', 'noopener,noreferrer')
+        return
+      }
+    }
+    setCursorModalOpen(true)
+  }
 
   return (
     <>
@@ -49,16 +85,29 @@ export function PlaygroundHeader() {
           </div>
 
           <div className="playground-header__actions">
-            {componentManifest && (
-              <Button.Text
-                dense
-                type="button"
-                className="playground-header__component-map"
-                onClick={() => setComponentMapOpen(true)}
-              >
-                👀 Component mapping
-              </Button.Text>
+            {showActionButtons && (
+              <div className="playground-header__action-group">
+                {experimentPage && (
+                  <button
+                    type="button"
+                    className="playground-header__action"
+                    onClick={handleStartInCursor}
+                  >
+                    Start in Cursor
+                  </button>
+                )}
+                {componentManifest && (
+                  <button
+                    type="button"
+                    className="playground-header__action"
+                    onClick={() => setComponentMapOpen(true)}
+                  >
+                    View DS components
+                  </button>
+                )}
+              </div>
             )}
+            {showActionButtons && <span className="playground-header__divider" aria-hidden="true" />}
             <AppearanceSwitcher />
           </div>
         </div>
@@ -71,6 +120,12 @@ export function PlaygroundHeader() {
           manifest={componentManifest}
         />
       )}
+
+      <StartInCursorModal
+        entry={experimentPage}
+        open={cursorModalOpen}
+        onClose={() => setCursorModalOpen(false)}
+      />
     </>
   )
 }

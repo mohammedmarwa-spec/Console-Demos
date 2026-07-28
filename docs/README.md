@@ -38,7 +38,7 @@ See [how-to-run.md](./how-to-run.md) for full setup (designers: start with [SETU
 
 ## Experiment preview thumbnails
 
-Commits that touch `experiments/<owner>/<slug>/` auto-generate a screenshot thumbnail (pre-commit hook). Cards on the Prototype Hub show the image when `public/experiment-previews/<owner>/<slug>.png` exists.
+Commits that touch `experiments/<owner>/<slug>/` (or `experiments/_templates/<slug>/`) auto-generate a screenshot thumbnail (pre-commit hook). Cards on the Prototype Hub show the image when `public/experiment-previews/<owner>/<slug>.png` exists.
 
 Setup: `npx playwright install chromium` after `npm install`. See [how-to-deploy.md](./how-to-deploy.md#experiment-preview-thumbnails-on-commit).
 

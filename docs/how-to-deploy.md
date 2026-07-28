@@ -46,7 +46,7 @@ Naming convention: confirm with your team (e.g. one shared preview service redep
 
 ## Experiment preview thumbnails (on commit)
 
-When you commit changes under `experiments/<owner>/<slug>/`, a pre-commit hook captures a screenshot of that experiment and saves it to `public/experiment-previews/<owner>/<slug>.png`. The Prototype Hub shows this image on the experiment card.
+When you commit changes under `experiments/<owner>/<slug>/` (or a template under `experiments/_templates/<slug>/`), a pre-commit hook captures a screenshot and saves it to `public/experiment-previews/<owner>/<slug>.png`. The Prototype Hub shows this image on the card.
 
 ### One-time setup
 

@@ -91,15 +91,48 @@
   flex-shrink: 0;
 }
 
-/* Dark lab chrome: keep DS text/ghost silhouette (no fill), only invert label color */
-.playground-header__component-map {
-  color: rgba(255, 255, 255, 0.88) !important;
+.playground-header__action-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
-.playground-header__component-map:hover,
-.playground-header__component-map:focus-visible {
-  color: rgba(255, 255, 255, 0.98) !important;
-  background-color: transparent !important;
+.playground-header__action {
+  display: inline-flex;
+  align-items: center;
+  padding: 6px 10px;
+  border: 1px solid rgb(255 255 255 / 12%);
+  border-radius: 6px;
+  background-color: #1c1c1c;
+  color: rgb(255 255 255 / 72%);
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 1;
+  cursor: pointer;
+  font-family: inherit;
+  white-space: nowrap;
+  transition:
+    color 0.15s ease,
+    border-color 0.15s ease,
+    background-color 0.15s ease;
+}
+
+.playground-header__action:hover {
+  color: rgb(255 255 255 / 95%);
+  border-color: rgb(255 255 255 / 28%);
+  background-color: rgb(255 255 255 / 8%);
+}
+
+.playground-header__action:focus-visible {
+  outline: 2px solid rgb(255 255 255 / 35%);
+  outline-offset: 2px;
+}
+
+.playground-header__divider {
+  width: 1px;
+  height: 20px;
+  flex-shrink: 0;
+  background-color: rgb(255 255 255 / 16%);
 }
 
 .playground-shell-loading {

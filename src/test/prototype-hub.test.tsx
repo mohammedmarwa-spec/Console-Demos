@@ -65,14 +65,15 @@ describe('PrototypeHub', () => {
     const user = userEvent.setup()
     renderHub()
 
-    expect(screen.getAllByRole('button', { name: 'Start in Cursor' })).toHaveLength(2)
+    expect(screen.getByRole('button', { name: 'Open Shorter create service flow' })).toBeInTheDocument()
     expect(screen.getByRole('heading', { level: 2, name: 'Elena' })).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Start in Cursor' })).not.toBeInTheDocument()
 
     await user.click(screen.getByRole('tab', { name: 'Templates' }))
 
     expect(screen.getByRole('tab', { name: 'Templates' })).toHaveAttribute('aria-selected', 'true')
-    expect(screen.getAllByRole('button', { name: 'Start in Cursor' })).toHaveLength(1)
     expect(screen.getByText('Onboarding starter')).toBeInTheDocument()
     expect(screen.queryByRole('heading', { level: 2, name: 'Elena' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Start in Cursor' })).not.toBeInTheDocument()
   })
 })

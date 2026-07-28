@@ -81,6 +81,12 @@ function readPageMeta(pageFilePath: string, slug: string): PageMeta {
   }
 }
 
+function previewThumbnail(ownerSlug: string, slug: string): string | undefined {
+  const previewPath = join(PREVIEWS_ROOT, ownerSlug, `${slug}.png`)
+  if (!existsSync(previewPath)) return undefined
+  return `/experiment-previews/${ownerSlug}/${slug}.png`
+}
+
 export function discoverTemplates(): DiscoveredPage[] {
   const templatesRoot = join(EXPERIMENTS_ROOT, TEMPLATES_DIR)
   const pages: DiscoveredPage[] = []
@@ -95,16 +101,12 @@ export function discoverTemplates(): DiscoveredPage[] {
       slug,
       kind: 'template',
       route: `/experiments/${TEMPLATES_DIR}/${slug}`,
+      thumbnail: previewThumbnail(TEMPLATES_DIR, slug),
+      updatedAt: getLastCommitIso(`experiments/${TEMPLATES_DIR}/${slug}`),
     })
   }
 
   return pages
-}
-
-function experimentThumbnail(ownerSlug: string, slug: string): string | undefined {
-  const previewPath = join(PREVIEWS_ROOT, ownerSlug, `${slug}.png`)
-  if (!existsSync(previewPath)) return undefined
-  return `/experiment-previews/${ownerSlug}/${slug}.png`
 }
 
 export function discoverExperiments(): DiscoveredPage[] {
@@ -127,7 +129,7 @@ export function discoverExperiments(): DiscoveredPage[] {
         kind: 'experiment',
         ownerSlug,
         route: `/experiments/${ownerSlug}/${slug}`,
-        thumbnail: experimentThumbnail(ownerSlug, slug),
+        thumbnail: previewThumbnail(ownerSlug, slug),
         updatedAt: getLastCommitIso(`experiments/${ownerSlug}/${slug}`),
       })
     }

@@ -29,7 +29,8 @@ const URL_STABLE_MS = 1_000
 /** PNGs smaller than this are almost always mid-compile blanks — warn. */
 const MIN_PREVIEW_BYTES = 80_000
 
-const RESERVED_OWNERS = new Set(['_templates', '_shared'])
+const TEMPLATES_DIR = '_templates'
+const RESERVED_OWNERS = new Set(['_shared'])
 
 function log(message) {
   console.log(`[preview] ${message}`)
@@ -39,12 +40,18 @@ function warn(message) {
   console.warn(`[preview] warning: ${message}`)
 }
 
+function isPreviewableOwner(owner) {
+  if (RESERVED_OWNERS.has(owner)) return false
+  if (owner === TEMPLATES_DIR) return true
+  return !owner.startsWith('_')
+}
+
 function parseExperimentPath(filePath) {
   const match = filePath.match(/^experiments\/([^/]+)\/([^/]+)\//)
   if (!match) return null
 
   const [, owner, slug] = match
-  if (RESERVED_OWNERS.has(owner) || owner.startsWith('_')) return null
+  if (!isPreviewableOwner(owner)) return null
   if (!existsSync(join(EXPERIMENTS_ROOT, owner, slug, 'index.tsx'))) return null
 
   return { owner, slug }
@@ -88,7 +95,7 @@ function listExplicitExperiments(args) {
       continue
     }
 
-    if (RESERVED_OWNERS.has(owner) || owner.startsWith('_')) {
+    if (!isPreviewableOwner(owner)) {
       warn(`skipping reserved owner "${owner}"`)
       continue
     }
