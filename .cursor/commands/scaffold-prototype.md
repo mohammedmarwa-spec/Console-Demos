@@ -7,7 +7,7 @@ Create a new experiment folder from a template in Console Prototype Lab.
 If not already provided, ask for:
 
 1. **Owner slug** — lowercase folder name, e.g. `elena`
-2. **Experiment slug** — e.g. `shorter-create-service`
+2. **Experiment slug** — e.g. `first-time-user`
 3. **Template slug** — e.g. `onboarding-starter`
 
 ## Steps

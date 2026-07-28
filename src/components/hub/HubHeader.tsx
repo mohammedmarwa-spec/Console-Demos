@@ -12,16 +12,25 @@ const PHOTO_CYCLE_MS = 900
 const ASTERISK_PATH =
   'M106.67 32.6459L119.011 24.0145L127.286 38.531L113.768 44.7727L127.286 51.0145L119.011 65.531L106.67 56.8996L108.026 71.7727H91.4049L92.7602 56.8996L80.4194 65.531L72.109 51.0501L85.6268 44.8084L72.109 38.531L80.3838 24.0145L92.7246 32.6459L91.4049 17.7727H108.026L106.67 32.6459Z'
 
-const SECOND_ASTERISK_PATH =
-  'M285.334 32.6459L297.675 24.0145L305.95 38.531L292.432 44.7727L305.95 51.0145L297.675 65.531L285.334 56.8996L286.69 71.7727H270.069L271.424 56.8996L259.083 65.531L250.773 51.0501L264.291 44.8084L250.773 38.531L259.048 24.0145L271.388 32.6459L270.069 17.7727H286.69L285.334 32.6459Z'
-
-/** Shared geometry — second asterisk slot (photo preview maps here). */
+/** Shared geometry — second symbol slot (photo preview maps here). */
 const ASTERISK_SIZE = 54
+/** Code-symbol PNG — height matches asterisk; width keeps aspect ratio. */
+const CODE_SYMBOL_ASPECT = 540 / 757
+const CODE_SYMBOL_HEIGHT = ASTERISK_SIZE
+const CODE_SYMBOL_WIDTH = ASTERISK_SIZE * CODE_SYMBOL_ASPECT
+const CODE_SYMBOL_SRC = '/hub/code-symbol.png'
 const FIRST_ASTERISK = { cx: 99.6975, cy: 44.7727 }
 const SECOND_ASTERISK = { cx: 278.3615, cy: 44.7727 }
 
-const COMPACT_ENTER_Y = 64
-const COMPACT_EXIT_Y = 16
+/**
+ * Sticky compact toggle changes header height by ~150–200px (padding + intro).
+ * That layout shift moves scrollY by roughly the same amount. The enter/exit gap
+ * MUST be larger than that delta, or compact↔full oscillates (blinking background).
+ */
+const COMPACT_ENTER_Y = 220
+const COMPACT_EXIT_Y = 8
+/** Ignore scroll while padding/intro finish transitioning after a compact toggle. */
+const COMPACT_LOCK_MS = 320
 
 const OWNER_AVATARS = listOwnerAvatars()
 
@@ -31,12 +40,19 @@ export function HubHeader({ children }: { children?: ReactNode }) {
   const [compact, setCompact] = useState(false)
 
   useEffect(() => {
+    let lockUntil = 0
+
     const onScroll = () => {
+      if (performance.now() < lockUntil) return
+
       const y = window.scrollY
       setCompact((isCompact) => {
-        if (!isCompact && y > COMPACT_ENTER_Y) return true
-        if (isCompact && y < COMPACT_EXIT_Y) return false
-        return isCompact
+        const next =
+          !isCompact && y > COMPACT_ENTER_Y ? true : isCompact && y < COMPACT_EXIT_Y ? false : isCompact
+        if (next !== isCompact) {
+          lockUntil = performance.now() + COMPACT_LOCK_MS
+        }
+        return next
       })
     }
     onScroll()
@@ -57,6 +73,8 @@ export function HubHeader({ children }: { children?: ReactNode }) {
   const currentPhoto = OWNER_AVATARS[photoIndex]
   const photoOrigin = SECOND_ASTERISK.cx - ASTERISK_SIZE / 2
   const photoTop = SECOND_ASTERISK.cy - ASTERISK_SIZE / 2
+  const codeSymbolX = SECOND_ASTERISK.cx - CODE_SYMBOL_WIDTH / 2
+  const codeSymbolY = SECOND_ASTERISK.cy - CODE_SYMBOL_HEIGHT / 2
 
   return (
     <header
@@ -127,7 +145,14 @@ export function HubHeader({ children }: { children?: ReactNode }) {
           </g>
 
           <g className="hub-header__asterisk hub-header__asterisk--secondary" aria-hidden="true">
-            <path d={SECOND_ASTERISK_PATH} fill={ASTERISK_FILL} pointerEvents="none" />
+            <image
+              href={CODE_SYMBOL_SRC}
+              x={codeSymbolX}
+              y={codeSymbolY}
+              width={CODE_SYMBOL_WIDTH}
+              height={CODE_SYMBOL_HEIGHT}
+              pointerEvents="none"
+            />
           </g>
 
           <image

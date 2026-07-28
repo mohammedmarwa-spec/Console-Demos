@@ -17,18 +17,18 @@ const template: DiscoveredPage = {
 }
 
 const experiment: DiscoveredPage = {
-  id: 'experiment/elena/shorter-create-service',
-  title: 'Shorter create service flow',
-  description: 'Advanced settings hidden by default — experiment from Create test environment',
-  slug: 'shorter-create-service',
+  id: 'experiment/elena/first-time-user',
+  title: 'First-time user',
+  description: 'Alias of Empty project — onboarding state, no services',
+  slug: 'first-time-user',
   kind: 'experiment',
   ownerSlug: 'elena',
-  route: '/experiments/elena/shorter-create-service',
+  route: '/experiments/elena/first-time-user',
 }
 
 describe('cursorDeeplink', () => {
   it('slugifies names', () => {
-    expect(slugify('Shorter Create Service')).toBe('shorter-create-service')
+    expect(slugify('First Time User')).toBe('first-time-user')
     expect(slugify('Design team')).toBe('design-team')
   })
 
@@ -54,7 +54,7 @@ describe('cursorDeeplink', () => {
   it('builds edit prompt for experiments', () => {
     const result = buildCursorPrompt(experiment)
     expect(result.intent).toBe('edit')
-    expect(result.prompt).toContain('experiments/elena/shorter-create-service/')
+    expect(result.prompt).toContain('experiments/elena/first-time-user/')
     expect(result.withinLimit).toBe(true)
   })
 

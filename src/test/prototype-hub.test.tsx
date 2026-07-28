@@ -7,13 +7,13 @@ import { ThemeProvider } from '../theme'
 
 const experiments: DiscoveredPage[] = [
   {
-    id: 'experiment/elena/shorter-create-service',
-    title: 'Shorter create service flow',
-    description: 'Advanced settings hidden by default — experiment from Create test environment',
-    slug: 'shorter-create-service',
+    id: 'experiment/elena/free-dev-upgrade-v4',
+    title: 'Free & Dev: Quick Upgrade V4',
+    description: 'Developer + Hobbyist on AWS and GCP (europe-west-1)',
+    slug: 'free-dev-upgrade-v4',
     kind: 'experiment',
     ownerSlug: 'elena',
-    route: '/experiments/elena/shorter-create-service',
+    route: '/experiments/elena/free-dev-upgrade-v4',
   },
   {
     id: 'experiment/elena/first-time-user',
@@ -52,12 +52,12 @@ describe('PrototypeHub', () => {
     const user = userEvent.setup()
     renderHub()
 
-    expect(screen.getByText('Shorter create service flow')).toBeInTheDocument()
+    expect(screen.getByText('Free & Dev: Quick Upgrade V4')).toBeInTheDocument()
     expect(screen.getByText('First-time user')).toBeInTheDocument()
 
-    await user.type(screen.getByLabelText('Search'), 'shorter')
+    await user.type(screen.getByLabelText('Search'), 'upgrade')
 
-    expect(screen.getByText('Shorter create service flow')).toBeInTheDocument()
+    expect(screen.getByText('Free & Dev: Quick Upgrade V4')).toBeInTheDocument()
     expect(screen.queryByText('First-time user')).not.toBeInTheDocument()
   })
 
@@ -65,7 +65,7 @@ describe('PrototypeHub', () => {
     const user = userEvent.setup()
     renderHub()
 
-    expect(screen.getByRole('button', { name: 'Open Shorter create service flow' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Open Free & Dev: Quick Upgrade V4' })).toBeInTheDocument()
     expect(screen.getByRole('heading', { level: 2, name: 'Elena' })).toBeInTheDocument()
     expect(screen.queryByRole('button', { name: 'Start in Cursor' })).not.toBeInTheDocument()
 

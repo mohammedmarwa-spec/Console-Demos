@@ -42,7 +42,7 @@ Rules:
 ## Scaffold command
 
 ```bash
-node scripts/create-experiment.mjs --owner elena --name shorter-create-service --from onboarding-test-env
+node scripts/create-experiment.mjs --owner elena --name first-time-user --from onboarding-test-env
 ```
 
 ## What to update

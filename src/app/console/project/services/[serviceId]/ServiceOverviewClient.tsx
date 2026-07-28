@@ -4,6 +4,7 @@ import { useEffect, useLayoutEffect } from 'react'
 import { useParams } from 'next/navigation'
 import ServiceOverview from '../../../../../screens/ServiceOverview'
 import { usePlaygroundState } from '../../../../../contexts/PlaygroundStateContext'
+import { SERVICE_OVERVIEW_CATCHALL_ID } from '../../../../../lib/serviceIds'
 
 export default function ServiceOverviewClient() {
   const params = useParams<{ serviceId: string }>()
@@ -27,20 +28,20 @@ export default function ServiceOverviewClient() {
   } = usePlaygroundState()
 
   useLayoutEffect(() => {
-    if (serviceId && serviceId !== '_') {
+    if (serviceId && serviceId !== SERVICE_OVERVIEW_CATCHALL_ID) {
       syncOverviewFromRoute(serviceId)
     }
   }, [serviceId, syncOverviewFromRoute])
 
   useEffect(() => {
-    if (serviceId === '_' || serviceId === overviewServiceId) return
+    if (serviceId === SERVICE_OVERVIEW_CATCHALL_ID || serviceId === overviewServiceId) return
     const service = services.find((s) => s.id === serviceId)
     if (service) {
       navigateToServiceOverview(service.id, service.serviceTypeId ?? 'mysql')
     }
   }, [serviceId, services, overviewServiceId, navigateToServiceOverview])
 
-  const activeId = serviceId !== '_' ? serviceId : overviewServiceId
+  const activeId = serviceId !== SERVICE_OVERVIEW_CATCHALL_ID ? serviceId : overviewServiceId
   const activeService = services.find((s) => s.id === activeId)
 
   return (

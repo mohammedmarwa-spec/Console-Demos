@@ -40,7 +40,7 @@ Scenarios still support query params:
 ```txt
 /console/project/services?scenario=onboarding-test-env
 /console/project/services?scenario=existing-customer
-/experiments/elena/shorter-create-service
+/experiments/elena/first-time-user
 ```
 
 ## Other commands

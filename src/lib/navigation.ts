@@ -4,6 +4,7 @@ import {
   resolveRuntime,
   type AppView,
 } from '../scenarios/scenarioRuntime'
+import { isKnownServiceId, SERVICE_OVERVIEW_CATCHALL_ID } from './serviceIds'
 
 export const ROUTES = {
   hub: '/',
@@ -14,8 +15,14 @@ export const ROUTES = {
   consolePlayground: '/console/onboarding/playground',
 } as const
 
+/**
+ * Path for service overview. Unknown / user-created IDs map to `_` because
+ * `output: 'export'` only allows paths returned from generateStaticParams.
+ * The real id is kept in PlaygroundStateContext.
+ */
 export function serviceOverviewPath(serviceId: string): string {
-  return `/console/project/services/${encodeURIComponent(serviceId)}`
+  const segment = isKnownServiceId(serviceId) ? serviceId : SERVICE_OVERVIEW_CATCHALL_ID
+  return `/console/project/services/${encodeURIComponent(segment)}`
 }
 
 export function experimentPath(owner: string, slug: string): string {
