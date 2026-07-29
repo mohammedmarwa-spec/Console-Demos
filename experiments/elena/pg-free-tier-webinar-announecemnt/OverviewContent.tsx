@@ -240,6 +240,8 @@ export function OverviewContent() {
           variant="default"
           image={imageSrc(pgUpgradeBannerUrl)}
           imageAlt="PostgreSQL"
+          imageWidth={308}
+          imageHeight={196}
           action={{ text: UPGRADE_BANNER.cta, onClick: noop }}
         >
           {UPGRADE_BANNER.description}

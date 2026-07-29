@@ -16,6 +16,7 @@ export const pageMeta: PageMeta = {
 
 export default function Page() {
   const [activeItem, setActiveItem] = useState('overview')
+  const [showWebinarBanner, setShowWebinarBanner] = useState(true)
 
   return (
     <Box
@@ -34,16 +35,19 @@ export default function Page() {
         userInitials="EI"
       />
 
-      <Alert.Banner
-        type="information"
-        title={`🐘 ${WEBINAR_ANNOUNCEMENT.title}`}
-        action={{
-          text: WEBINAR_ANNOUNCEMENT.registerCta,
-          href: WEBINAR_ANNOUNCEMENT.href,
-        }}
-      >
-        {WEBINAR_ANNOUNCEMENT.description} {WEBINAR_ANNOUNCEMENT.schedule}
-      </Alert.Banner>
+      {showWebinarBanner ? (
+        <Alert.Banner
+          type="information"
+          title={`🐘 ${WEBINAR_ANNOUNCEMENT.title}`}
+          action={{
+            text: WEBINAR_ANNOUNCEMENT.registerCta,
+            href: WEBINAR_ANNOUNCEMENT.href,
+          }}
+          onDismiss={() => setShowWebinarBanner(false)}
+        >
+          {WEBINAR_ANNOUNCEMENT.description} {WEBINAR_ANNOUNCEMENT.schedule}
+        </Alert.Banner>
+      ) : null}
 
       <Box style={{ display: 'flex', flex: 1, minHeight: 0 }}>
         <FreeTierServiceSidebar activeItem={activeItem} onNavigate={setActiveItem} />
