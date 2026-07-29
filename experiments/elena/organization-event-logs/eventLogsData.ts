@@ -7,7 +7,12 @@ export type EventDateRange = { start: CalendarDate; end: CalendarDate }
 
 export type ActorKind = 'user' | 'automation' | 'system'
 
-export type ResourceKind = 'Service' | 'Project' | 'Organization' | 'Network' | 'Billing'
+export type ResourceKind =
+  | 'Service'
+  | 'Project'
+  | 'Organization unit'
+  | 'Network'
+  | 'Billing group'
 
 /** API event_type values shown in log details and filter dropdowns. */
 export const EVENT_TYPE_VALUES = [

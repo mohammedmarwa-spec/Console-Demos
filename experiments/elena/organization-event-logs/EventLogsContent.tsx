@@ -53,14 +53,13 @@ import {
 
 type QueryStatus = 'loading' | 'ready' | 'error'
 
-type ColumnId = 'dateTime' | 'user' | 'action' | 'project' | 'service'
+type ColumnId = 'dateTime' | 'user' | 'action' | 'resource'
 
 const COLUMN_OPTIONS: { id: ColumnId; label: string }[] = [
   { id: 'dateTime', label: 'Date and time' },
   { id: 'user', label: 'User' },
   { id: 'action', label: 'Action' },
-  { id: 'project', label: 'Project' },
-  { id: 'service', label: 'Service' },
+  { id: 'resource', label: 'Resource' },
 ]
 
 const DEFAULT_VISIBLE_COLUMNS: ColumnId[] = COLUMN_OPTIONS.map((c) => c.id)
@@ -68,8 +67,7 @@ const DEFAULT_VISIBLE_COLUMNS: ColumnId[] = COLUMN_OPTIONS.map((c) => c.id)
 const COLUMN_WIDTHS = {
   dateTime: 260,
   user: 180,
-  project: 160,
-  service: 200,
+  resource: 260,
 } as const
 
 /** Max rows shown for a single query (retention / export cap). */
@@ -471,12 +469,17 @@ function UserCell({ row }: { row: EventLog }) {
   )
 }
 
-function ProjectCell({ row }: { row: EventLog }) {
-  return <Typography.Default>{row.projectId ?? '—'}</Typography.Default>
+function resourceDisplayValue(row: EventLog): string {
+  const resourceName = row.resourceName?.trim()
+  const resourceKind = row.resourceKind?.trim()
+  if (resourceName && resourceKind) return `${resourceKind}: ${resourceName}`
+  if (resourceName) return resourceName
+  if (resourceKind) return resourceKind
+  return '—'
 }
 
-function ServiceCell({ row }: { row: EventLog }) {
-  return <Typography.Default>{row.serviceId ?? '—'}</Typography.Default>
+function ResourceCell({ row }: { row: EventLog }) {
+  return <Typography.Default>{resourceDisplayValue(row)}</Typography.Default>
 }
 
 type DetailRow = { id: string; label: string; value: ReactNode }
@@ -616,24 +619,17 @@ function buildEventLogColumns(visibleIds: ColumnId[]) {
       ),
     })
   }
-  if (visible.has('project')) {
+  if (visible.has('resource')) {
     columns.push({
       type: 'custom' as const,
-      headerName: 'Project',
-      width: COLUMN_WIDTHS.project,
+      headerName: 'Resource',
+      width: COLUMN_WIDTHS.resource,
       sort: (a: EventLog, b: EventLog, direction: 'ascending' | 'descending' | 'none' | undefined) =>
-        dir((a.projectId ?? '').localeCompare(b.projectId ?? ''), direction === 'descending'),
-      UNSAFE_render: (row: EventLog) => <ProjectCell row={row} />,
-    })
-  }
-  if (visible.has('service')) {
-    columns.push({
-      type: 'custom' as const,
-      headerName: 'Service',
-      width: COLUMN_WIDTHS.service,
-      sort: (a: EventLog, b: EventLog, direction: 'ascending' | 'descending' | 'none' | undefined) =>
-        dir((a.serviceId ?? '').localeCompare(b.serviceId ?? ''), direction === 'descending'),
-      UNSAFE_render: (row: EventLog) => <ServiceCell row={row} />,
+        dir(
+          resourceDisplayValue(a).localeCompare(resourceDisplayValue(b)),
+          direction === 'descending',
+        ),
+      UNSAFE_render: (row: EventLog) => <ResourceCell row={row} />,
     })
   }
 
@@ -853,26 +849,26 @@ export function EventLogsContent() {
             </DateRangePicker>
 
             <IdStringFilter
-              label="account_id"
-              placeholder="Enter account_id"
+              label="Account"
+              placeholder="Enter account"
               value={filters.accountId}
               onChange={(accountId) => setFilters((f) => ({ ...f, accountId }))}
             />
             <IdStringFilter
-              label="organization_unit_id"
-              placeholder="Enter organization_unit_id"
+              label="Organization unit"
+              placeholder="Enter organization unit"
               value={filters.organizationUnitId}
               onChange={(organizationUnitId) => setFilters((f) => ({ ...f, organizationUnitId }))}
             />
             <IdStringFilter
-              label="project_id"
-              placeholder="Enter project_id"
+              label="Project"
+              placeholder="Enter project"
               value={filters.projectId}
               onChange={(projectId) => setFilters((f) => ({ ...f, projectId }))}
             />
             <IdStringFilter
-              label="actor_user_id"
-              placeholder="Enter actor_user_id"
+              label="Actor user"
+              placeholder="Enter actor user"
               value={filters.actorUserId}
               onChange={(actorUserId) => setFilters((f) => ({ ...f, actorUserId }))}
             />
