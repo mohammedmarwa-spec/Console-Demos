@@ -24,16 +24,18 @@ npm run dev
 
 Open http://localhost:5173 — browse scenarios from the hub or use deep links (see [how-to-run.md](./how-to-run.md)).
 
-See [how-to-run.md](./how-to-run.md) for full setup (designers: start with [SETUP.md](./SETUP.md)).
+Designers: start with [SETUP.md](./SETUP.md) (onboarding through your first experiment). Day-to-day commands: [how-to-run.md](./how-to-run.md).
 
 ## Documentation
 
 | Doc | Purpose |
 |-----|---------|
-| [how-to-run.md](./how-to-run.md) | Local development |
+| [SETUP.md](./SETUP.md) | Designer onboarding — tools, first run, first experiment |
+| [how-to-run.md](./how-to-run.md) | Local development, routes, deep links |
 | [how-to-create-prototype.md](./how-to-create-prototype.md) | Create experiments from reusable scenarios |
 | [how-to-deploy.md](./how-to-deploy.md) | Deploy to Aiven Application |
 | [contribution-guide.md](./contribution-guide.md) | Minimal Gitflow, CI path guard, share work with the team |
+| [setup-technical-reference.md](./setup-technical-reference.md) | Aquarium / Next.js wiring (optional) |
 | [agent-rules.md](./agent-rules.md) | Cursor Agent prompts and safety rules |
 
 ## Experiment preview thumbnails

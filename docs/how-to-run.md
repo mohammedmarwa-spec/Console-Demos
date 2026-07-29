@@ -2,13 +2,20 @@
 
 ## Prerequisites
 
-Follow [SETUP.md](./SETUP.md) if this is your first time (Node.js, git, `npm install`).
+First-time designers: follow [SETUP.md](./SETUP.md) (Cursor, tools check, clone, first experiment).
+
+This repo pins Node via [`.nvmrc`](../.nvmrc) (Node 20). If you use nvm:
+
+```bash
+nvm install
+nvm use
+```
 
 ## Start the dev server
 
 ```bash
 cd console-prototype-lab
-npm install   # after pull, if dependencies changed
+npm install   # after pull, only if dependencies changed
 npm run dev
 ```
 
