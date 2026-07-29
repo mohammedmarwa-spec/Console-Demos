@@ -92,7 +92,7 @@ brew --version
 
 Node runs the app tooling. **npm** (Node Package Manager) installs Aquarium, Next.js, and everything else.
 
-Next.js 15 requires **Node.js 20 or newer**. We recommend **nvm** (Node Version Manager) so you can switch Node versions safely — the same approach used in the [aiven-design](https://github.com/aiven/aiven-design) repo.
+This project uses **Next.js 16** and requires **Node.js 20 or newer**. We recommend **nvm** (Node Version Manager) so you can switch Node versions safely — the same approach used in the [aiven-design](https://github.com/aiven/aiven-design) repo.
 
 ### 4a. Install nvm
 
@@ -192,7 +192,7 @@ npm run dev
 Expected output:
 
 ```
-  ▲ Next.js 15.x.x
+  ▲ Next.js 16.x.x
   - Local:   http://localhost:5173
 ```
 
@@ -209,9 +209,10 @@ Expected output:
 | `npm run dev` | Start dev server on port 5173 (hot reload on save) |
 | `npm run dev:clean` | Clear the `.next` cache, then start the dev server |
 | `npm run build` | Production static export to `out/` (build check before deploy) |
-| `npm run start` | Serve the production build |
 | `npm test` | Run automated tests (Vitest) |
 | `npm run lint` | Run ESLint |
+
+> Production is a **static** `out/` folder (served by nginx in Aiven Application on port 8080). Day-to-day local work uses `npm run dev` only.
 
 See [how-to-run.md](./how-to-run.md) for routes and deep links (e.g. `?scenario=onboarding-test-env`).
 
@@ -255,6 +256,7 @@ The stylesheet loads design tokens as CSS variables (`--aquarium-*`).
 
 ```tsx
 'use client'
+import { Suspense } from 'react'
 import { Context } from '@aivenio/aquarium'
 import { ScenarioProvider } from '../scenarios/ScenarioContext'
 import { ThemeProvider } from '../theme'
@@ -262,9 +264,11 @@ import { ThemeProvider } from '../theme'
 export function Providers({ children }: { children: React.ReactNode }) {
   return (
     <Context>
-      <ScenarioProvider>
-        <ThemeProvider>{children}</ThemeProvider>
-      </ScenarioProvider>
+      <Suspense fallback={null}>
+        <ScenarioProvider>
+          <ThemeProvider>{children}</ThemeProvider>
+        </ScenarioProvider>
+      </Suspense>
     </Context>
   )
 }
@@ -293,9 +297,9 @@ Browse all components at https://aquarium.aiven.io — names match Figma (`Input
 }} />
 ```
 
-### 8f. Font (Inter)
+### 8f. Font
 
-Aquarium recommends [Inter](https://fonts.google.com/specimen/Inter). Global styles live in `src/index.css`.
+Aquarium recommends [Inter](https://fonts.google.com/specimen/Inter). This playground currently uses **system fonts** in `src/index.css` (`system-ui, Avenir, Helvetica, Arial, sans-serif`). That is enough for prototyping; add Inter only if you need closer parity with production Console.
 
 ### 8g. Dark mode
 
@@ -342,6 +346,7 @@ Read these **before** building new screens or asking AI to implement UI:
 | [`AGENTS.md`](../AGENTS.md) | Design Police persona + full AI workflow (read Figma → audit → plan → execute → verify), Figma file keys, 8px grid, token rules |
 | [`.cursor/rules/playground-rules.mdc`](../.cursor/rules/playground-rules.mdc) | Edit-scope safety, experiment structure, reuse rules, deployment |
 | [`.cursor/rules/experiment-previews.md`](../.cursor/rules/experiment-previews.md) | How experiment preview thumbnails are generated |
+| [`.cursor/rules/component-map.md`](../.cursor/rules/component-map.md) | Console → Aquarium component mapping reference |
 | [`docs/README.md`](./README.md) | Playground overview and architecture |
 
 ### Figma libraries
@@ -383,10 +388,14 @@ Reusable and prototype scenarios are registered in `src/registry/`; experiments 
 Do **not** edit shared reusable scenarios directly. Instead, copy a template into your own experiment folder:
 
 ```bash
-node scripts/create-experiment.mjs --owner <your-name> --name <slug> --template <templateSlug>
+node scripts/create-experiment.mjs --owner <your-name> --name <slug> --template onboarding-starter
 ```
 
-The entry file for an experiment is `index.tsx`, and by default you should modify **only** that experiment folder. See [how-to-create-prototype.md](./how-to-create-prototype.md).
+Available templates live under `experiments/_templates/` (for example `onboarding-starter`, `project-services-list`). Owner slug must match `src/data/design-team-owners.json`.
+
+You can also use **Start in Cursor** in the playground header (from an open experiment or template). Prerequisites: Cursor installed as a deeplink handler, this repo cloned and open as your Cursor workspace, Node.js installed. Use **Copy prompt** if the deeplink does not open Cursor.
+
+The entry file for an experiment is `index.tsx`, and by default you should modify **only** that experiment folder. Full walkthrough: [how-to-create-prototype.md](./how-to-create-prototype.md).
 
 ---
 
@@ -433,6 +442,14 @@ Full instructions: [how-to-deploy.md](./how-to-deploy.md).
 3. **File → Open Folder** → select your `console-prototype-lab` folder.
 
 Cursor reads `AGENTS.md` and `.cursor/rules/*` automatically as project rules.
+
+For **Start in Cursor** from the browser hub/playground:
+
+- Cursor must be installed and registered as a deeplink handler
+- This repo must be cloned locally and opened as the Cursor workspace
+- Node.js must be installed (scaffolding runs `create-experiment.mjs`)
+
+See [how-to-create-prototype.md](./how-to-create-prototype.md#prerequisites-for-start-in-cursor).
 
 ---
 

@@ -17,7 +17,7 @@ Recommended starters:
 **From the terminal:**
 
 ```bash
-node scripts/create-experiment.mjs --owner your-name --name my-experiment --from onboarding-test-env
+node scripts/create-experiment.mjs --owner your-name --name my-experiment --template onboarding-starter
 ```
 
 **From Cursor:** run the `/scaffold-prototype` command (see `.cursor/commands/scaffold-prototype.md`).
