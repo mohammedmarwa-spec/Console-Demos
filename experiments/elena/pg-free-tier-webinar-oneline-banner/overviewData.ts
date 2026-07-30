@@ -39,11 +39,19 @@ export const UPGRADE_BANNER = {
   cta: 'Upgrade now',
 } as const
 
-/** In-product webinar promo for free-tier PG users (Alert.Banner information). */
+/** Platform trial ended — matches Console BannerContainer TrialOver (Alert.Banner information). */
+export const TRIAL_OVER_ANNOUNCEMENT = {
+  title: 'Your platform trial has ended.',
+  description: 'Upgrade to get access to all platform features.',
+  upgradeCta: 'Upgrade',
+  href: '#',
+} as const
+
+/** In-product webinar promo for free-tier PG users (OneLineBanner, dismissable action). */
 export const WEBINAR_ANNOUNCEMENT = {
-  title: 'New to PostgreSQL? Build your first database live',
+  title: '🐘 New to PostgreSQL? Build your database live',
   description:
-    'Join a beginner-friendly walkthrough of Aiven for PostgreSQL using MCP and PGStudio.',
+    'Join a beginner-friendly walkthrough of Aiven for PG using MCP and PGStudio.',
   schedule: 'August 5 at 18:00 · 45 min',
   registerCta: 'Register',
   href: '#',

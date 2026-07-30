@@ -13,8 +13,7 @@ export const componentManifest: ComponentManifest = {
     },
     {
       name: 'Alert.Banner',
-      usage:
-        'Full-width information webinar promo under ConsoleHeader (shell-level, Console AppHeader pattern)',
+      usage: 'Shell-level trial-ended banner under ConsoleHeader (information + Upgrade)',
       storybookUrl: 'https://aquarium-library.aiven.io/?path=/story/feedback-alert--banner',
     },
     {
@@ -48,8 +47,15 @@ export const componentManifest: ComponentManifest = {
       usage: 'Service and section overflow / contextual actions',
     },
     {
+      name: 'OneLineBanner',
+      usage:
+        'Webinar promo above the Upgrade Banner (title, Register action, dismiss) — Aquarium one-line banner with dismissable action',
+      storybookUrl:
+        'https://aquarium-library.aiven.io/?path=/docs/data-display-banner--docs#one-line-banner-with-dismissable-action',
+    },
+    {
       name: 'Banner',
-      usage: 'Free-tier upgrade callout under the service PageHeader',
+      usage: 'Free-tier upgrade callout under the webinar OneLineBanner',
     },
     {
       name: 'Section',
@@ -82,10 +88,10 @@ export const componentManifest: ComponentManifest = {
   ],
 
   notes: [
-    'Experiment explores an in-product webinar promo on the free-tier PG overview using Aquarium Alert.Banner (information).',
-    'Alert.Banner sits under ConsoleHeader at shell level (same placement as Console BannerContainer under HeadingPanel).',
-    'Register uses Alert.Banner’s built-in action slot (Ghost / Link.Button.Ghost per Storybook).',
-    'Upgrade Banner remains in OverviewContent under PageHeader so plan upsell stays in-page.',
+    'Explores OneLineBanner for an in-product webinar promo on the free-tier PG overview.',
+    'Trial-ended Alert.Banner (information) stays at shell level under ConsoleHeader.',
+    'Webinar OneLineBanner sits in OverviewContent above the Upgrade Banner (Register + onDismiss).',
+    'Upgrade Banner remains under PageHeader so plan upsell stays in-page.',
     'Shared playground helpers (e.g. ServiceStatusChip, NodesCountChip, ConsoleHeader) are used but live outside this experiment folder.',
   ],
 }

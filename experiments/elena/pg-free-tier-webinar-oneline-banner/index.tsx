@@ -6,17 +6,16 @@ import type { PageMeta } from '@/lib/experiments/types'
 import { ConsoleHeader } from '@/components/ConsoleHeader'
 import { FreeTierServiceSidebar } from './FreeTierServiceSidebar'
 import { OverviewContent } from './OverviewContent'
-import { ORG_NAME, WEBINAR_ANNOUNCEMENT } from './overviewData'
+import { ORG_NAME, TRIAL_OVER_ANNOUNCEMENT } from './overviewData'
 
 export const pageMeta: PageMeta = {
-  title: 'PG — Free tier — Webinar announcement',
+  title: 'PG — Free tier — Webinar OneLineBanner',
   description:
-    'Free-tier PostgreSQL service overview with an Alert.Banner (information) webinar promo under the top header.',
+    'Free-tier PostgreSQL overview with trial-ended Alert.Banner at shell level and a webinar OneLineBanner above the in-page Upgrade Banner.',
 }
 
 export default function Page() {
   const [activeItem, setActiveItem] = useState('overview')
-  const [showWebinarBanner, setShowWebinarBanner] = useState(true)
 
   return (
     <Box
@@ -35,19 +34,16 @@ export default function Page() {
         userInitials="EI"
       />
 
-      {showWebinarBanner ? (
-        <Alert.Banner
-          type="information"
-          title={`🐘 ${WEBINAR_ANNOUNCEMENT.title}`}
-          action={{
-            text: WEBINAR_ANNOUNCEMENT.registerCta,
-            href: WEBINAR_ANNOUNCEMENT.href,
-          }}
-          onDismiss={() => setShowWebinarBanner(false)}
-        >
-          {WEBINAR_ANNOUNCEMENT.description} {WEBINAR_ANNOUNCEMENT.schedule}
-        </Alert.Banner>
-      ) : null}
+      <Alert.Banner
+        type="information"
+        title={TRIAL_OVER_ANNOUNCEMENT.title}
+        action={{
+          text: TRIAL_OVER_ANNOUNCEMENT.upgradeCta,
+          href: TRIAL_OVER_ANNOUNCEMENT.href,
+        }}
+      >
+        {TRIAL_OVER_ANNOUNCEMENT.description}
+      </Alert.Banner>
 
       <Box style={{ display: 'flex', flex: 1, minHeight: 0 }}>
         <FreeTierServiceSidebar activeItem={activeItem} onNavigate={setActiveItem} />

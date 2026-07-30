@@ -1,6 +1,6 @@
 'use client'
 
-import type { ReactNode } from 'react'
+import { useState, type ReactNode } from 'react'
 import {
   Banner,
   Box,
@@ -9,6 +9,7 @@ import {
   DropdownMenu,
   Icon,
   Link,
+  OneLineBanner,
   PageHeader,
   Section,
   StatusChip,
@@ -36,6 +37,7 @@ import {
   PROJECT_NAME,
   SERVICE,
   UPGRADE_BANNER,
+  WEBINAR_ANNOUNCEMENT,
   type ConnectionRow,
 } from './overviewData'
 
@@ -184,6 +186,7 @@ function StatCell({
 
 export function OverviewContent() {
   const theme = useResolvedTheme()
+  const [showWebinarBanner, setShowWebinarBanner] = useState(true)
   const noop = () => {}
 
   return (
@@ -232,6 +235,22 @@ export function OverviewContent() {
           onAction={noop}
         />
       </Box>
+
+      {showWebinarBanner ? (
+        <Box style={{ marginBottom: 16 }}>
+          <OneLineBanner
+            title={WEBINAR_ANNOUNCEMENT.title}
+            action={{
+              text: WEBINAR_ANNOUNCEMENT.registerCta,
+              href: WEBINAR_ANNOUNCEMENT.href,
+            }}
+            onDismiss={() => setShowWebinarBanner(false)}
+          >
+            {WEBINAR_ANNOUNCEMENT.description}{' '}
+            <Typography.Strong>{WEBINAR_ANNOUNCEMENT.schedule}</Typography.Strong>
+          </OneLineBanner>
+        </Box>
+      ) : null}
 
       <Box style={{ marginBottom: 16 }}>
         <Banner
