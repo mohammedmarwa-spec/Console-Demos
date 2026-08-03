@@ -16,6 +16,7 @@ export type ResourceKind =
 
 /** API event_type values shown in log details and filter dropdowns. */
 export const EVENT_TYPE_VALUES = [
+  'disk_size_change',
   'group_permissions_set',
   'privatelink_connection_active',
   'privatelink_connection_connected',
@@ -228,6 +229,11 @@ export type EventLogCategory = {
    * (e.g. IP allowlist updates share `service_update` with plan changes).
    */
   actionIncludes?: string
+  /**
+   * When set, row action must include at least one of these substrings
+   * (used when a category spans multiple action phrasings).
+   */
+  actionIncludesAny?: readonly string[]
   tone: EventLogCategoryTone
   /** How the card subtitle is built. */
   detailMode: 'latest' | 'static'
@@ -236,6 +242,11 @@ export type EventLogCategory = {
 }
 
 export const IP_ALLOWLIST_ACTION_PREFIX = 'Changed allowed IP addresses from'
+
+export const SERVICE_CONFIG_ACTION_PREFIXES = [
+  'updated service plan to',
+  'updated disk size to',
+] as const
 
 export const EVENT_LOG_CATEGORIES: readonly EventLogCategory[] = [
   {
@@ -254,23 +265,11 @@ export const EVENT_LOG_CATEGORIES: readonly EventLogCategory[] = [
   },
   {
     id: 'lifecycle',
-    label: 'Service lifecycle',
-    eventTypes: [
-      'service_create',
-      'service_update',
-      'service_poweroff',
-      'service_poweron',
-      'service_revive',
-      'service_forked',
-      'service_integration_create',
-      'service_integration_delete',
-      'service_integration_update',
-      'project_delete',
-      'project_suspend',
-    ],
+    label: 'Service configuration update',
+    eventTypes: ['service_update', 'disk_size_change'],
+    actionIncludesAny: SERVICE_CONFIG_ACTION_PREFIXES,
     tone: 'success',
-    detailMode: 'static',
-    staticDetail: 'Create, plan change, delete…',
+    detailMode: 'latest',
   },
   {
     id: 'ip-addresses',
@@ -292,6 +291,12 @@ export const EVENT_LOG_CATEGORIES: readonly EventLogCategory[] = [
 export function rowMatchesCategory(row: EventLog, category: EventLogCategory): boolean {
   if (!category.eventTypes.includes(row.eventType)) return false
   if (category.actionIncludes && !row.action.includes(category.actionIncludes)) return false
+  if (
+    category.actionIncludesAny &&
+    !category.actionIncludesAny.some((fragment) => row.action.includes(fragment))
+  ) {
+    return false
+  }
   return true
 }
 
@@ -320,7 +325,7 @@ export function latestCategoryEvent(
 
 export function getActiveCategoryId(eventTypes: string[]): EventLogCategoryId | null {
   for (const category of EVENT_LOG_CATEGORIES) {
-    if (category.actionIncludes) continue
+    if (category.actionIncludes || category.actionIncludesAny) continue
     if (
       eventTypes.length === category.eventTypes.length &&
       category.eventTypes.every((type) => eventTypes.includes(type))

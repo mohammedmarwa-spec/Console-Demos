@@ -26,6 +26,7 @@ export type AnonContext = {
   serviceId: string
   planFrom: string
   planTo: string
+  diskSizeGb: number
   cloud: string
   serviceType: string
   integrationId: string
@@ -158,13 +159,13 @@ export const REAL_EVENT_TEMPLATES: RealEventTemplate[] = [
       `Changed allowed IP addresses from '${ctx.ipFrom}' to '${ctx.ipTo}'`,
   },
   {
-    // Sample 4: plan change (scoped + service_id)
+    // Sample 4: user plan change (Service configuration update)
     eventType: 'service_update',
-    actorKind: 'system',
+    actorKind: 'user',
     scoped: true,
     hasServiceId: true,
     buildSummary: (ctx) =>
-      `Changed service plan from '${ctx.planFrom}' to '${ctx.planTo}'`,
+      `${ctx.actor} updated service plan to '${ctx.planTo}'`,
   },
   {
     // Sample 5: integration create
@@ -185,12 +186,13 @@ export const REAL_EVENT_TEMPLATES: RealEventTemplate[] = [
       `Set billing group for project ${ctx.projectId} to bg-${String(1000 + (ctx.index % 12)).padStart(4, '0')}`,
   },
   {
-    // Sample 7: automation poweroff
-    eventType: 'service_poweroff',
-    actorKind: 'automation',
+    // Sample 7: user disk size change (Service configuration update)
+    eventType: 'disk_size_change',
+    actorKind: 'user',
     scoped: true,
     hasServiceId: true,
-    buildSummary: () => 'Powered down the free service due to inactivity',
+    buildSummary: (ctx) =>
+      `${ctx.actor} updated disk size to '${ctx.diskSizeGb} GB'`,
   },
   {
     // Sample 8: wide permissions grant (keeps Wide access card counters non-zero)
@@ -259,17 +261,18 @@ function pickActor(template: RealEventTemplate, index: number): {
   }
 }
 
-function buildContext(index: number, actorEmail: string): AnonContext {
+function buildContext(index: number, actorEmail: string, actorDisplay: string): AnonContext {
   const ips = buildIpAllowlistSummary(index)
   return {
     index,
-    actor: actorEmail,
+    actor: actorDisplay,
     actorEmail,
     projectId: `do-user-${10000 + (index % 50)}-0`,
     serviceName: SERVICE_NAMES[index % SERVICE_NAMES.length],
     serviceId: `s${padHex(0xa00000 + index * 97, 8)}`,
     planFrom: PLANS[index % PLANS.length],
     planTo: PLANS[(index + 2) % PLANS.length],
+    diskSizeGb: 80 + (index % 8) * 40,
     cloud: CLOUDS[index % CLOUDS.length],
     serviceType: SERVICE_TYPES[index % SERVICE_TYPES.length],
     integrationId: uuidFromIndex(index, 42),
@@ -314,7 +317,7 @@ export function createRealEventLogs(count = 100): EventLog[] {
         : actorInfo.actor.includes('@')
           ? actorInfo.actor
           : HUMAN_ACTORS[0].email
-    const ctx = buildContext(i, emailForSummary)
+    const ctx = buildContext(i, emailForSummary, actorInfo.actor)
 
     // Spread evenly across retention window; later indices are more recent
     const offsetMs = Math.floor((i / Math.max(count - 1, 1)) * spanMs)
