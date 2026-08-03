@@ -108,19 +108,17 @@ function ipList(parts: readonly string[], extraCount: number): string {
 }
 
 function buildIpAllowlistSummary(index: number): { from: string; to: string } {
-  const fromSet = IP_SETS[index % IP_SETS.length]
-  const toSet = IP_SETS[(index + 1) % IP_SETS.length]
-  const fromExtra = 20 + (index % 40)
-  const toExtra = fromExtra + ((index % 5) - 2)
+  const toSet = IP_SETS[index % IP_SETS.length]
+  const toExtra = 20 + (index % 40)
   return {
-    from: ipList(fromSet, fromExtra),
-    to: ipList(toSet, Math.max(0, toExtra)),
+    from: '0.0.0.0/0, ::/0',
+    to: ipList(toSet, toExtra),
   }
 }
 
 /**
- * 10 templates mirroring the BigQuery sample event types and nullability.
- * Summaries use mock names/IDs only.
+ * 10 templates mirroring BigQuery sample shapes plus billing/permissions coverage
+ * for category filter cards. Summaries use mock names/IDs only.
  */
 export const REAL_EVENT_TEMPLATES: RealEventTemplate[] = [
   {
@@ -178,13 +176,13 @@ export const REAL_EVENT_TEMPLATES: RealEventTemplate[] = [
       `Created integration prometheus (${ctx.integrationId}) from project ${ctx.projectId} service ${ctx.serviceName} to project ${ctx.projectId} service endpoint ${ctx.endpointName}`,
   },
   {
-    // Sample 6: unscoped IP allowlist
-    eventType: 'service_update',
-    actorKind: 'system',
-    scoped: false,
+    // Sample 6: billing group assignment (keeps Billing card counters non-zero)
+    eventType: 'project_billing_group_set',
+    actorKind: 'user',
+    scoped: true,
     hasServiceId: false,
     buildSummary: (ctx) =>
-      `Changed allowed IP addresses from '${ctx.ipFrom}' to '${ctx.ipTo}'`,
+      `Set billing group for project ${ctx.projectId} to bg-${String(1000 + (ctx.index % 12)).padStart(4, '0')}`,
   },
   {
     // Sample 7: automation poweroff
@@ -195,16 +193,16 @@ export const REAL_EVENT_TEMPLATES: RealEventTemplate[] = [
     buildSummary: () => 'Powered down the free service due to inactivity',
   },
   {
-    // Sample 8: unscoped IP allowlist
-    eventType: 'service_update',
-    actorKind: 'system',
-    scoped: false,
+    // Sample 8: wide permissions grant (keeps Wide access card counters non-zero)
+    eventType: 'user_permissions_set',
+    actorKind: 'user',
+    scoped: true,
     hasServiceId: false,
     buildSummary: (ctx) =>
-      `Changed allowed IP addresses from '${ctx.ipFrom}' to '${ctx.ipTo}'`,
+      `Granted organization admin permissions to ${ctx.actorEmail}`,
   },
   {
-    // Sample 9: maintenance by human (scoped, no service_id)
+    // Sample 9: maintenance — actor alternates person / Aiven Automation in createRealEventLogs
     eventType: 'service_maintenance_perform',
     actorKind: 'user',
     scoped: true,
@@ -221,6 +219,18 @@ function pickActor(template: RealEventTemplate, index: number): {
   actorHref?: string
   internalActor: string | null
 } {
+  // Maintenance updates: half person, half Aiven Automation (every other occurrence).
+  if (template.eventType === 'service_maintenance_perform') {
+    const occurrence = Math.floor(index / REAL_EVENT_TEMPLATES.length)
+    if (occurrence % 2 === 1) {
+      return {
+        actor: 'Aiven Automation',
+        actorKind: 'automation',
+        actorUserId: null,
+        internalActor: 'aiven-automation',
+      }
+    }
+  }
   if (template.actorKind === 'automation') {
     return {
       actor: 'Aiven Automation',
@@ -269,8 +279,21 @@ function buildContext(index: number, actorEmail: string): AnonContext {
   }
 }
 
+/** Display format matching Console short datetime, e.g. "24 Jul 2026 14:19 UTC". */
 function formatEventTimestamp(d: Date): string {
-  return d.toISOString()
+  return new Intl.DateTimeFormat('en-GB', {
+    timeZone: 'UTC',
+    hour12: false,
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+    timeZoneName: 'short',
+  })
+    .format(d)
+    .replace(' at ', ' ')
+    .replace(',', '')
 }
 
 /**

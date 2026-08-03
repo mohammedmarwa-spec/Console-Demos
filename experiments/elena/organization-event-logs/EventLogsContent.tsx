@@ -15,8 +15,6 @@ import {
   Box,
   Breadcrumbs,
   Button,
-  Checkbox,
-  CheckboxGroup,
   DataList,
   DateRangePicker,
   Divider,
@@ -26,8 +24,8 @@ import {
   Input,
   InputBase,
   Link,
+  MultiSelect,
   PageHeader,
-  Popover,
   Typography,
 } from '@aivenio/aquarium'
 import filterIcon from '@aivenio/aquarium/icons/filter'
@@ -36,19 +34,34 @@ import searchIcon from '@aivenio/aquarium/icons/search'
 import automaticUpdatesIcon from '@aivenio/aquarium/icons/automaticUpdates'
 import consoleIcon from '@aivenio/aquarium/icons/console'
 import personIcon from '@aivenio/aquarium/icons/person'
+import toolsIcon from '@aivenio/aquarium/icons/tools'
+import appUsersIcon from '@aivenio/aquarium/icons/appUsers'
+import bankAccountIcon from '@aivenio/aquarium/icons/bankAccount'
+import databaseIcon from '@aivenio/aquarium/icons/database'
+import globeNetworkIcon from '@aivenio/aquarium/icons/globeNetwork'
+import type { IconifyIcon } from '@iconify/react'
 import {
   DATE_RANGE_PRESETS,
+  EVENT_LOG_CATEGORIES,
   EVENT_LOG_MAX_DATE,
   EVENT_LOG_MIN_DATE,
+  EVENT_TYPE_OPTIONS,
   DEFAULT_PRESET_RANGE,
   MOCK_EVENT_LOGS,
   calendarDateToUtcEndMs,
   calendarDateToUtcStartMs,
+  categoryDetailLabel,
+  countCategory,
   downloadEventLogsJson,
   eventLogSearchBlob,
   eventLogToJson,
+  rowMatchesCategory,
   type EventDateRange,
   type EventLog,
+  type EventLogCategory,
+  type EventLogCategoryId,
+  type EventLogCategoryTone,
+  type EventType,
 } from './eventLogsData'
 
 type QueryStatus = 'loading' | 'ready' | 'error'
@@ -194,9 +207,9 @@ function matchesIdFilter(filterValue: string, rowValue: string | null | undefine
 type FilterState = {
   /** Free-text schema ID fields — supports deleted resources not in any options list. */
   actorUserId: string
-  /** Kept for a possible return of the Event type chip; UI currently hidden. */
   eventTypes: string[]
-  accountId: string
+  /** Set when a Quick view card is active (needed for action-text categories like IP). */
+  activeCategoryId: EventLogCategoryId | null
   organizationUnitId: string
   projectId: string
   billingGroupId: string
@@ -206,18 +219,189 @@ type FilterState = {
 const EMPTY_FILTERS: FilterState = {
   actorUserId: '',
   eventTypes: [],
-  accountId: '',
+  activeCategoryId: null,
   organizationUnitId: '',
   projectId: '',
   billingGroupId: '',
   serviceId: '',
 }
 
+// ─── Category filter cards (OrgHome MetricCard pattern, interactive) ─────────
+
+const CATEGORY_ICON: Record<EventLogCategoryId, IconifyIcon> = {
+  maintenance: toolsIcon,
+  'wide-access': appUsersIcon,
+  billing: bankAccountIcon,
+  lifecycle: databaseIcon,
+  'ip-addresses': globeNetworkIcon,
+}
+
+const CATEGORY_ICON_TONE: Record<
+  EventLogCategoryTone,
+  { iconColor: string; iconBg: string }
+> = {
+  primary: {
+    iconColor: 'var(--aquarium-text-color-primary-graphic)',
+    iconBg: 'var(--aquarium-background-color-primary-muted)',
+  },
+  success: {
+    iconColor: 'var(--aquarium-text-color-success-intense)',
+    iconBg: 'var(--aquarium-background-color-success-muted)',
+  },
+  info: {
+    iconColor: 'var(--aquarium-text-color-info-intense)',
+    iconBg: 'var(--aquarium-background-color-info-muted)',
+  },
+  warning: {
+    iconColor: 'var(--aquarium-text-color-warning-intense)',
+    iconBg: 'var(--aquarium-background-color-warning-muted)',
+  },
+}
+
+function EventCategoryCard({
+  category,
+  count,
+  detail,
+  selected,
+  onToggle,
+}: {
+  category: EventLogCategory
+  count: number
+  detail: string
+  selected: boolean
+  onToggle: () => void
+}) {
+  const { iconColor, iconBg } = CATEGORY_ICON_TONE[category.tone]
+  return (
+    <Box
+      component="button"
+      type="button"
+      className="event-log-category-card"
+      aria-pressed={selected}
+      aria-label={`Filter by ${category.label}`}
+      onClick={onToggle}
+      style={{
+        flex: 1,
+        minWidth: 0,
+        textAlign: 'left',
+        display: 'flex',
+        flexDirection: 'column',
+        gap: 16,
+        font: 'inherit',
+        color: 'inherit',
+      }}
+    >
+      <Box
+        aria-hidden
+        style={{
+          width: 40,
+          height: 40,
+          borderRadius: 8,
+          backgroundColor: iconBg,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          flexShrink: 0,
+        }}
+      >
+        <Icon
+          icon={CATEGORY_ICON[category.id]}
+          style={{ width: 20, height: 20, color: iconColor }}
+        />
+      </Box>
+      <Box>
+        <Box style={{ color: 'var(--aquarium-text-color-muted)', marginBottom: 4 }}>
+          <Typography.Small>{category.label}</Typography.Small>
+        </Box>
+        <Box style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+          <Typography.LargeHeading>{count}</Typography.LargeHeading>
+          {detail ? (
+            <Box style={{ color: 'var(--aquarium-text-color-muted)' }}>
+              <Typography.Small>{detail}</Typography.Small>
+            </Box>
+          ) : null}
+        </Box>
+      </Box>
+    </Box>
+  )
+}
+
+function EventCategoryCards({
+  rows,
+  activeCategoryId,
+  onSelectCategory,
+}: {
+  rows: EventLog[]
+  activeCategoryId: EventLogCategoryId | null
+  onSelectCategory: (id: EventLogCategoryId | null) => void
+}) {
+  return (
+    <>
+      {/* Mirror Aquarium Card.Label (checkable) hover / selected / focus / active. */}
+      <style>{`
+        .event-log-category-card {
+          cursor: pointer;
+          border: 1px solid var(--aquarium-border-color-muted);
+          border-radius: 8px;
+          padding: 24px;
+          background-color: var(--aquarium-background-color-layer);
+          outline: none;
+          box-shadow: none;
+          transition: background-color 150ms ease, box-shadow 150ms ease, border-color 150ms ease;
+        }
+        .event-log-category-card:hover {
+          background-color: var(--aquarium-background-color-primary-active);
+        }
+        .event-log-category-card:active {
+          background-color: var(--aquarium-background-color-body);
+        }
+        .event-log-category-card:focus-visible {
+          outline: 2px solid var(--aquarium-border-color-action-focus);
+          outline-offset: 2px;
+        }
+        .event-log-category-card[aria-pressed="true"] {
+          border-color: transparent;
+          background-color: var(--aquarium-background-color-primary-active);
+          box-shadow: 0 0 0 2px var(--aquarium-border-color-primary-default);
+        }
+        .event-log-category-card[aria-pressed="true"]:focus-visible {
+          outline-offset: 4px;
+        }
+      `}</style>
+      <Box style={{ marginBottom: 24 }}>
+        <Box style={{ marginBottom: 12, display: 'flex', alignItems: 'baseline', gap: 4 }}>
+          <Typography.DefaultStrong>Quick views</Typography.DefaultStrong>
+          <Typography.Default color="muted">·</Typography.Default>
+          <Typography.Default color="muted">Last 30 days</Typography.Default>
+        </Box>
+        <Box
+          role="group"
+          aria-label="Event category filters"
+          style={{ display: 'flex', gap: 16 }}
+        >
+          {EVENT_LOG_CATEGORIES.map((category) => {
+            const selected = activeCategoryId === category.id
+            return (
+              <EventCategoryCard
+                key={category.id}
+                category={category}
+                count={countCategory(rows, category)}
+                detail={categoryDetailLabel(rows, category)}
+                selected={selected}
+                onToggle={() => onSelectCategory(selected ? null : category.id)}
+              />
+            )
+          })}
+        </Box>
+      </Box>
+    </>
+  )
+}
+
 function countActiveIdFilters(filters: FilterState): number {
   return (
     Number(Boolean(filters.actorUserId.trim())) +
     filters.eventTypes.length +
-    Number(Boolean(filters.accountId.trim())) +
     Number(Boolean(filters.organizationUnitId.trim())) +
     Number(Boolean(filters.projectId.trim())) +
     Number(Boolean(filters.billingGroupId.trim())) +
@@ -262,7 +446,7 @@ function AllFiltersButton({
         <Filter.Trigger
           labelText="All filters"
           icon={filterIcon}
-          badge={activeCount > 0 ? activeCount : undefined}
+          value={activeCount > 0 ? String(activeCount) : undefined}
           onClear={activeCount > 0 ? clearAll : undefined}
           onClick={() => setOpen((prev) => !prev)}
         />
@@ -297,25 +481,16 @@ function AllFiltersButton({
         open={open}
         onClose={() => setOpen(false)}
         title="Filter by"
-        size="sm"
+        size="md"
         closeOnEsc
         primaryAction={{ text: 'Done', onClick: () => setOpen(false) }}
         secondaryActions={{ text: 'Clear filters', onClick: clearAll }}
       >
         <Box className="event-logs-filter-grid" style={{ display: 'grid', rowGap: 16 }}>
-          {/* Order follows Aiven entity hierarchy, then actor. */}
+          {/* Order follows Aiven entity hierarchy, then event type, then actor. */}
           <Input
-            labelText="account_id [string]"
-            placeholder="Enter account_id"
-            value={filters.accountId}
-            reserveSpaceForError={false}
-            onChange={(event) =>
-              setFilters({ ...filters, accountId: event.currentTarget.value })
-            }
-          />
-          <Input
-            labelText="organization_unit_id [string]"
-            placeholder="Enter organization_unit_id"
+            labelText="Organization unit"
+            placeholder="Enter organization unit"
             value={filters.organizationUnitId}
             reserveSpaceForError={false}
             onChange={(event) =>
@@ -323,8 +498,8 @@ function AllFiltersButton({
             }
           />
           <Input
-            labelText="billing_group_id [string]"
-            placeholder="Enter billing_group_id"
+            labelText="Billing group"
+            placeholder="Enter billing group"
             value={filters.billingGroupId}
             reserveSpaceForError={false}
             onChange={(event) =>
@@ -332,8 +507,8 @@ function AllFiltersButton({
             }
           />
           <Input
-            labelText="project_id [string]"
-            placeholder="Enter project_id"
+            labelText="Project"
+            placeholder="Enter project"
             value={filters.projectId}
             reserveSpaceForError={false}
             onChange={(event) =>
@@ -341,24 +516,36 @@ function AllFiltersButton({
             }
           />
           <Input
-            labelText="service_id [string]"
-            placeholder="Enter service_id"
+            labelText="Service"
+            placeholder="Enter service"
             value={filters.serviceId}
             reserveSpaceForError={false}
             onChange={(event) =>
               setFilters({ ...filters, serviceId: event.currentTarget.value })
             }
           />
+          <MultiSelect
+            labelText="Event type"
+            placeholder="Select event types"
+            options={EVENT_TYPE_OPTIONS}
+            value={EVENT_TYPE_OPTIONS.filter((opt) => filters.eventTypes.includes(opt.value))}
+            reserveSpaceForError={false}
+            onChange={(items) => {
+              const next = (items ?? []).map((item) =>
+                typeof item === 'string' ? item : (item.value as EventType),
+              )
+              setFilters({ ...filters, eventTypes: next, activeCategoryId: null })
+            }}
+          />
           <Input
-            labelText="actor_user_id [string]"
-            placeholder="Enter actor_user_id"
+            labelText="User"
+            placeholder="Enter user"
             value={filters.actorUserId}
             reserveSpaceForError={false}
             onChange={(event) =>
               setFilters({ ...filters, actorUserId: event.currentTarget.value })
             }
           />
-          {/* Event type filter hidden for now — keep filters.eventTypes to restore. */}
         </Box>
       </Drawer>
     </>
@@ -478,7 +665,27 @@ function resourceDisplayValue(row: EventLog): string {
   return '—'
 }
 
+const LINKABLE_RESOURCE_KINDS = new Set<EventLog['resourceKind']>([
+  'Service',
+  'Project',
+  'Organization unit',
+])
+
 function ResourceCell({ row }: { row: EventLog }) {
+  const resourceName = row.resourceName?.trim()
+  const resourceKind = row.resourceKind?.trim()
+
+  if (resourceName && resourceKind && LINKABLE_RESOURCE_KINDS.has(row.resourceKind)) {
+    return (
+      <Typography.Default>
+        {resourceKind}:{' '}
+        <Link href="#" onClick={(e) => e.preventDefault()}>
+          {resourceName}
+        </Link>
+      </Typography.Default>
+    )
+  }
+
   return <Typography.Default>{resourceDisplayValue(row)}</Typography.Default>
 }
 
@@ -497,6 +704,7 @@ function EventDetails({ row }: { row: EventLog }) {
   const detailRows: DetailRow[] = [
     { id: 'log_entry_id', label: 'log_entry_id', value: row.logEntryId },
     { id: 'event_type', label: 'event_type', value: row.eventType },
+    { id: 'create_time', label: 'create_time', value: row.dateTimeLabel },
     {
       id: 'actor',
       label: 'actor',
@@ -637,58 +845,13 @@ function buildEventLogColumns(visibleIds: ColumnId[]) {
   return columns as never
 }
 
-function ColumnConfigurer({
-  visibleIds,
-  onChange,
-}: {
-  visibleIds: ColumnId[]
-  onChange: (next: ColumnId[]) => void
-}) {
-  const onlyOneVisible = visibleIds.length === 1
-
-  return (
-    <Popover placement="bottom-end">
-      <Popover.Trigger>
-        <Button.Dropdown kind="ghost" type="button">
-          Configure columns
-        </Button.Dropdown>
-      </Popover.Trigger>
-      <Popover.Panel>
-        <Box style={{ padding: 12, width: 'max-content' }}>
-          <CheckboxGroup
-            labelText="Visible columns"
-            reserveSpaceForError={false}
-            value={visibleIds}
-            onChange={(val) => {
-              const selected = new Set(val ?? [])
-              const next = COLUMN_OPTIONS.map((opt) => opt.id).filter((id) => selected.has(id))
-              if (next.length === 0) return
-              onChange(next)
-            }}
-          >
-            {COLUMN_OPTIONS.map((opt) => (
-              <Checkbox
-                key={opt.id}
-                value={opt.id}
-                disabled={onlyOneVisible && visibleIds.includes(opt.id)}
-              >
-                {opt.label}
-              </Checkbox>
-            ))}
-          </CheckboxGroup>
-        </Box>
-      </Popover.Panel>
-    </Popover>
-  )
-}
-
 // ─── Main content ──────────────────────────────────────────────────────────────
 
 export function EventLogsContent() {
   const [dateRange, setDateRange] = useState<EventDateRange | null>(DEFAULT_PRESET_RANGE)
   const [filters, setFilters] = useState<FilterState>({ ...EMPTY_FILTERS })
   const [searchInput, setSearchInput] = useState('')
-  const [visibleColumnIds, setVisibleColumnIds] = useState<ColumnId[]>(DEFAULT_VISIBLE_COLUMNS)
+  const visibleColumnIds = DEFAULT_VISIBLE_COLUMNS
   const [queryStatus, setQueryStatus] = useState<QueryStatus>('loading')
   const [queryError, setQueryError] = useState<string>()
   const [queryRows, setQueryRows] = useState<EventLog[]>([])
@@ -701,7 +864,10 @@ export function EventLogsContent() {
     [visibleColumnIds],
   )
 
-  const filteredRows = useMemo(() => {
+  const activeCategoryId = filters.activeCategoryId
+
+  /** Rows after date / ID / search filters — category preset excluded so card counts stay meaningful. */
+  const rowsForCategoryCounts = useMemo(() => {
     const q = searchInput.trim().toLowerCase()
     let startMs = -8.64e15
     let endMs = 8.64e15
@@ -713,8 +879,6 @@ export function EventLogsContent() {
       const t = row.occurredAt.getTime()
       if (t < startMs || t > endMs) return false
       if (!matchesIdFilter(filters.actorUserId, row.actorUserId)) return false
-      if (filters.eventTypes.length > 0 && !filters.eventTypes.includes(row.eventType)) return false
-      if (!matchesIdFilter(filters.accountId, row.accountId)) return false
       if (!matchesIdFilter(filters.organizationUnitId, row.organizationUnitId)) return false
       if (!matchesIdFilter(filters.projectId, row.projectId)) return false
       if (!matchesIdFilter(filters.billingGroupId, row.billingGroupId)) return false
@@ -723,6 +887,25 @@ export function EventLogsContent() {
       return eventLogSearchBlob(row).includes(q)
     })
   }, [searchInput, dateRange, filters])
+
+  const filteredRows = useMemo(() => {
+    if (filters.activeCategoryId) {
+      const category = EVENT_LOG_CATEGORIES.find((c) => c.id === filters.activeCategoryId)
+      if (!category) return rowsForCategoryCounts
+      return rowsForCategoryCounts.filter((row) => rowMatchesCategory(row, category))
+    }
+    if (filters.eventTypes.length === 0) return rowsForCategoryCounts
+    return rowsForCategoryCounts.filter((row) => filters.eventTypes.includes(row.eventType))
+  }, [rowsForCategoryCounts, filters.activeCategoryId, filters.eventTypes])
+
+  const selectCategory = (id: EventLogCategoryId | null) => {
+    const category = EVENT_LOG_CATEGORIES.find((c) => c.id === id)
+    setFilters((f) => ({
+      ...f,
+      activeCategoryId: category ? category.id : null,
+      eventTypes: category ? [...category.eventTypes] : [],
+    }))
+  }
 
   // Simulate an async query so DS loading / error / empty states are exercised.
   useEffect(() => {
@@ -802,18 +985,13 @@ export function EventLogsContent() {
           />
         </Box>
 
-        {/* Free-text search across table + detail fields */}
-        <Box style={{ maxWidth: 720, marginBottom: 16 }}>
-          <InputBase
-            placeholder="Search event logs"
-            aria-label="Search event logs"
-            value={searchInput}
-            onChange={(e) => setSearchInput((e.target as HTMLInputElement).value)}
-            endAdornment={<Icon icon={searchIcon} color="muted" style={{ width: 16, height: 16 }} />}
-          />
-        </Box>
+        <EventCategoryCards
+          rows={rowsForCategoryCounts}
+          activeCategoryId={activeCategoryId}
+          onSelectCategory={selectCategory}
+        />
 
-        {/* Filter row */}
+        {/* Search + filters on one line */}
         <Box
           style={{
             display: 'flex',
@@ -823,7 +1001,25 @@ export function EventLogsContent() {
             flexWrap: 'wrap',
           }}
         >
-          <Box style={{ display: 'flex', alignItems: 'flex-start', gap: 8, flexWrap: 'wrap', flex: '1 1 auto', minWidth: 0 }}>
+          <Box style={{ flex: '1 1 240px', minWidth: 200, maxWidth: 360 }}>
+            <InputBase
+              placeholder="Search event logs"
+              aria-label="Search event logs"
+              value={searchInput}
+              onChange={(e) => setSearchInput((e.target as HTMLInputElement).value)}
+              endAdornment={<Icon icon={searchIcon} color="muted" style={{ width: 16, height: 16 }} />}
+            />
+          </Box>
+          <Box
+            style={{
+              display: 'flex',
+              alignItems: 'flex-start',
+              gap: 8,
+              flexWrap: 'wrap',
+              flex: '1 1 auto',
+              minWidth: 0,
+            }}
+          >
             <DateRangePicker
               aria-label="Date range"
               value={dateRange ?? undefined}
@@ -849,16 +1045,10 @@ export function EventLogsContent() {
             </DateRangePicker>
 
             <IdStringFilter
-              label="Account"
-              placeholder="Enter account"
-              value={filters.accountId}
-              onChange={(accountId) => setFilters((f) => ({ ...f, accountId }))}
-            />
-            <IdStringFilter
-              label="Organization unit"
-              placeholder="Enter organization unit"
-              value={filters.organizationUnitId}
-              onChange={(organizationUnitId) => setFilters((f) => ({ ...f, organizationUnitId }))}
+              label="User"
+              placeholder="Enter user"
+              value={filters.actorUserId}
+              onChange={(actorUserId) => setFilters((f) => ({ ...f, actorUserId }))}
             />
             <IdStringFilter
               label="Project"
@@ -867,12 +1057,11 @@ export function EventLogsContent() {
               onChange={(projectId) => setFilters((f) => ({ ...f, projectId }))}
             />
             <IdStringFilter
-              label="Actor user"
-              placeholder="Enter actor user"
-              value={filters.actorUserId}
-              onChange={(actorUserId) => setFilters((f) => ({ ...f, actorUserId }))}
+              label="Service"
+              placeholder="Enter service"
+              value={filters.serviceId}
+              onChange={(serviceId) => setFilters((f) => ({ ...f, serviceId }))}
             />
-            {/* Event type filter hidden for now — restore with filters.eventTypes. */}
             <AllFiltersButton filters={filters} setFilters={setFilters} />
           </Box>
         </Box>
@@ -890,10 +1079,13 @@ export function EventLogsContent() {
               }}
             >
               <Typography.Default color="muted">
-                {queryStatus === 'loading' ? '…' : 'Showing last 100 entries'}
+                {queryStatus === 'loading'
+                  ? '…'
+                  : activeCategoryId
+                    ? `${queryRows.length} matching events`
+                    : 'Showing last 100 entries'}
               </Typography.Default>
               <Box style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
-                <ColumnConfigurer visibleIds={visibleColumnIds} onChange={setVisibleColumnIds} />
                 <Button.Secondary
                   dense
                   icon={exportIcon}

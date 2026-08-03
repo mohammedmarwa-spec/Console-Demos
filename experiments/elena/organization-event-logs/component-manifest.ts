@@ -44,12 +44,8 @@ export const componentManifest: ComponentManifest = {
       usage: 'Date range filter for event logs',
     },
     {
-      name: 'Checkbox',
-      usage: 'Multi-select filter options and column visibility',
-    },
-    {
-      name: 'CheckboxGroup',
-      usage: 'Grouped filter option sets in the all-filters panel',
+      name: 'MultiSelect',
+      usage: 'Event type multi-select in the all-filters drawer',
     },
     {
       name: 'Divider',
@@ -61,15 +57,11 @@ export const componentManifest: ComponentManifest = {
     },
     {
       name: 'Drawer',
-      usage: 'Event detail panel',
-    },
-    {
-      name: 'Popover',
-      usage: 'Filter and column-configurer popovers',
+      usage: 'All-filters panel (md) and event detail panel',
     },
     {
       name: 'Link',
-      usage: 'Linked identifiers in event details',
+      usage: 'Linked identifiers in event details and resource column',
     },
     {
       name: 'Icon',
@@ -89,13 +81,19 @@ export const componentManifest: ComponentManifest = {
     {
       name: 'EventLogsContent',
       reason:
-        'Interactive event logs surface: search, filters, column config, table, and detail drawer',
+        'Interactive event logs surface: category filter cards, search, filters, table, and detail drawer',
+    },
+    {
+      name: 'EventCategoryCards',
+      reason:
+        'OrgHome-style metric cards that count critical event categories and act as exclusive eventTypes filter presets',
     },
   ],
 
   notes: [
     'This experiment builds Admin › Event logs from Aquarium primitives with experiment-local layout and data.',
-    'Filter triggers, column configurer, and cell renderers are custom composition around Aquarium inputs and DataList.',
+    'Filter triggers and cell renderers are custom composition around Aquarium inputs and DataList.',
+    'Category filter cards reuse the OrgHome MetricCard visual pattern (prototype, not Aquarium Card) and drive filters.eventTypes.',
     'Shared playground helpers (e.g. ConsoleHeader) are used but live outside this experiment folder.',
   ],
 }

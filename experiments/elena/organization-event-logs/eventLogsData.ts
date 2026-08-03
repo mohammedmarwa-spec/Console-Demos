@@ -65,7 +65,7 @@ export type EventType = (typeof EVENT_TYPE_VALUES)[number]
 export type EventLog = {
   id: string
   occurredAt: Date
-  /** Pre-formatted ISO 8601 UTC label for the table, e.g. "2024-08-23T14:22:08.000Z". */
+  /** Pre-formatted UTC display label for the table/details, e.g. "24 Jul 2026 14:19 UTC". */
   dateTimeLabel: string
   actor: string
   actorKind: ActorKind
@@ -207,6 +207,141 @@ export const USER_OPTIONS = ACTOR_USER_ID_OPTIONS
 
 export const EVENT_TYPE_OPTIONS: { value: EventType; label: string }[] =
   EVENT_TYPE_VALUES.map((value) => ({ value, label: value }))
+
+// ─── Category filter cards (quick presets for eventTypes) ────────────────────
+
+export type EventLogCategoryId =
+  | 'maintenance'
+  | 'wide-access'
+  | 'billing'
+  | 'lifecycle'
+  | 'ip-addresses'
+
+export type EventLogCategoryTone = 'primary' | 'success' | 'info' | 'warning'
+
+export type EventLogCategory = {
+  id: EventLogCategoryId
+  label: string
+  eventTypes: readonly EventType[]
+  /**
+   * When set, rows must also include this substring in `action`
+   * (e.g. IP allowlist updates share `service_update` with plan changes).
+   */
+  actionIncludes?: string
+  tone: EventLogCategoryTone
+  /** How the card subtitle is built. */
+  detailMode: 'latest' | 'static'
+  /** Used when detailMode is `static`. */
+  staticDetail?: string
+}
+
+export const IP_ALLOWLIST_ACTION_PREFIX = 'Changed allowed IP addresses from'
+
+export const EVENT_LOG_CATEGORIES: readonly EventLogCategory[] = [
+  {
+    id: 'maintenance',
+    label: 'Maintenance updates',
+    eventTypes: ['service_maintenance_perform'],
+    tone: 'primary',
+    detailMode: 'latest',
+  },
+  {
+    id: 'wide-access',
+    label: 'Access & permissions',
+    eventTypes: ['service_user_secrets_read', 'user_permissions_set', 'group_permissions_set'],
+    tone: 'info',
+    detailMode: 'latest',
+  },
+  {
+    id: 'lifecycle',
+    label: 'Service lifecycle',
+    eventTypes: [
+      'service_create',
+      'service_update',
+      'service_poweroff',
+      'service_poweron',
+      'service_revive',
+      'service_forked',
+      'service_integration_create',
+      'service_integration_delete',
+      'service_integration_update',
+      'project_delete',
+      'project_suspend',
+    ],
+    tone: 'success',
+    detailMode: 'static',
+    staticDetail: 'Create, plan change, delete…',
+  },
+  {
+    id: 'ip-addresses',
+    label: 'IP adresses updates',
+    eventTypes: ['service_update'],
+    actionIncludes: IP_ALLOWLIST_ACTION_PREFIX,
+    tone: 'info',
+    detailMode: 'latest',
+  },
+  {
+    id: 'billing',
+    label: 'Billing updates',
+    eventTypes: ['project_billing_group_set'],
+    tone: 'warning',
+    detailMode: 'latest',
+  },
+] as const
+
+export function rowMatchesCategory(row: EventLog, category: EventLogCategory): boolean {
+  if (!category.eventTypes.includes(row.eventType)) return false
+  if (category.actionIncludes && !row.action.includes(category.actionIncludes)) return false
+  return true
+}
+
+export function rowsMatchingCategory(
+  rows: EventLog[],
+  category: EventLogCategory,
+): EventLog[] {
+  return rows.filter((row) => rowMatchesCategory(row, category))
+}
+
+export function countCategory(rows: EventLog[], category: EventLogCategory): number {
+  return rowsMatchingCategory(rows, category).length
+}
+
+/** Most recent matching row, or null when the category has no hits. */
+export function latestCategoryEvent(
+  rows: EventLog[],
+  category: EventLogCategory,
+): EventLog | null {
+  const matches = rowsMatchingCategory(rows, category)
+  if (matches.length === 0) return null
+  return matches.reduce((latest, row) =>
+    row.occurredAt.getTime() > latest.occurredAt.getTime() ? row : latest,
+  )
+}
+
+export function getActiveCategoryId(eventTypes: string[]): EventLogCategoryId | null {
+  for (const category of EVENT_LOG_CATEGORIES) {
+    if (category.actionIncludes) continue
+    if (
+      eventTypes.length === category.eventTypes.length &&
+      category.eventTypes.every((type) => eventTypes.includes(type))
+    ) {
+      return category.id
+    }
+  }
+  return null
+}
+
+export function categoryDetailLabel(
+  rows: EventLog[],
+  category: EventLogCategory,
+): string {
+  if (category.detailMode === 'static') {
+    return category.staticDetail ?? ''
+  }
+  const latest = latestCategoryEvent(rows, category)
+  if (!latest) return 'No events in range'
+  return `${latest.actor} · ${latest.dateTimeLabel}`
+}
 
 const EXTRA_ACCOUNT_ID_OPTIONS = ['acc-partner-002', 'acc-trial-003', 'acc-legacy-004', 'acc-sandbox-005']
 
