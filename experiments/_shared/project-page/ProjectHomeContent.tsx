@@ -4,7 +4,7 @@ import { Box, Button, DropdownMenu, PageHeader, Typography } from '@aivenio/aqua
 import { OverviewContent } from './OverviewContent'
 import { ServicesListContent } from './ServicesListContent'
 import { ArchitectureContent } from './ArchitectureContent'
-import { CREATE_MENU_AGENT, CREATE_MENU_SECTIONS, CREATE_MENU_SOLUTION } from './createMenu'
+import { CREATE_MENU_AGENT, CREATE_MENU_SOLUTION } from './createMenu'
 import { useProjectPageData } from './ProjectPageDataContext'
 import type { ProjectTab } from './types'
 
@@ -59,22 +59,20 @@ export function ProjectHomeContent({ activeView = 'overview' }: ProjectHomeConte
               </Button.Dropdown>
             </DropdownMenu.Trigger>
             <DropdownMenu.Items>
-              {CREATE_MENU_SECTIONS.map((section) => (
-                <DropdownMenu.Section key={section.title} title={section.title}>
-                  {section.items.map((item) => (
-                    <DropdownMenu.Item key={item.id} id={item.id}>
-                      {item.label}
-                    </DropdownMenu.Item>
-                  ))}
-                </DropdownMenu.Section>
-              ))}
+              <DropdownMenu.Section title="Data service">
+                <DropdownMenu.Item id="postgresql">PostgreSQL</DropdownMenu.Item>
+                <DropdownMenu.Item id="kafka">Kafka</DropdownMenu.Item>
+                <DropdownMenu.Item id="clickhouse">ClickHouse</DropdownMenu.Item>
+                <DropdownMenu.Item id="opensearch">OpenSearch</DropdownMenu.Item>
+              </DropdownMenu.Section>
+              <DropdownMenu.Section title="Application">
+                <DropdownMenu.Item id="deploy-runtime">Deploy with Aiven Runtime</DropdownMenu.Item>
+              </DropdownMenu.Section>
               <DropdownMenu.Item id={CREATE_MENU_AGENT.id}>{CREATE_MENU_AGENT.label}</DropdownMenu.Item>
               <DropdownMenu.Section title={CREATE_MENU_SOLUTION.title}>
-                {CREATE_MENU_SOLUTION.items.map((item) => (
-                  <DropdownMenu.Item key={item.id} id={item.id}>
-                    {item.label}
-                  </DropdownMenu.Item>
-                ))}
+                <DropdownMenu.Item id={CREATE_MENU_SOLUTION.items[0].id}>
+                  {CREATE_MENU_SOLUTION.items[0].label}
+                </DropdownMenu.Item>
               </DropdownMenu.Section>
             </DropdownMenu.Items>
           </DropdownMenu>

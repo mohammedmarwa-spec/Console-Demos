@@ -7,6 +7,7 @@ import {
   useMemo,
   useRef,
   useState,
+  type ComponentProps,
   type ReactNode,
 } from 'react'
 import { CalendarDate } from '@internationalized/date'
@@ -850,7 +851,7 @@ function buildEventLogColumns(visibleIds: ColumnId[]) {
 type EventLogsContentProps = {
   title?: string
   subtitle?: string
-  breadcrumbs?: ReactNode[]
+  breadcrumbs?: ComponentProps<typeof PageHeader>['breadcrumbs']
 }
 
 export function EventLogsContent({
