@@ -34,15 +34,8 @@ import searchIcon from '@aivenio/aquarium/icons/search'
 import automaticUpdatesIcon from '@aivenio/aquarium/icons/automaticUpdates'
 import consoleIcon from '@aivenio/aquarium/icons/console'
 import personIcon from '@aivenio/aquarium/icons/person'
-import toolsIcon from '@aivenio/aquarium/icons/tools'
-import appUsersIcon from '@aivenio/aquarium/icons/appUsers'
-import bankAccountIcon from '@aivenio/aquarium/icons/bankAccount'
-import databaseIcon from '@aivenio/aquarium/icons/database'
-import globeNetworkIcon from '@aivenio/aquarium/icons/globeNetwork'
-import type { IconifyIcon } from '@iconify/react'
 import {
   DATE_RANGE_PRESETS,
-  EVENT_LOG_CATEGORIES,
   EVENT_LOG_MAX_DATE,
   EVENT_LOG_MIN_DATE,
   EVENT_TYPE_OPTIONS,
@@ -50,17 +43,11 @@ import {
   MOCK_EVENT_LOGS,
   calendarDateToUtcEndMs,
   calendarDateToUtcStartMs,
-  categoryDetailLabel,
-  countCategory,
   downloadEventLogsJson,
   eventLogSearchBlob,
   eventLogToJson,
-  rowMatchesCategory,
   type EventDateRange,
   type EventLog,
-  type EventLogCategory,
-  type EventLogCategoryId,
-  type EventLogCategoryTone,
   type EventType,
 } from './eventLogsData'
 
@@ -202,14 +189,105 @@ function matchesIdFilter(filterValue: string, rowValue: string | null | undefine
   return tokens.includes(rowValue)
 }
 
+// ─── Event type multi-select filter (Filter.Trigger + local panel) ─────────────
+
+function EventTypeFilter({
+  value,
+  onChange,
+}: {
+  value: string[]
+  onChange: (next: string[]) => void
+}) {
+  const [open, setOpen] = useState(false)
+  const rootRef = useRef<HTMLDivElement>(null)
+  const active = value.length > 0
+  const chipValue =
+    value.length === 0
+      ? undefined
+      : value.length === 1
+        ? value[0]
+        : `${value.length} selected`
+
+  useEffect(() => {
+    if (!open) return
+
+    const closeOnOutside = (event: MouseEvent) => {
+      if (!(event.target instanceof Node)) return
+      if (rootRef.current?.contains(event.target)) return
+      // MultiSelect listbox portals outside this panel — keep the panel open.
+      if (event.target instanceof Element) {
+        if (
+          event.target.closest('[data-react-aria-top-layer]') ||
+          event.target.closest('[role="listbox"]') ||
+          event.target.closest('[role="option"]')
+        ) {
+          return
+        }
+      }
+      setOpen(false)
+    }
+
+    document.addEventListener('mousedown', closeOnOutside)
+    return () => document.removeEventListener('mousedown', closeOnOutside)
+  }, [open])
+
+  return (
+    <div ref={rootRef} style={{ display: 'inline-flex', position: 'relative' }}>
+      <Filter.Trigger
+        labelText="Event type"
+        icon={filterIcon}
+        value={chipValue}
+        onClear={
+          active
+            ? () => {
+                onChange([])
+                setOpen(false)
+              }
+            : undefined
+        }
+        onClick={() => setOpen((prev) => !prev)}
+      />
+      {open ? (
+        <Box
+          style={{
+            position: 'absolute',
+            top: 'calc(100% + 8px)',
+            left: 0,
+            zIndex: 200,
+            minWidth: 320,
+            maxWidth: 400,
+            padding: 12,
+            backgroundColor: 'var(--aquarium-background-color-layer)',
+            border: '1px solid var(--aquarium-border-color-muted)',
+            borderRadius: 8,
+            boxShadow: '0 4px 24px rgba(0, 0, 0, 0.12)',
+          }}
+        >
+          <MultiSelect
+            labelText="Event type"
+            placeholder="Select event types"
+            options={EVENT_TYPE_OPTIONS}
+            value={EVENT_TYPE_OPTIONS.filter((opt) => value.includes(opt.value))}
+            reserveSpaceForError={false}
+            onChange={(items) => {
+              const next = (items ?? []).map((item) =>
+                typeof item === 'string' ? item : (item.value as EventType),
+              )
+              onChange(next)
+            }}
+          />
+        </Box>
+      ) : null}
+    </div>
+  )
+}
+
 // ─── "All filters" combined drawer ─────────────────────────────────────────────
 
 type FilterState = {
   /** Free-text schema ID fields — supports deleted resources not in any options list. */
   actorUserId: string
   eventTypes: string[]
-  /** Set when a Quick view card is active (needed for action-text categories like IP). */
-  activeCategoryId: EventLogCategoryId | null
   organizationUnitId: string
   projectId: string
   billingGroupId: string
@@ -219,183 +297,10 @@ type FilterState = {
 const EMPTY_FILTERS: FilterState = {
   actorUserId: '',
   eventTypes: [],
-  activeCategoryId: null,
   organizationUnitId: '',
   projectId: '',
   billingGroupId: '',
   serviceId: '',
-}
-
-// ─── Category filter cards (OrgHome MetricCard pattern, interactive) ─────────
-
-const CATEGORY_ICON: Record<EventLogCategoryId, IconifyIcon> = {
-  maintenance: toolsIcon,
-  'wide-access': appUsersIcon,
-  billing: bankAccountIcon,
-  lifecycle: databaseIcon,
-  'ip-addresses': globeNetworkIcon,
-}
-
-const CATEGORY_ICON_TONE: Record<
-  EventLogCategoryTone,
-  { iconColor: string; iconBg: string }
-> = {
-  primary: {
-    iconColor: 'var(--aquarium-text-color-primary-graphic)',
-    iconBg: 'var(--aquarium-background-color-primary-muted)',
-  },
-  success: {
-    iconColor: 'var(--aquarium-text-color-success-intense)',
-    iconBg: 'var(--aquarium-background-color-success-muted)',
-  },
-  info: {
-    iconColor: 'var(--aquarium-text-color-info-intense)',
-    iconBg: 'var(--aquarium-background-color-info-muted)',
-  },
-  warning: {
-    iconColor: 'var(--aquarium-text-color-warning-intense)',
-    iconBg: 'var(--aquarium-background-color-warning-muted)',
-  },
-}
-
-function EventCategoryCard({
-  category,
-  count,
-  detail,
-  selected,
-  onToggle,
-}: {
-  category: EventLogCategory
-  count: number
-  detail: string
-  selected: boolean
-  onToggle: () => void
-}) {
-  const { iconColor, iconBg } = CATEGORY_ICON_TONE[category.tone]
-  return (
-    <Box
-      component="button"
-      type="button"
-      className="event-log-category-card"
-      aria-pressed={selected}
-      aria-label={`Filter by ${category.label}`}
-      onClick={onToggle}
-      style={{
-        flex: 1,
-        minWidth: 0,
-        textAlign: 'left',
-        display: 'flex',
-        flexDirection: 'column',
-        gap: 16,
-        font: 'inherit',
-        color: 'inherit',
-      }}
-    >
-      <Box
-        aria-hidden
-        style={{
-          width: 40,
-          height: 40,
-          borderRadius: 8,
-          backgroundColor: iconBg,
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          flexShrink: 0,
-        }}
-      >
-        <Icon
-          icon={CATEGORY_ICON[category.id]}
-          style={{ width: 20, height: 20, color: iconColor }}
-        />
-      </Box>
-      <Box>
-        <Box style={{ color: 'var(--aquarium-text-color-muted)', marginBottom: 4 }}>
-          <Typography.Small>{category.label}</Typography.Small>
-        </Box>
-        <Box style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-          <Typography.LargeHeading>{count}</Typography.LargeHeading>
-          {detail ? (
-            <Box style={{ color: 'var(--aquarium-text-color-muted)' }}>
-              <Typography.Small>{detail}</Typography.Small>
-            </Box>
-          ) : null}
-        </Box>
-      </Box>
-    </Box>
-  )
-}
-
-function EventCategoryCards({
-  rows,
-  activeCategoryId,
-  onSelectCategory,
-}: {
-  rows: EventLog[]
-  activeCategoryId: EventLogCategoryId | null
-  onSelectCategory: (id: EventLogCategoryId | null) => void
-}) {
-  return (
-    <>
-      {/* Mirror Aquarium Card.Label (checkable) hover / selected / focus / active. */}
-      <style>{`
-        .event-log-category-card {
-          cursor: pointer;
-          border: 1px solid var(--aquarium-border-color-muted);
-          border-radius: 8px;
-          padding: 24px;
-          background-color: var(--aquarium-background-color-layer);
-          outline: none;
-          box-shadow: none;
-          transition: background-color 150ms ease, box-shadow 150ms ease, border-color 150ms ease;
-        }
-        .event-log-category-card:hover {
-          background-color: var(--aquarium-background-color-primary-active);
-        }
-        .event-log-category-card:active {
-          background-color: var(--aquarium-background-color-body);
-        }
-        .event-log-category-card:focus-visible {
-          outline: 2px solid var(--aquarium-border-color-action-focus);
-          outline-offset: 2px;
-        }
-        .event-log-category-card[aria-pressed="true"] {
-          border-color: transparent;
-          background-color: var(--aquarium-background-color-primary-active);
-          box-shadow: 0 0 0 2px var(--aquarium-border-color-primary-default);
-        }
-        .event-log-category-card[aria-pressed="true"]:focus-visible {
-          outline-offset: 4px;
-        }
-      `}</style>
-      <Box style={{ marginBottom: 24 }}>
-        <Box style={{ marginBottom: 12, display: 'flex', alignItems: 'baseline', gap: 4 }}>
-          <Typography.DefaultStrong>Quick views</Typography.DefaultStrong>
-          <Typography.Default color="muted">·</Typography.Default>
-          <Typography.Default color="muted">Last 30 days</Typography.Default>
-        </Box>
-        <Box
-          role="group"
-          aria-label="Event category filters"
-          style={{ display: 'flex', gap: 16 }}
-        >
-          {EVENT_LOG_CATEGORIES.map((category) => {
-            const selected = activeCategoryId === category.id
-            return (
-              <EventCategoryCard
-                key={category.id}
-                category={category}
-                count={countCategory(rows, category)}
-                detail={categoryDetailLabel(rows, category)}
-                selected={selected}
-                onToggle={() => onSelectCategory(selected ? null : category.id)}
-              />
-            )
-          })}
-        </Box>
-      </Box>
-    </>
-  )
 }
 
 function countActiveIdFilters(filters: FilterState): number {
@@ -534,7 +439,7 @@ function AllFiltersButton({
               const next = (items ?? []).map((item) =>
                 typeof item === 'string' ? item : (item.value as EventType),
               )
-              setFilters({ ...filters, eventTypes: next, activeCategoryId: null })
+              setFilters({ ...filters, eventTypes: next })
             }}
           />
           <Input
@@ -847,17 +752,7 @@ function buildEventLogColumns(visibleIds: ColumnId[]) {
 
 // ─── Main content ──────────────────────────────────────────────────────────────
 
-type EventLogsContentProps = {
-  title?: string
-  subtitle?: string
-  breadcrumbs?: ReactNode[]
-}
-
-export function EventLogsContent({
-  title = 'Event logs',
-  subtitle = 'View the history of actions across organization',
-  breadcrumbs,
-}: EventLogsContentProps) {
+export function EventLogsContent() {
   const [dateRange, setDateRange] = useState<EventDateRange | null>(DEFAULT_PRESET_RANGE)
   const [filters, setFilters] = useState<FilterState>({ ...EMPTY_FILTERS })
   const [searchInput, setSearchInput] = useState('')
@@ -874,10 +769,7 @@ export function EventLogsContent({
     [visibleColumnIds],
   )
 
-  const activeCategoryId = filters.activeCategoryId
-
-  /** Rows after date / ID / search filters — category preset excluded so card counts stay meaningful. */
-  const rowsForCategoryCounts = useMemo(() => {
+  const filteredRows = useMemo(() => {
     const q = searchInput.trim().toLowerCase()
     let startMs = -8.64e15
     let endMs = 8.64e15
@@ -893,29 +785,11 @@ export function EventLogsContent({
       if (!matchesIdFilter(filters.projectId, row.projectId)) return false
       if (!matchesIdFilter(filters.billingGroupId, row.billingGroupId)) return false
       if (!matchesIdFilter(filters.serviceId, row.serviceId)) return false
+      if (filters.eventTypes.length > 0 && !filters.eventTypes.includes(row.eventType)) return false
       if (!q) return true
       return eventLogSearchBlob(row).includes(q)
     })
   }, [searchInput, dateRange, filters])
-
-  const filteredRows = useMemo(() => {
-    if (filters.activeCategoryId) {
-      const category = EVENT_LOG_CATEGORIES.find((c) => c.id === filters.activeCategoryId)
-      if (!category) return rowsForCategoryCounts
-      return rowsForCategoryCounts.filter((row) => rowMatchesCategory(row, category))
-    }
-    if (filters.eventTypes.length === 0) return rowsForCategoryCounts
-    return rowsForCategoryCounts.filter((row) => filters.eventTypes.includes(row.eventType))
-  }, [rowsForCategoryCounts, filters.activeCategoryId, filters.eventTypes])
-
-  const selectCategory = (id: EventLogCategoryId | null) => {
-    const category = EVENT_LOG_CATEGORIES.find((c) => c.id === id)
-    setFilters((f) => ({
-      ...f,
-      activeCategoryId: category ? category.id : null,
-      eventTypes: category ? [...category.eventTypes] : [],
-    }))
-  }
 
   // Simulate an async query so DS loading / error / empty states are exercised.
   useEffect(() => {
@@ -981,27 +855,19 @@ export function EventLogsContent({
       <Box style={{ width: '100%' }}>
         <Box style={{ marginBottom: 24 }}>
           <PageHeader
-            title={title}
-            subtitle={subtitle}
-            breadcrumbs={
-              breadcrumbs ?? [
-                <Breadcrumbs.Crumb key="org" href="#" onClick={(e) => e.preventDefault()}>
-                  Big Co Ltd.
-                </Breadcrumbs.Crumb>,
-                <Breadcrumbs.Crumb key="admin" href="#" onClick={(e) => e.preventDefault()}>
-                  Admin
-                </Breadcrumbs.Crumb>,
-                <Breadcrumbs.Crumb key="event-logs">Event logs</Breadcrumbs.Crumb>,
-              ]
-            }
+            title="Event logs"
+            subtitle="View the history of actions across organization"
+            breadcrumbs={[
+              <Breadcrumbs.Crumb key="org" href="#" onClick={(e) => e.preventDefault()}>
+                Big Co Ltd.
+              </Breadcrumbs.Crumb>,
+              <Breadcrumbs.Crumb key="admin" href="#" onClick={(e) => e.preventDefault()}>
+                Admin
+              </Breadcrumbs.Crumb>,
+              <Breadcrumbs.Crumb key="event-logs">Event logs</Breadcrumbs.Crumb>,
+            ]}
           />
         </Box>
-
-        <EventCategoryCards
-          rows={rowsForCategoryCounts}
-          activeCategoryId={activeCategoryId}
-          onSelectCategory={selectCategory}
-        />
 
         {/* Search + filters on one line */}
         <Box
@@ -1056,6 +922,10 @@ export function EventLogsContent({
               <DateRangePicker.Calendar presets={DATE_RANGE_PRESETS} />
             </DateRangePicker>
 
+            <EventTypeFilter
+              value={filters.eventTypes}
+              onChange={(eventTypes) => setFilters((f) => ({ ...f, eventTypes }))}
+            />
             <IdStringFilter
               label="User"
               placeholder="Enter user"
@@ -1093,7 +963,7 @@ export function EventLogsContent({
               <Typography.Default color="muted">
                 {queryStatus === 'loading'
                   ? '…'
-                  : activeCategoryId
+                  : filters.eventTypes.length > 0
                     ? `${queryRows.length} matching events`
                     : 'Showing last 100 entries'}
               </Typography.Default>
