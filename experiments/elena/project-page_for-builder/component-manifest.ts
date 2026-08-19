@@ -25,6 +25,7 @@ export const componentManifest: ComponentManifest = {
       name: 'Button',
       usage: 'Button.Dropdown Create / Connect; Explore architecture; bottom CTAs; Architecture icons',
     },
+    { name: 'ChoiceChip', usage: 'Dense Architecture view segments: All, Integrated, Standalone' },
     { name: 'InputBase', usage: 'Resources services search field' },
     { name: 'Filter', usage: 'Resources filter trigger (simplified stub)' },
     { name: 'Switch', usage: 'Show only services with alerts on Resources' },

@@ -11,7 +11,10 @@ const nextConfig: NextConfig = {
     unoptimized: true,
   },
   trailingSlash: false,
-  webpack(config) {
+  webpack(config, { dev }) {
+    if (dev && config.output) {
+      config.output.chunkLoadTimeout = 300_000
+    }
     config.module.rules.push({
       test: /\.svg$/i,
       resourceQuery: /raw/,

@@ -1028,7 +1028,6 @@ function ProjectServices({ services, onCreateServiceClick, onServiceClick, onDel
         orgName={consoleContext.orgName}
         orgSublabel={consoleContext.orgSublabel}
         userInitials={consoleContext.userInitials}
-        onHomeClick={onOrgHomeClick}
         onBillingClick={onBillingClick}
         onProjectsClick={onOrgHomeClick}
       />

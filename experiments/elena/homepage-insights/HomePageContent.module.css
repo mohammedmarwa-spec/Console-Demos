@@ -1,0 +1,76 @@
+.coverageGrid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 24px;
+}
+
+.insightGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.recentProjectsGrid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+}
+
+@media (max-width: 960px) {
+  .insightGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .recentProjectsGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .coverageGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+.serviceIconStack {
+  display: flex;
+  align-items: center;
+}
+
+.serviceIconStackItem {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: 1px solid var(--aquarium-border-color-muted);
+  background-color: var(--aquarium-background-color-body);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  position: relative;
+  overflow: hidden;
+}
+
+.projectPreviewTitle {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 12px;
+  min-width: 0;
+  width: 100%;
+}
+
+.projectPreviewHeading {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  width: 100%;
+}
+
+.projectPreviewName {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 1;
+  overflow: hidden;
+  min-width: 0;
+  flex: 1;
+}

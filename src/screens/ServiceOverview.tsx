@@ -1142,7 +1142,7 @@ function ServiceOverview({
         flexDirection: 'column',
       }}
     >
-      <ConsoleHeader activeNav="projects" onHomeClick={onOrgHomeClick} onBillingClick={onBillingClick} onProjectsClick={onOrgHomeClick} />
+      <ConsoleHeader activeNav="projects" onBillingClick={onBillingClick} onProjectsClick={onOrgHomeClick} />
 
       <Box style={{ display: 'flex', flex: 1, minHeight: 0 }}>
         <ServiceSidebar

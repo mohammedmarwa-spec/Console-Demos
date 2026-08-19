@@ -17,12 +17,12 @@ export type MockOrganization = {
 }
 
 export const MOCK_PROJECTS: MockProject[] = [
-  { id: 'defaultdb', name: 'defaultdb' },
+  { id: 'online-store-prod', name: 'online-store-prod' },
+  { id: 'online-store-staging', name: 'online-store-staging' },
+  { id: 'online-store-dev', name: 'online-store-dev' },
   { id: 'kafka-prod', name: 'kafka-prod' },
   { id: 'pg-analytics', name: 'pg-analytics' },
   { id: 'clickhouse-metrics', name: 'clickhouse-metrics' },
-  { id: 'opensearch-logs', name: 'opensearch-logs' },
-  { id: 'redis-cache', name: 'redis-cache' },
 ]
 
 /** First few projects shown under “Recent projects”. */

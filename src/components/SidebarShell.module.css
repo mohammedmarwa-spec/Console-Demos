@@ -1,0 +1,64 @@
+.shell {
+  flex-shrink: 0;
+  height: 100%;
+  min-height: 0;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
+  background-color: var(--aquarium-background-color-layer);
+  box-shadow: inset -1px 0 0 var(--aquarium-border-color-muted);
+  transition: width 0.3s ease;
+}
+
+.shell :global(nav) {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+  width: 100%;
+}
+
+.menu {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  min-height: 0;
+  overflow: hidden;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.menuList {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  justify-content: flex-start;
+  min-height: 0;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  overflow-x: hidden;
+  overflow-y: auto;
+}
+
+/*
+ * Keep default item padding so icons stay on the same x as expanded.
+ * Hide leftover label text/nodes; never hide or recolor the SVG.
+ */
+.shell[data-collapsed='true'] .menuList :global(a) {
+  overflow: hidden;
+  gap: 0;
+  font-size: 0;
+}
+
+.shell[data-collapsed='true'] .menuList :global(svg) {
+  flex-shrink: 0;
+  visibility: visible;
+  opacity: 1;
+}
+
+.shell[data-collapsed='true'] .menuList :global(li[role='presentation'] > div) {
+  display: none;
+}

@@ -1,4 +1,6 @@
-import { Box, Navigation } from '@aivenio/aquarium'
+'use client'
+
+import { Navigation } from '@aivenio/aquarium'
 import clipboardCheckIcon from '@aivenio/aquarium/icons/clipboardCheck'
 import gridIcon from '@aivenio/aquarium/icons/grid'
 import listIcon from '@aivenio/aquarium/icons/list'
@@ -6,6 +8,7 @@ import appUsersIcon from '@aivenio/aquarium/icons/appUsers'
 import mapMarkerIcon from '@aivenio/aquarium/icons/mapMarker'
 import creditCardIcon from '@aivenio/aquarium/icons/creditCard'
 import type { IconifyIcon } from '@iconify/react'
+import { SidebarShell } from './SidebarShell'
 
 const NAV_ITEMS: { label: string; icon: IconifyIcon; id: string }[] = [
   { id: 'get-started', label: 'Get started', icon: clipboardCheckIcon },
@@ -23,26 +26,26 @@ export type BillingSidebarProps = {
 
 export function BillingSidebar({ activeItem = 'invoices', onItemClick }: BillingSidebarProps) {
   return (
-    <Box
-      style={{
-        width: 280,
-        flexShrink: 0,
-        backgroundColor: 'var(--aquarium-background-color-layer)',
-        display: 'flex',
-        flexDirection: 'column',
-      }}
+    <SidebarShell
+      ariaLabel="Billing navigation"
+      header={(collapsed) =>
+        collapsed ? null : (
+          <>
+            <Navigation.Header.Title>ORGANIZATION</Navigation.Header.Title>
+            <Navigation.Header.Subtitle>Billing</Navigation.Header.Subtitle>
+          </>
+        )
+      }
     >
-      <Navigation>
-        <Navigation.Header>
-          <Navigation.Header.Title>ORGANIZATION</Navigation.Header.Title>
-          <Navigation.Header.Subtitle>Billing</Navigation.Header.Subtitle>
-        </Navigation.Header>
-        {NAV_ITEMS.map(({ id, label, icon }) => (
+      {() =>
+        NAV_ITEMS.map(({ id, label, icon }) => (
           <Navigation.Item
             key={id}
             icon={icon}
             active={id === activeItem}
             href="#"
+            aria-label={label}
+            title={label}
             onClick={(e) => {
               e.preventDefault()
               onItemClick?.(id)
@@ -50,9 +53,9 @@ export function BillingSidebar({ activeItem = 'invoices', onItemClick }: Billing
           >
             {label}
           </Navigation.Item>
-        ))}
-      </Navigation>
-    </Box>
+        ))
+      }
+    </SidebarShell>
   )
 }
 

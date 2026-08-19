@@ -36,3 +36,38 @@ export function buildArchitectureEdges(edges: ArchitectureEdgeMock[]): Edge[] {
     type: edge.type ?? 'architectureLabeled',
   }))
 }
+
+export function getConnectedServiceIds(edges: ArchitectureEdgeMock[]): Set<string> {
+  const ids = new Set<string>()
+  for (const edge of edges) {
+    ids.add(edge.source)
+    ids.add(edge.target)
+  }
+  return ids
+}
+
+export type ArchitectureView = 'all' | 'integrated' | 'standalone'
+
+export function filterArchitecture(
+  services: ServiceListRow[],
+  edges: ArchitectureEdgeMock[],
+  view: ArchitectureView,
+): { services: ServiceListRow[]; edges: ArchitectureEdgeMock[] } {
+  if (view === 'all') {
+    return { services, edges }
+  }
+
+  const connectedIds = getConnectedServiceIds(edges)
+
+  if (view === 'integrated') {
+    return {
+      services: services.filter((service) => connectedIds.has(service.id)),
+      edges,
+    }
+  }
+
+  return {
+    services: services.filter((service) => !connectedIds.has(service.id)),
+    edges: [],
+  }
+}

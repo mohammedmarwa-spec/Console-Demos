@@ -191,12 +191,6 @@ export const projectPageData: ProjectPageMockData = {
       animated: true,
     },
     {
-      id: 'e-mysql-valkey',
-      source: 'mysql-app',
-      target: 'valkey-cache',
-      label: 'cache',
-    },
-    {
       id: 'e-kafka-ch',
       source: 'kafka-events',
       target: 'clickhouse-analytics',
@@ -208,18 +202,6 @@ export const projectPageData: ProjectPageMockData = {
       source: 'kafka-events',
       target: 'opensearch-logs',
       label: 'logs',
-    },
-    {
-      id: 'e-ch-grafana',
-      source: 'clickhouse-analytics',
-      target: 'grafana-dash',
-      label: 'dashboards',
-    },
-    {
-      id: 'e-os-grafana',
-      source: 'opensearch-logs',
-      target: 'grafana-dash',
-      label: 'logs UI',
     },
   ],
   solutions: [

@@ -1,6 +1,6 @@
 'use client'
 
-import { useCallback, useMemo, type ReactNode } from 'react'
+import { useCallback, useMemo, useState, type ReactNode } from 'react'
 import {
   Background,
   Controls,
@@ -12,12 +12,17 @@ import {
   useNodesState,
 } from '@xyflow/react'
 import '@xyflow/react/dist/style.css'
-import { Box, Button } from '@aivenio/aquarium'
+import { Box, Button, ChoiceChip, ChoiceChipGroup } from '@aivenio/aquarium'
 import downloadIcon from '@aivenio/aquarium/icons/download'
 import refreshIcon from '@aivenio/aquarium/icons/refresh'
 import maximizeIcon from '@aivenio/aquarium/icons/maximize'
 import { useResolvedTheme } from '@/theme/ThemeProvider'
-import { buildArchitectureEdges, buildArchitectureNodes } from './architectureGraph'
+import {
+  buildArchitectureEdges,
+  buildArchitectureNodes,
+  filterArchitecture,
+  type ArchitectureView,
+} from './architectureGraph'
 import { useProjectPageData } from './ProjectPageDataContext'
 import { ArchitectureServiceNode } from './ArchitectureServiceNode'
 import { ArchitectureLabeledEdge } from './ArchitectureLabeledEdge'
@@ -29,6 +34,12 @@ const nodeTypes = {
 const edgeTypes = {
   architectureLabeled: ArchitectureLabeledEdge,
 }
+
+const VIEW_OPTIONS: { id: ArchitectureView; label: string }[] = [
+  { id: 'all', label: 'All' },
+  { id: 'integrated', label: 'Integrated' },
+  { id: 'standalone', label: 'Standalone' },
+]
 
 function LayoutButtonWrapper({ children }: { children: ReactNode }) {
   return (
@@ -46,23 +57,31 @@ function LayoutButtonWrapper({ children }: { children: ReactNode }) {
 
 LayoutButtonWrapper.displayName = 'LayoutButtonWrapper'
 
-function ArchitectureFlowInner() {
+function ArchitectureFlowInner({ view }: { view: ArchitectureView }) {
   const { services, architectureEdges } = useProjectPageData()
   const resolvedTheme = useResolvedTheme()
 
-  const initialNodes = useMemo(() => buildArchitectureNodes(services), [services])
+  const filtered = useMemo(
+    () => filterArchitecture(services, architectureEdges, view),
+    [architectureEdges, services, view],
+  )
+
+  const initialNodes = useMemo(
+    () => buildArchitectureNodes(filtered.services),
+    [filtered.services],
+  )
   const initialEdges = useMemo(
-    () => buildArchitectureEdges(architectureEdges),
-    [architectureEdges],
+    () => buildArchitectureEdges(filtered.edges),
+    [filtered.edges],
   )
 
   const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes)
   const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges)
 
   const onRefresh = useCallback(() => {
-    setNodes(buildArchitectureNodes(services))
-    setEdges(buildArchitectureEdges(architectureEdges))
-  }, [architectureEdges, services, setEdges, setNodes])
+    setNodes(buildArchitectureNodes(filtered.services))
+    setEdges(buildArchitectureEdges(filtered.edges))
+  }, [filtered.edges, filtered.services, setEdges, setNodes])
 
   return (
     <Box
@@ -184,10 +203,36 @@ ArchitectureFlowInner.displayName = 'ArchitectureFlowInner'
 
 /** Project Architecture tab — React Flow canvas with services on a grid + mock integrations. */
 export function ArchitectureContent() {
+  const [view, setView] = useState<ArchitectureView>('integrated')
+
   return (
-    <Box style={{ flex: 1, minHeight: 0, height: '100%', display: 'flex', flexDirection: 'column' }}>
+    <Box
+      style={{
+        flex: 1,
+        minHeight: 0,
+        height: '100%',
+        display: 'flex',
+        flexDirection: 'column',
+        gap: 16,
+      }}
+    >
+      <Box style={{ flexShrink: 0 }}>
+        <ChoiceChipGroup
+          name="architecture-view"
+          selectionMode="radio"
+          value={view}
+          onChange={(value) => setView(value as ArchitectureView)}
+          aria-label="Architecture view"
+        >
+          {VIEW_OPTIONS.map((option) => (
+            <ChoiceChip key={option.id} value={option.id} dense>
+              {option.label}
+            </ChoiceChip>
+          ))}
+        </ChoiceChipGroup>
+      </Box>
       <ReactFlowProvider>
-        <ArchitectureFlowInner />
+        <ArchitectureFlowInner key={view} view={view} />
       </ReactFlowProvider>
     </Box>
   )

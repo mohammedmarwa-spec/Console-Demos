@@ -661,7 +661,6 @@ function BillingInvoiceDetail({ onBack, onOrgHomeClick, onBillingClick }: Billin
     <Box style={{ minHeight: '100vh', backgroundColor: 'var(--aquarium-background-color-body)', display: 'flex', flexDirection: 'column' }}>
       <ConsoleHeader
         activeNav="billing"
-        onHomeClick={onOrgHomeClick}
         onBillingClick={onBillingClick}
         onProjectsClick={onOrgHomeClick}
       />

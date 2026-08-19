@@ -154,6 +154,9 @@ export function discoverAllRoutes(): { owner: string; slug: string }[] {
  */
 export async function loadPage(owner: string, slug: string): Promise<ComponentType> {
   const relPath = `${owner}/${slug}`
-  const mod = (await import(`../../../experiments/${relPath}/index`)) as { default: ComponentType }
+  const mod = (await import(
+    /* webpackChunkName: "experiment-[request]" */
+    `../../../experiments/${relPath}/index`
+  )) as { default: ComponentType }
   return mod.default
 }

@@ -1,4 +1,6 @@
-import { Box, Navigation } from '@aivenio/aquarium'
+'use client'
+
+import { Navigation } from '@aivenio/aquarium'
 import endorsedIcon from '@aivenio/aquarium/icons/endorsed'
 import databaseIcon from '@aivenio/aquarium/icons/database'
 import consoleIcon from '@aivenio/aquarium/icons/console'
@@ -11,6 +13,7 @@ import performanceIcon from '@aivenio/aquarium/icons/performance'
 import proPlansIcon from '@aivenio/aquarium/icons/proPlans'
 import cogIcon from '@aivenio/aquarium/icons/cog'
 import type { IconifyIcon } from '@iconify/react'
+import { SidebarShell } from './SidebarShell'
 
 /**
  * Production ProjectNavItems order/labels
@@ -43,49 +46,52 @@ export function ProjectSidebar({
   onItemClick,
 }: ProjectSidebarProps) {
   return (
-    <Box
-      style={{
-        width: 280,
-        flexShrink: 0,
-        backgroundColor: 'var(--aquarium-background-color-layer)',
-        display: 'flex',
-        flexDirection: 'column',
-      }}
+    <SidebarShell
+      ariaLabel="Project navigation"
+      header={(collapsed) =>
+        collapsed ? null : (
+          <>
+            <Navigation.Header.Title>Project</Navigation.Header.Title>
+            <Navigation.Header.Subtitle>{projectName}</Navigation.Header.Subtitle>
+          </>
+        )
+      }
     >
-      <Navigation>
-        <Navigation.Header>
-          <Navigation.Header.Title>Project</Navigation.Header.Title>
-          <Navigation.Header.Subtitle>{projectName}</Navigation.Header.Subtitle>
-        </Navigation.Header>
-        <Navigation.Divider />
-        {PRIMARY_NAV_ITEMS.map(({ id, label, icon }) => (
+      {() => (
+        <>
+          {PRIMARY_NAV_ITEMS.map(({ id, label, icon }) => (
+            <Navigation.Item
+              key={id}
+              icon={icon}
+              active={id === activeItem}
+              href="#"
+              aria-label={label}
+              title={label}
+              onClick={(e) => {
+                e.preventDefault()
+                onItemClick?.(id)
+              }}
+            >
+              {label}
+            </Navigation.Item>
+          ))}
+          <Navigation.Divider />
           <Navigation.Item
-            key={id}
-            icon={icon}
-            active={id === activeItem}
+            icon={cogIcon}
+            active={activeItem === 'settings'}
             href="#"
+            aria-label="Settings"
+            title="Settings"
             onClick={(e) => {
               e.preventDefault()
-              onItemClick?.(id)
+              onItemClick?.('settings')
             }}
           >
-            {label}
+            Settings
           </Navigation.Item>
-        ))}
-        <Navigation.Divider />
-        <Navigation.Item
-          icon={cogIcon}
-          active={activeItem === 'settings'}
-          href="#"
-          onClick={(e) => {
-            e.preventDefault()
-            onItemClick?.('settings')
-          }}
-        >
-          Settings
-        </Navigation.Item>
-      </Navigation>
-    </Box>
+        </>
+      )}
+    </SidebarShell>
   )
 }
 

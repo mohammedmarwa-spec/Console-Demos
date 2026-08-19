@@ -234,7 +234,7 @@ export function OrganizationSelector({
     <DropdownMenu
       maxWidth={300}
       searchable={false}
-      placement="bottom-end"
+      placement="bottom-start"
       isOpen={isOpen}
       onOpenChange={handleOpenChange}
       onAction={handleMenuAction}
@@ -282,7 +282,8 @@ export function OrganizationSelector({
             color: 'var(--aquarium-text-color-default)',
           }}
         >
-          <Box style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 0 }}>
+          <Icon icon={officeIcon} color="muted" style={{ width: 20, height: 20 }} />
+          <Box style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 0 }}>
             {showUnitInTrigger ? (
               <>
                 <Box
@@ -291,7 +292,7 @@ export function OrganizationSelector({
                     fontSize: 12,
                     lineHeight: 1,
                     color: 'var(--aquarium-text-color-muted)',
-                    textAlign: 'right',
+                    textAlign: 'left',
                     maxWidth: 200,
                     overflow: 'hidden',
                     textOverflow: 'ellipsis',
@@ -305,7 +306,7 @@ export function OrganizationSelector({
                   style={{
                     fontSize: 14,
                     lineHeight: 1.42,
-                    textAlign: 'right',
+                    textAlign: 'left',
                     maxWidth: 200,
                     overflow: 'hidden',
                     textOverflow: 'ellipsis',
@@ -321,7 +322,7 @@ export function OrganizationSelector({
                 style={{
                   fontSize: 14,
                   lineHeight: 1.42,
-                  textAlign: 'right',
+                  textAlign: 'left',
                   maxWidth: 200,
                   overflow: 'hidden',
                   textOverflow: 'ellipsis',
@@ -332,7 +333,6 @@ export function OrganizationSelector({
               </Box>
             )}
           </Box>
-          <Icon icon={officeIcon} style={{ width: 20, height: 20 }} />
           <Icon
             icon={isOpen ? chevronUpIcon : chevronDownIcon}
             style={{ width: 12, height: 12 }}

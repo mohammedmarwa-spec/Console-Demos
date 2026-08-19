@@ -1,6 +1,7 @@
 'use client'
 
-import type { CSSProperties } from 'react'
+import type { CSSProperties, ReactNode } from 'react'
+import { useRouter } from 'next/navigation'
 import { Box, Divider, DropdownMenu, Icon, InlineIcon } from '@aivenio/aquarium'
 import notificationsIcon from '@aivenio/aquarium/icons/notifications'
 import helpIcon from '@aivenio/aquarium/icons/help'
@@ -11,6 +12,8 @@ import { useResolvedTheme } from '../theme/ThemeProvider'
 import { OrganizationSelector } from './header/OrganizationSelector'
 import { ProjectsPopover } from './header/ProjectsPopover'
 import { DEFAULT_ACTIVE_PROJECT_ID } from './header/shellNavMockData'
+import { SIDEBAR_WIDTH_COLLAPSED } from './SidebarShell'
+import { ROUTES } from '../lib/navigation'
 
 export type NavItem = 'home' | 'projects' | 'tools' | 'billing' | 'support' | 'admin'
 
@@ -25,12 +28,16 @@ export type ConsoleHeaderProps = {
   userInitials?: string
   /** Selected project id for the Projects panel checkmark. */
   activeProjectId?: string
-  /** Called when the Home nav item is clicked. */
+  /** Called when the Home nav item is clicked. Defaults to Console Homepage. */
   onHomeClick?: () => void
   /** Called when the Billing nav item is clicked. */
   onBillingClick?: () => void
   /** Called when View all projects is clicked (shell callback, no route). */
   onProjectsClick?: () => void
+  /** Optional custom content rendered on the right, before header icon actions. */
+  beforeOrganizationSelector?: ReactNode
+  /** Show primary navigation buttons in the header. */
+  showPrimaryNav?: boolean
 }
 
 // ─── Aiven Console Logo ───────────────────────────────────────────────────────
@@ -189,7 +196,12 @@ export function ConsoleHeader({
   onHomeClick,
   onBillingClick,
   onProjectsClick,
+  beforeOrganizationSelector,
+  showPrimaryNav = true,
 }: ConsoleHeaderProps) {
+  const router = useRouter()
+  const handleHomeClick = onHomeClick ?? (() => router.push(ROUTES.homepage))
+
   return (
     <Box
       component="nav"
@@ -200,8 +212,9 @@ export function ConsoleHeader({
         borderBottom: '1px solid var(--aquarium-border-color-muted)',
         display: 'flex',
         alignItems: 'center',
-        paddingInline: 16,
-        gap: 16,
+        paddingLeft: 0,
+        paddingRight: 16,
+        gap: 0,
         position: 'sticky',
         top: 0,
         zIndex: 100,
@@ -209,7 +222,24 @@ export function ConsoleHeader({
         boxSizing: 'border-box',
       }}
     >
-      <AivenConsoleLogo width={28} />
+      <Box
+        style={{
+          width: SIDEBAR_WIDTH_COLLAPSED,
+          flexShrink: 0,
+          height: '100%',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          boxSizing: 'border-box',
+          boxShadow: 'inset -1px 0 0 var(--aquarium-border-color-muted)',
+        }}
+      >
+        <AivenConsoleLogo width={42} />
+      </Box>
+
+      <Box style={{ marginLeft: 16, flexShrink: 0 }}>
+        <OrganizationSelector orgName={orgName} orgSublabel={orgSublabel} />
+      </Box>
 
       <Box
         style={{
@@ -219,35 +249,44 @@ export function ConsoleHeader({
           flex: 1,
           minWidth: 0,
           height: 40,
+          marginLeft: 16,
         }}
       >
-        <NavButton label="Home" active={activeNav === 'home'} onClick={onHomeClick} />
+        {showPrimaryNav ? (
+          <>
+            <NavButton label="Home" active={activeNav === 'home'} onClick={handleHomeClick} />
 
-        <ProjectsPopover
-          active={activeNav === 'projects'}
-          activeProjectId={activeProjectId}
-          onViewAllProjects={onProjectsClick}
-        />
+            <ProjectsPopover
+              active={activeNav === 'projects'}
+              activeProjectId={activeProjectId}
+              onViewAllProjects={onProjectsClick}
+            />
 
-        <DropdownMenu>
-          <DropdownMenu.Trigger>
-            <NavButton label="Tools" active={activeNav === 'tools'} hasDropdown as="span" />
-          </DropdownMenu.Trigger>
-          <DropdownMenu.Items>
-            <DropdownMenu.Item id="topic-catalog">Topic catalog</DropdownMenu.Item>
-            <DropdownMenu.Item id="data-flow">Data flow</DropdownMenu.Item>
-            <DropdownMenu.Item id="sql-optimizer">SQL query optimizer</DropdownMenu.Item>
-            <DropdownMenu.Item id="mcp-use-cases">Aiven MCP use cases</DropdownMenu.Item>
-          </DropdownMenu.Items>
-        </DropdownMenu>
+            <DropdownMenu>
+              <DropdownMenu.Trigger>
+                <NavButton label="Tools" active={activeNav === 'tools'} hasDropdown as="span" />
+              </DropdownMenu.Trigger>
+              <DropdownMenu.Items>
+                <DropdownMenu.Item id="topic-catalog">Topic catalog</DropdownMenu.Item>
+                <DropdownMenu.Item id="data-flow">Data flow</DropdownMenu.Item>
+                <DropdownMenu.Item id="sql-optimizer">SQL query optimizer</DropdownMenu.Item>
+                <DropdownMenu.Item id="mcp-use-cases">Aiven MCP use cases</DropdownMenu.Item>
+              </DropdownMenu.Items>
+            </DropdownMenu>
 
-        <NavButton label="Billing" active={activeNav === 'billing'} onClick={onBillingClick} />
-        <NavButton label="Support" active={activeNav === 'support'} external />
-        <NavButton label="Admin" active={activeNav === 'admin'} />
+            <NavButton label="Billing" active={activeNav === 'billing'} onClick={onBillingClick} />
+            <NavButton label="Support" active={activeNav === 'support'} external />
+            <NavButton label="Admin" active={activeNav === 'admin'} />
+          </>
+        ) : null}
       </Box>
 
       <Box style={{ display: 'flex', alignItems: 'center', gap: 4, flexShrink: 0 }}>
-        <OrganizationSelector orgName={orgName} orgSublabel={orgSublabel} />
+        {beforeOrganizationSelector ? (
+          <Box style={{ display: 'flex', alignItems: 'center', marginRight: 8 }}>
+            {beforeOrganizationSelector}
+          </Box>
+        ) : null}
 
         <Box style={{ height: 40, marginLeft: 6, marginRight: 6 }}>
           <Divider direction="vertical" size={2} />

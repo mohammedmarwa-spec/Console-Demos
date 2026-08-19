@@ -6,8 +6,14 @@ import {
 } from '../scenarios/scenarioRuntime'
 import { isKnownServiceId, SERVICE_OVERVIEW_CATCHALL_ID } from './serviceIds'
 
+export function experimentPath(owner: string, slug: string): string {
+  return `/experiments/${owner}/${slug}`
+}
+
 export const ROUTES = {
   hub: '/',
+  homepage: experimentPath('elena', 'homepage'),
+  projectPage: experimentPath('elena', 'project-page'),
   consoleOrg: '/console/org',
   consoleServices: '/console/project/services',
   consoleBilling: '/console/billing',
@@ -23,10 +29,6 @@ export const ROUTES = {
 export function serviceOverviewPath(serviceId: string): string {
   const segment = isKnownServiceId(serviceId) ? serviceId : SERVICE_OVERVIEW_CATCHALL_ID
   return `/console/project/services/${encodeURIComponent(segment)}`
-}
-
-export function experimentPath(owner: string, slug: string): string {
-  return `/experiments/${owner}/${slug}`
 }
 
 export function parseExperimentId(id: string): { owner: string; slug: string } | null {

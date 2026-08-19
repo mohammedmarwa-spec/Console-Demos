@@ -1,5 +1,7 @@
+'use client'
+
 import type { MouseEvent } from 'react'
-import { Box, Navigation } from '@aivenio/aquarium'
+import { Navigation } from '@aivenio/aquarium'
 import dashboardIcon from '@aivenio/aquarium/icons/dashboard'
 import integrationsIcon from '@aivenio/aquarium/icons/integrations'
 import chartIcon from '@aivenio/aquarium/icons/chart'
@@ -12,6 +14,7 @@ import databaseIcon from '@aivenio/aquarium/icons/database'
 import dbBackupIcon from '@aivenio/aquarium/icons/dbBackup'
 import cogIcon from '@aivenio/aquarium/icons/cog'
 import type { IconifyIcon } from '@iconify/react'
+import { SidebarShell } from './SidebarShell'
 
 const PG_STUDIO_NAV_ITEM = { id: 'pg-studio', label: 'PG Studio', icon: queriesEditorIcon } as const
 
@@ -53,48 +56,49 @@ export function ServiceSidebar({
     : BASE_NAV_ITEMS
 
   return (
-    <Box
-      style={{
-        width: 280,
-        flexShrink: 0,
-        backgroundColor: 'var(--aquarium-background-color-layer)',
-        display: 'flex',
-        flexDirection: 'column',
-      }}
+    <SidebarShell
+      ariaLabel="Service navigation"
+      header={(collapsed) =>
+        collapsed ? null : (
+          <>
+            <Navigation.Header.Title>{projectName}</Navigation.Header.Title>
+            <Navigation.Header.Subtitle>{serviceName}</Navigation.Header.Subtitle>
+          </>
+        )
+      }
     >
-      <Navigation>
-        <Navigation.Header>
-          <Navigation.Header.Title>{projectName}</Navigation.Header.Title>
-          <Navigation.Header.Subtitle>{serviceName}</Navigation.Header.Subtitle>
-        </Navigation.Header>
-        {onBackToProject && (
-          <Navigation.Item
-            href="#"
-            onClick={(e: React.MouseEvent) => {
-              e.preventDefault()
-              onBackToProject()
-            }}
-          >
-            ← Back to project
-          </Navigation.Item>
-        )}
-        <Navigation.Divider />
-        {navItems.map(({ id, label, icon }) => (
-          <Navigation.Item
-            key={id}
-            icon={icon}
-            active={id === activeItem}
-            href="#"
-            onClick={(e: MouseEvent) => {
-              e.preventDefault()
-              onNavigate?.(id)
-            }}
-          >
-            {label}
-          </Navigation.Item>
-        ))}
-      </Navigation>
-    </Box>
+      {(collapsed) => (
+        <>
+          {onBackToProject && !collapsed && (
+            <Navigation.Item
+              href="#"
+              onClick={(e: React.MouseEvent) => {
+                e.preventDefault()
+                onBackToProject()
+              }}
+            >
+              ← Back to project
+            </Navigation.Item>
+          )}
+          {navItems.map(({ id, label, icon }) => (
+            <Navigation.Item
+              key={id}
+              icon={icon}
+              active={id === activeItem}
+              href="#"
+              aria-label={label}
+              title={label}
+              onClick={(e: MouseEvent) => {
+                e.preventDefault()
+                onNavigate?.(id)
+              }}
+            >
+              {label}
+            </Navigation.Item>
+          ))}
+        </>
+      )}
+    </SidebarShell>
   )
 }
 

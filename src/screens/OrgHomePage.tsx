@@ -341,7 +341,6 @@ function OrgHomePage({ onProjectsClick, onBillingClick, onInvoiceClick }: OrgHom
     >
       <ConsoleHeader
         activeNav="home"
-        onHomeClick={() => {}}
         onBillingClick={onBillingClick}
         onProjectsClick={onProjectsClick}
       />
