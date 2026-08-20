@@ -7,7 +7,7 @@ import { HomePageContent } from './HomePageContent'
 import { ORG_NAME, USER_INITIALS } from './mockData'
 
 export const pageMeta: PageMeta = {
-  title: 'Homepage',
+  title: 'Homepage V1',
   description:
     'Console Home for an organization — recent projects, project health, platform status, and product updates.',
 }

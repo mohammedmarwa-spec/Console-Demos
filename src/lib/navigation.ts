@@ -12,7 +12,7 @@ export function experimentPath(owner: string, slug: string): string {
 
 export const ROUTES = {
   hub: '/',
-  homepage: experimentPath('elena', 'homepage'),
+  homepage: experimentPath('elena', 'homepage-v1'),
   projectPage: experimentPath('elena', 'project-page'),
   consoleOrg: '/console/org',
   consoleServices: '/console/project/services',

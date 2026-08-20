@@ -1,6 +1,6 @@
 # Console Homepage experiment brief: project posture summary
 
-> **Experiment variant:** `homepage-insights` — clipped Project health layout: dual insight cards (Attention required / Improve your project), Protection coverage strip, and Services requiring review table. Copied from `homepage`; original left unchanged for comparison.
+> **Experiment variant:** `homepage-v2` (`Homepage V2`) — clipped Project health layout: dual insight cards (Attention required / Improve your project), Protection coverage strip, and Services requiring review table. Copied from `homepage-v1`; original left unchanged for comparison.
 
 ## Problem
 

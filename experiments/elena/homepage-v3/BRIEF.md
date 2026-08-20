@@ -1,6 +1,6 @@
 # Console Homepage experiment brief: project posture summary
 
-> **Experiment variant:** `homepage-v3` (`Homepage_v3`) — copy of `homepage-insights` with a vertical project DataList. **Project insights** is a link action that opens a non-blocking drawer with Project health and the services list. Protection coverage is removed. `homepage` and `homepage-insights` are left unchanged for comparison.
+> **Experiment variant:** `homepage-v3` (`Homepage V3`) — copy of `homepage-v2` with a vertical project DataList. **Project insights** is a link action that opens a non-blocking drawer with Project health and the services list. Protection coverage is removed. `homepage-v1` and `homepage-v2` are left unchanged for comparison.
 
 ## Problem
 

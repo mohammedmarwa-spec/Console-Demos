@@ -10,6 +10,7 @@ import {
   Divider,
   DropdownMenu,
   EmptyState,
+  Filter,
   InlineIcon,
   Link,
   StatusChip,
@@ -24,6 +25,7 @@ import chevronLeft from '@aivenio/aquarium/icons/chevronLeft'
 import chevronRight from '@aivenio/aquarium/icons/chevronRight'
 import chevronUp from '@aivenio/aquarium/icons/chevronUp'
 import errorSign from '@aivenio/aquarium/icons/error'
+import filterIcon from '@aivenio/aquarium/icons/filter'
 import helpIcon from '@aivenio/aquarium/icons/help'
 import warningSign from '@aivenio/aquarium/icons/warningSign'
 import { ServiceIcon } from '@experiments/_shared/components/ServiceIcon'
@@ -49,6 +51,44 @@ import styles from './HomePageContent.module.css'
 
 const CHANGELOG_URL = 'https://aiven.io/changelog'
 const CHANGELOG_RSS_URL = 'https://aiven.io/changelog/feed.xml'
+
+type ServiceTableFilterId = 'close-eol' | 'maintenance' | 'degraded'
+
+const SERVICE_TABLE_FILTERS: { id: ServiceTableFilterId; label: string }[] = [
+  { id: 'close-eol', label: 'Close EOL' },
+  { id: 'maintenance', label: 'Maintenance' },
+  { id: 'degraded', label: 'Degraded service' },
+]
+
+function isServiceTableFilterId(value: string): value is ServiceTableFilterId {
+  return SERVICE_TABLE_FILTERS.some((filter) => filter.id === value)
+}
+
+function parseSelectedTableFilters(keys: Iterable<unknown> | 'all'): Set<ServiceTableFilterId> {
+  if (keys === 'all') return new Set(SERVICE_TABLE_FILTERS.map((filter) => filter.id))
+  const selected = new Set<ServiceTableFilterId>()
+  for (const key of keys) {
+    const id = String(key)
+    if (isServiceTableFilterId(id)) selected.add(id)
+  }
+  return selected
+}
+
+function serviceMatchesTableFilter(service: HomeServiceRow, filterId: ServiceTableFilterId): boolean {
+  if (filterId === 'close-eol') return service.versionEolState !== 'supported'
+  if (filterId === 'maintenance') return service.maintenanceWindowState === 'needs_review'
+  return service.nodeStatus === 'degraded' || service.nodeStatus === 'down'
+}
+
+function filterServicesByTableFilters(
+  services: HomeServiceRow[],
+  selected: Set<ServiceTableFilterId>,
+): HomeServiceRow[] {
+  if (selected.size === 0) return services
+  return services.filter((service) =>
+    SERVICE_TABLE_FILTERS.some((filter) => selected.has(filter.id) && serviceMatchesTableFilter(service, filter.id)),
+  )
+}
 
 function noopClick(event: { preventDefault: () => void }) {
   event.preventDefault()
@@ -282,6 +322,7 @@ function ProjectHealth({
               onSelectSignal={onSelectSignal}
             />
             <PostureServicesPanel
+              key={project.id}
               activeSignal={activeSignal}
               services={services}
               onClearActiveSignal={onClearActiveSignal}
@@ -394,6 +435,12 @@ function PostureServicesPanel({
   services: HomeServiceRow[]
   onClearActiveSignal: () => void
 }) {
+  const [selectedFilters, setSelectedFilters] = useState<Set<ServiceTableFilterId>>(new Set())
+  const filteredServices = useMemo(
+    () => filterServicesByTableFilters(services, selectedFilters),
+    [services, selectedFilters],
+  )
+
   if (services.length === 0) {
     return (
       <EmptyState title="No services in this scope">
@@ -404,38 +451,90 @@ function PostureServicesPanel({
 
   return (
     <Box style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-      {activeSignal ? (
-        <Box
-          style={{
-            display: 'inline-flex',
-            alignItems: 'center',
-            gap: 8,
-            border: '1px solid var(--aquarium-border-color-primary-default)',
-            backgroundColor: 'var(--aquarium-background-color-primary-muted)',
-            borderRadius: 999,
-            padding: '6px 10px',
-            alignSelf: 'flex-start',
-          }}
-        >
-          <Typography.SmallStrong>{activeSignal.title}</Typography.SmallStrong>
-          <Typography.Small color="muted">{activeSignal.fixLabel}</Typography.Small>
-          <Link
-            href="#"
-            onClick={(event) => {
-              noopClick(event)
-              onClearActiveSignal()
+      <Box style={{ display: 'flex', alignItems: 'center', gap: 16, flexWrap: 'wrap' }}>
+        <ServiceTableFilters selected={selectedFilters} onChange={setSelectedFilters} />
+        {activeSignal ? (
+          <Box
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: 8,
+              border: '1px solid var(--aquarium-border-color-primary-default)',
+              backgroundColor: 'var(--aquarium-background-color-primary-muted)',
+              borderRadius: 999,
+              padding: '6px 10px',
+              alignSelf: 'flex-start',
             }}
           >
-            Clear
-          </Link>
-        </Box>
-      ) : null}
-      <PostureServiceList services={services} fixLabel={activeSignal?.fixLabel ?? 'Review service'} />
+            <Typography.SmallStrong>{activeSignal.title}</Typography.SmallStrong>
+            <Typography.Small color="muted">{activeSignal.fixLabel}</Typography.Small>
+            <Link
+              href="#"
+              onClick={(event) => {
+                noopClick(event)
+                onClearActiveSignal()
+              }}
+            >
+              Clear
+            </Link>
+          </Box>
+        ) : null}
+      </Box>
+      {filteredServices.length === 0 ? (
+        <EmptyState title="No matching services">
+          No services match the selected filters.
+        </EmptyState>
+      ) : (
+        <PostureServiceList services={filteredServices} fixLabel={activeSignal?.fixLabel ?? 'Review service'} />
+      )}
     </Box>
   )
 }
 
 PostureServicesPanel.displayName = 'PostureServicesPanel'
+
+function ServiceTableFilters({
+  selected,
+  onChange,
+}: {
+  selected: Set<ServiceTableFilterId>
+  onChange: (next: Set<ServiceTableFilterId>) => void
+}) {
+  const selectedIds = SERVICE_TABLE_FILTERS.filter((filter) => selected.has(filter.id))
+  let valueText: string | undefined
+  if (selectedIds.length === 1) {
+    valueText = selectedIds[0]!.label
+  } else if (selectedIds.length > 1) {
+    valueText = `${selectedIds.length} selected`
+  }
+
+  return (
+    <DropdownMenu
+      placement="bottom-left"
+      selectionMode="multiple"
+      selection={selected}
+      onSelectionChange={(keys) => onChange(parseSelectedTableFilters(keys))}
+    >
+      <DropdownMenu.Trigger>
+        <Filter.Trigger
+          labelText="Filters"
+          icon={filterIcon}
+          value={valueText}
+          onClear={selected.size > 0 ? () => onChange(new Set()) : undefined}
+        />
+      </DropdownMenu.Trigger>
+      <DropdownMenu.Items>
+        {SERVICE_TABLE_FILTERS.map((filter) => (
+          <DropdownMenu.Item key={filter.id} id={filter.id} closeOnSelect={false}>
+            {filter.label}
+          </DropdownMenu.Item>
+        ))}
+      </DropdownMenu.Items>
+    </DropdownMenu>
+  )
+}
+
+ServiceTableFilters.displayName = 'ServiceTableFilters'
 
 function PostureServiceList({ services, fixLabel }: { services: HomeServiceRow[]; fixLabel: string }) {
   const columns: DataListColumn<HomeServiceRow>[] = [

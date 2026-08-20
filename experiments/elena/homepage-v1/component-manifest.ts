@@ -33,7 +33,11 @@ export const componentManifest: ComponentManifest = {
     },
     {
       name: 'DropdownMenu',
-      usage: 'Searchable project selector in the posture section',
+      usage: 'Searchable project selector in the posture section, and multi-select Filters above the services table',
+    },
+    {
+      name: 'Filter',
+      usage: 'Filters trigger above the Project insights services table',
     },
     {
       name: 'Switch',
@@ -89,6 +93,10 @@ export const componentManifest: ComponentManifest = {
     {
       name: 'PostureSummary',
       reason: 'Horizontal row of Aquarium Cards with StatusChip coverage, click-to-filter, and info tooltip',
+    },
+    {
+      name: 'ServiceTableFilters',
+      reason: 'Filter.Trigger + DropdownMenu for Close EOL, Maintenance, and Degraded service',
     },
     {
       name: 'PostureServiceList',

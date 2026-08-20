@@ -7,7 +7,7 @@ import { HomePageContent } from './HomePageContent'
 import { ORG_NAME, USER_INITIALS } from './mockData'
 
 export const pageMeta: PageMeta = {
-  title: 'Homepage_v3',
+  title: 'Homepage V3',
   description:
     'Console Home with a vertical project DataList. Project insights open in a non-blocking drawer from a link action.',
 }

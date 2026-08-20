@@ -104,7 +104,7 @@ export const componentManifest: ComponentManifest = {
   ],
 
   notes: [
-    'Copied from homepage-insights. Protection coverage and Improve your project are removed.',
+    'Copied from homepage-v2. Protection coverage and Improve your project are removed.',
     'Recent projects are a vertical DataList; Project insights is a Link in the Actions column.',
     'Aquarium Drawer overlays the page, so Project insights is an in-flow side panel (Box + Divider) that replaces the MCP and product-updates column.',
     'Project health and the services list live only in the side panel, scoped to the row that opened it.',

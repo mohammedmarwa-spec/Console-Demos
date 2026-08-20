@@ -128,7 +128,7 @@ export const componentManifest: ComponentManifest = {
   ],
 
   notes: [
-    'Layout matches clipped Project health design — not the horizontal posture-card row in homepage.',
+    'Layout matches clipped Project health design — not the horizontal posture-card row in homepage-v1.',
     'Project health uses a Filter.Trigger project control; production scope is fixed in mock data.',
     'Insight card tints use Aquarium border/background tokens on Box wrappers around Card.',
     'Platform status is plain text with a token-colored dot in ConsoleHeader.',
