@@ -4,8 +4,6 @@ import { useMemo, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import {
   Box,
-  Banner,
-  Button,
   Card,
   Chip,
   DataList,
@@ -16,6 +14,7 @@ import {
   Icon,
   InlineIcon,
   Link,
+  PageHeader,
   StatusChip,
   Tooltip,
   Typography,
@@ -23,8 +22,6 @@ import {
 import type { DataListColumn } from '@aivenio/aquarium'
 import type { IconifyIcon } from '@iconify/react'
 import arrowRight from '@aivenio/aquarium/icons/arrowRight'
-import chevronLeft from '@aivenio/aquarium/icons/chevronLeft'
-import chevronRight from '@aivenio/aquarium/icons/chevronRight'
 import cloudIcon from '@aivenio/aquarium/icons/cloud'
 import filterIcon from '@aivenio/aquarium/icons/filter'
 import helpIcon from '@aivenio/aquarium/icons/help'
@@ -34,6 +31,7 @@ import shieldIcon from '@aivenio/aquarium/icons/shield'
 import warningSign from '@aivenio/aquarium/icons/warningSign'
 import { getServiceIconUrl, ServiceIcon } from '@experiments/_shared/components/ServiceIcon'
 import { imageSrc } from '@experiments/_shared/lib/image'
+import { HomeRightColumn } from '@experiments/elena/homepage-v5/HomeRightColumn'
 import { OrgSidebar } from '@/components/OrgSidebar'
 import { ROUTES } from '@/lib/navigation'
 import { useResolvedTheme } from '@/theme/ThemeProvider'
@@ -41,7 +39,7 @@ import {
   ORG_NAME,
   PROJECT_HOME_ID,
   PROJECTS,
-  RELEASE_NOTES,
+  USER_NAME,
   SERVICES_BY_PROJECT,
   getAttentionServices,
   getImprovementRecommendations,
@@ -57,12 +55,8 @@ import {
   type HomeServiceRow,
 } from './mockData'
 import projectIcon from './assets/home-page-project.svg'
-import mcpBanner from './assets/home-page-mcp-banner.svg'
 import styles from './HomePageContent.module.css'
 
-const CHANGELOG_URL = 'https://aiven.io/changelog'
-const CHANGELOG_RSS_URL = 'https://aiven.io/changelog/feed.xml'
-const MCP_ENABLE_URL = 'https://aiven.io/docs/tools/mcp'
 const PROJECT_HEALTH_SCOPE = 'production' as const
 
 const PROTECTION_ICONS: Record<HomeProtectionMetric['id'], IconifyIcon> = {
@@ -139,6 +133,10 @@ export function HomePageContent() {
             minWidth: 0,
           }}
         >
+          <PageHeader
+            title={`Welcome to Aiven Platform, ${USER_NAME}`}
+            subtitle="Here's what's happening across your organization."
+          />
           <RecentProjects />
           <ProjectHealth
             project={currentProject}
@@ -154,21 +152,7 @@ export function HomePageContent() {
 
         <Divider direction="vertical" />
 
-        <Box
-          style={{
-            display: 'flex',
-            flexDirection: 'column',
-            gap: 32,
-            padding: 24,
-            minWidth: 0,
-            position: 'sticky',
-            top: 0,
-            alignSelf: 'start',
-          }}
-        >
-          <AivenMcpPromo />
-          <ProductUpdates />
-        </Box>
+        <HomeRightColumn />
       </Box>
     </Box>
   )
@@ -603,108 +587,3 @@ function ServicesRequiringReviewList({ rows }: { rows: HomeReviewRow[] }) {
 
 ServicesRequiringReviewList.displayName = 'ServicesRequiringReviewList'
 
-function AivenMcpPromo() {
-  return (
-    <Banner
-      variant="outlined"
-      title="Aiven MCP"
-      image={imageSrc(mcpBanner)}
-      action={{
-        href: MCP_ENABLE_URL,
-        target: '_blank',
-        text: 'Enable',
-        icon: arrowRight,
-        iconPlacement: 'right',
-      }}
-    >
-      Explore, monitor, and manage Kafka, PostgreSQL, and more using natural language in Cursor or Claude Code.
-    </Banner>
-  )
-}
-
-AivenMcpPromo.displayName = 'AivenMcpPromo'
-
-function ProductUpdates() {
-  const [index, setIndex] = useState(0)
-  const total = RELEASE_NOTES.length
-  const note = RELEASE_NOTES[index]
-  if (!note) return null
-
-  const isFirst = index === 0
-  const isLast = index === total - 1
-
-  return (
-    <Box style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
-      <Box style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
-        <Typography.LargeStrong>Product updates</Typography.LargeStrong>
-        <Box style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-          <Typography.Default>
-            <Link href={CHANGELOG_URL} target="_blank">
-              See all
-            </Link>
-          </Typography.Default>
-          <Link.Button.Secondary dense href={CHANGELOG_RSS_URL} target="_blank">
-            RSS Feed
-          </Link.Button.Secondary>
-        </Box>
-      </Box>
-      <Box style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-        <Card
-          fullWidth
-          title={
-            <Card.Title>
-              <Box style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-                <Typography.Small color="muted">
-                  {note.date} // {note.tag}
-                </Typography.Small>
-                {note.title}
-              </Box>
-            </Card.Title>
-          }
-        >
-          <Box style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-            <Box
-              style={{
-                display: '-webkit-box',
-                WebkitLineClamp: 2,
-                WebkitBoxOrient: 'vertical',
-                overflow: 'hidden',
-                color: 'var(--aquarium-text-color-muted)',
-              }}
-            >
-              <Typography.Small>{note.description}</Typography.Small>
-            </Box>
-            <Typography.Default>
-              <Link href={note.href} target="_blank" aria-label={`Read more about ${note.title}`}>
-                Read more
-              </Link>
-            </Typography.Default>
-          </Box>
-        </Card>
-        <Box style={{ display: 'flex', alignItems: 'center', gap: 8, alignSelf: 'flex-start' }}>
-          <Button.Icon
-            type="button"
-            dense
-            aria-label="Previous update"
-            icon={chevronLeft}
-            disabled={isFirst}
-            onClick={() => setIndex((value) => Math.max(0, value - 1))}
-          />
-          <Typography.Small>
-            {index + 1}/{total}
-          </Typography.Small>
-          <Button.Icon
-            type="button"
-            dense
-            aria-label="Next update"
-            icon={chevronRight}
-            disabled={isLast}
-            onClick={() => setIndex((value) => Math.min(total - 1, value + 1))}
-          />
-        </Box>
-      </Box>
-    </Box>
-  )
-}
-
-ProductUpdates.displayName = 'ProductUpdates'

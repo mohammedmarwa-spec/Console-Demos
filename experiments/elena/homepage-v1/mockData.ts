@@ -1,10 +1,13 @@
 import type { ServiceTypeId } from '@experiments/_shared/lib/serviceTypes'
 import { projectPageData } from '@experiments/elena/project-page/mockData'
 
+export type HomeProjectTag = 'prod' | 'staging' | 'dev'
+
 export type HomeProject = {
   id: string
   name: string
   serviceCount: number
+  tag: HomeProjectTag
 }
 
 export type HomeEnvironment = 'production' | 'development'
@@ -67,15 +70,35 @@ export const USER_INITIALS = 'EI'
 export const PROJECT_HOME_ID = STORE_PROD
 
 const ALERT_DETAILS: Record<string, Pick<HomeServiceRow, 'maintenance' | 'alerts' | 'severity'>> = {
+  'pg-prod-01': {
+    maintenance: 'Sunday 02:00–06:00 UTC',
+    alerts: ['Connection pool saturated', 'Replication lag above threshold'],
+    severity: 'warning',
+  },
   'kafka-events': {
     maintenance: 'Sunday 02:00–06:00 UTC',
-    alerts: ['Disk usage above 80%'],
+    alerts: ['Disk usage above 80%', 'Under-replicated partitions'],
+    severity: 'warning',
+  },
+  'mysql-app': {
+    maintenance: 'Sunday 02:00–06:00 UTC',
+    alerts: ['MySQL version approaching end of life'],
     severity: 'warning',
   },
   'opensearch-logs': {
     maintenance: 'Monday 01:00–05:00 UTC',
     alerts: ['Node restart required', 'Certificate expires in 14 days'],
     severity: 'danger',
+  },
+  'clickhouse-analytics': {
+    maintenance: 'Sunday 02:00–06:00 UTC',
+    alerts: ['Disk usage above 80%', 'Query memory usage high'],
+    severity: 'warning',
+  },
+  'pg-prod-01-replica': {
+    maintenance: 'Sunday 02:00–06:00 UTC',
+    alerts: ['No alert destination configured'],
+    severity: 'warning',
   },
 }
 
@@ -189,11 +212,12 @@ export const PROJECTS: HomeProject[] = [
     id: STORE_PROD,
     name: STORE_PROD,
     serviceCount: projectPageData.services.length,
+    tag: 'prod',
   },
-  { id: 'online-store-staging', name: 'online-store-staging', serviceCount: 3 },
-  { id: 'online-store-dev', name: 'online-store-dev', serviceCount: 2 },
-  { id: 'kafka-prod', name: 'kafka-prod', serviceCount: 3 },
-  { id: 'pg-analytics', name: 'pg-analytics', serviceCount: 4 },
+  { id: 'online-store-staging', name: 'online-store-staging', serviceCount: 3, tag: 'staging' },
+  { id: 'online-store-dev', name: 'online-store-dev', serviceCount: 2, tag: 'dev' },
+  { id: 'kafka-prod', name: 'kafka-prod', serviceCount: 3, tag: 'prod' },
+  { id: 'pg-analytics', name: 'pg-analytics', serviceCount: 4, tag: 'staging' },
 ]
 
 function buildStoreProdRows(): HomeServiceRow[] {
@@ -294,6 +318,23 @@ export const SERVICES_BY_PROJECT: Record<string, HomeServiceRow[]> = {
   ],
   'online-store-staging': [],
   'online-store-dev': [],
+}
+
+const PROJECT_PREVIEW_ICON_LIMIT = 5
+
+export function getProjectPreviewServices(projectId: string, limit = PROJECT_PREVIEW_ICON_LIMIT): HomeServiceRow[] {
+  const services = SERVICES_BY_PROJECT[projectId] ?? []
+  const preview: HomeServiceRow[] = []
+  const seenTypes = new Set<ServiceTypeId>()
+
+  for (const service of services) {
+    if (seenTypes.has(service.serviceTypeId)) continue
+    seenTypes.add(service.serviceTypeId)
+    preview.push(service)
+    if (preview.length >= limit) break
+  }
+
+  return preview
 }
 
 export function getScopedServices(services: HomeServiceRow[], scope: HomeScope): HomeServiceRow[] {

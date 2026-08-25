@@ -12,40 +12,41 @@ export const componentManifest: ComponentManifest = {
       usage: 'Page shell, two-column content layout, and drill-down chips',
     },
     {
+      name: 'PageHeader',
+      usage: 'Welcome to Aiven Platform title and returning-user subtitle',
+    },
+    {
       name: 'Typography',
-      usage: 'Section titles, project names, marketplace labels, and product-update copy',
+      usage: 'Section titles, project names, and marketplace labels',
     },
     {
       name: 'Link',
-      usage: 'Text links at Typography.Default size; Link.Button.Secondary dense for Subscribe and RSS Feed',
-    },
-    {
-      name: 'Button',
-      usage: 'Link.Button.Secondary dense actions for Platform status and Product updates',
+      usage: 'Text links at Typography.Default size for project names, view-all, and posture actions',
     },
     {
       name: 'InlineIcon',
-      usage: 'Project selector chevron and alert severity icons',
+      usage: 'Alert severity icons in the services table (and help icons on hidden posture cards)',
     },
     {
       name: 'Card',
-      usage: 'Recent project compact cards and posture signal cards with Card.Title and StatusChip chips',
+      usage: 'Recent project compact cards with service icon stacks, and posture signal cards with Card.Title and StatusChip chips',
     },
     {
-      name: 'DropdownMenu',
-      usage: 'Searchable project selector in the posture section, and multi-select Filters above the services table',
+      name: 'Chip',
+      usage: 'Environment tag on recent project cards, placed below the service count (prod, staging, dev)',
     },
     {
-      name: 'Filter',
-      usage: 'Filters trigger above the Project insights services table',
-    },
-    {
-      name: 'Switch',
-      usage: 'Project posture scope toggle for including development services',
+      name: 'Select',
+      usage: 'Project selector in Project insights; service filter on the reused homepage-v5 product updates list',
     },
     {
       name: 'EmptyState',
       usage: 'Empty states when no posture signals or no services are visible in selected scope',
+    },
+    {
+      name: 'ChoiceChip',
+      usage:
+        'Radio service filters: All alerts {count} is the full alerts list; Close EOL, Maintenance, and Degraded service narrow it',
     },
     {
       name: 'DataList',
@@ -65,7 +66,11 @@ export const componentManifest: ComponentManifest = {
     },
     {
       name: 'Divider',
-      usage: 'Vertical split between main content and the updates column',
+      usage: 'Vertical split between main content and the homepage-v5 right column',
+    },
+    {
+      name: 'Banner',
+      usage: 'MCP promo and CLI quick start via shared homepage-v5 HomeRightColumn',
     },
   ],
 
@@ -80,11 +85,11 @@ export const componentManifest: ComponentManifest = {
     },
     {
       name: 'RecentProjects',
-      reason: 'Recent project cards with service counts',
+      reason: 'Recent project cards with service icon stacks, service counts, and environment tags',
     },
     {
       name: 'ProjectHealth',
-      reason: 'Project selector, environment scope toggle, posture signal cards, and drill-down list',
+      reason: 'Project Select and drill-down list (posture cards hidden)',
     },
     {
       name: 'OrgSidebar',
@@ -92,26 +97,30 @@ export const componentManifest: ComponentManifest = {
     },
     {
       name: 'PostureSummary',
-      reason: 'Horizontal row of Aquarium Cards with StatusChip coverage, click-to-filter, and info tooltip',
+      reason:
+        'Posture insight cards kept in code and exported for reuse; hidden on this page via SHOW_POSTURE_INSIGHT_CARDS',
     },
     {
       name: 'ServiceTableFilters',
-      reason: 'Filter.Trigger + DropdownMenu for Close EOL, Maintenance, and Degraded service',
+      reason:
+        'ChoiceChip radio group: All alerts {count} by default; other chips narrow the alerts list',
     },
     {
       name: 'PostureServiceList',
-      reason: 'DataList columns for service, node status, maintenance, alerts, and fix action',
+      reason: 'DataList of alert rows: service, node status, maintenance, alert, and fix action',
     },
     {
-      name: 'ProductUpdates',
-      reason: 'Single changelog card with a bottom-left carousel — Aquarium Timeline is not in this DS version',
+      name: 'HomeRightColumn',
+      reason:
+        'Reuses homepage-v5 rail: Developer tools (MCP Banner + CLI quick start) and Product updates with service Select',
     },
   ],
 
   notes: [
     'Custom Console Home experiment based on production HomePageScreen (/account/:accountId/home).',
     'Uses ConsoleHeader with org controls and shared OrgSidebar for left navigation.',
-    'Product updates are a token-styled list because Timeline is not exported from Aquarium 6.',
+    'Right column is homepage-v5 HomeRightColumn — Developer tools plus Product updates.',
     'Shared helpers (ConsoleHeader and ServiceIcon) live outside this folder.',
+    'Posture insight cards stay in HomePageContent (PostureSummary, PostureCard) for reuse; flip SHOW_POSTURE_INSIGHT_CARDS to show them here.',
   ],
 }

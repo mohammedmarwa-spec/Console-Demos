@@ -11,24 +11,30 @@ export const componentManifest: ComponentManifest = {
       usage: 'Page shell, shrinking overview grid, column scrollports, and project-insights side panel',
     },
     {
+      name: 'PageHeader',
+      usage: 'Welcome to Aiven Platform title and returning-user subtitle',
+    },
+    {
       name: 'Typography',
-      usage: 'Section titles, project names, findings, and product-update copy',
+      usage: 'Section titles, project names, and findings',
     },
     {
       name: 'Link',
-      usage: 'Project insights action, project name, issue actions, See all, and Read more',
+      usage: 'View alerts action, project name, and issue actions',
     },
     {
       name: 'Button',
-      usage: 'Button.Icon dense close control on the insights side panel; prev/next stepper for product updates',
+      usage:
+        'Button.Icon dense list/cards switcher and insights close; Button.Ghost dense Add user',
     },
     {
       name: 'Chip',
-      usage: 'Environment tag on project DataList rows (prod, staging, dev)',
+      usage: 'Project label chips with tag icon in the Labels column and on compact cards (prod, staging, dev)',
     },
     {
       name: 'Card',
-      usage: 'Product-update carousel card',
+      usage:
+        'Org summary cards (Projects, Resources, Last invoice, Users) and Card.Compact project cards in the 4-up grid',
     },
     {
       name: 'Section',
@@ -40,15 +46,20 @@ export const componentManifest: ComponentManifest = {
     },
     {
       name: 'DataList',
-      usage: 'Vertical recent-projects list with Project insights link; services requiring review in the side panel',
+      usage:
+        'Vertical recent-projects list with Labels, service stacks, Health status, and View alerts; services requiring review in the side panel',
     },
     {
       name: 'Divider',
-      usage: 'Vertical split between the project list and either product updates or the insights side panel',
+      usage: 'Vertical split between the project list and either the homepage-v5 right column or the insights side panel',
     },
     {
       name: 'StatusChip',
-      usage: 'Attention row status and review table status column',
+      usage: 'Project Health column (Healthy, Degraded, Issue), last-invoice Paid, and side-panel statuses',
+    },
+    {
+      name: 'Icon',
+      usage: 'Toned tiles on the org summary cards',
     },
     {
       name: 'Navigation',
@@ -56,7 +67,11 @@ export const componentManifest: ComponentManifest = {
     },
     {
       name: 'Banner',
-      usage: 'Aiven MCP promo Banner above Product updates (title, Enable CTA, MCP illustration)',
+      usage: 'MCP promo and CLI quick start via shared homepage-v5 HomeRightColumn',
+    },
+    {
+      name: 'Select',
+      usage: 'Service filter on the reused homepage-v5 product updates list',
     },
   ],
 
@@ -70,12 +85,36 @@ export const componentManifest: ComponentManifest = {
       reason: 'Console Home layout composed from Aquarium primitives and homepage mock data',
     },
     {
+      name: 'MetricRow',
+      reason: 'Four org summary cards: Projects, Resources, Last invoice, and Users',
+    },
+    {
       name: 'ProjectsList',
-      reason: 'Vertical DataList of recent projects with a Project insights link',
+      reason: 'Recent projects with list/cards view switcher, service icon stacks, Health column, and a View alerts link',
+    },
+    {
+      name: 'ProjectViewSwitcher',
+      reason: 'Button.Icon pair that toggles Recent projects between DataList and a 4-up Card.Compact grid',
+    },
+    {
+      name: 'ServiceIconStack',
+      reason: 'Overlapping unique service-type logos next to the Services count and on project cards',
+    },
+    {
+      name: 'ProjectLabelChip',
+      reason: 'Dense Chip with tag icon for prod/staging/dev in the Labels column',
+    },
+    {
+      name: 'ProjectHealthCell',
+      reason: 'Healthy/Degraded/Issue StatusChip in the project list Health column',
+    },
+    {
+      name: 'ViewAlertsLink',
+      reason: 'Actions-column Link that opens the project insights side panel',
     },
     {
       name: 'ProjectInsightsPanel',
-      reason: 'In-flow side panel that replaces the MCP/updates column; opened from the Project insights link',
+      reason: 'In-flow side panel that replaces the homepage-v5 right column; opened from the View alerts link',
     },
     {
       name: 'ProjectHealth',
@@ -94,19 +133,22 @@ export const componentManifest: ComponentManifest = {
       reason: 'Shared organization sidebar with Tools group, Settings, and Admin',
     },
     {
-      name: 'AivenMcpPromo',
-      reason: 'Right-column MCP enablement promo above Product updates',
-    },
-    {
-      name: 'ProductUpdates',
-      reason: 'Single changelog Card with bottom-left Button.Icon carousel',
+      name: 'HomeRightColumn',
+      reason:
+        'Reuses homepage-v5 rail: Developer tools (MCP Banner + CLI quick start) and Product updates with service Select',
     },
   ],
 
   notes: [
     'Copied from homepage-v2. Protection coverage and Improve your project are removed.',
-    'Recent projects are a vertical DataList; Project insights is a Link in the Actions column.',
-    'Aquarium Drawer overlays the page, so Project insights is an in-flow side panel (Box + Divider) that replaces the MCP and product-updates column.',
+    'Four org summary cards sit above Recent projects. Project and resource counts come from PROJECTS; invoice and users match the existing homepage mock.',
+    'Recent projects default to a vertical DataList; a list/cards switcher reveals a 4-up Card.Compact grid.',
+    'Every project name is a Link. Health is derived from production service node status, severity, and alerts.',
+    'Project labels (prod, staging, dev) live in a Labels column as dense Chips with the tag icon.',
+    'View alerts is a Link in the Actions column and on each compact card; it opens the insights side panel.',
+    'Services column and cards show overlapping unique service-type icons from getProjectPreviewServices.',
+    'Aquarium Drawer overlays the page, so Project insights is an in-flow side panel (Box + Divider) that replaces the homepage-v5 right column.',
+    'Right column is homepage-v5 HomeRightColumn until Project insights opens.',
     'Project health and the services list live only in the side panel, scoped to the row that opened it.',
     'Shared helpers (ConsoleHeader, OrgSidebar, ServiceIcon) live outside this folder.',
   ],

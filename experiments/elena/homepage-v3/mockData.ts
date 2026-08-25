@@ -1,3 +1,6 @@
+import folderCloseIcon from '@aivenio/aquarium/icons/folderClose'
+import serverHddIcon from '@aivenio/aquarium/icons/serverHdd'
+import type { IconifyIcon } from '@iconify/react'
 import type { ServiceTypeId } from '@experiments/_shared/lib/serviceTypes'
 import { projectPageData } from '@experiments/elena/project-page/mockData'
 
@@ -8,6 +11,23 @@ export type HomeProject = {
   name: string
   serviceCount: number
   tag: HomeProjectTag
+}
+
+export type IconTone = 'primary' | 'info' | 'warning' | 'danger'
+
+export type FleetMetric = {
+  id: 'projects' | 'resources'
+  label: string
+  value: string
+  icon: IconifyIcon
+  tone: IconTone
+}
+
+export type ProjectHealthLabel = 'Healthy' | 'Degraded' | 'Issue'
+
+export type ProjectHealthSummary = {
+  statusText: ProjectHealthLabel
+  status: 'success' | 'warning' | 'danger'
 }
 
 export type HomeEnvironment = 'production' | 'development'
@@ -236,6 +256,39 @@ export const PROJECTS: HomeProject[] = [
   { id: 'mobile-backend', name: 'mobile-backend', serviceCount: 4, tag: 'prod' },
 ]
 
+function formatCount(value: number): string {
+  return value.toLocaleString('en-US')
+}
+
+export const FLEET_METRICS: FleetMetric[] = [
+  {
+    id: 'projects',
+    label: 'Projects',
+    value: formatCount(PROJECTS.length),
+    icon: folderCloseIcon,
+    tone: 'primary',
+  },
+  {
+    id: 'resources',
+    label: 'Resources',
+    value: formatCount(PROJECTS.reduce((sum, project) => sum + project.serviceCount, 0)),
+    icon: serverHddIcon,
+    tone: 'info',
+  },
+]
+
+export const LAST_INVOICE = {
+  amount: '$23.80',
+  currency: 'USD',
+  period: '1 Feb – 1 Mar 2026',
+  statusText: 'Paid',
+  status: 'success' as const,
+} as const
+
+export const ORG_USERS = {
+  count: 24,
+} as const
+
 function mockService(
   id: string,
   serviceName: string,
@@ -404,6 +457,19 @@ export const SERVICES_BY_PROJECT: Record<string, HomeServiceRow[]> = {
 }
 
 const PROJECT_PREVIEW_ICON_LIMIT = 5
+
+export function getProjectHealth(projectId: string): ProjectHealthSummary {
+  const services = getScopedServices(SERVICES_BY_PROJECT[projectId] ?? [], 'production')
+  const scoped = services.length > 0 ? services : (SERVICES_BY_PROJECT[projectId] ?? [])
+
+  if (scoped.some((service) => service.nodeStatus === 'down' || service.severity === 'danger')) {
+    return { statusText: 'Issue', status: 'danger' }
+  }
+  if (scoped.some((service) => service.nodeStatus === 'degraded' || service.alerts.length > 0)) {
+    return { statusText: 'Degraded', status: 'warning' }
+  }
+  return { statusText: 'Healthy', status: 'success' }
+}
 
 export function getProjectPreviewServices(projectId: string, limit = PROJECT_PREVIEW_ICON_LIMIT): HomeServiceRow[] {
   const services = SERVICES_BY_PROJECT[projectId] ?? []

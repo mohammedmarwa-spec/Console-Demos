@@ -1,0 +1,73 @@
+.rail {
+  display: flex;
+  flex-direction: column;
+  gap: 32px;
+  padding: 24px;
+  min-width: 0;
+  position: sticky;
+  top: 0;
+  align-self: start;
+}
+
+.developerTools {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  min-width: 0;
+}
+
+.codeBlock {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  width: 100%;
+  padding: 8px;
+  background-color: var(--aquarium-background-color-muted);
+  border-radius: var(--aquarium-border-radius-default);
+}
+
+.codeText {
+  flex: 1;
+  min-width: 0;
+  white-space: pre-wrap;
+  word-break: break-all;
+}
+
+.updatesPanel {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  min-width: 0;
+}
+
+.updatesHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.serviceSelect {
+  max-width: 280px;
+}
+
+.updatesList {
+  border: 1px solid var(--aquarium-border-color-muted);
+  border-radius: var(--aquarium-border-radius-default);
+  overflow: hidden;
+}
+
+.updateItem {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 16px;
+  text-decoration: none;
+  color: inherit;
+}
+
+@media (max-width: 960px) {
+  .rail {
+    position: static;
+  }
+}

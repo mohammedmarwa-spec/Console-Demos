@@ -4,77 +4,82 @@ import { useEffect, useMemo, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import {
   Box,
-  Button,
   Card,
+  Chip,
+  ChoiceChip,
+  ChoiceChipGroup,
   DataList,
   Divider,
-  DropdownMenu,
   EmptyState,
-  Filter,
   InlineIcon,
   Link,
+  PageHeader,
+  Select,
   StatusChip,
-  Switch,
   Tooltip,
   Typography,
 } from '@aivenio/aquarium'
 import type { DataListColumn } from '@aivenio/aquarium'
 import arrowRight from '@aivenio/aquarium/icons/arrowRight'
-import chevronDown from '@aivenio/aquarium/icons/chevronDown'
-import chevronLeft from '@aivenio/aquarium/icons/chevronLeft'
-import chevronRight from '@aivenio/aquarium/icons/chevronRight'
-import chevronUp from '@aivenio/aquarium/icons/chevronUp'
 import errorSign from '@aivenio/aquarium/icons/error'
-import filterIcon from '@aivenio/aquarium/icons/filter'
 import helpIcon from '@aivenio/aquarium/icons/help'
 import warningSign from '@aivenio/aquarium/icons/warningSign'
-import { ServiceIcon } from '@experiments/_shared/components/ServiceIcon'
+import { getServiceIconUrl, ServiceIcon } from '@experiments/_shared/components/ServiceIcon'
 import { imageSrc } from '@experiments/_shared/lib/image'
+import { HomeRightColumn } from '@experiments/elena/homepage-v5/HomeRightColumn'
 import { OrgSidebar } from '@/components/OrgSidebar'
+import { aquariumSelectValue } from '@/lib/aquariumSelect'
 import { ROUTES } from '@/lib/navigation'
+import { useResolvedTheme } from '@/theme/ThemeProvider'
 import {
   ORG_NAME,
   PROJECT_HOME_ID,
   PROJECTS,
-  RELEASE_NOTES,
+  USER_NAME,
   SERVICES_BY_PROJECT,
   getPostureSignals,
+  getProjectPreviewServices,
   getScopedServices,
   type HomePostureSignal,
   type HomePostureSignalId,
   type HomeProject,
   type HomeServiceRow,
-  type HomeScope,
 } from './mockData'
 import projectIcon from './assets/home-page-project.svg'
 import styles from './HomePageContent.module.css'
 
-const CHANGELOG_URL = 'https://aiven.io/changelog'
-const CHANGELOG_RSS_URL = 'https://aiven.io/changelog/feed.xml'
+type ServiceTableFilterId = 'all-alerts' | 'close-eol' | 'maintenance' | 'degraded'
 
-type ServiceTableFilterId = 'close-eol' | 'maintenance' | 'degraded'
+type HomeAlertRow = {
+  id: string
+  service: HomeServiceRow
+  alert: string
+  maintenance: string
+}
 
 const SERVICE_TABLE_FILTERS: { id: ServiceTableFilterId; label: string }[] = [
+  { id: 'all-alerts', label: 'All alerts' },
   { id: 'close-eol', label: 'Close EOL' },
   { id: 'maintenance', label: 'Maintenance' },
   { id: 'degraded', label: 'Degraded service' },
 ]
 
+/** Hidden on this homepage; keep `true` to restore posture cards, or import `PostureSummary` elsewhere. */
+export const SHOW_POSTURE_INSIGHT_CARDS = false
+
 function isServiceTableFilterId(value: string): value is ServiceTableFilterId {
   return SERVICE_TABLE_FILTERS.some((filter) => filter.id === value)
 }
 
-function parseSelectedTableFilters(keys: Iterable<unknown> | 'all'): Set<ServiceTableFilterId> {
-  if (keys === 'all') return new Set(SERVICE_TABLE_FILTERS.map((filter) => filter.id))
-  const selected = new Set<ServiceTableFilterId>()
-  for (const key of keys) {
-    const id = String(key)
-    if (isServiceTableFilterId(id)) selected.add(id)
-  }
-  return selected
+const SERVICE_ICON_STACK_SIZE = 32
+const SERVICE_ICON_STACK_OVERLAP = 10
+
+function getAlertServices(services: HomeServiceRow[]): HomeServiceRow[] {
+  return services.filter((service) => service.alerts.length > 0)
 }
 
-function serviceMatchesTableFilter(service: HomeServiceRow, filterId: ServiceTableFilterId): boolean {
+function serviceMatchesNarrowingFilter(service: HomeServiceRow, filterId: ServiceTableFilterId): boolean {
+  if (filterId === 'all-alerts') return true
   if (filterId === 'close-eol') return service.versionEolState !== 'supported'
   if (filterId === 'maintenance') return service.maintenanceWindowState === 'needs_review'
   return service.nodeStatus === 'degraded' || service.nodeStatus === 'down'
@@ -82,11 +87,24 @@ function serviceMatchesTableFilter(service: HomeServiceRow, filterId: ServiceTab
 
 function filterServicesByTableFilters(
   services: HomeServiceRow[],
-  selected: Set<ServiceTableFilterId>,
-): HomeServiceRow[] {
-  if (selected.size === 0) return services
-  return services.filter((service) =>
-    SERVICE_TABLE_FILTERS.some((filter) => selected.has(filter.id) && serviceMatchesTableFilter(service, filter.id)),
+  selected: ServiceTableFilterId,
+): HomeAlertRow[] {
+  const alertServices = getAlertServices(services)
+  const narrowed =
+    selected === 'all-alerts'
+      ? alertServices
+      : alertServices.filter((service) => serviceMatchesNarrowingFilter(service, selected))
+  return toAlertRows(narrowed)
+}
+
+function toAlertRows(services: HomeServiceRow[]): HomeAlertRow[] {
+  return services.flatMap((service) =>
+    service.alerts.map((alert, index) => ({
+      id: `${service.id}:${index}`,
+      service,
+      alert,
+      maintenance: service.maintenance,
+    })),
   )
 }
 
@@ -94,16 +112,22 @@ function noopClick(event: { preventDefault: () => void }) {
   event.preventDefault()
 }
 
+const PROJECT_INSIGHTS_SCOPE = 'production' as const
+
 export function HomePageContent() {
   const [currentProjectId, setCurrentProjectId] = useState(PROJECTS[0]!.id)
-  const [includeDevelopment, setIncludeDevelopment] = useState(false)
   const [activeSignalId, setActiveSignalId] = useState<HomePostureSignalId | null>(null)
   const currentProject = PROJECTS.find((project) => project.id === currentProjectId) ?? PROJECTS[0]!
   const projectServices = SERVICES_BY_PROJECT[currentProject.id] ?? []
-  const scope: HomeScope = includeDevelopment ? 'all' : 'production'
 
-  const scopedServices = useMemo(() => getScopedServices(projectServices, scope), [projectServices, scope])
-  const postureSignals = useMemo(() => getPostureSignals(projectServices, scope), [projectServices, scope])
+  const scopedServices = useMemo(
+    () => getScopedServices(projectServices, PROJECT_INSIGHTS_SCOPE),
+    [projectServices],
+  )
+  const postureSignals = useMemo(
+    () => getPostureSignals(projectServices, PROJECT_INSIGHTS_SCOPE),
+    [projectServices],
+  )
   const activeSignal = activeSignalId ? postureSignals.find((signal) => signal.id === activeSignalId) ?? null : null
   const drilldownServices = useMemo(() => {
     if (!activeSignal) return scopedServices
@@ -153,16 +177,18 @@ export function HomePageContent() {
             minWidth: 0,
           }}
         >
+          <PageHeader
+            title={`Welcome to Aiven Platform, ${USER_NAME}`}
+            subtitle="Here's what's happening across your organization."
+          />
           <RecentProjects />
           <ProjectHealth
             project={currentProject}
             projects={PROJECTS}
-            includeDevelopment={includeDevelopment}
             postureSignals={postureSignals}
             activeSignal={activeSignal}
             services={drilldownServices}
             onProjectChange={setCurrentProjectId}
-            onToggleIncludeDevelopment={setIncludeDevelopment}
             onSelectSignal={setActiveSignalId}
             onClearActiveSignal={() => setActiveSignalId(null)}
           />
@@ -170,20 +196,7 @@ export function HomePageContent() {
 
         <Divider direction="vertical" />
 
-        <Box
-          style={{
-            display: 'flex',
-            flexDirection: 'column',
-            gap: 32,
-            padding: 24,
-            minWidth: 0,
-            position: 'sticky',
-            top: 0,
-            alignSelf: 'start',
-          }}
-        >
-          <ProductUpdates />
-        </Box>
+        <HomeRightColumn />
       </Box>
     </Box>
   )
@@ -204,29 +217,48 @@ function RecentProjects() {
           </Link>
         </Typography.Default>
       </Box>
-      <Box
-        style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(5, minmax(0, 1fr))',
-          gap: 16,
-        }}
-      >
-        {PROJECTS.map((project) => (
-          <Card.Compact
-            key={project.id}
-            fullWidth
-            icon={imageSrc(projectIcon)}
-            title={project.name}
-            clampTitle={1}
-            onClick={() => {
-              if (project.id === PROJECT_HOME_ID) {
-                router.push(ROUTES.projectPage)
+      <Box className={styles.recentProjectsGrid}>
+        {PROJECTS.map((project) => {
+          const previewServices = getProjectPreviewServices(project.id)
+          return (
+            <Card.Compact
+              key={project.id}
+              fullWidth
+              title={
+                <Card.Title>
+                  <Box className={styles.projectPreviewTitle}>
+                    {previewServices.length > 0 ? (
+                      <ServiceIconStack services={previewServices} />
+                    ) : (
+                      <Box className={styles.serviceIconStackItem} aria-hidden>
+                        <img
+                          src={imageSrc(projectIcon)}
+                          width={18}
+                          height={18}
+                          alt=""
+                          style={{ display: 'block', objectFit: 'contain' }}
+                        />
+                      </Box>
+                    )}
+                    <Typography.DefaultStrong className={styles.projectPreviewName}>
+                      {project.name}
+                    </Typography.DefaultStrong>
+                  </Box>
+                </Card.Title>
               }
-            }}
-          >
-            {project.serviceCount} services
-          </Card.Compact>
-        ))}
+              onClick={() => {
+                if (project.id === PROJECT_HOME_ID) {
+                  router.push(ROUTES.projectPage)
+                }
+              }}
+            >
+              <Box className={styles.projectPreviewMeta}>
+                {project.serviceCount} services
+                <Chip text={project.tag} dense />
+              </Box>
+            </Card.Compact>
+          )
+        })}
       </Box>
     </Box>
   )
@@ -237,90 +269,53 @@ RecentProjects.displayName = 'RecentProjects'
 function ProjectHealth({
   project,
   projects,
-  includeDevelopment,
   postureSignals,
   activeSignal,
   services,
   onProjectChange,
-  onToggleIncludeDevelopment,
   onSelectSignal,
   onClearActiveSignal,
 }: {
   project: HomeProject
   projects: HomeProject[]
-  includeDevelopment: boolean
   postureSignals: HomePostureSignal[]
   activeSignal: HomePostureSignal | null
   services: HomeServiceRow[]
   onProjectChange: (id: string) => void
-  onToggleIncludeDevelopment: (includeDevelopment: boolean) => void
   onSelectSignal: (id: HomePostureSignalId | null) => void
   onClearActiveSignal: () => void
 }) {
-  const [menuOpen, setMenuOpen] = useState(false)
+  const projectOptions = projects.map((item) => ({ label: item.name, value: item.id }))
+  const showInsightCards = SHOW_POSTURE_INSIGHT_CARDS && postureSignals.length > 0
+  const showEmptyPosture = SHOW_POSTURE_INSIGHT_CARDS && postureSignals.length === 0
 
   return (
     <Box style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
       <Typography.LargeStrong>Project insights</Typography.LargeStrong>
       <Box style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
-        <Box style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16, flexWrap: 'wrap' }}>
-          <DropdownMenu
-            placement="bottom-left"
-            searchable
-            emptyState="No results found"
-            onOpenChange={setMenuOpen}
-            onAction={(action) => onProjectChange(String(action))}
-            selectionMode="single"
-            selection={new Set([project.id])}
-          >
-            <DropdownMenu.Trigger>
-              <Box
-                role="button"
-                aria-pressed={menuOpen}
-                aria-label="Select project"
-                tabIndex={0}
-                style={{
-                  alignSelf: 'start',
-                  padding: '12px 16px',
-                  borderRadius: 'var(--aquarium-border-radius-default)',
-                  backgroundColor: 'var(--aquarium-background-color-muted)',
-                  cursor: 'pointer',
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: 28,
-                }}
-              >
-                <Box>
-                  <Typography.Default>{project.name}</Typography.Default>
-                  <Typography.Small color="muted">Select project</Typography.Small>
-                </Box>
-                <InlineIcon icon={menuOpen ? chevronUp : chevronDown} />
-              </Box>
-            </DropdownMenu.Trigger>
-            <DropdownMenu.Items>
-              {projects.map((item) => (
-                <DropdownMenu.Item key={item.id} id={item.id}>
-                  {item.name}
-                </DropdownMenu.Item>
-              ))}
-            </DropdownMenu.Items>
-          </DropdownMenu>
-          <Switch checked={includeDevelopment} onChange={(event) => onToggleIncludeDevelopment(event.target.checked)}>
-            Include development services
-          </Switch>
+        <Box className={styles.projectSelect}>
+          <Select
+            labelText="Project"
+            options={projectOptions}
+            value={project.id}
+            onChange={(selected) => onProjectChange(aquariumSelectValue(selected, project.id))}
+            reserveSpaceForError={false}
+          />
         </Box>
 
-        {postureSignals.length === 0 ? (
+        {showEmptyPosture ? (
           <EmptyState title="No posture statements available">
             No services match the selected project and environment scope.
           </EmptyState>
         ) : (
           <Box style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-            <PostureSummary
-              signals={postureSignals}
-              activeSignalId={activeSignal?.id ?? null}
-              onSelectSignal={onSelectSignal}
-            />
+            {showInsightCards ? (
+              <PostureSummary
+                signals={postureSignals}
+                activeSignalId={activeSignal?.id ?? null}
+                onSelectSignal={onSelectSignal}
+              />
+            ) : null}
             <PostureServicesPanel
               key={project.id}
               activeSignal={activeSignal}
@@ -336,13 +331,52 @@ function ProjectHealth({
 
 ProjectHealth.displayName = 'ProjectHealth'
 
+function ServiceIconStack({ services }: { services: HomeServiceRow[] }) {
+  const theme = useResolvedTheme()
+  const logoSize = Math.round(SERVICE_ICON_STACK_SIZE * 0.56)
+  const uniqueServices = services.filter(
+    (service, index, list) => list.findIndex((candidate) => candidate.id === service.id) === index,
+  )
+
+  if (uniqueServices.length === 0) return null
+
+  return (
+    <Box
+      className={styles.serviceIconStack}
+      aria-label={`${uniqueServices.length} ${uniqueServices.length === 1 ? 'service' : 'services'}`}
+    >
+      {uniqueServices.map((service, index) => (
+        <Box
+          key={service.id}
+          title={service.serviceName}
+          className={styles.serviceIconStackItem}
+          style={{
+            marginLeft: index === 0 ? 0 : -SERVICE_ICON_STACK_OVERLAP,
+            zIndex: uniqueServices.length - index,
+          }}
+        >
+          <img
+            src={getServiceIconUrl(service.serviceTypeId, theme)}
+            width={logoSize}
+            height={logoSize}
+            alt=""
+            style={{ display: 'block', objectFit: 'contain' }}
+          />
+        </Box>
+      ))}
+    </Box>
+  )
+}
+
+ServiceIconStack.displayName = 'ServiceIconStack'
+
 function postureToneToStatus(tone: HomePostureSignal['tone']): 'success' | 'warning' | 'danger' {
   if (tone === 'danger') return 'danger'
   if (tone === 'warning') return 'warning'
   return 'success'
 }
 
-function PostureSummary({
+export function PostureSummary({
   signals,
   activeSignalId,
   onSelectSignal,
@@ -367,7 +401,7 @@ function PostureSummary({
 
 PostureSummary.displayName = 'PostureSummary'
 
-function PostureCard({
+export function PostureCard({
   signal,
   isActive,
   onSelect,
@@ -435,10 +469,10 @@ function PostureServicesPanel({
   services: HomeServiceRow[]
   onClearActiveSignal: () => void
 }) {
-  const [selectedFilters, setSelectedFilters] = useState<Set<ServiceTableFilterId>>(new Set())
+  const [selectedFilter, setSelectedFilter] = useState<ServiceTableFilterId>('all-alerts')
   const filteredServices = useMemo(
-    () => filterServicesByTableFilters(services, selectedFilters),
-    [services, selectedFilters],
+    () => filterServicesByTableFilters(services, selectedFilter),
+    [services, selectedFilter],
   )
 
   if (services.length === 0) {
@@ -452,7 +486,7 @@ function PostureServicesPanel({
   return (
     <Box style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
       <Box style={{ display: 'flex', alignItems: 'center', gap: 16, flexWrap: 'wrap' }}>
-        <ServiceTableFilters selected={selectedFilters} onChange={setSelectedFilters} />
+        <ServiceTableFilters services={services} selected={selectedFilter} onChange={setSelectedFilter} />
         {activeSignal ? (
           <Box
             style={{
@@ -481,11 +515,11 @@ function PostureServicesPanel({
         ) : null}
       </Box>
       {filteredServices.length === 0 ? (
-        <EmptyState title="No matching services">
-          No services match the selected filters.
+        <EmptyState title="No matching alerts">
+          No alerts match the selected filter.
         </EmptyState>
       ) : (
-        <PostureServiceList services={filteredServices} fixLabel={activeSignal?.fixLabel ?? 'Review service'} />
+        <PostureServiceList rows={filteredServices} fixLabel={activeSignal?.fixLabel ?? 'Review service'} />
       )}
     </Box>
   )
@@ -494,64 +528,56 @@ function PostureServicesPanel({
 PostureServicesPanel.displayName = 'PostureServicesPanel'
 
 function ServiceTableFilters({
+  services,
   selected,
   onChange,
 }: {
-  selected: Set<ServiceTableFilterId>
-  onChange: (next: Set<ServiceTableFilterId>) => void
+  services: HomeServiceRow[]
+  selected: ServiceTableFilterId
+  onChange: (next: ServiceTableFilterId) => void
 }) {
-  const selectedIds = SERVICE_TABLE_FILTERS.filter((filter) => selected.has(filter.id))
-  let valueText: string | undefined
-  if (selectedIds.length === 1) {
-    valueText = selectedIds[0]!.label
-  } else if (selectedIds.length > 1) {
-    valueText = `${selectedIds.length} selected`
-  }
+  const alertServices = getAlertServices(services)
+  const alertCount = alertServices.reduce((sum, service) => sum + service.alerts.length, 0)
 
   return (
-    <DropdownMenu
-      placement="bottom-left"
-      selectionMode="multiple"
-      selection={selected}
-      onSelectionChange={(keys) => onChange(parseSelectedTableFilters(keys))}
+    <ChoiceChipGroup
+      name="service-table-filters"
+      selectionMode="radio"
+      dense
+      value={selected}
+      onChange={(value) => {
+        const id = String(value || 'all-alerts')
+        onChange(isServiceTableFilterId(id) ? id : 'all-alerts')
+      }}
+      aria-label="Service filters"
     >
-      <DropdownMenu.Trigger>
-        <Filter.Trigger
-          labelText="Filters"
-          icon={filterIcon}
-          value={valueText}
-          onClear={selected.size > 0 ? () => onChange(new Set()) : undefined}
-        />
-      </DropdownMenu.Trigger>
-      <DropdownMenu.Items>
-        {SERVICE_TABLE_FILTERS.map((filter) => (
-          <DropdownMenu.Item key={filter.id} id={filter.id} closeOnSelect={false}>
-            {filter.label}
-          </DropdownMenu.Item>
-        ))}
-      </DropdownMenu.Items>
-    </DropdownMenu>
+      {SERVICE_TABLE_FILTERS.map((filter) => (
+        <ChoiceChip key={filter.id} value={filter.id} dense>
+          {filter.id === 'all-alerts' ? `${filter.label} ${alertCount}` : filter.label}
+        </ChoiceChip>
+      ))}
+    </ChoiceChipGroup>
   )
 }
 
 ServiceTableFilters.displayName = 'ServiceTableFilters'
 
-function PostureServiceList({ services, fixLabel }: { services: HomeServiceRow[]; fixLabel: string }) {
-  const columns: DataListColumn<HomeServiceRow>[] = [
+function PostureServiceList({ rows, fixLabel }: { rows: HomeAlertRow[]; fixLabel: string }) {
+  const columns: DataListColumn<HomeAlertRow>[] = [
     {
       headerName: 'Service',
       type: 'custom',
       width: 'auto',
       UNSAFE_render: (row) => (
         <Box style={{ display: 'flex', alignItems: 'center', gap: 12, width: '100%' }}>
-          <ServiceIcon serviceTypeId={row.serviceTypeId} size={32} />
+          <ServiceIcon serviceTypeId={row.service.serviceTypeId} size={32} />
           <Box>
             <Typography.Default>
               <Link href="#" onClick={noopClick}>
-                {row.serviceName}
+                {row.service.serviceName}
               </Link>
             </Typography.Default>
-            <Typography.Small color="muted">{row.environment}</Typography.Small>
+            <Typography.Small color="muted">{row.service.environment}</Typography.Small>
           </Box>
         </Box>
       ),
@@ -561,7 +587,7 @@ function PostureServiceList({ services, fixLabel }: { services: HomeServiceRow[]
       type: 'custom',
       width: 120,
       UNSAFE_render: (row) => {
-        const node = nodeStatusToChip(row.nodeStatus)
+        const node = nodeStatusToChip(row.service.nodeStatus)
         return <StatusChip dense text={node.text} status={node.status} />
       },
     },
@@ -588,136 +614,21 @@ function PostureServiceList({ services, fixLabel }: { services: HomeServiceRow[]
     },
   ]
 
-  return <DataList columns={columns} rows={services} sticky={false} />
+  return <DataList columns={columns} rows={rows} sticky={false} />
 }
 
 PostureServiceList.displayName = 'PostureServiceList'
 
-function ServiceAlertsCell({ row }: { row: HomeServiceRow }) {
-  if (row.alerts.length === 0) {
-    return (
-      <Typography.Small color="muted">
-        No active alerts
-      </Typography.Small>
-    )
-  }
-
-  const icon = row.severity === 'danger' ? errorSign : warningSign
-  const iconColor = row.severity === 'danger' ? 'danger-default' : 'warning-default'
+function ServiceAlertsCell({ row }: { row: HomeAlertRow }) {
+  const icon = row.service.severity === 'danger' ? errorSign : warningSign
+  const iconColor = row.service.severity === 'danger' ? 'danger-default' : 'warning-default'
 
   return (
     <Box style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
       <InlineIcon icon={icon} color={iconColor} style={{ width: 16, height: 16 }} />
-      <span>{row.alerts[0]}</span>
-      {row.alerts.length > 1 && (
-        <Tooltip
-          content={
-            <Box>
-              Multiple alerts:
-              <ul>
-                {row.alerts.map((alert) => (
-                  <li key={alert} style={{ marginLeft: 20, listStyleType: 'disc' }}>
-                    {alert}
-                  </li>
-                ))}
-              </ul>
-            </Box>
-          }
-        >
-          <Box component="span" style={{ cursor: 'pointer' }}>
-            <Typography.Small htmlTag="span" color="muted">
-              +{row.alerts.length - 1} more
-            </Typography.Small>
-          </Box>
-        </Tooltip>
-      )}
+      <span>{row.alert}</span>
     </Box>
   )
 }
 
 ServiceAlertsCell.displayName = 'ServiceAlertsCell'
-
-function ProductUpdates() {
-  const [index, setIndex] = useState(0)
-  const total = RELEASE_NOTES.length
-  const note = RELEASE_NOTES[index]
-  if (!note) return null
-
-  const isFirst = index === 0
-  const isLast = index === total - 1
-
-  return (
-    <Box style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
-      <Box style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
-        <Typography.LargeStrong>Product updates</Typography.LargeStrong>
-        <Box style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-          <Typography.Default>
-            <Link href={CHANGELOG_URL} target="_blank">
-              See all
-            </Link>
-          </Typography.Default>
-          <Link.Button.Secondary dense href={CHANGELOG_RSS_URL} target="_blank">
-            RSS Feed
-          </Link.Button.Secondary>
-        </Box>
-      </Box>
-      <Box style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-      <Card
-        fullWidth
-        title={
-          <Card.Title>
-            <Box style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-              <Typography.Small color="muted">
-                {note.date} // {note.tag}
-              </Typography.Small>
-              {note.title}
-            </Box>
-          </Card.Title>
-        }
-      >
-        <Box style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-          <Box
-            style={{
-              display: '-webkit-box',
-              WebkitLineClamp: 2,
-              WebkitBoxOrient: 'vertical',
-              overflow: 'hidden',
-              color: 'var(--aquarium-text-color-muted)',
-            }}
-          >
-            <Typography.Small>{note.description}</Typography.Small>
-          </Box>
-          <Typography.Default>
-            <Link href={note.href} target="_blank" aria-label={`Read more about ${note.title}`}>
-              Read more
-            </Link>
-          </Typography.Default>
-        </Box>
-      </Card>
-      <Box style={{ display: 'flex', alignItems: 'center', gap: 8, alignSelf: 'flex-start' }}>
-        <Button.Icon
-          type="button"
-          dense
-          aria-label="Previous update"
-          icon={chevronLeft}
-          disabled={isFirst}
-          onClick={() => setIndex((value) => Math.max(0, value - 1))}
-        />
-        <Typography.Small>
-          {index + 1}/{total}
-        </Typography.Small>
-        <Button.Icon
-          type="button"
-          dense
-          aria-label="Next update"
-          icon={chevronRight}
-          disabled={isLast}
-          onClick={() => setIndex((value) => Math.min(total - 1, value + 1))}
-        />
-      </Box>
-      </Box>
-    </Box>
-  )
-}
-
-ProductUpdates.displayName = 'ProductUpdates'

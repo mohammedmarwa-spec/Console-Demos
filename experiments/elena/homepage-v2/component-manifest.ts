@@ -11,16 +11,16 @@ export const componentManifest: ComponentManifest = {
       usage: 'Page shell, two-column layout, header status dot, insight card wrappers, and coverage grid',
     },
     {
+      name: 'PageHeader',
+      usage: 'Welcome to Aiven Platform title and returning-user subtitle',
+    },
+    {
       name: 'Typography',
-      usage: 'Section titles, project/scope labels, findings, and product-update copy',
+      usage: 'Section titles, project/scope labels, and findings',
     },
     {
       name: 'Link',
-      usage: 'View-all links, issue actions, improvement actions, See all, and Read more',
-    },
-    {
-      name: 'Button',
-      usage: 'Button.Icon dense prev/next stepper for product updates',
+      usage: 'View-all links, issue actions, and improvement actions',
     },
     {
       name: 'InlineIcon',
@@ -36,7 +36,7 @@ export const componentManifest: ComponentManifest = {
     },
     {
       name: 'Card',
-      usage: 'Card.Compact for recent projects; Card + Card.Title for insight cards, protection coverage, and product updates',
+      usage: 'Card.Compact for recent projects; Card + Card.Title for insight cards and protection coverage',
     },
     {
       name: 'Filter',
@@ -68,11 +68,15 @@ export const componentManifest: ComponentManifest = {
     },
     {
       name: 'Divider',
-      usage: 'Vertical split between main content and the updates column',
+      usage: 'Vertical split between main content and the homepage-v5 right column',
     },
     {
       name: 'Banner',
-      usage: 'Aiven MCP promo Banner above Product updates (title, Enable CTA, MCP illustration)',
+      usage: 'MCP promo and CLI quick start via shared homepage-v5 HomeRightColumn',
+    },
+    {
+      name: 'Select',
+      usage: 'Service filter on the reused homepage-v5 product updates list',
     },
   ],
 
@@ -118,12 +122,9 @@ export const componentManifest: ComponentManifest = {
       reason: 'Shared organization sidebar with Tools group, Settings, and Admin',
     },
     {
-      name: 'AivenMcpPromo',
-      reason: 'Right-column MCP enablement promo above Product updates',
-    },
-    {
-      name: 'ProductUpdates',
-      reason: 'Single changelog Card with bottom-left Button.Icon carousel',
+      name: 'HomeRightColumn',
+      reason:
+        'Reuses homepage-v5 rail: Developer tools (MCP Banner + CLI quick start) and Product updates with service Select',
     },
   ],
 
@@ -132,6 +133,7 @@ export const componentManifest: ComponentManifest = {
     'Project health uses a Filter.Trigger project control; production scope is fixed in mock data.',
     'Insight card tints use Aquarium border/background tokens on Box wrappers around Card.',
     'Platform status is plain text with a token-colored dot in ConsoleHeader.',
+    'Right column is homepage-v5 HomeRightColumn — not the previous MCP + carousel.',
     'Shared helpers (ConsoleHeader, OrgSidebar, ServiceIcon) live outside this folder.',
   ],
 }
