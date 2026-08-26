@@ -986,9 +986,9 @@ export function EventLogsContent({
             subtitle={subtitle}
             breadcrumbs={
               breadcrumbs !== undefined
-                ? breadcrumbs.length > 0
-                  ? breadcrumbs
-                  : undefined
+                ? Array.isArray(breadcrumbs) && breadcrumbs.length === 0
+                  ? undefined
+                  : breadcrumbs
                 : [
                     <Breadcrumbs.Crumb key="org" href="#" onClick={(e) => e.preventDefault()}>
                       Big Co Ltd.
