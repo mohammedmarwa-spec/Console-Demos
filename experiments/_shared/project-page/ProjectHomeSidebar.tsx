@@ -91,12 +91,15 @@ export type ProjectHomeSidebarProps = {
   projectName?: string
   activeItem: string
   onItemClick: (id: string) => void
+  /** Hide the sidebar project dropdown when the parent header already switches projects. */
+  hideProjectSwitcher?: boolean
 }
 
 export function ProjectHomeSidebar({
   projectName: projectNameProp,
   activeItem,
   onItemClick,
+  hideProjectSwitcher = false,
 }: ProjectHomeSidebarProps) {
   const { projectName: projectNameFromData } = useProjectPageData()
   const projectName = projectNameProp ?? projectNameFromData
@@ -104,8 +107,9 @@ export function ProjectHomeSidebar({
   return (
     <SidebarShell
       ariaLabel="Project navigation"
+      omitHeader={hideProjectSwitcher}
       header={(collapsed) =>
-        collapsed ? null : (
+        collapsed || hideProjectSwitcher ? null : (
         <DropdownMenu>
           <DropdownMenu.Trigger>
             <Box

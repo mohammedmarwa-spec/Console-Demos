@@ -15,6 +15,8 @@ export type SidebarShellProps = {
   ariaLabel: string
   header: SidebarShellRender
   children: SidebarShellRender
+  /** Skip header slot and its divider (e.g. when context lives in the page header). */
+  omitHeader?: boolean
 }
 
 function resolveSlot(slot: SidebarShellRender, collapsed: boolean): ReactNode {
@@ -26,7 +28,12 @@ function resolveSlot(slot: SidebarShellRender, collapsed: boolean): ReactNode {
  * top-aligned menu, and footer collapse control. Matches production
  * NavigationContainer (68px collapsed, icon-only preview).
  */
-export function SidebarShell({ ariaLabel, header, children }: SidebarShellProps) {
+export function SidebarShell({
+  ariaLabel,
+  header,
+  children,
+  omitHeader = false,
+}: SidebarShellProps) {
   const [collapsed, setCollapsed] = useState(false)
 
   return (
@@ -38,12 +45,16 @@ export function SidebarShell({ ariaLabel, header, children }: SidebarShellProps)
       }}
     >
       <Navigation aria-label={ariaLabel}>
-        <Navigation.Header>
-          {resolveSlot(header, collapsed) ?? (
-            <Box style={{ minHeight: 44 }} aria-hidden />
-          )}
-        </Navigation.Header>
-        <Navigation.Divider />
+        {omitHeader ? null : (
+          <>
+            <Navigation.Header>
+              {resolveSlot(header, collapsed) ?? (
+                <Box style={{ minHeight: 44 }} aria-hidden />
+              )}
+            </Navigation.Header>
+            <Navigation.Divider />
+          </>
+        )}
         <li className={styles.menu} role="presentation">
           <ul className={styles.menuList} role="group">
             {resolveSlot(children, collapsed)}

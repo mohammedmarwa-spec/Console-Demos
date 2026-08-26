@@ -21,12 +21,18 @@ export type ProjectPageShellProps = {
   data: ProjectPageMockData
   /** Optional override for non–Project Home placeholder copy. */
   placeholderNote?: ReactNode
+  /**
+   * When true, omit ConsoleHeader and content-area breadcrumbs
+   * (parent owns a context Page header trail instead).
+   */
+  hideHeader?: boolean
 }
 
 /** Shared Project page chrome: header, sidebar, and content views. */
 export function ProjectPageShell({
   data,
   placeholderNote = 'Placeholder — this experiment focuses on Project Home.',
+  hideHeader = false,
 }: ProjectPageShellProps) {
   const [activeItem, setActiveItem] = useState('overview')
 
@@ -42,35 +48,50 @@ export function ProjectPageShell({
         style={{
           display: 'flex',
           flexDirection: 'column',
-          height: 'calc(100vh - 48px)',
-          minHeight: 0,
+          ...(hideHeader
+            ? { flex: 1, minHeight: 0 }
+            : { height: 'calc(100vh - 48px)', minHeight: 0 }),
           backgroundColor: 'var(--aquarium-background-color-body)',
         }}
       >
-        <ConsoleHeader
-          activeNav="projects"
-          orgName={data.orgName}
-          orgSublabel="Organization"
-          userInitials="EI"
-          activeProjectId={data.projectName}
-        />
+        {hideHeader ? null : (
+          <ConsoleHeader
+            activeNav="projects"
+            orgName={data.orgName}
+            orgSublabel="Organization"
+            userInitials="EI"
+            activeProjectId={data.projectName}
+          />
+        )}
 
         <Box style={{ display: 'flex', flex: 1, minHeight: 0 }}>
-          <ProjectHomeSidebar activeItem={activeItem} onItemClick={setActiveItem} />
+          <ProjectHomeSidebar
+            activeItem={activeItem}
+            onItemClick={setActiveItem}
+            hideProjectSwitcher={hideHeader}
+          />
 
           {showEventLog ? (
             <EventLogsContent
               title="Event log"
               subtitle="View the history of actions across this project"
-              breadcrumbs={[
-                <Breadcrumbs.Crumb key="org" href="#" onClick={(e) => e.preventDefault()}>
-                  {data.orgName}
-                </Breadcrumbs.Crumb>,
-                <Breadcrumbs.Crumb key="project" href="#" onClick={(e) => e.preventDefault()}>
-                  {data.projectName}
-                </Breadcrumbs.Crumb>,
-                <Breadcrumbs.Crumb key="event-log">Event log</Breadcrumbs.Crumb>,
-              ]}
+              breadcrumbs={
+                hideHeader
+                  ? []
+                  : [
+                      <Breadcrumbs.Crumb key="org" href="#" onClick={(e) => e.preventDefault()}>
+                        {data.orgName}
+                      </Breadcrumbs.Crumb>,
+                      <Breadcrumbs.Crumb
+                        key="project"
+                        href="#"
+                        onClick={(e) => e.preventDefault()}
+                      >
+                        {data.projectName}
+                      </Breadcrumbs.Crumb>,
+                      <Breadcrumbs.Crumb key="event-log">Event log</Breadcrumbs.Crumb>,
+                    ]
+              }
             />
           ) : showDataHub ? (
             <DataHubContent />

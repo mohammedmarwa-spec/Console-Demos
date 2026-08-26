@@ -21,11 +21,11 @@ export const componentManifest: ComponentManifest = {
     {
       name: 'Typography',
       usage:
-        'Dev tools and Product updates rail headings, CLI snippet, invoice amount, user count, and update dates',
+        'Dev tools and Product updates rail headings, invoice amount, user count, and update dates',
     },
     {
       name: 'Icon',
-      usage: 'Invoice and user glyphs, attention severity, reliability checks, copy on CLI snippet, and footer marks',
+      usage: 'Invoice and user glyphs, attention severity, reliability checks, and footer marks',
     },
     {
       name: 'Section',
@@ -58,7 +58,7 @@ export const componentManifest: ComponentManifest = {
     },
     {
       name: 'Button',
-      usage: 'Add user on the Users card; attention row Ghost dense actions; copy on the CLI snippet',
+      usage: 'Add user on the Users card; attention row Ghost dense actions',
     },
     {
       name: 'EmptyState',
@@ -74,7 +74,7 @@ export const componentManifest: ComponentManifest = {
     },
     {
       name: 'Banner',
-      usage: 'Dev tools promo (Get started opens drawer) and CLI quick start in the right rail'
+      usage: 'Dev tools promo (Get started opens drawer) in the right rail'
     },
     {
       name: 'Drawer',
@@ -118,7 +118,7 @@ export const componentManifest: ComponentManifest = {
     },
     {
       name: 'HomeRightColumn',
-      reason: 'Sticky right rail from experiments/_shared/home: Dev tools (promo + CLI) and Product updates'
+      reason: 'Sticky right rail from experiments/_shared/home: Dev tools promo and Product updates'
     },
     {
       name: 'DevToolsDrawer',
@@ -130,11 +130,6 @@ export const componentManifest: ComponentManifest = {
       reason: 'Right-column outlined Banner under Dev tools, covering MCP, CLI, Terraform, and API',
     },
     {
-      name: 'CliQuickStart',
-      reason:
-        'Outlined Banner matching the Dev tools promo — CodeSmall snippet + copy; Aquarium has no CodeBlock'
-    },
-    {
       name: 'ProductUpdates',
       reason:
         'Right-column changelog preview under Dev tools: title + RSS, Aquarium Select for service, bordered list — not ChoiceChip and not V2 carousel'
@@ -143,8 +138,7 @@ export const componentManifest: ComponentManifest = {
 
   notes: [
     'Org-level operational Home based on V2 IA. V1–V4 remain comparison variants.',
-    'Dev tools Get started and CLI setup open a non-blocking drawer. MCP config follows https://aiven.io/docs/tools/mcp-server.',
-    'CLI snippet uses the Console CodeBlock pattern (CodeSmall + copy) inside Banner.',
+    'Dev tools Get started opens a non-blocking drawer. MCP config follows https://aiven.io/docs/tools/mcp-server.',
     'Product updates sit under Dev tools in that rail, previewing 3 items per service. Reliability stays in the main column.',
     'Recent projects and attention lists use DataList hideHeader to match the headerless mock.',
     'Attention filters are ChoiceChip dense (aligned with SearchInput), not Tabs.',

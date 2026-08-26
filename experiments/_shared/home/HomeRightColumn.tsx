@@ -1,22 +1,20 @@
 'use client'
 
-import { useMemo, useState } from 'react'
+import { useMemo, useState, type Key } from 'react'
 import {
   Box,
   Banner,
   Button,
   Divider,
+  DropdownMenu,
   EmptyState,
   Link,
-  Select,
   Typography,
 } from '@aivenio/aquarium'
-import clipboardIcon from '@aivenio/aquarium/icons/clipboard'
-import clipboardCheckIcon from '@aivenio/aquarium/icons/clipboardCheck'
+import chevronDownIcon from '@aivenio/aquarium/icons/chevronDown'
 import { imageSrc } from '@experiments/_shared/lib/image'
-import { aquariumSelectValue } from '@/lib/aquariumSelect'
 import { DevToolsDrawerProvider, useDevToolsDrawer } from './DevToolsDrawer'
-import { CLI_QUICK_START, DEV_TOOLS_PROMO } from './devToolsData'
+import { DEV_TOOLS_PROMO } from './devToolsData'
 import {
   PRODUCT_UPDATES_DOCS,
   PRODUCT_UPDATES_PREVIEW_COUNT,
@@ -29,6 +27,10 @@ import devToolsBanner from './assets/home-page-dev-tools-banner.svg'
 import styles from './HomeRightColumn.module.css'
 
 export { DevToolsDrawerProvider, useDevToolsDrawer } from './DevToolsDrawer'
+
+function isProductUpdateServiceFilter(value: string): value is ProductUpdateServiceFilter {
+  return PRODUCT_UPDATE_SERVICE_OPTIONS.some((option) => option.value === value)
+}
 
 export function HomeRightColumn() {
   return (
@@ -48,7 +50,6 @@ function HomeRightColumnRail() {
       <Box className={styles.devTools}>
         <Typography.LargeStrong>Dev tools</Typography.LargeStrong>
         <DevToolsPromo onGetStarted={() => openDrawer()} />
-        <CliQuickStart onOpenCli={() => openDrawer('cli')} />
       </Box>
       <ProductUpdates />
     </Box>
@@ -75,45 +76,6 @@ function DevToolsPromo({ onGetStarted }: { onGetStarted: () => void }) {
 
 DevToolsPromo.displayName = 'DevToolsPromo'
 
-function CliQuickStart({ onOpenCli }: { onOpenCli: () => void }) {
-  const [copied, setCopied] = useState(false)
-
-  const copyCommand = () => {
-    if (typeof navigator === 'undefined' || !navigator.clipboard?.writeText) return
-    void navigator.clipboard.writeText(CLI_QUICK_START.command)
-    setCopied(true)
-    window.setTimeout(() => setCopied(false), 1200)
-  }
-
-  return (
-    <Banner
-      variant="outlined"
-      title={CLI_QUICK_START.title}
-      action={{
-        text: 'Open CLI setup',
-        onClick: onOpenCli,
-      }}
-    >
-      <Box className={styles.codeBlock}>
-        <Typography.Small color="muted">$</Typography.Small>
-        <Box className={styles.codeText}>
-          <Typography.CodeSmall>{CLI_QUICK_START.command}</Typography.CodeSmall>
-        </Box>
-        <Button.Icon
-          type="button"
-          dense
-          icon={copied ? clipboardCheckIcon : clipboardIcon}
-          aria-label={copied ? 'Copied' : 'Copy command'}
-          tooltip={copied ? 'Copied' : 'Copy'}
-          onClick={copyCommand}
-        />
-      </Box>
-    </Banner>
-  )
-}
-
-CliQuickStart.displayName = 'CliQuickStart'
-
 function ProductUpdates() {
   const [serviceFilter, setServiceFilter] = useState<ProductUpdateServiceFilter>('all')
   const matchingNotes = useMemo(
@@ -121,27 +83,53 @@ function ProductUpdates() {
     [serviceFilter],
   )
   const previewNotes = matchingNotes.slice(0, PRODUCT_UPDATES_PREVIEW_COUNT)
+  const filterLabel =
+    serviceFilter === 'all'
+      ? 'All services'
+      : (PRODUCT_UPDATE_SERVICE_OPTIONS.find((option) => option.value === serviceFilter)?.label ??
+        'All services')
 
   return (
     <Box className={styles.updatesPanel}>
       <Box className={styles.updatesHeader}>
-        <Typography.LargeStrong>Product updates</Typography.LargeStrong>
+        <Box className={styles.updatesHeaderStart}>
+          <Typography.LargeStrong>Product updates</Typography.LargeStrong>
+          <DropdownMenu
+            placement="bottom-start"
+            onAction={(key: Key) => {
+              const value = String(key)
+              if (isProductUpdateServiceFilter(value)) setServiceFilter(value)
+            }}
+          >
+            <DropdownMenu.Trigger>
+              <Button.Ghost
+                type="button"
+                dense
+                icon={chevronDownIcon}
+                iconPlacement="right"
+                aria-label="Filter product updates by service"
+              >
+                {filterLabel}
+              </Button.Ghost>
+            </DropdownMenu.Trigger>
+            <DropdownMenu.Items>
+              {PRODUCT_UPDATE_SERVICE_OPTIONS.map((option) => (
+                <DropdownMenu.Item
+                  key={option.value}
+                  id={option.value}
+                  textValue={option.label === 'All' ? 'All services' : option.label}
+                >
+                  {option.label === 'All' ? 'All services' : option.label}
+                </DropdownMenu.Item>
+              ))}
+            </DropdownMenu.Items>
+          </DropdownMenu>
+        </Box>
         <Typography.Default>
           <Link href={PRODUCT_UPDATES_DOCS.changelogRss} target="_blank">
             RSS Feed
           </Link>
         </Typography.Default>
-      </Box>
-      <Box className={styles.serviceSelect}>
-        <Select
-          labelText="Service"
-          options={PRODUCT_UPDATE_SERVICE_OPTIONS}
-          value={serviceFilter}
-          onChange={(selected) =>
-            setServiceFilter(aquariumSelectValue(selected, 'all') as ProductUpdateServiceFilter)
-          }
-          reserveSpaceForError={false}
-        />
       </Box>
       {previewNotes.length === 0 ? (
         <EmptyState title="No updates for this service">

@@ -1,0 +1,7 @@
+.header {
+  /* Trail segments stay compact; overflow handled by ellipsis on labels. */
+}
+
+.slash {
+  padding: 0 2px;
+}

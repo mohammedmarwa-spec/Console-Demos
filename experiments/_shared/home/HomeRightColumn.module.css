@@ -16,23 +16,6 @@
   min-width: 0;
 }
 
-.codeBlock {
-  display: flex;
-  align-items: flex-start;
-  gap: 8px;
-  width: 100%;
-  padding: 8px;
-  background-color: var(--aquarium-background-color-muted);
-  border-radius: var(--aquarium-border-radius-default);
-}
-
-.codeText {
-  flex: 1;
-  min-width: 0;
-  white-space: pre-wrap;
-  word-break: break-all;
-}
-
 .updatesPanel {
   display: flex;
   flex-direction: column;
@@ -47,8 +30,12 @@
   gap: 16px;
 }
 
-.serviceSelect {
-  max-width: 280px;
+.updatesHeaderStart {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+  flex-wrap: wrap;
 }
 
 .updatesList {

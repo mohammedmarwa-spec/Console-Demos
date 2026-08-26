@@ -985,15 +985,19 @@ export function EventLogsContent({
             title={title}
             subtitle={subtitle}
             breadcrumbs={
-              breadcrumbs ?? [
-                <Breadcrumbs.Crumb key="org" href="#" onClick={(e) => e.preventDefault()}>
-                  Big Co Ltd.
-                </Breadcrumbs.Crumb>,
-                <Breadcrumbs.Crumb key="admin" href="#" onClick={(e) => e.preventDefault()}>
-                  Admin
-                </Breadcrumbs.Crumb>,
-                <Breadcrumbs.Crumb key="event-logs">Event logs</Breadcrumbs.Crumb>,
-              ]
+              breadcrumbs !== undefined
+                ? breadcrumbs.length > 0
+                  ? breadcrumbs
+                  : undefined
+                : [
+                    <Breadcrumbs.Crumb key="org" href="#" onClick={(e) => e.preventDefault()}>
+                      Big Co Ltd.
+                    </Breadcrumbs.Crumb>,
+                    <Breadcrumbs.Crumb key="admin" href="#" onClick={(e) => e.preventDefault()}>
+                      Admin
+                    </Breadcrumbs.Crumb>,
+                    <Breadcrumbs.Crumb key="event-logs">Event logs</Breadcrumbs.Crumb>,
+                  ]
             }
           />
         </Box>

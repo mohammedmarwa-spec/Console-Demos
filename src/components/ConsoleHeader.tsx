@@ -36,8 +36,12 @@ export type ConsoleHeaderProps = {
   onProjectsClick?: () => void
   /** Optional custom content rendered on the right, before header icon actions. */
   beforeOrganizationSelector?: ReactNode
+  /** Optional content rendered immediately after the organization selector (left cluster). */
+  afterOrganizationSelector?: ReactNode
   /** Show primary navigation buttons in the header. */
   showPrimaryNav?: boolean
+  /** Show the Projects item inside primary nav. Hidden when a dedicated project selector is used. */
+  showProjectsNavItem?: boolean
 }
 
 // ─── Aiven Console Logo ───────────────────────────────────────────────────────
@@ -197,7 +201,9 @@ export function ConsoleHeader({
   onBillingClick,
   onProjectsClick,
   beforeOrganizationSelector,
+  afterOrganizationSelector,
   showPrimaryNav = true,
+  showProjectsNavItem = true,
 }: ConsoleHeaderProps) {
   const router = useRouter()
   const handleHomeClick = onHomeClick ?? (() => router.push(ROUTES.homepage))
@@ -237,8 +243,17 @@ export function ConsoleHeader({
         <AivenConsoleLogo width={42} />
       </Box>
 
-      <Box style={{ marginLeft: 16, flexShrink: 0 }}>
+      <Box
+        style={{
+          marginLeft: 16,
+          flexShrink: 0,
+          display: 'flex',
+          alignItems: 'center',
+          gap: 8,
+        }}
+      >
         <OrganizationSelector orgName={orgName} orgSublabel={orgSublabel} />
+        {afterOrganizationSelector}
       </Box>
 
       <Box
@@ -256,11 +271,13 @@ export function ConsoleHeader({
           <>
             <NavButton label="Home" active={activeNav === 'home'} onClick={handleHomeClick} />
 
-            <ProjectsPopover
-              active={activeNav === 'projects'}
-              activeProjectId={activeProjectId}
-              onViewAllProjects={onProjectsClick}
-            />
+            {showProjectsNavItem ? (
+              <ProjectsPopover
+                active={activeNav === 'projects'}
+                activeProjectId={activeProjectId}
+                onViewAllProjects={onProjectsClick}
+              />
+            ) : null}
 
             <DropdownMenu>
               <DropdownMenu.Trigger>

@@ -101,12 +101,6 @@ export const PRODUCT_UPDATE_SERVICE_OPTIONS: { label: string; value: ProductUpda
 
 export const PRODUCT_UPDATES_PREVIEW_COUNT = 3
 
-export const CLI_QUICK_START = {
-  title: 'CLI quick start',
-  command: 'pip install aiven-client\navn user login',
-  docsHref: DOCS.cli,
-} as const
-
 export const FLEET_METRICS: FleetMetric[] = [
   { id: 'projects', label: 'Projects', value: '258', icon: folderCloseIcon, tone: 'primary' },
   { id: 'resources', label: 'Resources', value: '1,248', icon: serverHddIcon, tone: 'info' },

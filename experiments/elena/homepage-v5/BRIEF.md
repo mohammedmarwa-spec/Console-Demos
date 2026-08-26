@@ -17,7 +17,6 @@ If Home uses Aquarium page, list, and promo primitives for this org layout, user
 | “Good morning, Irene” | `PageHeader` + subtitle | Standard page title region |
 | “Developer tools” | `Typography.LargeStrong` | Right-rail subheader above MCP, same type as Product updates |
 | “Build with Aiven MCP” | `Banner` outlined + image + Get started | Promo in the V2 right rail — `Card.primaryAction` is Secondary dense |
-| CLI quick start | `Banner` outlined + `CodeSmall` + `$` prompt + copy | Same outlined Banner as MCP; Aquarium has no CodeBlock |
 | Projects / Resources | `Card` + `Typography.LargeHeading` | Fleet counts. Aquarium has no StatCard |
 | Last invoice | `Card` + `StatusChip` + `Link` | Replaces Need attention KPI — amount, period, Paid, View invoice |
 | Users | `Card` + `Button.Ghost` dense | Replaces Updates available KPI — count with Add user CTA. `Card.primaryAction` is Secondary dense |

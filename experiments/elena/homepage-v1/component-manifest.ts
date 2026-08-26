@@ -70,7 +70,7 @@ export const componentManifest: ComponentManifest = {
     },
     {
       name: 'Banner',
-      usage: 'Dev tools promo (Get started opens drawer) and CLI quick start via shared HomeRightColumn'
+      usage: 'Dev tools promo (Get started opens drawer) via shared HomeRightColumn'
     },
     {
       name: 'Drawer',
@@ -120,7 +120,7 @@ export const componentManifest: ComponentManifest = {
     {
       name: 'HomeRightColumn',
       reason:
-        'Shared Dev tools rail (promo + CLI) and Product updates; Get started opens DevToolsDrawer'
+        'Shared Dev tools rail (promo Banner) and Product updates; Get started opens DevToolsDrawer'
     },
   ],
 
