@@ -1,0 +1,37 @@
+.drawerBody {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  padding-bottom: 16px;
+}
+
+.snippet {
+  border: 1px solid var(--aquarium-border-color-muted);
+  border-radius: var(--aquarium-border-radius-default);
+  overflow: hidden;
+}
+
+.snippetHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 8px 8px 8px 16px;
+  border-bottom: 1px solid var(--aquarium-border-color-muted);
+}
+
+.snippetBody {
+  margin: 0;
+  padding: 16px;
+  overflow: auto;
+  background-color: var(--aquarium-background-color-muted);
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.tabBody {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  min-width: 0;
+}

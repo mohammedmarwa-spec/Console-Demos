@@ -48,7 +48,7 @@ export const DOCS = {
   gettingStarted: 'https://aiven.io/docs/platform/howto/get-started',
   documentation: 'https://aiven.io/docs',
   askAi: 'https://aiven.io/docs',
-  mcp: 'https://aiven.io/docs/tools/mcp',
+  mcp: 'https://aiven.io/docs/tools/mcp-server',
 } as const
 
 /** Unique branded marks from experiments/_shared/assets/service-icons (aliases omitted). */
@@ -89,7 +89,6 @@ export const FIRST_RESOURCE_ACTIONS: FirstResourceAction[] = [
     actionKind: 'secondary',
     icon: proPlansIcon,
     tone: 'success',
-    href: DOCS.mcp,
   },
 ]
 

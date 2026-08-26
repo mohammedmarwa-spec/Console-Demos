@@ -46,7 +46,7 @@ export const componentManifest: ComponentManifest = {
     {
       name: 'ChoiceChip',
       usage:
-        'Radio service filters: All alerts {count} is the full alerts list; Close EOL, Maintenance, and Degraded service narrow it',
+        'Radio service filters (All alerts, Close EOL, Maintenance, Degraded) and Dev tools drawer tabs (MCP, CLI, Terraform, API)',
     },
     {
       name: 'DataList',
@@ -70,7 +70,15 @@ export const componentManifest: ComponentManifest = {
     },
     {
       name: 'Banner',
-      usage: 'MCP promo and CLI quick start via shared homepage-v5 HomeRightColumn',
+      usage: 'Dev tools promo (Get started opens drawer) and CLI quick start via shared HomeRightColumn'
+    },
+    {
+      name: 'Drawer',
+      usage: 'Non-blocking Dev tools drawer with MCP configurator, CLI, Terraform, and API',
+    },
+    {
+      name: 'Switch',
+      usage: 'MCP read-only mode in the Dev tools drawer',
     },
   ],
 
@@ -112,14 +120,14 @@ export const componentManifest: ComponentManifest = {
     {
       name: 'HomeRightColumn',
       reason:
-        'Reuses homepage-v5 rail: Developer tools (MCP Banner + CLI quick start) and Product updates with service Select',
+        'Shared Dev tools rail (promo + CLI) and Product updates; Get started opens DevToolsDrawer'
     },
   ],
 
   notes: [
     'Custom Console Home experiment based on production HomePageScreen (/account/:accountId/home).',
     'Uses ConsoleHeader with org controls and shared OrgSidebar for left navigation.',
-    'Right column is homepage-v5 HomeRightColumn — Developer tools plus Product updates.',
+    'Right column is shared HomeRightColumn — Dev tools plus Product updates.',
     'Shared helpers (ConsoleHeader and ServiceIcon) live outside this folder.',
     'Posture insight cards stay in HomePageContent (PostureSummary, PostureCard) for reuse; flip SHOW_POSTURE_INSIGHT_CARDS to show them here.',
   ],

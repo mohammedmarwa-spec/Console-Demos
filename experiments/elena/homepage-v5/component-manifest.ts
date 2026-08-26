@@ -21,7 +21,7 @@ export const componentManifest: ComponentManifest = {
     {
       name: 'Typography',
       usage:
-        'Developer tools and Product updates rail headings, CLI snippet, invoice amount, user count, and update dates',
+        'Dev tools and Product updates rail headings, CLI snippet, invoice amount, user count, and update dates',
     },
     {
       name: 'Icon',
@@ -53,7 +53,8 @@ export const componentManifest: ComponentManifest = {
     },
     {
       name: 'ChoiceChip',
-      usage: 'Dense attention category filter: All, Incidents, End of life, Upgrades, Security, Alerts',
+      usage:
+        'Dense attention category filter, and Dev tools drawer tabs (MCP, CLI, Terraform, API)',
     },
     {
       name: 'Button',
@@ -73,7 +74,15 @@ export const componentManifest: ComponentManifest = {
     },
     {
       name: 'Banner',
-      usage: 'MCP promo and CLI quick start in Developer tools — same outlined Banner; MCP adds illustration',
+      usage: 'Dev tools promo (Get started opens drawer) and CLI quick start in the right rail'
+    },
+    {
+      name: 'Drawer',
+      usage: 'Non-blocking Dev tools drawer with MCP configurator, CLI, Terraform, and API',
+    },
+    {
+      name: 'Switch',
+      usage: 'MCP read-only mode in the Dev tools drawer',
     },
     {
       name: 'Navigation',
@@ -109,32 +118,37 @@ export const componentManifest: ComponentManifest = {
     },
     {
       name: 'HomeRightColumn',
-      reason: 'Sticky right rail: Developer tools (MCP + CLI) and Product updates — reused by homepage-v1–v4',
+      reason: 'Sticky right rail from experiments/_shared/home: Dev tools (promo + CLI) and Product updates'
     },
     {
-      name: 'AivenMcpPromo',
-      reason: 'Right-column outlined Banner under Developer tools, with MCP illustration and Get started CTA',
+      name: 'DevToolsDrawer',
+      reason:
+        'Non-blocking Aquarium Drawer — MCP configurator from aiven.io/docs/tools/mcp-server, plus CLI, Terraform, and API',
+    },
+    {
+      name: 'DevToolsPromo',
+      reason: 'Right-column outlined Banner under Dev tools, covering MCP, CLI, Terraform, and API',
     },
     {
       name: 'CliQuickStart',
       reason:
-        'Outlined Banner matching MCP — CodeSmall snippet + copy; Aquarium has no CodeBlock',
+        'Outlined Banner matching the Dev tools promo — CodeSmall snippet + copy; Aquarium has no CodeBlock'
     },
     {
       name: 'ProductUpdates',
       reason:
-        'Right-column changelog preview under MCP: title + RSS, Aquarium Select for service, bordered list — not ChoiceChip and not V2 carousel',
+        'Right-column changelog preview under Dev tools: title + RSS, Aquarium Select for service, bordered list — not ChoiceChip and not V2 carousel'
     },
   ],
 
   notes: [
     'Org-level operational Home based on V2 IA. V1–V4 remain comparison variants.',
-    'MCP and CLI quick start both use outlined Banner in Developer tools — Card.primaryAction is Secondary dense.',
+    'Dev tools Get started and CLI setup open a non-blocking drawer. MCP config follows https://aiven.io/docs/tools/mcp-server.',
     'CLI snippet uses the Console CodeBlock pattern (CodeSmall + copy) inside Banner.',
-    'Product updates sit under Developer tools in that rail, previewing 3 items per service. Reliability stays in the main column.',
+    'Product updates sit under Dev tools in that rail, previewing 3 items per service. Reliability stays in the main column.',
     'Recent projects and attention lists use DataList hideHeader to match the headerless mock.',
     'Attention filters are ChoiceChip dense (aligned with SearchInput), not Tabs.',
     'Product updates use Select for service-specific changelog, not ChoiceChip filters.',
-    'Shared helpers (ConsoleHeader, OrgSidebar, ServiceIcon) live outside this folder. Homepage V1–V4 import HomeRightColumn from this experiment.',
+    'Shared HomeRightColumn lives in experiments/_shared/home and is imported by Homepage V1–V5.',
   ],
 }

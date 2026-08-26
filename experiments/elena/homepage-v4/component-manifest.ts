@@ -37,7 +37,7 @@ export const componentManifest: ComponentManifest = {
     },
     {
       name: 'Button',
-      usage: 'Create service Primary, Deploy app / Open project Secondary; Set up MCP is Link.Button.Secondary',
+      usage: 'Create service Primary, Deploy app / Open project Secondary; Set up MCP opens Dev tools drawer',
     },
     {
       name: 'Link',
@@ -49,7 +49,15 @@ export const componentManifest: ComponentManifest = {
     },
     {
       name: 'Banner',
-      usage: 'MCP promo and CLI quick start via shared homepage-v5 HomeRightColumn',
+      usage: 'Dev tools promo (Get started opens drawer) and CLI quick start via shared HomeRightColumn'
+    },
+    {
+      name: 'Drawer',
+      usage: 'Non-blocking Dev tools drawer with MCP configurator, CLI, Terraform, and API',
+    },
+    {
+      name: 'Switch',
+      usage: 'MCP read-only mode in the Dev tools drawer',
     },
     {
       name: 'Select',
@@ -97,7 +105,7 @@ export const componentManifest: ComponentManifest = {
     {
       name: 'HomeRightColumn',
       reason:
-        'Reuses homepage-v5 rail: Developer tools (MCP Banner + CLI quick start) and Product updates with service Select',
+        'Shared Dev tools rail (promo + CLI) and Product updates; Get started opens DevToolsDrawer'
     },
   ],
 
@@ -107,6 +115,6 @@ export const componentManifest: ComponentManifest = {
     'Create a service stacks every unique branded logo from experiments/_shared/assets/service-icons (aliases like Redis/Flink omitted).',
     'The empty project is a Card row, not DataList — the mock has no column headers or multi-row table behavior.',
     'Stepper is documented in the DS map as the closest getting-started primitive, but it is horizontal-only in Aquarium 6.',
-    'Right column is homepage-v5 HomeRightColumn, shared with V1–V3 and V5.',
+    'Right column is shared HomeRightColumn, used by V1–V5. Set up MCP opens the same Dev tools drawer.',
   ],
 }

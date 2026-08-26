@@ -68,13 +68,6 @@ export type HomeImprovementRecommendation = {
   actionLabel: string
 }
 
-export type HomeProtectionMetric = {
-  id: 'failover' | 'backups' | 'alerting' | 'network'
-  label: string
-  statusText: string
-  tone: 'success' | 'warning'
-}
-
 export type HomeReviewRow = {
   id: string
   service: HomeServiceRow
@@ -421,44 +414,6 @@ export function getImprovementRecommendations(
   }
 
   return items
-}
-
-export function getProtectionMetrics(services: HomeServiceRow[], scope: HomeScope): HomeProtectionMetric[] {
-  const scoped = getScopedServices(services, scope)
-  const total = scoped.length
-  if (total === 0) return []
-
-  const failoverCount = scoped.filter((service) => service.hasAutomaticFailover).length
-  const backupCount = scoped.filter((service) => service.isBackedUp).length
-  const alertCount = scoped.filter((service) => service.hasAlertDestination).length
-  const restrictedCount = scoped.filter((service) => !service.isPubliclyAccessible).length
-
-  return [
-    {
-      id: 'failover',
-      label: 'Automatic failover',
-      statusText: failoverCount === total ? `All ${total} protected` : `${failoverCount} of ${total} protected`,
-      tone: failoverCount === total ? 'success' : 'warning',
-    },
-    {
-      id: 'backups',
-      label: 'Backups',
-      statusText: backupCount === total ? `All ${total} protected` : `${backupCount} of ${total} protected`,
-      tone: backupCount === total ? 'success' : 'warning',
-    },
-    {
-      id: 'alerting',
-      label: 'Alerting',
-      statusText: `${alertCount} of ${total} configured`,
-      tone: alertCount === total ? 'success' : 'warning',
-    },
-    {
-      id: 'network',
-      label: 'Network access',
-      statusText: `${restrictedCount} of ${total} restricted`,
-      tone: restrictedCount === total ? 'success' : 'warning',
-    },
-  ]
 }
 
 function reviewStatus(service: HomeServiceRow): Pick<HomeReviewRow, 'statusText' | 'status'> {

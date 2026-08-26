@@ -67,7 +67,15 @@ export const componentManifest: ComponentManifest = {
     },
     {
       name: 'Banner',
-      usage: 'MCP promo and CLI quick start via shared homepage-v5 HomeRightColumn',
+      usage: 'Dev tools promo (Get started opens drawer) and CLI quick start via shared HomeRightColumn'
+    },
+    {
+      name: 'Drawer',
+      usage: 'Non-blocking Dev tools drawer with MCP configurator, CLI, Terraform, and API',
+    },
+    {
+      name: 'Switch',
+      usage: 'MCP read-only mode in the Dev tools drawer',
     },
     {
       name: 'Select',
@@ -135,7 +143,7 @@ export const componentManifest: ComponentManifest = {
     {
       name: 'HomeRightColumn',
       reason:
-        'Reuses homepage-v5 rail: Developer tools (MCP Banner + CLI quick start) and Product updates with service Select',
+        'Shared Dev tools rail (promo + CLI) and Product updates; Get started opens DevToolsDrawer'
     },
   ],
 
@@ -148,7 +156,7 @@ export const componentManifest: ComponentManifest = {
     'View alerts is a Link in the Actions column and on each compact card; it opens the insights side panel.',
     'Services column and cards show overlapping unique service-type icons from getProjectPreviewServices.',
     'Aquarium Drawer overlays the page, so Project insights is an in-flow side panel (Box + Divider) that replaces the homepage-v5 right column.',
-    'Right column is homepage-v5 HomeRightColumn until Project insights opens.',
+    'Right column is shared HomeRightColumn until Project insights opens.',
     'Project health and the services list live only in the side panel, scoped to the row that opened it.',
     'Shared helpers (ConsoleHeader, OrgSidebar, ServiceIcon) live outside this folder.',
   ],

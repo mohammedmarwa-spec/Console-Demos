@@ -8,7 +8,7 @@ export const componentManifest: ComponentManifest = {
   aquariumComponents: [
     {
       name: 'Box',
-      usage: 'Page shell, two-column layout, header status dot, insight card wrappers, and coverage grid',
+      usage: 'Page shell, two-column layout, header status dot, and insight card wrappers',
     },
     {
       name: 'PageHeader',
@@ -24,11 +24,7 @@ export const componentManifest: ComponentManifest = {
     },
     {
       name: 'InlineIcon',
-      usage: 'Dropdown chevrons, card header icons, and protection coverage tooltip',
-    },
-    {
-      name: 'Icon',
-      usage: 'Protection coverage metric icons (shield, cloud, notifications, lock)',
+      usage: 'Card header icons on Attention required and Improve your project',
     },
     {
       name: 'Chip',
@@ -36,7 +32,7 @@ export const componentManifest: ComponentManifest = {
     },
     {
       name: 'Card',
-      usage: 'Card.Compact for recent projects; Card + Card.Title for insight cards and protection coverage',
+      usage: 'Card.Compact for recent projects; Card + Card.Title for insight cards',
     },
     {
       name: 'Filter',
@@ -60,7 +56,7 @@ export const componentManifest: ComponentManifest = {
     },
     {
       name: 'Tooltip',
-      usage: 'Protection coverage info icon and Why am I seeing this on Improve card',
+      usage: 'Why am I seeing this on Improve card',
     },
     {
       name: 'Navigation',
@@ -72,7 +68,15 @@ export const componentManifest: ComponentManifest = {
     },
     {
       name: 'Banner',
-      usage: 'MCP promo and CLI quick start via shared homepage-v5 HomeRightColumn',
+      usage: 'Dev tools promo (Get started opens drawer) and CLI quick start via shared HomeRightColumn'
+    },
+    {
+      name: 'Drawer',
+      usage: 'Non-blocking Dev tools drawer with MCP configurator, CLI, Terraform, and API',
+    },
+    {
+      name: 'Switch',
+      usage: 'MCP read-only mode in the Dev tools drawer',
     },
     {
       name: 'Select',
@@ -95,7 +99,7 @@ export const componentManifest: ComponentManifest = {
     },
     {
       name: 'ProjectHealth',
-      reason: 'Project health — dual insight cards, protection coverage, and review table',
+      reason: 'Project health — dual insight cards and review table',
     },
     {
       name: 'ServiceIconStack',
@@ -110,10 +114,6 @@ export const componentManifest: ComponentManifest = {
       reason: 'Info-tinted card with posture-based improvement recommendations',
     },
     {
-      name: 'ProtectionCoverageSection',
-      reason: 'Four-metric coverage strip inside Card with Card.Title',
-    },
-    {
       name: 'ServicesRequiringReviewList',
       reason: 'DataList of services with findings and recommended actions',
     },
@@ -124,7 +124,7 @@ export const componentManifest: ComponentManifest = {
     {
       name: 'HomeRightColumn',
       reason:
-        'Reuses homepage-v5 rail: Developer tools (MCP Banner + CLI quick start) and Product updates with service Select',
+        'Shared Dev tools rail (promo + CLI) and Product updates; Get started opens DevToolsDrawer'
     },
   ],
 
@@ -133,7 +133,7 @@ export const componentManifest: ComponentManifest = {
     'Project health uses a Filter.Trigger project control; production scope is fixed in mock data.',
     'Insight card tints use Aquarium border/background tokens on Box wrappers around Card.',
     'Platform status is plain text with a token-colored dot in ConsoleHeader.',
-    'Right column is homepage-v5 HomeRightColumn — not the previous MCP + carousel.',
+    'Right column is shared HomeRightColumn — Dev tools plus Product updates.',
     'Shared helpers (ConsoleHeader, OrgSidebar, ServiceIcon) live outside this folder.',
   ],
 }

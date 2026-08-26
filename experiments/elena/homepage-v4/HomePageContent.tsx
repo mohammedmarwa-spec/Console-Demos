@@ -18,7 +18,7 @@ import folderCloseIcon from '@aivenio/aquarium/icons/folderClose'
 import linkExternalIcon from '@aivenio/aquarium/icons/linkExternal'
 import { getServiceIconUrl } from '@experiments/_shared/components/ServiceIcon'
 import type { ServiceTypeId } from '@experiments/_shared/lib/serviceTypes'
-import { HomeRightColumn } from '@experiments/elena/homepage-v5/HomeRightColumn'
+import { DevToolsDrawerProvider, HomeRightColumn, useDevToolsDrawer } from '@experiments/_shared/home/HomeRightColumn'
 import { OrgSidebar } from '@/components/OrgSidebar'
 import { ROUTES } from '@/lib/navigation'
 import {
@@ -55,35 +55,37 @@ const ICON_TONE: Record<IconTone, { iconColor: string; iconBg: string }> = {
 
 export function HomePageContent() {
   return (
-    <Box
-      style={{
-        display: 'flex',
-        flex: 1,
-        minHeight: 0,
-        overflow: 'hidden',
-      }}
-    >
-      <OrgSidebar orgName={ORG_NAME} activeItem="overview" />
-      <Box className={styles.overviewGrid}>
-        <Box className={styles.page}>
-          <PageHeader
-            title={`Welcome to Aiven Platform, ${USER_NAME}`}
-            subtitle="Your first project is ready. Choose what you want to build."
-          />
-          <CreateFirstResource />
-          <YourProject />
-          <Box className={styles.bottomGrid}>
-            <GettingStartedCard />
-            <WhatHappensNextCard />
+    <DevToolsDrawerProvider>
+      <Box
+        style={{
+          display: 'flex',
+          flex: 1,
+          minHeight: 0,
+          overflow: 'hidden',
+        }}
+      >
+        <OrgSidebar orgName={ORG_NAME} activeItem="overview" />
+        <Box className={styles.overviewGrid}>
+          <Box className={styles.page}>
+            <PageHeader
+              title={`Welcome to Aiven Platform, ${USER_NAME}`}
+              subtitle="Your first project is ready. Choose what you want to build."
+            />
+            <CreateFirstResource />
+            <YourProject />
+            <Box className={styles.bottomGrid}>
+              <GettingStartedCard />
+              <WhatHappensNextCard />
+            </Box>
+            <LearnAboutAiven />
           </Box>
-          <LearnAboutAiven />
+
+          <Divider direction="vertical" />
+
+          <HomeRightColumn />
         </Box>
-
-        <Divider direction="vertical" />
-
-        <HomeRightColumn />
       </Box>
-    </Box>
+    </DevToolsDrawerProvider>
   )
 }
 
@@ -147,6 +149,16 @@ function CreateFirstResource() {
 CreateFirstResource.displayName = 'CreateFirstResource'
 
 function ResourceAction({ action }: { action: FirstResourceAction }) {
+  const { openDrawer } = useDevToolsDrawer()
+
+  if (action.id === 'setup-mcp') {
+    return (
+      <Button.Secondary type="button" onClick={() => openDrawer('mcp')}>
+        {action.actionLabel}
+      </Button.Secondary>
+    )
+  }
+
   if (action.actionKind === 'primary') {
     return (
       <Button.Primary type="button" onClick={() => undefined}>

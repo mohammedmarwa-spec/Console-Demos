@@ -1,0 +1,18 @@
+<svg width="256" height="118" viewBox="0 0 256 118" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <g clip-path="url(#clip0_dev_tools_banner)">
+    <path d="M94 37.514L142.589 -11.0742C149.157 -17.6419 159.806 -17.6419 166.373 -11.0742C172.941 -4.50636 172.941 6.14212 166.373 12.7099M156.433 94L148.747 86.3136C146.425 83.9917 146.425 80.2266 148.747 77.9047L190.158 36.4937C196.725 29.9263 196.725 19.2777 190.158 12.7099C183.59 6.14212 172.941 6.14212 166.373 12.7099L129.676 49.4061" stroke="#2ED0CD" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M177.244 25.6166L140.547 62.3141C133.979 68.8815 123.33 68.8815 116.763 62.3141C110.195 55.7462 110.195 45.0974 116.763 38.5301L153.46 1.83356" stroke="#2ED0CD" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M215.476 44L182 168H207.524L241 44H215.476Z" fill="#5FFA74"/>
+    <rect x="96" y="72" width="64" height="36" rx="4" fill="#59D2F4" stroke="#05080F" stroke-width="0.66"/>
+    <circle cx="104.5" cy="81.5" r="1.6" fill="#05080F"/>
+    <circle cx="111.5" cy="81.5" r="1.6" fill="#05080F"/>
+    <circle cx="118.5" cy="81.5" r="1.6" fill="#05080F"/>
+    <path d="M104 89.5H152" stroke="#05080F" stroke-width="0.66" stroke-linecap="round"/>
+    <text x="104" y="102" fill="#05080F" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, monospace" font-size="11" font-weight="600">$ avn</text>
+  </g>
+  <defs>
+    <clipPath id="clip0_dev_tools_banner">
+      <rect width="256" height="118" fill="white"/>
+    </clipPath>
+  </defs>
+</svg>

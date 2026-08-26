@@ -53,7 +53,7 @@ import {
   type HomeProject,
   type IconTone,
 } from './mockData'
-import { HomeRightColumn } from './HomeRightColumn'
+import { HomeRightColumn } from '@experiments/_shared/home/HomeRightColumn'
 import styles from './HomePageContent.module.css'
 
 const SERVICE_ICON_STACK_SIZE = 32

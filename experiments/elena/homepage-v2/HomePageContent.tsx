@@ -11,7 +11,6 @@ import {
   DropdownMenu,
   EmptyState,
   Filter,
-  Icon,
   InlineIcon,
   Link,
   PageHeader,
@@ -20,18 +19,13 @@ import {
   Typography,
 } from '@aivenio/aquarium'
 import type { DataListColumn } from '@aivenio/aquarium'
-import type { IconifyIcon } from '@iconify/react'
 import arrowRight from '@aivenio/aquarium/icons/arrowRight'
-import cloudIcon from '@aivenio/aquarium/icons/cloud'
 import filterIcon from '@aivenio/aquarium/icons/filter'
 import helpIcon from '@aivenio/aquarium/icons/help'
-import lockIcon from '@aivenio/aquarium/icons/lock'
-import notificationsIcon from '@aivenio/aquarium/icons/notifications'
-import shieldIcon from '@aivenio/aquarium/icons/shield'
 import warningSign from '@aivenio/aquarium/icons/warningSign'
 import { getServiceIconUrl, ServiceIcon } from '@experiments/_shared/components/ServiceIcon'
 import { imageSrc } from '@experiments/_shared/lib/image'
-import { HomeRightColumn } from '@experiments/elena/homepage-v5/HomeRightColumn'
+import { HomeRightColumn } from '@experiments/_shared/home/HomeRightColumn'
 import { OrgSidebar } from '@/components/OrgSidebar'
 import { ROUTES } from '@/lib/navigation'
 import { useResolvedTheme } from '@/theme/ThemeProvider'
@@ -43,14 +37,12 @@ import {
   SERVICES_BY_PROJECT,
   getAttentionServices,
   getImprovementRecommendations,
-  getProtectionMetrics,
   getProjectPreviewServices,
   getScopedServices,
   getServicesRequiringReview,
   type HomeAttentionItem,
   type HomeImprovementRecommendation,
   type HomeProject,
-  type HomeProtectionMetric,
   type HomeReviewRow,
   type HomeServiceRow,
 } from './mockData'
@@ -58,13 +50,6 @@ import projectIcon from './assets/home-page-project.svg'
 import styles from './HomePageContent.module.css'
 
 const PROJECT_HEALTH_SCOPE = 'production' as const
-
-const PROTECTION_ICONS: Record<HomeProtectionMetric['id'], IconifyIcon> = {
-  failover: shieldIcon,
-  backups: cloudIcon,
-  alerting: notificationsIcon,
-  network: lockIcon,
-}
 
 const IMPROVE_WHY_COPY =
   'Recommendations are based on configuration gaps in the selected project scope. They highlight preventable risks before they become incidents.'
@@ -91,10 +76,6 @@ export function HomePageContent() {
   )
   const improvements = useMemo(
     () => getImprovementRecommendations(projectServices, PROJECT_HEALTH_SCOPE),
-    [projectServices],
-  )
-  const protectionMetrics = useMemo(
-    () => getProtectionMetrics(projectServices, PROJECT_HEALTH_SCOPE),
     [projectServices],
   )
   const reviewRows = useMemo(
@@ -144,7 +125,6 @@ export function HomePageContent() {
             scopedServices={scopedServices}
             attentionItems={attentionItems}
             improvements={improvements}
-            protectionMetrics={protectionMetrics}
             reviewRows={reviewRows}
             onProjectChange={setCurrentProjectId}
           />
@@ -221,7 +201,6 @@ function ProjectHealth({
   scopedServices,
   attentionItems,
   improvements,
-  protectionMetrics,
   reviewRows,
   onProjectChange,
 }: {
@@ -230,7 +209,6 @@ function ProjectHealth({
   scopedServices: ReturnType<typeof getScopedServices>
   attentionItems: HomeAttentionItem[]
   improvements: HomeImprovementRecommendation[]
-  protectionMetrics: HomeProtectionMetric[]
   reviewRows: HomeReviewRow[]
   onProjectChange: (id: string) => void
 }) {
@@ -270,7 +248,6 @@ function ProjectHealth({
             <AttentionRequiredCard items={attentionItems} />
             <ImproveProjectCard recommendations={improvements} />
           </Box>
-          <ProtectionCoverageSection metrics={protectionMetrics} />
           <ServicesRequiringReviewList rows={reviewRows} />
         </Box>
       )}
@@ -476,58 +453,6 @@ function ImproveProjectCard({ recommendations }: { recommendations: HomeImprovem
 }
 
 ImproveProjectCard.displayName = 'ImproveProjectCard'
-
-function ProtectionCoverageSection({ metrics }: { metrics: HomeProtectionMetric[] }) {
-  return (
-    <Card
-      fullWidth
-      title={
-        <Card.Title style={{ alignItems: 'center', gap: 8 }}>
-          Protection coverage
-          <Tooltip content="Summarizes preventive controls configured across services in the selected scope.">
-            <Box component="span" aria-label="About protection coverage" style={{ display: 'inline-flex' }}>
-              <InlineIcon icon={helpIcon} color="muted" />
-            </Box>
-          </Tooltip>
-        </Card.Title>
-      }
-    >
-      <Box className={styles.coverageGrid}>
-        {metrics.map((metric) => {
-          const icon = PROTECTION_ICONS[metric.id]
-          const statusColor =
-            metric.tone === 'success'
-              ? 'var(--aquarium-text-color-success-intense)'
-              : 'var(--aquarium-text-color-warning-intense)'
-          return (
-            <Box key={metric.id} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8 }}>
-              <Box
-                aria-hidden
-                style={{
-                  width: 40,
-                  height: 40,
-                  borderRadius: '50%',
-                  backgroundColor: 'var(--aquarium-background-color-muted)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                }}
-              >
-                <Icon icon={icon} style={{ width: 20, height: 20, color: 'var(--aquarium-text-color-muted)' }} />
-              </Box>
-              <Typography.SmallStrong>{metric.label}</Typography.SmallStrong>
-              <Box style={{ color: statusColor }}>
-                <Typography.Small>{metric.statusText}</Typography.Small>
-              </Box>
-            </Box>
-          )
-        })}
-      </Box>
-    </Card>
-  )
-}
-
-ProtectionCoverageSection.displayName = 'ProtectionCoverageSection'
 
 function ServicesRequiringReviewList({ rows }: { rows: HomeReviewRow[] }) {
   const columns: DataListColumn<HomeReviewRow>[] = [

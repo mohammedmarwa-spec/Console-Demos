@@ -11,7 +11,7 @@ export const USER_INITIALS = 'EI'
 export const DOCS = {
   documentation: 'https://aiven.io/docs',
   askAi: 'https://aiven.io/docs',
-  mcp: 'https://aiven.io/docs/tools/mcp',
+  mcp: 'https://aiven.io/docs/tools/mcp-server',
   cli: 'https://aiven.io/docs/tools/cli',
   changelog: 'https://aiven.io/changelog',
   changelogRss: 'https://aiven.io/changelog/feed.xml',
