@@ -1,0 +1,19 @@
+/*
+ * Single column first, two equal columns from Aquarium's `sm` breakpoint (672px).
+ * A media query is used instead of `repeat(auto-fit, minmax(...))` because this row is a
+ * flex-column child: on resize Chrome resolves its available width as indefinite, so
+ * `auto-fit` falls back to one repetition and the desktop layout stays collapsed.
+ */
+.filterRow {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 24px;
+  align-items: start;
+  width: 100%;
+}
+
+@media (min-width: 672px) {
+  .filterRow {
+    grid-template-columns: 1fr 1fr;
+  }
+}

@@ -14,6 +14,7 @@ import { DesignerAvatar } from './DesignerAvatar'
 import { ALL_DESIGNERS_VALUE, DesignerFilter } from './DesignerFilter'
 import { PrototypeCard } from './PrototypeCard'
 import { getOwnerDisplayName } from '../../lib/designTeamOwners'
+import styles from './PrototypeHub.module.css'
 
 type TabId = 'experiments' | 'templates'
 
@@ -94,15 +95,7 @@ export function PrototypeHub({ experiments, templates }: PrototypeHubProps) {
         <Tabs value={tab} onChange={(value) => setTab(value as TabId)}>
           <Tabs.Tab title="Experiments" value="experiments" badge={totalExperiments}>
             <Box style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
-              <Box
-                style={{
-                  display: 'grid',
-                  gridTemplateColumns: '1fr 1fr',
-                  gap: 24,
-                  alignItems: 'start',
-                  width: '100%',
-                }}
-              >
+              <Box className={styles.filterRow}>
                 <Input
                   labelText="Search"
                   placeholder="Search experiments…"
