@@ -13,7 +13,6 @@ import {
   Icon,
   Link,
   PageHeader,
-  Section,
   StatusChip,
   Typography,
 } from '@aivenio/aquarium'
@@ -42,12 +41,10 @@ import {
   PROJECTS,
   SERVICES_BY_PROJECT,
   USER_NAME,
-  getAttentionServices,
   getProjectHealth,
   getProjectPreviewServices,
   getScopedServices,
   getServicesRequiringReview,
-  type HomeAttentionItem,
   type HomeProject,
   type HomeReviewRow,
   type HomeServiceRow,
@@ -93,10 +90,6 @@ export function HomePageContent() {
 
   const scopedServices = useMemo(
     () => getScopedServices(projectServices, PROJECT_HEALTH_SCOPE),
-    [projectServices],
-  )
-  const attentionItems = useMemo(
-    () => getAttentionServices(projectServices, PROJECT_HEALTH_SCOPE),
     [projectServices],
   )
   const reviewRows = useMemo(
@@ -148,7 +141,6 @@ export function HomePageContent() {
           <ProjectInsightsPanel
             project={insightsProject}
             scopedServices={scopedServices}
-            attentionItems={attentionItems}
             reviewRows={reviewRows}
             onClose={() => setInsightsProjectId(null)}
           />
@@ -426,6 +418,10 @@ function ProjectsList({
   onOpenInsights: (projectId: string) => void
 }) {
   const [view, setView] = useState<ProjectListView>('list')
+  const projectsWithAlerts = useMemo(
+    () => PROJECTS.filter((project) => getProjectHealth(project.id).statusText !== 'Healthy'),
+    [],
+  )
 
   const columns: DataListColumn<HomeProject>[] = [
     {
@@ -470,7 +466,7 @@ function ProjectsList({
   return (
     <Box style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
       <Box style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16 }}>
-        <Typography.LargeStrong>Recent projects</Typography.LargeStrong>
+        <Typography.LargeStrong>Projects with alerts</Typography.LargeStrong>
         <Box className={styles.projectsToolbar}>
           <Typography.Default>
             <Link href={ROUTES.projectsPage} icon={arrowRight} iconPlacement="right">
@@ -483,13 +479,13 @@ function ProjectsList({
       {view === 'list' ? (
         <DataList
           columns={columns}
-          rows={PROJECTS}
+          rows={projectsWithAlerts}
           sticky={false}
           rowClassName={(project) => (project.id === activeProjectId ? styles.selectedRow : undefined)}
         />
       ) : (
         <Box className={styles.recentProjectsGrid}>
-          {PROJECTS.map((project) => (
+          {projectsWithAlerts.map((project) => (
             <Box
               key={project.id}
               className={`${styles.projectCard}${project.id === activeProjectId ? ` ${styles.selectedCard}` : ''}`}
@@ -527,13 +523,11 @@ ProjectsList.displayName = 'ProjectsList'
 function ProjectInsightsPanel({
   project,
   scopedServices,
-  attentionItems,
   reviewRows,
   onClose,
 }: {
   project: HomeProject
   scopedServices: ReturnType<typeof getScopedServices>
-  attentionItems: HomeAttentionItem[]
   reviewRows: HomeReviewRow[]
   onClose: () => void
 }) {
@@ -544,11 +538,7 @@ function ProjectInsightsPanel({
         <Button.Icon type="button" dense aria-label="Close project insights" icon={crossIcon} onClick={onClose} />
       </Box>
       <Box className={styles.insightsBody}>
-        <ProjectHealth
-          scopedServices={scopedServices}
-          attentionItems={attentionItems}
-          reviewRows={reviewRows}
-        />
+        <ProjectHealth scopedServices={scopedServices} reviewRows={reviewRows} />
       </Box>
     </Box>
   )
@@ -558,73 +548,23 @@ ProjectInsightsPanel.displayName = 'ProjectInsightsPanel'
 
 function ProjectHealth({
   scopedServices,
-  attentionItems,
   reviewRows,
 }: {
   scopedServices: ReturnType<typeof getScopedServices>
-  attentionItems: HomeAttentionItem[]
   reviewRows: HomeReviewRow[]
 }) {
-  const attentionCaption =
-    attentionItems.length === 0
-      ? 'No services need attention'
-      : `${attentionItems.length} ${attentionItems.length === 1 ? 'service needs' : 'services need'} attention`
+  if (scopedServices.length === 0) {
+    return (
+      <EmptyState title="No services in this project">
+        No production services are configured for the selected project.
+      </EmptyState>
+    )
+  }
 
-  return (
-    <Section title="Project health" subtitle={scopedServices.length === 0 ? undefined : attentionCaption}>
-      {scopedServices.length === 0 ? (
-        <EmptyState title="No services in this project">
-          No production services are configured for the selected project.
-        </EmptyState>
-      ) : (
-        <Box style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
-          <AttentionRequiredCard items={attentionItems} />
-          <ServicesRequiringReviewList rows={reviewRows} />
-        </Box>
-      )}
-    </Section>
-  )
+  return <ServicesRequiringReviewList rows={reviewRows} />
 }
 
 ProjectHealth.displayName = 'ProjectHealth'
-
-function AttentionRequiredCard({ items }: { items: HomeAttentionItem[] }) {
-  if (items.length === 0) {
-    return <Typography.Small color="muted">All services are healthy in this scope.</Typography.Small>
-  }
-
-  return (
-    <Box style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-      {items.map((item) => (
-        <Box
-          key={item.service.id}
-          style={{
-            display: 'grid',
-            gridTemplateColumns: 'minmax(0, 1fr) auto auto',
-            gap: 12,
-            alignItems: 'center',
-          }}
-        >
-          <Box style={{ display: 'flex', alignItems: 'center', gap: 12, minWidth: 0 }}>
-            <ServiceIcon serviceTypeId={item.service.serviceTypeId} size={28} />
-            <Box style={{ minWidth: 0 }}>
-              <Typography.DefaultStrong>{item.service.serviceName}</Typography.DefaultStrong>
-              <Typography.Small color="muted">{item.finding}</Typography.Small>
-            </Box>
-          </Box>
-          <StatusChip dense text={item.statusText} status={item.status} />
-          <Typography.Default>
-            <Link href="#" onClick={noopClick}>
-              {item.actionLabel}
-            </Link>
-          </Typography.Default>
-        </Box>
-      ))}
-    </Box>
-  )
-}
-
-AttentionRequiredCard.displayName = 'AttentionRequiredCard'
 
 function ServicesRequiringReviewList({ rows }: { rows: HomeReviewRow[] }) {
   const columns: DataListColumn<HomeReviewRow>[] = [
@@ -670,16 +610,11 @@ function ServicesRequiringReviewList({ rows }: { rows: HomeReviewRow[] }) {
     },
   ]
 
-  return (
-    <Box style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-      <Typography.LargeStrong>Services requiring review</Typography.LargeStrong>
-      {rows.length === 0 ? (
-        <EmptyState title="No services to review">All services look good in this scope.</EmptyState>
-      ) : (
-        <DataList columns={columns} rows={rows} sticky={false} />
-      )}
-    </Box>
-  )
+  if (rows.length === 0) {
+    return <EmptyState title="No services to review">All services look good in this scope.</EmptyState>
+  }
+
+  return <DataList columns={columns} rows={rows} sticky={false} />
 }
 
 ServicesRequiringReviewList.displayName = 'ServicesRequiringReviewList'

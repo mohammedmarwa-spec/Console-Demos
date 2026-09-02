@@ -205,10 +205,10 @@ If you will share work, create a personal branch first — see [contribution-gui
 ### Recommended: Start in Cursor
 
 1. With `npm run dev` running, open http://localhost:5173.
-2. Open a **template** from the Prototype Hub.
+2. Open a **template** or someone else's **experiment** from the Prototype Hub.
 3. In the playground header, click **Start in Cursor**.
 4. Enter your owner slug and experiment name when asked.
-5. Confirm the prompt in Cursor so it scaffolds your experiment folder.
+5. Confirm the prompt in Cursor so it scaffolds your experiment folder (from a template, or as a copy of another experiment).
 
 **Prerequisites:** Cursor installed as a deeplink handler; this repo open as your Cursor workspace; Node.js available. If the browser does not open Cursor, use **Copy prompt** and paste into Cursor chat.
 
@@ -223,6 +223,15 @@ node scripts/create-experiment.mjs \
   --owner elena \
   --name pricing-plan-test \
   --template project-services-list
+```
+
+Or copy another designer's experiment:
+
+```bash
+node scripts/create-experiment.mjs \
+  --owner elena \
+  --name pricing-plan-test \
+  --from kate/homepage-v1
 ```
 
 Available templates live under `experiments/_templates/` (for example `onboarding-starter`, `project-services-list`).

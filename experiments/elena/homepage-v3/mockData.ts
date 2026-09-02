@@ -627,47 +627,18 @@ function reviewFinding(service: HomeServiceRow): { finding: string; actionLabel:
 }
 
 export function getServicesRequiringReview(services: HomeServiceRow[], scope: HomeScope): HomeReviewRow[] {
-  const scoped = getScopedServices(services, scope)
-  const attentionIds = new Set(getAttentionServices(services, scope).map((item) => item.service.id))
-  const improvementServiceNames = new Set(
-    getImprovementRecommendations(services, scope).map((item) => item.affectedServiceName),
-  )
-
-  const prioritized = scoped.filter(
-    (service) =>
-      attentionIds.has(service.id) ||
-      improvementServiceNames.has(service.serviceName) ||
-      service.isPubliclyAccessible ||
-      !service.hasAlertDestination,
-  )
-
-  const reviewRows = prioritized.map((service) => {
-    const { statusText, status } = reviewStatus(service)
-    const { finding, actionLabel } = reviewFinding(service)
+  return getAttentionServices(services, scope).map((item) => {
+    const { statusText, status } = reviewStatus(item.service)
+    const { finding, actionLabel } = reviewFinding(item.service)
     return {
-      id: service.id,
-      service,
+      id: item.service.id,
+      service: item.service,
       statusText,
       status,
       finding,
       actionLabel,
     }
   })
-
-  const shownIds = new Set(reviewRows.map((row) => row.id))
-  const healthyFallback = scoped.find((service) => service.nodeStatus === 'healthy' && !shownIds.has(service.id))
-  if (healthyFallback) {
-    reviewRows.push({
-      id: healthyFallback.id,
-      service: healthyFallback,
-      statusText: 'Healthy',
-      status: 'success',
-      finding: 'No recommendations',
-      actionLabel: null,
-    })
-  }
-
-  return reviewRows
 }
 
 function toneFromGap(gap: number, total: number): HomePostureSignalTone {

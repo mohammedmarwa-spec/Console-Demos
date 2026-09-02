@@ -37,10 +37,6 @@ export const componentManifest: ComponentManifest = {
         'Org summary cards (Projects, Resources, Last invoice, Users) and Card.Compact project cards in the 4-up grid',
     },
     {
-      name: 'Section',
-      usage: 'Project health heading and caption in the insights side panel',
-    },
-    {
       name: 'EmptyState',
       usage: 'Empty scope, no attention items, and no review rows in the side panel',
     },
@@ -98,11 +94,11 @@ export const componentManifest: ComponentManifest = {
     },
     {
       name: 'ProjectsList',
-      reason: 'Recent projects with list/cards view switcher, service icon stacks, Health column, and a View alerts link',
+      reason: 'Projects with alerts with list/cards view switcher, service icon stacks, Health column, and a View alerts link',
     },
     {
       name: 'ProjectViewSwitcher',
-      reason: 'Button.Icon pair that toggles Recent projects between DataList and a 4-up Card.Compact grid',
+      reason: 'Button.Icon pair that toggles Projects with alerts between DataList and a 4-up Card.Compact grid',
     },
     {
       name: 'ServiceIconStack',
@@ -126,15 +122,11 @@ export const componentManifest: ComponentManifest = {
     },
     {
       name: 'ProjectHealth',
-      reason: 'Aquarium Section wrapping the attention-required card and services requiring review',
-    },
-    {
-      name: 'AttentionRequiredCard',
-      reason: 'List of services with active alerts or unhealthy nodes under Project health',
+      reason: 'Alerts content in the insights panel: services review DataList only',
     },
     {
       name: 'ServicesRequiringReviewList',
-      reason: 'DataList of services with findings and recommended actions',
+      reason: 'DataList of non-healthy services with findings and recommended actions',
     },
     {
       name: 'OrgSidebar',
@@ -149,8 +141,9 @@ export const componentManifest: ComponentManifest = {
 
   notes: [
     'Copied from homepage-v2. Protection coverage and Improve your project are removed.',
-    'Four org summary cards sit above Recent projects. Project and resource counts come from PROJECTS; invoice and users match the existing homepage mock.',
-    'Recent projects default to a vertical DataList; a list/cards switcher reveals a 4-up Card.Compact grid.',
+    'Four org summary cards sit above Projects with alerts. Project and resource counts come from PROJECTS; invoice and users match the existing homepage mock.',
+    'Projects with alerts lists only non-healthy projects (Degraded / Issue); View all projects still counts the full org.',
+    'The list defaults to a vertical DataList; a list/cards switcher reveals a 4-up Card.Compact grid.',
     'Every project name is a Link. Health is derived from production service node status, severity, and alerts.',
     'Project labels (prod, staging, dev) live in a Labels column as dense Chips with the tag icon.',
     'View alerts is a Link in the Actions column and on each compact card; it opens the insights side panel.',

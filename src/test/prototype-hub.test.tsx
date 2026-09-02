@@ -65,13 +65,15 @@ describe('PrototypeHub', () => {
     const user = userEvent.setup()
     renderHub()
 
+    expect(screen.getByRole('tab', { name: /Experiments/ })).toHaveTextContent('2')
+    expect(screen.getByRole('tab', { name: /Templates/ })).toHaveTextContent('1')
     expect(screen.getByRole('button', { name: 'Open Free & Dev: Quick Upgrade V4' })).toBeInTheDocument()
     expect(screen.getByRole('heading', { level: 2, name: 'Elena' })).toBeInTheDocument()
     expect(screen.queryByRole('button', { name: 'Start in Cursor' })).not.toBeInTheDocument()
 
-    await user.click(screen.getByRole('tab', { name: 'Templates' }))
+    await user.click(screen.getByRole('tab', { name: /Templates/ }))
 
-    expect(screen.getByRole('tab', { name: 'Templates' })).toHaveAttribute('aria-selected', 'true')
+    expect(screen.getByRole('tab', { name: /Templates/ })).toHaveAttribute('aria-selected', 'true')
     expect(screen.getByText('Onboarding starter')).toBeInTheDocument()
     expect(screen.queryByRole('heading', { level: 2, name: 'Elena' })).not.toBeInTheDocument()
     expect(screen.queryByRole('button', { name: 'Start in Cursor' })).not.toBeInTheDocument()

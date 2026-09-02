@@ -36,8 +36,12 @@ export const componentManifest: ComponentManifest = {
       usage: 'Environment tag on recent project cards, placed below the service count (prod, staging, dev)',
     },
     {
-      name: 'Select',
-      usage: 'Project selector in Project insights; service filter on the reused homepage-v5 product updates list',
+      name: 'Filter',
+      usage: 'Filter.Trigger project control in Services with alerts (with DropdownMenu)',
+    },
+    {
+      name: 'DropdownMenu',
+      usage: 'Searchable project picker opened from Filter.Trigger',
     },
     {
       name: 'EmptyState',
@@ -97,7 +101,7 @@ export const componentManifest: ComponentManifest = {
     },
     {
       name: 'ProjectHealth',
-      reason: 'Project Select and drill-down list (posture cards hidden)',
+      reason: 'Services with alerts: Filter.Trigger project control and drill-down list (posture cards hidden)',
     },
     {
       name: 'OrgSidebar',

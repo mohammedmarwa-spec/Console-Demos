@@ -47,8 +47,8 @@ export function PlaygroundHeader() {
 
   function handleStartInCursor() {
     if (!experimentPage) return
-    // Always open the modal so templates can pick owner/name (fork) and experiments
-    // can review/copy the prompt before launching Cursor.
+    // Always open the modal so designers can pick owner/name and fork a template
+    // or copy someone else's experiment into their folder.
     setCursorModalOpen(true)
   }
 

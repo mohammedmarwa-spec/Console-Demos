@@ -7,7 +7,6 @@ import { aquariumSelectValue } from '../../lib/aquariumSelect'
 import {
   buildCursorPrompt,
   CURSOR_DEEPLINK_MAX_LENGTH,
-  getCursorPromptIntent,
   slugify,
   storeOwnerSlug,
   suggestExperimentSlug,
@@ -44,7 +43,6 @@ export function StartInCursorModal({ entry, open, onClose }: StartInCursorModalP
 
   if (!entry) return null
 
-  const intent = getCursorPromptIntent(entry)
   const normalizedExperiment = slugify(experimentName)
   const resolvedOwner = ownerSlug || fallbackOwner
   const canSubmit = resolvedOwner.length > 0 && normalizedExperiment.length > 0
@@ -79,7 +77,6 @@ export function StartInCursorModal({ entry, open, onClose }: StartInCursorModalP
     setCopyState('copied')
   }
 
-  const isFork = intent === 'fork'
   const copyLabel =
     copyState === 'copied' ? 'Copied' : copyState === 'error' ? 'Copy failed' : 'Copy prompt'
 
@@ -89,11 +86,7 @@ export function StartInCursorModal({ entry, open, onClose }: StartInCursorModalP
       onClose={handleClose}
       size="sm"
       title="Start in Cursor"
-      subtitle={
-        isFork
-          ? `Fork "${entry.title}" into your experiment folder.`
-          : `Open "${entry.title}" in Cursor with the right context.`
-      }
+      subtitle={`Fork "${entry.title}" into your experiment folder.`}
       primaryAction={{
         text: 'Open in Cursor',
         onClick: handleOpenInCursor,
@@ -102,7 +95,7 @@ export function StartInCursorModal({ entry, open, onClose }: StartInCursorModalP
       secondaryActions={{ text: 'Cancel', onClick: handleClose }}
     >
       <Box style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-        {isFork && open && (
+        {open && (
           <>
             <Select
               key={`owner-${entry.id}`}
@@ -123,6 +116,9 @@ export function StartInCursorModal({ entry, open, onClose }: StartInCursorModalP
         <Typography.Small color="muted">
           Prerequisites: Cursor installed, this repo cloned locally, and the workspace open in Cursor.
           Review the pre-filled prompt before running the agent.
+          {entry.kind === 'experiment'
+            ? ' This copies the open experiment into your folder.'
+            : null}
         </Typography.Small>
 
         {result && !result.withinLimit && (

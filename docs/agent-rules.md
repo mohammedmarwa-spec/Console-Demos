@@ -42,7 +42,8 @@ Rules:
 ## Scaffold command
 
 ```bash
-node scripts/create-experiment.mjs --owner elena --name first-time-user --from onboarding-test-env
+node scripts/create-experiment.mjs --owner elena --name first-time-user --template onboarding-starter
+node scripts/create-experiment.mjs --owner elena --name first-time-user --from kate/homepage-v1
 ```
 
 ## What to update

@@ -32,12 +32,12 @@ describe('cursorDeeplink', () => {
     expect(slugify('Design team')).toBe('design-team')
   })
 
-  it('detects fork vs edit intent', () => {
+  it('always uses fork intent for Start in Cursor', () => {
     expect(getCursorPromptIntent(template)).toBe('fork')
-    expect(getCursorPromptIntent(experiment)).toBe('edit')
+    expect(getCursorPromptIntent(experiment)).toBe('fork')
   })
 
-  it('builds fork prompt with scaffold command', () => {
+  it('builds fork prompt with scaffold command for templates', () => {
     const result = buildCursorPrompt(template, {
       ownerSlug: 'elena',
       experimentSlug: 'my-flow',
@@ -51,10 +51,16 @@ describe('cursorDeeplink', () => {
     expect(result.withinLimit).toBe(true)
   })
 
-  it('builds edit prompt for experiments', () => {
-    const result = buildCursorPrompt(experiment)
-    expect(result.intent).toBe('edit')
-    expect(result.prompt).toContain('experiments/elena/first-time-user/')
+  it('builds fork prompt with --from for experiments', () => {
+    const result = buildCursorPrompt(experiment, {
+      ownerSlug: 'kate',
+      experimentSlug: 'first-time-user',
+    })
+    expect(result.intent).toBe('fork')
+    expect(result.prompt).toContain('elena/first-time-user')
+    expect(result.prompt).toContain(
+      'node scripts/create-experiment.mjs --owner kate --name first-time-user --from elena/first-time-user',
+    )
     expect(result.withinLimit).toBe(true)
   })
 

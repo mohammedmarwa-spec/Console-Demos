@@ -48,9 +48,12 @@ export function storeOwnerSlug(ownerSlug: string): void {
   }
 }
 
-/** Templates are forked into a new experiment; experiments are edited in place. */
-export function getCursorPromptIntent(entry: DiscoveredPage): CursorPromptIntent {
-  return entry.kind === 'experiment' ? 'edit' : 'fork'
+/**
+ * Start in Cursor always forks into a new experiment folder —
+ * from a template or by copying someone else's experiment.
+ */
+export function getCursorPromptIntent(_entry: DiscoveredPage): CursorPromptIntent {
+  return 'fork'
 }
 
 function playgroundRulesBlock(): string {
@@ -61,19 +64,35 @@ function playgroundRulesBlock(): string {
 - Follow .cursor/rules/ and docs/agent-rules.md.`
 }
 
+function scaffoldCommand(
+  entry: DiscoveredPage,
+  ownerSlug: string,
+  experimentSlug: string,
+): string {
+  if (entry.kind === 'experiment' && entry.ownerSlug) {
+    return `node scripts/create-experiment.mjs --owner ${ownerSlug} --name ${experimentSlug} --from ${entry.ownerSlug}/${entry.slug}`
+  }
+  return `node scripts/create-experiment.mjs --owner ${ownerSlug} --name ${experimentSlug} --template ${entry.slug}`
+}
+
 export function buildForkCursorPrompt({
   entry,
   ownerSlug,
   experimentSlug,
 }: ForkCursorPromptInput): string {
   const folder = `experiments/${ownerSlug}/${experimentSlug}`
+  const sourceKind = entry.kind === 'experiment' ? 'experiment' : 'template'
+  const sourcePath =
+    entry.kind === 'experiment' && entry.ownerSlug
+      ? ` (${entry.ownerSlug}/${entry.slug})`
+      : ''
 
-  return `Use the "${entry.title}" template as the base.
+  return `Use the "${entry.title}" ${sourceKind}${sourcePath} as the base.
 
 Create a new experiment in Console Prototype Lab.
 
 Run (or replicate exactly):
-node scripts/create-experiment.mjs --owner ${ownerSlug} --name ${experimentSlug} --template ${entry.slug}
+${scaffoldCommand(entry, ownerSlug, experimentSlug)}
 
 Target folder: ${folder}/
 Preview route: /experiments/${ownerSlug}/${experimentSlug}
@@ -132,13 +151,12 @@ export function buildCursorPromptUrl(prompt: string): string {
 }
 
 export function suggestExperimentSlug(entry: DiscoveredPage): string {
-  if (entry.kind === 'experiment') return entry.slug
-  return slugify(entry.title)
+  return slugify(entry.title) || entry.slug
 }
 
-export function suggestOwnerSlug(entry: DiscoveredPage): string {
+/** Prefer the designer's saved owner — never default to the source experiment's owner. */
+export function suggestOwnerSlug(_entry?: DiscoveredPage): string {
   const stored = getStoredOwnerSlug()
   if (stored) return stored
-  if (entry.kind === 'experiment' && entry.ownerSlug) return entry.ownerSlug
   return listOwnerSlugs()[0] ?? ''
 }

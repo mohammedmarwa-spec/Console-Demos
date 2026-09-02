@@ -1,9 +1,10 @@
 #!/usr/bin/env node
 /**
- * Scaffold a new experiment by copying a template folder.
+ * Scaffold a new experiment by copying a template or another experiment folder.
  *
  * Usage:
  *   node scripts/create-experiment.mjs --owner elena --name my-experiment --template onboarding-starter
+ *   node scripts/create-experiment.mjs --owner elena --name my-experiment --from kate/homepage-v1
  */
 
 import { cpSync, existsSync, readFileSync, readdirSync } from 'node:fs'
@@ -46,11 +47,56 @@ function listKnownOwnerSlugs() {
   return Object.keys(owners).sort()
 }
 
-const { owner, name, template } = parseArgs(process.argv)
+function resolveSourceDir({ template, from }) {
+  if (template && from) {
+    console.error('Use either --template <templateSlug> or --from <owner>/<slug>, not both.')
+    process.exit(1)
+  }
 
-if (!owner || !name || !template) {
+  if (template) {
+    const availableTemplates = listAvailableTemplates()
+    if (!availableTemplates.includes(template)) {
+      console.error(`Unknown template: "${template}"`)
+      console.error(`Available templates: ${availableTemplates.join(', ') || '(none found)'}`)
+      process.exit(1)
+    }
+    return {
+      sourceDir: join(TEMPLATES_ROOT, template),
+      sourceLabel: `template ${template}`,
+    }
+  }
+
+  if (from) {
+    const parts = from.split('/').filter(Boolean)
+    if (parts.length !== 2) {
+      console.error(`Invalid --from value: "${from}"`)
+      console.error('Expected format: --from <ownerSlug>/<experimentSlug>')
+      process.exit(1)
+    }
+    const [sourceOwner, sourceSlug] = parts
+    const sourceDir = join(EXPERIMENTS_ROOT, sourceOwner, sourceSlug)
+    if (!existsSync(sourceDir)) {
+      console.error(`Unknown experiment source: "${from}"`)
+      console.error(`Expected folder: experiments/${sourceOwner}/${sourceSlug}/`)
+      process.exit(1)
+    }
+    return {
+      sourceDir,
+      sourceLabel: `experiment ${sourceOwner}/${sourceSlug}`,
+    }
+  }
+
   console.error(
-    'Usage: node scripts/create-experiment.mjs --owner <ownerSlug> --name <slug> --template <templateSlug>',
+    'Usage: node scripts/create-experiment.mjs --owner <ownerSlug> --name <slug> (--template <templateSlug> | --from <owner>/<slug>)',
+  )
+  process.exit(1)
+}
+
+const { owner, name, template, from } = parseArgs(process.argv)
+
+if (!owner || !name) {
+  console.error(
+    'Usage: node scripts/create-experiment.mjs --owner <ownerSlug> --name <slug> (--template <templateSlug> | --from <owner>/<slug>)',
   )
   process.exit(1)
 }
@@ -62,15 +108,8 @@ if (!knownOwners.includes(owner)) {
   process.exit(1)
 }
 
-const availableTemplates = listAvailableTemplates()
-if (!availableTemplates.includes(template)) {
-  console.error(`Unknown template: "${template}"`)
-  console.error(`Available templates: ${availableTemplates.join(', ') || '(none found)'}`)
-  process.exit(1)
-}
-
+const { sourceDir, sourceLabel } = resolveSourceDir({ template, from })
 const slug = slugify(name)
-const sourceDir = join(TEMPLATES_ROOT, template)
 const targetDir = join(EXPERIMENTS_ROOT, owner, slug)
 
 if (existsSync(targetDir)) {
@@ -81,6 +120,7 @@ if (existsSync(targetDir)) {
 cpSync(sourceDir, targetDir, { recursive: true })
 
 console.log(`Created experiment: ${owner}/${slug}`)
+console.log(`Copied from: ${sourceLabel}`)
 console.log(`Folder: experiments/${owner}/${slug}/`)
 console.log(`Update pageMeta (title, description) in ${join('experiments', owner, slug, 'index.tsx')}`)
 console.log(

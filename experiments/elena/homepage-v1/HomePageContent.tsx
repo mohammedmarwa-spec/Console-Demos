@@ -10,11 +10,12 @@ import {
   ChoiceChipGroup,
   DataList,
   Divider,
+  DropdownMenu,
   EmptyState,
+  Filter,
   InlineIcon,
   Link,
   PageHeader,
-  Select,
   StatusChip,
   Tooltip,
   Typography,
@@ -22,13 +23,13 @@ import {
 import type { DataListColumn } from '@aivenio/aquarium'
 import arrowRight from '@aivenio/aquarium/icons/arrowRight'
 import errorSign from '@aivenio/aquarium/icons/error'
+import filterIcon from '@aivenio/aquarium/icons/filter'
 import helpIcon from '@aivenio/aquarium/icons/help'
 import warningSign from '@aivenio/aquarium/icons/warningSign'
 import { getServiceIconUrl, ServiceIcon } from '@experiments/_shared/components/ServiceIcon'
 import { imageSrc } from '@experiments/_shared/lib/image'
 import { HomeRightColumn } from '@experiments/_shared/home/HomeRightColumn'
 import { OrgSidebar } from '@/components/OrgSidebar'
-import { aquariumSelectValue } from '@/lib/aquariumSelect'
 import { ROUTES } from '@/lib/navigation'
 import { useResolvedTheme } from '@/theme/ThemeProvider'
 import {
@@ -293,22 +294,33 @@ function ProjectHealth({
   onSelectSignal: (id: HomePostureSignalId | null) => void
   onClearActiveSignal: () => void
 }) {
-  const projectOptions = projects.map((item) => ({ label: item.name, value: item.id }))
   const showInsightCards = SHOW_POSTURE_INSIGHT_CARDS && postureSignals.length > 0
   const showEmptyPosture = SHOW_POSTURE_INSIGHT_CARDS && postureSignals.length === 0
 
   return (
     <Box style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
-      <Typography.LargeStrong>Project insights</Typography.LargeStrong>
+      <Typography.LargeStrong>Services with alerts</Typography.LargeStrong>
       <Box style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
-        <Box className={styles.projectSelect}>
-          <Select
-            labelText="Project"
-            options={projectOptions}
-            value={project.id}
-            onChange={(selected) => onProjectChange(aquariumSelectValue(selected, project.id))}
-            reserveSpaceForError={false}
-          />
+        <Box style={{ display: 'flex', alignItems: 'center', gap: 16, flexWrap: 'wrap' }}>
+          <DropdownMenu
+            placement="bottom-left"
+            searchable
+            emptyState="No results found"
+            onAction={(action) => onProjectChange(String(action))}
+            selectionMode="single"
+            selection={new Set([project.id])}
+          >
+            <DropdownMenu.Trigger>
+              <Filter.Trigger labelText="Project" icon={filterIcon} value={project.name} />
+            </DropdownMenu.Trigger>
+            <DropdownMenu.Items>
+              {projects.map((item) => (
+                <DropdownMenu.Item key={item.id} id={item.id}>
+                  {item.name}
+                </DropdownMenu.Item>
+              ))}
+            </DropdownMenu.Items>
+          </DropdownMenu>
         </Box>
 
         {showEmptyPosture ? (

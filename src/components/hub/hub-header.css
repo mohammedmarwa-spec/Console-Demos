@@ -121,7 +121,6 @@
   opacity: 0;
   pointer-events: none;
   transition: opacity 0.2s ease;
-  animation: hub-photo-fade-in 0.35s ease;
 }
 
 .hub-header--preview-active .hub-header__asterisk--secondary {
@@ -130,6 +129,7 @@
 
 .hub-header--preview-active .hub-header__photo-preview {
   opacity: 1;
+  animation: hub-photo-fade-in 0.35s ease;
 }
 
 @keyframes hub-asterisk-spin {

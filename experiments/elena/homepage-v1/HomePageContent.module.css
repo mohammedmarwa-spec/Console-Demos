@@ -73,8 +73,3 @@
   align-items: flex-start;
   gap: 8px;
 }
-
-.projectSelect {
-  min-width: 240px;
-  max-width: 320px;
-}

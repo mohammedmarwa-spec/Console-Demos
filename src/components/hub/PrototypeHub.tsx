@@ -17,11 +17,6 @@ import { getOwnerDisplayName, listOwnerSlugs } from '../../lib/designTeamOwners'
 
 type TabId = 'experiments' | 'templates'
 
-const TABS: { id: TabId; label: string }[] = [
-  { id: 'experiments', label: 'Experiments' },
-  { id: 'templates', label: 'Templates' },
-]
-
 const ALL_OWNERS_VALUE = 'all'
 const DEFAULT_AREA_FILTER: HubAreaFilterId = 'all'
 
@@ -83,10 +78,7 @@ export function PrototypeHub({ experiments, templates }: PrototypeHubProps) {
     return templates.filter((entry) => !query || matchesSearch(entry, query))
   }, [templates, query])
 
-  const totalVisible =
-    tab === 'experiments'
-      ? filteredExperimentGroups.reduce((sum, group) => sum + group.entries.length, 0)
-      : filteredTemplates.length
+  const totalExperiments = filteredExperimentGroups.reduce((sum, group) => sum + group.entries.length, 0)
 
   return (
     <Box style={{ minHeight: '100vh' }}>
@@ -106,79 +98,103 @@ export function PrototypeHub({ experiments, templates }: PrototypeHubProps) {
           margin: '0 auto',
         }}
       >
-        <Box style={{ marginBottom: 24 }}>
-          <Tabs value={tab} onChange={(value) => setTab(value as TabId)}>
-            {TABS.map((t) => (
-              <Tabs.Tab key={t.id} title={t.label} value={t.id} />
-            ))}
-          </Tabs>
-        </Box>
-
-        <Box
-          style={{
-            display: 'grid',
-            gridTemplateColumns:
-              tab === 'experiments' ? 'repeat(auto-fit, minmax(240px, 1fr))' : 'minmax(240px, 1fr)',
-            gap: 16,
-            marginBottom: 32,
-            alignItems: 'end',
-          }}
-        >
-          <Input
-            labelText="Search"
-            placeholder={tab === 'experiments' ? 'Search experiments…' : 'Search templates…'}
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            aria-label="Search"
-          />
-          {tab === 'experiments' && (
-            <Select
-              labelText="Owner"
-              options={ownerOptions}
-              value={ownerFilter}
-              onChange={(selected) => setOwnerFilter(aquariumSelectValue(selected, ALL_OWNERS_VALUE))}
-            />
-          )}
-        </Box>
-
-        {tab === 'experiments' && (
-          <Box style={{ marginBottom: 24 }}>
-            <ChoiceChipGroup
-              name="hub-area-filters"
-              selectionMode="radio"
-              dense
-              value={areaFilter}
-              onChange={(value) => {
-                const id = String(value || DEFAULT_AREA_FILTER)
-                setAreaFilter(isHubAreaFilterId(id) ? id : DEFAULT_AREA_FILTER)
-              }}
-              aria-label="Filter by console area"
-            >
-              {HUB_AREA_FILTERS.map((filter) => (
-                <ChoiceChip key={filter.id} value={filter.id} dense>
-                  {filter.label}
-                </ChoiceChip>
-              ))}
-            </ChoiceChipGroup>
-          </Box>
-        )}
-
-        {tab === 'experiments' &&
-          filteredExperimentGroups.map(({ ownerSlug, entries }) => (
-            <Box key={ownerSlug} style={{ marginBottom: 40 }}>
+        {/* Content lives in Tabs.Tab so Aquarium's TabContainer py-6 (24px) is the tabs→content gap. */}
+        <Tabs value={tab} onChange={(value) => setTab(value as TabId)}>
+          <Tabs.Tab title="Experiments" value="experiments" badge={totalExperiments}>
+            <Box style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
               <Box
                 style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 12,
-                  marginBottom: 16,
+                  display: 'grid',
+                  gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))',
+                  gap: 16,
+                  alignItems: 'end',
                 }}
               >
-                <DesignerAvatar ownerSlug={ownerSlug} size={48} />
-                <Typography.Subheading color="intense">
-                  {getOwnerDisplayName(ownerSlug)}
-                </Typography.Subheading>
+                <Input
+                  labelText="Search"
+                  placeholder="Search experiments…"
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  aria-label="Search"
+                  reserveSpaceForError={false}
+                />
+                <Select
+                  labelText="Owner"
+                  options={ownerOptions}
+                  value={ownerFilter}
+                  onChange={(selected) => setOwnerFilter(aquariumSelectValue(selected, ALL_OWNERS_VALUE))}
+                  reserveSpaceForError={false}
+                />
               </Box>
+
+              <ChoiceChipGroup
+                name="hub-area-filters"
+                selectionMode="radio"
+                dense
+                value={areaFilter}
+                onChange={(value) => {
+                  const id = String(value || DEFAULT_AREA_FILTER)
+                  setAreaFilter(isHubAreaFilterId(id) ? id : DEFAULT_AREA_FILTER)
+                }}
+                aria-label="Filter by console area"
+              >
+                {HUB_AREA_FILTERS.map((filter) => (
+                  <ChoiceChip key={filter.id} value={filter.id} dense>
+                    {filter.label}
+                  </ChoiceChip>
+                ))}
+              </ChoiceChipGroup>
+            </Box>
+
+            <Box style={{ marginTop: 40 }}>
+              {filteredExperimentGroups.map(({ ownerSlug, entries }) => (
+                <Box key={ownerSlug} style={{ marginBottom: 40 }}>
+                  <Box
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 12,
+                      marginBottom: 16,
+                    }}
+                  >
+                    <DesignerAvatar ownerSlug={ownerSlug} size={48} />
+                    <Typography.Subheading color="intense">
+                      {getOwnerDisplayName(ownerSlug)}
+                    </Typography.Subheading>
+                  </Box>
+                  <Box
+                    style={{
+                      display: 'grid',
+                      gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))',
+                      gap: 24,
+                    }}
+                  >
+                    {entries.map((entry) => (
+                      <PrototypeCard key={entry.id} entry={entry} />
+                    ))}
+                  </Box>
+                </Box>
+              ))}
+
+              {totalExperiments === 0 && (
+                <Box style={{ padding: 48, textAlign: 'center' }}>
+                  <Typography.Default color="muted">No experiments match your search.</Typography.Default>
+                </Box>
+              )}
+            </Box>
+          </Tabs.Tab>
+
+          <Tabs.Tab title="Templates" value="templates" badge={filteredTemplates.length}>
+            <Box style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
+              <Input
+                labelText="Search"
+                placeholder="Search templates…"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                aria-label="Search"
+                reserveSpaceForError={false}
+              />
+
               <Box
                 style={{
                   display: 'grid',
@@ -186,32 +202,19 @@ export function PrototypeHub({ experiments, templates }: PrototypeHubProps) {
                   gap: 24,
                 }}
               >
-                {entries.map((entry) => (
+                {filteredTemplates.map((entry) => (
                   <PrototypeCard key={entry.id} entry={entry} />
                 ))}
               </Box>
+
+              {filteredTemplates.length === 0 && (
+                <Box style={{ padding: 48, textAlign: 'center' }}>
+                  <Typography.Default color="muted">No templates match your search.</Typography.Default>
+                </Box>
+              )}
             </Box>
-          ))}
-
-        {tab === 'templates' && (
-          <Box
-            style={{
-              display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))',
-              gap: 24,
-            }}
-          >
-            {filteredTemplates.map((entry) => (
-              <PrototypeCard key={entry.id} entry={entry} />
-            ))}
-          </Box>
-        )}
-
-        {totalVisible === 0 && (
-          <Box style={{ padding: 48, textAlign: 'center' }}>
-            <Typography.Default color="muted">No {tab} match your search.</Typography.Default>
-          </Box>
-        )}
+          </Tabs.Tab>
+        </Tabs>
       </Box>
     </Box>
   )

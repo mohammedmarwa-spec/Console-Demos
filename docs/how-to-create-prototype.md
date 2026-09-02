@@ -12,12 +12,14 @@ Recommended starters:
 
 ## 2. Scaffold an experiment folder
 
-**From an open experiment or template:** click **Start in Cursor** in the top playground bar. For templates, enter your owner slug and experiment name; Cursor opens with a pre-filled agent prompt. Use **Copy prompt** if the deeplink does not open Cursor.
+**From an open experiment or template:** click **Start in Cursor** in the top playground bar. Enter your owner slug and experiment name to fork a template or copy someone else's experiment into your folder. Cursor opens with a pre-filled agent prompt. Use **Copy prompt** if the deeplink does not open Cursor.
 
 **From the terminal:**
 
 ```bash
 node scripts/create-experiment.mjs --owner your-name --name my-experiment --template onboarding-starter
+# or copy another designer's experiment:
+node scripts/create-experiment.mjs --owner your-name --name my-experiment --from elena/first-time-user
 ```
 
 **From Cursor:** run the `/scaffold-prototype` command (see `.cursor/commands/scaffold-prototype.md`).
