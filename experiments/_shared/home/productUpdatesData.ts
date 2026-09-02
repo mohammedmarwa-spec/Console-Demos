@@ -38,7 +38,28 @@ export const PRODUCT_UPDATE_SERVICE_OPTIONS: { label: string; value: ProductUpda
 
 export const PRODUCT_UPDATES_PREVIEW_COUNT = 3
 
-const changelog = PRODUCT_UPDATES_DOCS.changelog
+/** Public changelog filter query values (double-encoded in getChangelogUrl). */
+const CHANGELOG_SERVICE_QUERY: Record<
+  ProductUpdateServiceId,
+  { param: 'services' | 'tools'; value: string }
+> = {
+  kafka: { param: 'services', value: 'Apache Kafka®' },
+  clickhouse: { param: 'services', value: 'ClickHouse®' },
+  opensearch: { param: 'services', value: 'OpenSearch®' },
+  mysql: { param: 'services', value: 'MySQL' },
+  valkey: { param: 'services', value: 'Valkey™' },
+  postgresql: { param: 'services', value: 'PostgreSQL®' },
+  grafana: { param: 'services', value: 'Grafana®' },
+  mcp: { param: 'tools', value: 'Aiven MCP' },
+}
+
+/** Builds an aiven.io/changelog URL with the matching product/tools filter applied. */
+export function getChangelogUrl(filter: ProductUpdateServiceFilter): string {
+  const base = PRODUCT_UPDATES_DOCS.changelog
+  if (filter === 'all') return base
+  const { param, value } = CHANGELOG_SERVICE_QUERY[filter]
+  return `${base}?${param}=${encodeURIComponent(encodeURIComponent(value))}`
+}
 
 export const RELEASE_NOTES: ReleaseNote[] = [
   {
@@ -47,7 +68,7 @@ export const RELEASE_NOTES: ReleaseNote[] = [
     tag: 'ClickHouse',
     serviceId: 'clickhouse',
     title: 'Aiven for ClickHouse® 26.3 available in Early Availability',
-    href: changelog,
+    href: getChangelogUrl('clickhouse'),
   },
   {
     id: 'mcp-assistants',
@@ -55,7 +76,7 @@ export const RELEASE_NOTES: ReleaseNote[] = [
     tag: 'MCP',
     serviceId: 'mcp',
     title: 'Connect AI assistants to Aiven with Aiven MCP',
-    href: changelog,
+    href: getChangelogUrl('mcp'),
   },
   {
     id: 'opensearch-tiering',
@@ -63,7 +84,7 @@ export const RELEASE_NOTES: ReleaseNote[] = [
     tag: 'OpenSearch',
     serviceId: 'opensearch',
     title: 'Hot/warm data tiering for Aiven for OpenSearch®',
-    href: changelog,
+    href: getChangelogUrl('opensearch'),
   },
   {
     id: 'kafka-diskless',
@@ -71,7 +92,7 @@ export const RELEASE_NOTES: ReleaseNote[] = [
     tag: 'Kafka',
     serviceId: 'kafka',
     title: 'Diskless topics for Aiven for Apache Kafka®',
-    href: changelog,
+    href: getChangelogUrl('kafka'),
   },
   {
     id: 'mysql-84',
@@ -79,7 +100,7 @@ export const RELEASE_NOTES: ReleaseNote[] = [
     tag: 'MySQL',
     serviceId: 'mysql',
     title: 'Aiven for MySQL® 8.4 is generally available',
-    href: changelog,
+    href: getChangelogUrl('mysql'),
   },
   {
     id: 'valkey-81',
@@ -87,7 +108,7 @@ export const RELEASE_NOTES: ReleaseNote[] = [
     tag: 'Valkey',
     serviceId: 'valkey',
     title: 'Valkey 8.1 with improved memory efficiency',
-    href: changelog,
+    href: getChangelogUrl('valkey'),
   },
   {
     id: 'pg-18',
@@ -95,7 +116,7 @@ export const RELEASE_NOTES: ReleaseNote[] = [
     tag: 'PostgreSQL',
     serviceId: 'postgresql',
     title: 'PostgreSQL 18 is available on Aiven',
-    href: changelog,
+    href: getChangelogUrl('postgresql'),
   },
   {
     id: 'grafana-12',
@@ -103,7 +124,7 @@ export const RELEASE_NOTES: ReleaseNote[] = [
     tag: 'Grafana',
     serviceId: 'grafana',
     title: 'Grafana 12 dashboards with improved alerting',
-    href: changelog,
+    href: getChangelogUrl('grafana'),
   },
   {
     id: 'kafka-acls',
@@ -111,7 +132,7 @@ export const RELEASE_NOTES: ReleaseNote[] = [
     tag: 'Kafka',
     serviceId: 'kafka',
     title: 'Simpler ACL management for Aiven for Apache Kafka®',
-    href: changelog,
+    href: getChangelogUrl('kafka'),
   },
   {
     id: 'mcp-cursor',
@@ -119,7 +140,7 @@ export const RELEASE_NOTES: ReleaseNote[] = [
     tag: 'MCP',
     serviceId: 'mcp',
     title: 'Manage Kafka topics from Cursor and Claude Code',
-    href: changelog,
+    href: getChangelogUrl('mcp'),
   },
   {
     id: 'clickhouse-query-cache',
@@ -127,7 +148,7 @@ export const RELEASE_NOTES: ReleaseNote[] = [
     tag: 'ClickHouse',
     serviceId: 'clickhouse',
     title: 'Query cache for Aiven for ClickHouse®',
-    href: changelog,
+    href: getChangelogUrl('clickhouse'),
   },
   {
     id: 'kafka-tiered-storage',
@@ -135,7 +156,7 @@ export const RELEASE_NOTES: ReleaseNote[] = [
     tag: 'Kafka',
     serviceId: 'kafka',
     title: 'Tiered storage for Aiven for Apache Kafka®',
-    href: changelog,
+    href: getChangelogUrl('kafka'),
   },
   {
     id: 'mcp-claude-desktop',
@@ -143,7 +164,7 @@ export const RELEASE_NOTES: ReleaseNote[] = [
     tag: 'MCP',
     serviceId: 'mcp',
     title: 'Aiven MCP support for Claude Desktop',
-    href: changelog,
+    href: getChangelogUrl('mcp'),
   },
   {
     id: 'clickhouse-keeper',
@@ -151,7 +172,7 @@ export const RELEASE_NOTES: ReleaseNote[] = [
     tag: 'ClickHouse',
     serviceId: 'clickhouse',
     title: 'ClickHouse Keeper is generally available',
-    href: changelog,
+    href: getChangelogUrl('clickhouse'),
   },
 ]
 

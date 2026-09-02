@@ -21,6 +21,7 @@ import {
   PRODUCT_UPDATE_SERVICE_OPTIONS,
   RELEASE_NOTES,
   filterReleaseNotes,
+  getChangelogUrl,
   type ProductUpdateServiceFilter,
 } from './productUpdatesData'
 import devToolsBanner from './assets/home-page-dev-tools-banner.svg'
@@ -83,6 +84,7 @@ function ProductUpdates() {
     [serviceFilter],
   )
   const previewNotes = matchingNotes.slice(0, PRODUCT_UPDATES_PREVIEW_COUNT)
+  const changelogHref = getChangelogUrl(serviceFilter)
   const filterLabel =
     serviceFilter === 'all'
       ? 'All services'
@@ -157,7 +159,7 @@ function ProductUpdates() {
         </Box>
       )}
       <Typography.Default>
-        <Link href={PRODUCT_UPDATES_DOCS.changelog} target="_blank">
+        <Link href={changelogHref} target="_blank">
           View all ({matchingNotes.length})
         </Link>
       </Typography.Default>

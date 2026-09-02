@@ -1,8 +1,14 @@
 'use client'
 
 import { useMemo, useState } from 'react'
-import { Box, Input, Select, Tabs, Typography } from '@aivenio/aquarium'
+import { Box, ChoiceChip, ChoiceChipGroup, Input, Select, Tabs, Typography } from '@aivenio/aquarium'
 import type { DiscoveredPage } from '@/lib/experiments/types'
+import {
+  HUB_AREA_FILTERS,
+  isHubAreaFilterId,
+  matchesHubAreaFilter,
+  type HubAreaFilterId,
+} from '@/lib/experiments/hubAreaFilters'
 import { HubHeader } from './HubHeader'
 import { DesignerAvatar } from './DesignerAvatar'
 import { PrototypeCard } from './PrototypeCard'
@@ -17,6 +23,7 @@ const TABS: { id: TabId; label: string }[] = [
 ]
 
 const ALL_OWNERS_VALUE = 'all'
+const DEFAULT_AREA_FILTER: HubAreaFilterId = 'all'
 
 function matchesSearch(entry: DiscoveredPage, q: string): boolean {
   const haystack = [entry.title, entry.description].join(' ').toLowerCase()
@@ -32,6 +39,7 @@ export function PrototypeHub({ experiments, templates }: PrototypeHubProps) {
   const [search, setSearch] = useState('')
   const [tab, setTab] = useState<TabId>('experiments')
   const [ownerFilter, setOwnerFilter] = useState(ALL_OWNERS_VALUE)
+  const [areaFilter, setAreaFilter] = useState<HubAreaFilterId>(DEFAULT_AREA_FILTER)
 
   const query = search.trim().toLowerCase()
 
@@ -48,6 +56,7 @@ export function PrototypeHub({ experiments, templates }: PrototypeHubProps) {
     for (const entry of experiments) {
       if (query && !matchesSearch(entry, query)) continue
       if (ownerFilter !== ALL_OWNERS_VALUE && entry.ownerSlug !== ownerFilter) continue
+      if (!matchesHubAreaFilter(entry, areaFilter)) continue
 
       const entries = byOwner.get(entry.ownerSlug ?? '') ?? []
       entries.push(entry)
@@ -68,7 +77,7 @@ export function PrototypeHub({ experiments, templates }: PrototypeHubProps) {
           return a.slug.localeCompare(b.slug)
         }),
       }))
-  }, [experiments, query, ownerFilter])
+  }, [experiments, query, ownerFilter, areaFilter])
 
   const filteredTemplates = useMemo(() => {
     return templates.filter((entry) => !query || matchesSearch(entry, query))
@@ -131,6 +140,28 @@ export function PrototypeHub({ experiments, templates }: PrototypeHubProps) {
             />
           )}
         </Box>
+
+        {tab === 'experiments' && (
+          <Box style={{ marginBottom: 24 }}>
+            <ChoiceChipGroup
+              name="hub-area-filters"
+              selectionMode="radio"
+              dense
+              value={areaFilter}
+              onChange={(value) => {
+                const id = String(value || DEFAULT_AREA_FILTER)
+                setAreaFilter(isHubAreaFilterId(id) ? id : DEFAULT_AREA_FILTER)
+              }}
+              aria-label="Filter by console area"
+            >
+              {HUB_AREA_FILTERS.map((filter) => (
+                <ChoiceChip key={filter.id} value={filter.id} dense>
+                  {filter.label}
+                </ChoiceChip>
+              ))}
+            </ChoiceChipGroup>
+          </Box>
+        )}
 
         {tab === 'experiments' &&
           filteredExperimentGroups.map(({ ownerSlug, entries }) => (
