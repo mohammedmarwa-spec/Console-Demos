@@ -16,8 +16,9 @@ When creating or editing an experiment under `experiments/<owner>/<slug>/` (or a
 ## Prefer Aquarium
 
 - Prefer Aquarium components where available (`@aivenio/aquarium`).
-- Consult Storybook MCP (`user-aiven-storybook`) or `docs/SETUP.md` before inventing custom UI.
-- Resolve docs URLs via `src/lib/experiments/aquariumStorybookLinks.ts` or verified library paths.
+- **Must** query Storybook MCP (`user-aiven-storybook` / `aiven-storybook`) before using an Aquarium component. In-repo screens are not the source of truth. If the MCP is missing, stop — see `.cursor/rules/aquarium-storybook-mcp.mdc`.
+- **Must** have Figma MCP (`plugin-figma-figma` / `figma`) connected for UI and DS work. If it is missing, stop — see `.cursor/rules/figma-mcp.mdc`.
+- Resolve docs URLs via Storybook MCP first, then `src/lib/experiments/aquariumStorybookLinks.ts` or verified library paths.
 - Never invent Storybook URLs — leave `storybookUrl` unset if unresolved.
 
 ## Scope

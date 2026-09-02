@@ -57,7 +57,13 @@ function LayoutButtonWrapper({ children }: { children: ReactNode }) {
 
 LayoutButtonWrapper.displayName = 'LayoutButtonWrapper'
 
-function ArchitectureFlowInner({ view }: { view: ArchitectureView }) {
+function ArchitectureFlowInner({
+  view,
+  showAlerts,
+}: {
+  view: ArchitectureView
+  showAlerts: boolean
+}) {
   const { services, architectureEdges } = useProjectPageData()
   const resolvedTheme = useResolvedTheme()
 
@@ -67,8 +73,8 @@ function ArchitectureFlowInner({ view }: { view: ArchitectureView }) {
   )
 
   const initialNodes = useMemo(
-    () => buildArchitectureNodes(filtered.services),
-    [filtered.services],
+    () => buildArchitectureNodes(filtered.services, { showAlerts }),
+    [filtered.services, showAlerts],
   )
   const initialEdges = useMemo(
     () => buildArchitectureEdges(filtered.edges),
@@ -79,9 +85,9 @@ function ArchitectureFlowInner({ view }: { view: ArchitectureView }) {
   const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges)
 
   const onRefresh = useCallback(() => {
-    setNodes(buildArchitectureNodes(filtered.services))
+    setNodes(buildArchitectureNodes(filtered.services, { showAlerts }))
     setEdges(buildArchitectureEdges(filtered.edges))
-  }, [filtered.edges, filtered.services, setEdges, setNodes])
+  }, [filtered.edges, filtered.services, setEdges, setNodes, showAlerts])
 
   return (
     <Box
@@ -201,9 +207,32 @@ function ArchitectureFlowInner({ view }: { view: ArchitectureView }) {
 
 ArchitectureFlowInner.displayName = 'ArchitectureFlowInner'
 
+export type ArchitectureContentProps = {
+  /** When false, hides All / Integrated / Standalone chips (e.g. org Data flow page). Default true. */
+  showViewFilter?: boolean
+  /** Controlled view. When omitted, uses internal state from `defaultView`. */
+  view?: ArchitectureView
+  defaultView?: ArchitectureView
+  onViewChange?: (view: ArchitectureView) => void
+  /** When true, nodes with `hasAlerts` show warning border + icon. */
+  showAlerts?: boolean
+}
+
 /** Project Architecture tab — React Flow canvas with services on a grid + mock integrations. */
-export function ArchitectureContent() {
-  const [view, setView] = useState<ArchitectureView>('integrated')
+export function ArchitectureContent({
+  showViewFilter = true,
+  view: controlledView,
+  defaultView = 'integrated',
+  onViewChange,
+  showAlerts = false,
+}: ArchitectureContentProps = {}) {
+  const [uncontrolledView, setUncontrolledView] = useState<ArchitectureView>(defaultView)
+  const view = controlledView ?? uncontrolledView
+
+  const setView = (next: ArchitectureView) => {
+    if (controlledView === undefined) setUncontrolledView(next)
+    onViewChange?.(next)
+  }
 
   return (
     <Box
@@ -216,23 +245,25 @@ export function ArchitectureContent() {
         gap: 16,
       }}
     >
-      <Box style={{ flexShrink: 0 }}>
-        <ChoiceChipGroup
-          name="architecture-view"
-          selectionMode="radio"
-          value={view}
-          onChange={(value) => setView(value as ArchitectureView)}
-          aria-label="Architecture view"
-        >
-          {VIEW_OPTIONS.map((option) => (
-            <ChoiceChip key={option.id} value={option.id} dense>
-              {option.label}
-            </ChoiceChip>
-          ))}
-        </ChoiceChipGroup>
-      </Box>
+      {showViewFilter ? (
+        <Box style={{ flexShrink: 0 }}>
+          <ChoiceChipGroup
+            name="architecture-view"
+            selectionMode="radio"
+            value={view}
+            onChange={(value) => setView(value as ArchitectureView)}
+            aria-label="Architecture view"
+          >
+            {VIEW_OPTIONS.map((option) => (
+              <ChoiceChip key={option.id} value={option.id} dense>
+                {option.label}
+              </ChoiceChip>
+            ))}
+          </ChoiceChipGroup>
+        </Box>
+      ) : null}
       <ReactFlowProvider>
-        <ArchitectureFlowInner key={view} view={view} />
+        <ArchitectureFlowInner key={`${view}-${showAlerts}`} view={view} showAlerts={showAlerts} />
       </ReactFlowProvider>
     </Box>
   )

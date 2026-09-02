@@ -10,10 +10,10 @@ export const componentManifest: ComponentManifest = {
     { name: 'Navigation', usage: 'Project sidebar sections and primary items' },
     { name: 'DropdownMenu', usage: 'Sidebar project selector and grouped Create CTA menu' },
     { name: 'Badge', usage: 'Solutions NEW label in the sidebar' },
-    { name: 'ItemList', usage: 'Data Hub nested solution/services tree (parent + child rows)' },
-    { name: 'EmptyState', usage: 'Data Hub empty state for fresh-user experiment' },
-    { name: 'PageHeader', usage: 'Project title / subtitle and Data Hub page header' },
-    { name: 'StatusChip', usage: 'Service status chips on Resources and Architecture nodes' },
+    { name: 'ItemList', usage: 'Data Hub and Apps nested trees (parent + child rows)' },
+    { name: 'EmptyState', usage: 'Data Hub and Apps empty states for fresh-user experiment' },
+    { name: 'PageHeader', usage: 'Project title / subtitle and Data Hub / Apps page headers' },
+    { name: 'StatusChip', usage: 'Service status chips, Apps Running badges, and Nodes count chips' },
     { name: 'Tabs', usage: 'Overview / Resources / Architecture / Solutions' },
     { name: 'Typography', usage: 'Headings, KPI numbers, muted copy, table cells' },
     { name: 'Icon', usage: 'KPI tiles, architecture, CTA, and row chevrons' },
@@ -43,6 +43,10 @@ export const componentManifest: ComponentManifest = {
     {
       name: 'DataHubContent',
       reason: 'Data Hub sidebar page — Aquarium ItemList with nested composition rows',
+    },
+    {
+      name: 'AppsContent',
+      reason: 'Apps sidebar page — Aquarium ItemList with application + backing services',
     },
     {
       name: 'EventLogsContent',

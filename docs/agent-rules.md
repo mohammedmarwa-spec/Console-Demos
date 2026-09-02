@@ -60,6 +60,13 @@ node scripts/create-experiment.mjs --owner elena --name first-time-user --from o
 - `scenarioRuntime.ts` base configs
 - Shared screen components used by multiple scenarios
 
+## Required MCPs
+
+- **Storybook** — query before using `@aivenio/aquarium` components. See `.cursor/rules/aquarium-storybook-mcp.mdc`.
+- **Figma** (`plugin-figma-figma` / `figma` at `https://mcp.figma.com/mcp`) — required before implementing or auditing UI. See `.cursor/rules/figma-mcp.mdc`.
+
+If either server is not connected, stop and enable it in **Cursor Settings → MCP**. Servers are defined in `.cursor/mcp.json`.
+
 ## Figma / design system rules
 
 For Figma audits and DS enforcement, see `AGENTS.md` and `cursor/rules/*.md`.

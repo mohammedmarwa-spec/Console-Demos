@@ -1,10 +1,12 @@
 'use client'
 
 import { useState } from 'react'
+import { useRouter } from 'next/navigation'
 import { Box } from '@aivenio/aquarium'
 import type { PageMeta } from '@/lib/experiments/types'
 import { ProjectPageShell } from '@experiments/_shared/project-page/ProjectPageShell'
 import { projectPageData } from '@experiments/elena/project-page/mockData'
+import { ROUTES } from '@/lib/navigation'
 import { ContextPageHeader } from './ContextPageHeader'
 import { HomePageContent } from './HomePageContent'
 import { ORG_NAME, PROJECT_HOME_ID, PROJECTS, USER_INITIALS } from './mockData'
@@ -18,6 +20,7 @@ export const pageMeta: PageMeta = {
 type View = 'home' | 'project'
 
 export default function Page() {
+  const router = useRouter()
   const [view, setView] = useState<View>('home')
   const currentProject = PROJECTS.find((p) => p.id === PROJECT_HOME_ID) ?? PROJECTS[0]!
 
@@ -43,6 +46,7 @@ export default function Page() {
         userInitials={USER_INITIALS}
         onLogoClick={goHome}
         onOrgHomeClick={goHome}
+        onViewAllProjects={() => router.push(ROUTES.projectsPage)}
       />
       {view === 'home' ? (
         <HomePageContent onOpenProject={openProject} />

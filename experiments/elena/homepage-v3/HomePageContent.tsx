@@ -86,6 +86,7 @@ function noopClick(event: { preventDefault: () => void }) {
 }
 
 export function HomePageContent() {
+  const router = useRouter()
   const [insightsProjectId, setInsightsProjectId] = useState<string | null>(null)
   const insightsProject = PROJECTS.find((project) => project.id === insightsProjectId) ?? null
   const projectServices = insightsProject ? (SERVICES_BY_PROJECT[insightsProject.id] ?? []) : []
@@ -122,7 +123,14 @@ export function HomePageContent() {
         overflow: 'hidden',
       }}
     >
-      <OrgSidebar orgName={ORG_NAME} activeItem="overview" />
+      <OrgSidebar
+        orgName={ORG_NAME}
+        activeItem="overview"
+        onItemClick={(id) => {
+          if (id === 'projects') router.push(ROUTES.projectsPage)
+          if (id === 'data-flow') router.push(ROUTES.dataFlow)
+        }}
+      />
 
       <Box className={styles.overviewGrid} data-panel-open={panelOpen ? 'true' : 'false'}>
         <Box className={styles.column}>
@@ -465,7 +473,7 @@ function ProjectsList({
         <Typography.LargeStrong>Recent projects</Typography.LargeStrong>
         <Box className={styles.projectsToolbar}>
           <Typography.Default>
-            <Link href="#" icon={arrowRight} iconPlacement="right" onClick={noopClick}>
+            <Link href={ROUTES.projectsPage} icon={arrowRight} iconPlacement="right">
               View all projects ({PROJECTS.length})
             </Link>
           </Typography.Default>

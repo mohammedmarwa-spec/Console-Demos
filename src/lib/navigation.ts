@@ -14,6 +14,8 @@ export const ROUTES = {
   hub: '/',
   homepage: experimentPath('elena', 'homepage-v1'),
   projectPage: experimentPath('elena', 'project-page'),
+  projectsPage: experimentPath('elena', 'projects'),
+  dataFlow: experimentPath('elena', 'data-flow'),
   consoleOrg: '/console/org',
   consoleServices: '/console/project/services',
   consoleBilling: '/console/billing',

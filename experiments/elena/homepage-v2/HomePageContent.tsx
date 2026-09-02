@@ -62,6 +62,7 @@ function noopClick(event: { preventDefault: () => void }) {
 }
 
 export function HomePageContent() {
+  const router = useRouter()
   const [currentProjectId, setCurrentProjectId] = useState(PROJECT_HOME_ID)
   const currentProject = PROJECTS.find((project) => project.id === currentProjectId) ?? PROJECTS[0]!
   const projectServices = SERVICES_BY_PROJECT[currentProject.id] ?? []
@@ -92,7 +93,14 @@ export function HomePageContent() {
         overflow: 'hidden',
       }}
     >
-      <OrgSidebar orgName={ORG_NAME} activeItem="overview" />
+      <OrgSidebar
+        orgName={ORG_NAME}
+        activeItem="overview"
+        onItemClick={(id) => {
+          if (id === 'projects') router.push(ROUTES.projectsPage)
+          if (id === 'data-flow') router.push(ROUTES.dataFlow)
+        }}
+      />
 
       <Box
         style={{
@@ -145,7 +153,14 @@ function RecentProjects() {
 
   return (
     <Box style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
-      <Typography.LargeStrong>Recent projects</Typography.LargeStrong>
+      <Box style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16 }}>
+        <Typography.LargeStrong>Recent projects</Typography.LargeStrong>
+        <Typography.Default>
+          <Link href={ROUTES.projectsPage} icon={arrowRight} iconPlacement="right">
+            View all projects ({PROJECTS.length})
+          </Link>
+        </Typography.Default>
+      </Box>
       <Box className={styles.recentProjectsGrid}>
         {PROJECTS.map((project) => {
           const previewServices = getProjectPreviewServices(project.id)

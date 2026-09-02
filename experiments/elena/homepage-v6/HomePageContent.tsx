@@ -27,6 +27,7 @@ import { getServiceIconUrl, ServiceIcon } from '@experiments/_shared/components/
 import { imageSrc } from '@experiments/_shared/lib/image'
 import { HomeRightColumn } from '@experiments/_shared/home/HomeRightColumn'
 import { aquariumSelectValue } from '@/lib/aquariumSelect'
+import { ROUTES } from '@/lib/navigation'
 import { useResolvedTheme } from '@/theme/ThemeProvider'
 import {
   PROJECT_HOME_ID,
@@ -200,7 +201,7 @@ function RecentProjects({ onOpenProject }: { onOpenProject?: (projectId: string)
       <Box style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16 }}>
         <Typography.LargeStrong>Recent projects</Typography.LargeStrong>
         <Typography.Default>
-          <Link href="#" icon={arrowRight} iconPlacement="right" onClick={noopClick}>
+          <Link href={ROUTES.projectsPage} icon={arrowRight} iconPlacement="right">
             View all projects ({PROJECTS.length})
           </Link>
         </Typography.Default>

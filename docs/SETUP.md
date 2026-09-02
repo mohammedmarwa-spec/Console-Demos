@@ -144,6 +144,15 @@ cd console-prototype-lab
 
 Then in Cursor: **File → Open Folder** → select `~/Projects/console-prototype-lab`.
 
+Enable these **required MCPs** for AI-assisted UI. Cursor Settings → **MCP** → turn on both until they show as connected:
+
+| Server | What it is |
+|--------|------------|
+| **aiven-storybook** | Aquarium component props |
+| **figma** | Official Figma MCP (`https://mcp.figma.com/mcp`) — Aquarium visual specs, tokens, library |
+
+This repo ships both in `.cursor/mcp.json`. If Cursor asks you to authenticate Figma, complete that flow. If the agent says Storybook or Figma MCP is missing, do not continue UI work until both are green.
+
 Use the project Node version:
 
 ```bash
@@ -301,6 +310,10 @@ npm run dev
 - Use **Copy prompt** on the modal and paste into Cursor chat.
 - See [how-to-create-prototype.md](./how-to-create-prototype.md#prerequisites-for-start-in-cursor).
 
+### Agent says Storybook or Figma MCP is missing
+
+Both are required for AI UI work. In Cursor: **Settings → MCP** → enable **aiven-storybook** and **figma** and wait until they are connected. Figma uses `https://mcp.figma.com/mcp` (complete auth if Cursor prompts). Start a **new agent chat** after enabling. Servers are defined in `.cursor/mcp.json`.
+
 ### Git pull or push fails
 
 - If there is a conflict or auth error, stop and ask a teammate.
@@ -312,17 +325,11 @@ npm run dev
 
 Skip these until you need them.
 
-### Figma + MCP (Design Police AI audits)
+### Write to Figma (Figma Console MCP)
 
-1. Install [Figma Desktop](https://www.figma.com/downloads/).
-2. Ask your team which MCP servers are enabled. Typical set:
+Storybook and official Figma MCP are **required** for AI UI work (see Quick setup). `user-figma-console` is only needed when the agent **writes** into a Figma file. Enable it in Cursor Settings → MCP with a personal token — never commit tokens to the repo.
 
-| Server | Purpose |
-|--------|---------|
-| `plugin-figma-figma` | Read designs, screenshots, Code Connect |
-| `user-figma-console` | Write to Figma |
-| `user-aiven-storybook` | Aquarium props from Storybook |
-| `cursor-ide-browser` | Test the running app |
+`cursor-ide-browser` is optional for testing the running app.
 
 See [`AGENTS.md`](../AGENTS.md).
 

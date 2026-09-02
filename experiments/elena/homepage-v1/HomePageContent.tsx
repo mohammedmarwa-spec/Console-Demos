@@ -115,6 +115,7 @@ function noopClick(event: { preventDefault: () => void }) {
 const PROJECT_INSIGHTS_SCOPE = 'production' as const
 
 export function HomePageContent() {
+  const router = useRouter()
   const [currentProjectId, setCurrentProjectId] = useState(PROJECTS[0]!.id)
   const [activeSignalId, setActiveSignalId] = useState<HomePostureSignalId | null>(null)
   const currentProject = PROJECTS.find((project) => project.id === currentProjectId) ?? PROJECTS[0]!
@@ -155,7 +156,14 @@ export function HomePageContent() {
         overflow: 'hidden',
       }}
     >
-      <OrgSidebar orgName={ORG_NAME} activeItem="overview" />
+      <OrgSidebar
+        orgName={ORG_NAME}
+        activeItem="overview"
+        onItemClick={(id) => {
+          if (id === 'projects') router.push(ROUTES.projectsPage)
+          if (id === 'data-flow') router.push(ROUTES.dataFlow)
+        }}
+      />
 
       <Box
         style={{
@@ -212,7 +220,7 @@ function RecentProjects() {
       <Box style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16 }}>
         <Typography.LargeStrong>Recent projects</Typography.LargeStrong>
         <Typography.Default>
-          <Link href="#" icon={arrowRight} iconPlacement="right" onClick={noopClick}>
+          <Link href={ROUTES.projectsPage} icon={arrowRight} iconPlacement="right">
             View all projects ({PROJECTS.length})
           </Link>
         </Typography.Default>

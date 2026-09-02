@@ -54,6 +54,8 @@ const ICON_TONE: Record<IconTone, { iconColor: string; iconBg: string }> = {
 }
 
 export function HomePageContent() {
+  const router = useRouter()
+
   return (
     <DevToolsDrawerProvider>
       <Box
@@ -64,7 +66,14 @@ export function HomePageContent() {
           overflow: 'hidden',
         }}
       >
-        <OrgSidebar orgName={ORG_NAME} activeItem="overview" />
+        <OrgSidebar
+          orgName={ORG_NAME}
+          activeItem="overview"
+          onItemClick={(id) => {
+            if (id === 'projects') router.push(ROUTES.projectsPage)
+            if (id === 'data-flow') router.push(ROUTES.dataFlow)
+          }}
+        />
         <Box className={styles.overviewGrid}>
           <Box className={styles.page}>
             <PageHeader

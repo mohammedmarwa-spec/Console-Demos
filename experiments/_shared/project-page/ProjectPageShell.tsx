@@ -8,6 +8,7 @@ import { ProjectHomeContent } from './ProjectHomeContent'
 import { ProjectHomeSidebar, getProjectNavLabel } from './ProjectHomeSidebar'
 import { DataHubContent } from './DataHubContent'
 import { AivenStudioContent } from './AivenStudioContent'
+import { AppsContent } from './AppsContent'
 import { ProjectPageDataProvider } from './ProjectPageDataContext'
 import type { ProjectPageMockData, ProjectTab } from './types'
 
@@ -41,6 +42,7 @@ export function ProjectPageShell({
   const showEventLog = activeItem === 'event-log'
   const showDataHub = activeItem === 'data-hub'
   const showAivenStudio = activeItem === 'aiven-studio'
+  const showApps = activeItem === 'apps'
 
   return (
     <ProjectPageDataProvider data={data}>
@@ -97,6 +99,8 @@ export function ProjectPageShell({
             <DataHubContent />
           ) : showAivenStudio ? (
             <AivenStudioContent />
+          ) : showApps ? (
+            <AppsContent />
           ) : showProjectHome ? (
             <ProjectHomeContent activeView={activeView} />
           ) : (

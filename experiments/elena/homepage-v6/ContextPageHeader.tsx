@@ -44,6 +44,7 @@ export type ContextPageHeaderProps = {
   onOrgHomeClick?: () => void
   /** Optional trail segments after project (service, page, etc.). */
   extraSegments?: ReactNode
+  onViewAllProjects?: () => void
 }
 
 const segmentTriggerStyle = (isOpen: boolean): CSSProperties => ({
@@ -448,6 +449,7 @@ export function ContextPageHeader({
   onLogoClick,
   onOrgHomeClick,
   extraSegments,
+  onViewAllProjects,
 }: ContextPageHeaderProps) {
   const showProject = Boolean(projectName)
 
@@ -512,6 +514,7 @@ export function ContextPageHeader({
               projectName={projectName}
               activeProjectId={activeProjectId}
               variant="segment"
+              onViewAllProjects={onViewAllProjects}
             />
           </>
         ) : null}

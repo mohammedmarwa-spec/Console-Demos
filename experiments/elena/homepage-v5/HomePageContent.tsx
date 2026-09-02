@@ -1,6 +1,7 @@
 'use client'
 
 import { useMemo, useState, type ReactNode } from 'react'
+import { useRouter } from 'next/navigation'
 import {
   Box,
   Button,
@@ -34,6 +35,7 @@ import tickCircleIcon from '@aivenio/aquarium/icons/tickCircle'
 import warningSignIcon from '@aivenio/aquarium/icons/warningSign'
 import { getServiceIconUrl } from '@experiments/_shared/components/ServiceIcon'
 import { OrgSidebar } from '@/components/OrgSidebar'
+import { ROUTES } from '@/lib/navigation'
 import { useResolvedTheme } from '@/theme/ThemeProvider'
 import {
   ATTENTION_FILTERS,
@@ -89,6 +91,8 @@ function noopClick(event: { preventDefault: () => void }) {
 }
 
 export function HomePageContent() {
+  const router = useRouter()
+
   return (
     <Box
       style={{
@@ -98,7 +102,14 @@ export function HomePageContent() {
         overflow: 'hidden',
       }}
     >
-      <OrgSidebar orgName={ORG_NAME} activeItem="overview" />
+      <OrgSidebar
+        orgName={ORG_NAME}
+        activeItem="overview"
+        onItemClick={(id) => {
+          if (id === 'projects') router.push(ROUTES.projectsPage)
+          if (id === 'data-flow') router.push(ROUTES.dataFlow)
+        }}
+      />
       <Box className={styles.overviewGrid}>
         <Box className={styles.page}>
           <PageHeader
@@ -268,6 +279,7 @@ function ServiceIconStack({ serviceTypeIds }: { serviceTypeIds: HomeProject['ser
 ServiceIconStack.displayName = 'ServiceIconStack'
 
 function RecentProjects() {
+  const router = useRouter()
   const columns: DataListColumn<HomeProject>[] = [
     {
       headerName: 'Project',
@@ -339,7 +351,7 @@ function RecentProjects() {
     <Section
       title="Recent projects"
       subtitle="Review your infrastructure resources across projects"
-      actions={{ text: 'View all projects', onClick: () => undefined }}
+      actions={{ text: 'View all projects', onClick: () => router.push(ROUTES.projectsPage) }}
     >
       <DataList columns={columns} rows={PROJECTS} sticky={false} hideHeader />
     </Section>

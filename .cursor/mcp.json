@@ -1,0 +1,15 @@
+{
+  "mcpServers": {
+    "aiven-storybook": {
+      "command": "npx",
+      "args": ["-y", "storybook-mcp-server@latest"],
+      "env": {
+        "STORYBOOK_URL": "https://aquarium-library.aiven.io"
+      }
+    },
+    "figma": {
+      "url": "https://mcp.figma.com/mcp",
+      "type": "http"
+    }
+  }
+}

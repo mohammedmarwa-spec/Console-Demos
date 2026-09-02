@@ -84,6 +84,23 @@ export type DataHubListItem = {
   items?: DataHubListItem[]
 }
 
+/** Nested Apps row for Aquarium ItemList (application parent + backing services). */
+export type AppsListItem = {
+  id: string
+  serviceName: string
+  serviceType: string
+  /** Used for service icon; omit for Application parent (console icon). */
+  serviceTypeId?: ServiceTypeId
+  status: string
+  nodeCount?: number
+  planName: string
+  planDetails?: string
+  cloudRegion: string
+  location: string
+  created: string
+  items?: AppsListItem[]
+}
+
 export type ProjectTab = 'overview' | 'resources' | 'architecture'
 
 export type ArchitectureEdgeMock = Pick<Edge, 'id' | 'source' | 'target' | 'label' | 'animated'> & {
@@ -104,8 +121,11 @@ export type ProjectPageMockData = {
   recentActivity: ActivityRow[]
   ctaBanner: CtaBannerData
   dataHubItems: DataHubListItem[]
+  appsItems: AppsListItem[]
 }
 
 export type ArchitectureNodeData = {
   service: ServiceListRow
+  /** When true, alert services render warning border + icon (Data flow mock state). */
+  showAlerts?: boolean
 }

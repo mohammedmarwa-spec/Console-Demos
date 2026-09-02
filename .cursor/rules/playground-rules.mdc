@@ -17,6 +17,8 @@ This repo is a **shared design playground**, not production Aiven Console.
 - Never add secrets, tokens, or private customer information
 - Never use production API dependencies
 - Optimize for prototype clarity, not production quality
+- Before using `@aivenio/aquarium` components, query Storybook MCP (`user-aiven-storybook` / `aiven-storybook`). If it is missing, stop — do not copy props from other experiments. See `.cursor/rules/aquarium-storybook-mcp.mdc`.
+- Before implementing or auditing UI, Figma MCP (`plugin-figma-figma` / `figma`) must be connected. If it is missing, stop. See `.cursor/rules/figma-mcp.mdc`.
 
 ## Edit scope
 

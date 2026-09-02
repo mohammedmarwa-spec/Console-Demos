@@ -34,11 +34,21 @@ This repo supports two workflows:
 - **Base grid unit:** 8px — all spacing must be multiples of 8
 - **Desktop container padding:** 24px
 
-## MCP Servers Available
+## MCP Servers
 
-- `plugin-figma-figma` — official Figma MCP (read designs, get screenshots, Code Connect)
-- `user-figma-console` — Figma Console MCP (execute write operations in Figma)
-- `user-aiven-storybook` — Aiven Storybook reference
+**Required for Aquarium UI** (experiments, templates, app screens, Figma audits):
+
+- `user-aiven-storybook` / `aiven-storybook` — Aquarium component props from Storybook. Query this **before** using any `@aivenio/aquarium` component.
+- `plugin-figma-figma` / `figma` — official Figma MCP at `https://mcp.figma.com/mcp` (read designs, library, tokens, Code Connect). Required before implementing or auditing UI.
+
+If either required server is missing from the tool catalog, **stop** and tell the user to enable it in Cursor Settings → MCP (see `.cursor/mcp.json` and `docs/SETUP.md`).
+
+**Required only when writing to a Figma file:**
+
+- `user-figma-console` — Figma Console MCP. Do not store access tokens in the repo.
+
+**Optional:**
+
 - `cursor-ide-browser` — browser automation for testing
 
 ## Standard Workflow
@@ -51,6 +61,8 @@ This repo supports two workflows:
 
 ## Hard Rules
 
+- Never implement Aquarium UI from memory or by copying in-repo screens until Storybook MCP and Figma MCP have been queried
+- If Figma MCP (`plugin-figma-figma` / `figma`) is missing, stop — see `.cursor/rules/figma-mcp.mdc`
 - Never use hex codes for colors — always use design tokens via `figma_set_variable_on_node`
 - Never rename DS component instances
 - Never use Group layers — use Frames with Auto-Layout

@@ -1,0 +1,28 @@
+---
+description: Require Figma MCP for design-system UI and Figma audits
+alwaysApply: true
+---
+
+# Figma MCP is required
+
+Figma is the source of truth for Aquarium visual specs, tokens, and component instances. Do not guess from screenshots or memory.
+
+## Before UI or Figma work
+
+When creating, editing, or auditing UI (experiments, templates, app screens, or Figma files):
+
+1. Discover tools with pattern `figma`.
+2. Use official Figma MCP (`plugin-figma-figma` or `figma`) to read the Aquarium library, tokens, and component APIs.
+3. Load the matching Figma skill before write tools (`use_figma`, `get_design_context`, and so on).
+
+## If Figma MCP is missing
+
+If the server is absent, `needsAuth`, or errors:
+
+- **Stop.** Do not implement or audit UI without Figma MCP.
+- Tell the user to enable **figma** in **Cursor Settings → MCP**.
+- Point to `.cursor/mcp.json` (`https://mcp.figma.com/mcp`) and `docs/SETUP.md`.
+
+Expected server names: `plugin-figma-figma` or `figma`.
+
+`user-figma-console` is required only when **writing** to a Figma file. Do not put access tokens in the repo.

@@ -2,12 +2,13 @@ import type { Edge, Node } from '@xyflow/react'
 import type { ArchitectureEdgeMock, ArchitectureNodeData, ServiceListRow } from './types'
 
 const GRID_COLS = 4
-const NODE_WIDTH = 260
+/** Wide enough for icon + name + Nodes/Running chips + info on one row. */
+const NODE_WIDTH = 440
 const GAP_X = 72
-const GAP_Y = 88
+const GAP_Y = 72
 const ORIGIN_X = 32
 const ORIGIN_Y = 32
-const NODE_HEIGHT = 96
+const NODE_HEIGHT = 72
 
 function gridPosition(index: number): { x: number; y: number } {
   const col = index % GRID_COLS
@@ -20,12 +21,14 @@ function gridPosition(index: number): { x: number; y: number } {
 
 export function buildArchitectureNodes(
   services: ServiceListRow[],
+  options?: { showAlerts?: boolean },
 ): Node<ArchitectureNodeData>[] {
+  const showAlerts = options?.showAlerts ?? false
   return services.map((service, index) => ({
     id: service.id,
     type: 'architectureService',
     position: gridPosition(index),
-    data: { service },
+    data: { service, showAlerts },
     style: { width: NODE_WIDTH },
   }))
 }

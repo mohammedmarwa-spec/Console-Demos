@@ -113,7 +113,11 @@ export const componentManifest: ComponentManifest = {
     },
     {
       name: 'ProjectPageShell',
-      reason: 'Shared project chrome with hideHeader — sidebar + content under the context trail',
+      reason: 'Shared project chrome with hideHeader — sidebar + content under the context trail (includes Apps)',
+    },
+    {
+      name: 'AppsContent',
+      reason: 'Apps sidebar page — nested applications and backing services via ItemList',
     },
     {
       name: 'RecentProjects',

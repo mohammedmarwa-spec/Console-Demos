@@ -49,4 +49,5 @@ export const projectPageData: ProjectPageMockData = {
     ],
   },
   dataHubItems: [],
+  appsItems: [],
 }

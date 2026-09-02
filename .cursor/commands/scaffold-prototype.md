@@ -22,7 +22,7 @@ node scripts/create-experiment.mjs --owner <owner> --name <experiment-slug> --te
 
 3. Update `pageMeta` (title, description) in `index.tsx`.
 
-4. Create or update `component-manifest.ts` listing Aquarium components (with Storybook links when known) and prototype components. See `.cursor/rules/component-map.md`.
+4. Confirm Storybook MCP and Figma MCP are connected. Query Storybook for each Aquarium component, and Figma for visual/DS specs, before implementing. Then create or update `component-manifest.ts`. See `.cursor/rules/component-map.md`, `.cursor/rules/aquarium-storybook-mcp.mdc`, and `.cursor/rules/figma-mcp.mdc`. If either MCP is missing, stop.
 
 5. Confirm the experiment appears in the hub and opens at `/experiments/<owner>/<experiment-slug>`.
 

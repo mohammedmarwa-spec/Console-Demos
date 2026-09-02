@@ -43,6 +43,11 @@
   overflow-y: auto;
 }
 
+/* Expanded only: 16px gap below Navigation.Divider hairlines. */
+.shell[data-collapsed='false'] :global(li[aria-hidden='true']) {
+  margin-bottom: 16px;
+}
+
 /*
  * Keep default item padding so icons stay on the same x as expanded.
  * Hide leftover label text/nodes; never hide or recolor the SVG.

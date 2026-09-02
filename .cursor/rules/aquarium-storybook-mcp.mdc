@@ -1,0 +1,26 @@
+---
+description: Require Aquarium Storybook MCP before using design-system components
+alwaysApply: true
+---
+
+# Aquarium Storybook MCP is required
+
+Storybook is the source of truth for Aquarium component props. In-repo screens are not.
+
+## Before using Aquarium UI
+
+When creating or editing UI that uses `@aivenio/aquarium` (Modal, Input, Select, Button, Box, and any other DS component):
+
+1. Discover tools with pattern `storybook`.
+2. Query Storybook MCP for that component’s props, variants, and composition.
+3. Use only documented props. Do not invent props from memory.
+
+## If Storybook MCP is missing
+
+If the server is absent, `needsAuth`, or errors:
+
+- **Stop.** Do not implement Aquarium UI from memory or by copying other experiments.
+- Tell the user to enable **aiven-storybook** in **Cursor Settings → MCP**.
+- Point to `.cursor/mcp.json` (ships with this repo) and `docs/SETUP.md`.
+
+Expected server names: `user-aiven-storybook` or `aiven-storybook`.
