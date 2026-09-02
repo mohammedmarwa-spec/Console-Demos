@@ -24,6 +24,15 @@ const experiments: DiscoveredPage[] = [
     ownerSlug: 'elena',
     route: '/experiments/elena/first-time-user',
   },
+  {
+    id: 'experiment/brian/sample',
+    title: 'Brian sample',
+    description: 'Another owner experiment',
+    slug: 'sample',
+    kind: 'experiment',
+    ownerSlug: 'brian',
+    route: '/experiments/brian/sample',
+  },
 ]
 
 const templates: DiscoveredPage[] = [
@@ -61,11 +70,31 @@ describe('PrototypeHub', () => {
     expect(screen.queryByText('First-time user')).not.toBeInTheDocument()
   })
 
+  it('filters experiments by designer avatar', async () => {
+    const user = userEvent.setup()
+    renderHub()
+
+    expect(screen.getByRole('heading', { level: 2, name: 'Elena' })).toBeInTheDocument()
+    expect(screen.getByRole('heading', { level: 2, name: 'Brian' })).toBeInTheDocument()
+    expect(screen.getByRole('tab', { name: /Experiments/ })).toHaveTextContent('3')
+
+    await user.click(screen.getByRole('radio', { name: 'Elena' }))
+
+    expect(screen.getByRole('radio', { name: 'Elena' })).toHaveAttribute('aria-checked', 'true')
+    expect(screen.getByRole('heading', { level: 2, name: 'Elena' })).toBeInTheDocument()
+    expect(screen.queryByRole('heading', { level: 2, name: 'Brian' })).not.toBeInTheDocument()
+    expect(screen.getByRole('tab', { name: /Experiments/ })).toHaveTextContent('2')
+
+    await user.click(screen.getByRole('radio', { name: 'Everyone' }))
+
+    expect(screen.getByRole('heading', { level: 2, name: 'Brian' })).toBeInTheDocument()
+  })
+
   it('switches between experiments and templates tabs', async () => {
     const user = userEvent.setup()
     renderHub()
 
-    expect(screen.getByRole('tab', { name: /Experiments/ })).toHaveTextContent('2')
+    expect(screen.getByRole('tab', { name: /Experiments/ })).toHaveTextContent('3')
     expect(screen.getByRole('tab', { name: /Templates/ })).toHaveTextContent('1')
     expect(screen.getByRole('button', { name: 'Open Free & Dev: Quick Upgrade V4' })).toBeInTheDocument()
     expect(screen.getByRole('heading', { level: 2, name: 'Elena' })).toBeInTheDocument()

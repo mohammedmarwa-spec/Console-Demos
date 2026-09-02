@@ -1,7 +1,7 @@
 'use client'
 
 import { useMemo, useState } from 'react'
-import { Box, ChoiceChip, ChoiceChipGroup, Input, Select, Tabs, Typography } from '@aivenio/aquarium'
+import { Box, ChoiceChip, ChoiceChipGroup, Input, Tabs, Typography } from '@aivenio/aquarium'
 import type { DiscoveredPage } from '@/lib/experiments/types'
 import {
   HUB_AREA_FILTERS,
@@ -11,13 +11,12 @@ import {
 } from '@/lib/experiments/hubAreaFilters'
 import { HubHeader } from './HubHeader'
 import { DesignerAvatar } from './DesignerAvatar'
+import { ALL_DESIGNERS_VALUE, DesignerFilter } from './DesignerFilter'
 import { PrototypeCard } from './PrototypeCard'
-import { aquariumSelectValue } from '../../lib/aquariumSelect'
-import { getOwnerDisplayName, listOwnerSlugs } from '../../lib/designTeamOwners'
+import { getOwnerDisplayName } from '../../lib/designTeamOwners'
 
 type TabId = 'experiments' | 'templates'
 
-const ALL_OWNERS_VALUE = 'all'
 const DEFAULT_AREA_FILTER: HubAreaFilterId = 'all'
 
 function matchesSearch(entry: DiscoveredPage, q: string): boolean {
@@ -33,24 +32,17 @@ export type PrototypeHubProps = {
 export function PrototypeHub({ experiments, templates }: PrototypeHubProps) {
   const [search, setSearch] = useState('')
   const [tab, setTab] = useState<TabId>('experiments')
-  const [ownerFilter, setOwnerFilter] = useState(ALL_OWNERS_VALUE)
+  const [ownerFilter, setOwnerFilter] = useState(ALL_DESIGNERS_VALUE)
   const [areaFilter, setAreaFilter] = useState<HubAreaFilterId>(DEFAULT_AREA_FILTER)
 
   const query = search.trim().toLowerCase()
-
-  const ownerOptions = useMemo(() => {
-    return [
-      { label: 'All owners', value: ALL_OWNERS_VALUE },
-      ...listOwnerSlugs().map((slug) => ({ label: getOwnerDisplayName(slug), value: slug })),
-    ]
-  }, [])
 
   const filteredExperimentGroups = useMemo(() => {
     const byOwner = new Map<string, DiscoveredPage[]>()
 
     for (const entry of experiments) {
       if (query && !matchesSearch(entry, query)) continue
-      if (ownerFilter !== ALL_OWNERS_VALUE && entry.ownerSlug !== ownerFilter) continue
+      if (ownerFilter !== ALL_DESIGNERS_VALUE && entry.ownerSlug !== ownerFilter) continue
       if (!matchesHubAreaFilter(entry, areaFilter)) continue
 
       const entries = byOwner.get(entry.ownerSlug ?? '') ?? []
@@ -105,9 +97,10 @@ export function PrototypeHub({ experiments, templates }: PrototypeHubProps) {
               <Box
                 style={{
                   display: 'grid',
-                  gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))',
-                  gap: 16,
-                  alignItems: 'end',
+                  gridTemplateColumns: '1fr 1fr',
+                  gap: 24,
+                  alignItems: 'start',
+                  width: '100%',
                 }}
               >
                 <Input
@@ -118,13 +111,7 @@ export function PrototypeHub({ experiments, templates }: PrototypeHubProps) {
                   aria-label="Search"
                   reserveSpaceForError={false}
                 />
-                <Select
-                  labelText="Owner"
-                  options={ownerOptions}
-                  value={ownerFilter}
-                  onChange={(selected) => setOwnerFilter(aquariumSelectValue(selected, ALL_OWNERS_VALUE))}
-                  reserveSpaceForError={false}
-                />
+                <DesignerFilter value={ownerFilter} onChange={setOwnerFilter} />
               </Box>
 
               <ChoiceChipGroup

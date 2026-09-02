@@ -288,8 +288,14 @@ html.aquarium-theme-dark .audit-logs-histogram {
 html.aquarium-theme-dark .Aquarium-Tooltip.bg-inverse {
   background-color: var(--aquarium-background-color-popover-content) !important;
   color: var(--aquarium-text-color-default) !important;
-  border: 1px solid var(--aquarium-border-color-muted);
-  box-shadow: 0 4px 24px color-mix(in srgb, var(--aquarium-colors-black) 14%, transparent);
+  /*
+   * The arrow is a separate rotated child, so a `border` would stop at the bubble edge and
+   * leave the tip unoutlined. Stacked drop-shadows trace the bubble + arrow silhouette.
+   */
+  filter: drop-shadow(0 1px 0 var(--aquarium-border-color-muted))
+    drop-shadow(0 -1px 0 var(--aquarium-border-color-muted))
+    drop-shadow(1px 0 0 var(--aquarium-border-color-muted))
+    drop-shadow(-1px 0 0 var(--aquarium-border-color-muted));
 }
 
 html.aquarium-theme-dark .Aquarium-Tooltip > .absolute.bg-inverse {
