@@ -43,6 +43,10 @@ export const componentManifest: ComponentManifest = {
       reason: 'Mock of Console ScanApplicationSourceModal empty VCS flow',
     },
     {
+      name: 'RuntimeVerticalStepper',
+      reason: 'Dense vertical stepper matching Aquarium finished/ongoing/waiting states',
+    },
+    {
       name: 'CreationFlowSection',
       reason: 'Reused Service creation section divider (icon + vertical connector)',
     },
@@ -52,7 +56,7 @@ export const componentManifest: ComponentManifest = {
     },
     {
       name: 'ServiceIcon',
-      reason: 'Service-type icons on picker cards',
+      reason: 'Service-type icons on picker cards and Runtime example stacks',
     },
     {
       name: 'CloudProviderIcon',
@@ -61,7 +65,7 @@ export const componentManifest: ComponentManifest = {
   ],
   notes: [
     'Custom UI in experiments/elena/onboarding-v2 — not the shared OnboardingTestEnv launcher.',
-    'An application swaps the summary to Aiven Runtime explainer and opens Deploy from GitHub modal.',
+    'Choice chips: A service, An application (Runtime + GitHub), Data Hub (description + Book demo).',
     'GitHub modal mirrors Console SelectSourceEmptyState (connect → waiting → success).',
   ],
 }

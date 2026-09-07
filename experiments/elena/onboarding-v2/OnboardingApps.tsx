@@ -25,8 +25,10 @@ import dbBackupIcon from '@aivenio/aquarium/icons/dbBackup'
 import floppyDiskIcon from '@aivenio/aquarium/icons/floppyDisk'
 import githubLogoIcon from '@aivenio/aquarium/icons/githubLogo'
 import infoSignIcon from '@aivenio/aquarium/icons/infoSign'
+import layersIcon from '@aivenio/aquarium/icons/layers'
 import memoryIcon from '@aivenio/aquarium/icons/memory'
 import settingsIcon from '@aivenio/aquarium/icons/settings'
+import tickIcon from '@aivenio/aquarium/icons/tick'
 import { CloudProviderIcon } from '@experiments/_shared/components/CloudProviderIcon'
 import { CreationFlowSection } from '@experiments/_shared/components/CreationFlowSection'
 import { OnboardingTestEnvShell } from '@experiments/_shared/components/OnboardingTestEnvShell'
@@ -48,7 +50,7 @@ import type { OnboardingTestEnvCreatePayload } from '@experiments/_shared/compon
 import { showPlaygroundToast } from '@/screens/playground/showPlaygroundToast'
 import { ConnectGitHubModal } from './ConnectGitHubModal'
 
-type BuildTarget = 'service' | 'application'
+type BuildTarget = 'service' | 'application' | 'datahub'
 
 /** Services shown in Figma onboarding + apps (no Grafana). */
 const ONBOARDING_V2_SERVICE_IDS: TestEnvServiceId[] = [
@@ -249,13 +251,172 @@ function TrialCostCard({ monthlyAfterTrial }: { monthlyAfterTrial: string }) {
 
 TrialCostCard.displayName = 'TrialCostCard'
 
-const AIVEN_APP_BENEFITS = [
-  'Deploy containerized apps directly from a GitHub repository',
-  'Connect your app to Aiven services in a few clicks',
-  'Start testing and demoing for free — no credit card required',
-] as const
+const RUNTIME_STEPS = ['Deploy from GitHub', 'Connect services', 'Test for free'] as const
 
-function AivenRuntimeSummary() {
+type ExampleStackServiceId = Extract<
+  TestEnvServiceId,
+  'postgresql' | 'valkey' | 'clickhouse' | 'opensearch' | 'kafka'
+>
+
+const EXAMPLE_STACKS: Array<{
+  label: string
+  services: ExampleStackServiceId[]
+  /** DataHub is a solution (not a service type) — show database icon instead of service logos. */
+  dataHub?: boolean
+}> = [
+  { label: 'App + PostgreSQL', services: ['postgresql'] },
+  { label: 'App + PostgreSQL + Valkey', services: ['postgresql', 'valkey'] },
+  { label: 'App + PostgreSQL + ClickHouse', services: ['postgresql', 'clickhouse'] },
+  { label: 'App + DataHub', services: [], dataHub: true },
+]
+
+function RuntimeVerticalStepper({ activeIndex = 0 }: { activeIndex?: number }) {
+  return (
+    <Box
+      aria-label="How Aiven Runtime works"
+      style={{ display: 'flex', flexDirection: 'column', width: '100%' }}
+    >
+      {RUNTIME_STEPS.map((label, index) => {
+        const state = index < activeIndex ? 'completed' : index === activeIndex ? 'active' : 'inactive'
+        const isLast = index === RUNTIME_STEPS.length - 1
+        const connectorCompleted = state === 'completed'
+
+        return (
+          <Box
+            key={label}
+            style={{
+              display: 'flex',
+              alignItems: 'stretch',
+              gap: 12,
+              width: '100%',
+            }}
+          >
+            <Box
+              aria-hidden
+              style={{
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                width: 16,
+                flexShrink: 0,
+              }}
+            >
+              <Box
+                style={{
+                  width: 16,
+                  height: 16,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  flexShrink: 0,
+                  marginTop: 2,
+                }}
+              >
+                {state === 'completed' ? (
+                  <InlineIcon icon={tickIcon} color="success-intense" style={{ width: 14, height: 14 }} />
+                ) : (
+                  <Box
+                    style={{
+                      width: 8,
+                      height: 8,
+                      borderRadius: '50%',
+                      backgroundColor:
+                        state === 'active'
+                          ? 'var(--aquarium-background-color-inverse)'
+                          : 'var(--aquarium-background-color-intense)',
+                    }}
+                  />
+                )}
+              </Box>
+              {!isLast ? (
+                <Box
+                  style={{
+                    width: 3,
+                    flex: 1,
+                    minHeight: 16,
+                    marginTop: 4,
+                    marginBottom: 4,
+                    borderRadius: 1,
+                    backgroundColor: connectorCompleted
+                      ? 'var(--aquarium-background-color-success-graphic)'
+                      : 'var(--aquarium-border-color-intense)',
+                  }}
+                />
+              ) : null}
+            </Box>
+            <Typography.Small
+              color={state === 'inactive' ? 'muted' : 'intense'}
+              style={{ lineHeight: '20px', paddingBottom: isLast ? 0 : 16 }}
+            >
+              {label}
+            </Typography.Small>
+          </Box>
+        )
+      })}
+    </Box>
+  )
+}
+
+RuntimeVerticalStepper.displayName = 'RuntimeVerticalStepper'
+
+function ExampleStackCard({
+  label,
+  services,
+  dataHub,
+}: {
+  label: string
+  services: ExampleStackServiceId[]
+  dataHub?: boolean
+}) {
+  return (
+    <Box
+      style={{
+        padding: 12,
+        borderRadius: 8,
+        border: '1px solid var(--aquarium-border-color-muted)',
+        backgroundColor: 'var(--aquarium-background-color-layer)',
+        display: 'flex',
+        flexDirection: 'column',
+        gap: 8,
+        width: '100%',
+        minWidth: 0,
+        boxSizing: 'border-box',
+      }}
+    >
+      <Box style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap', minWidth: 0 }}>
+        <Icon icon={codeBlockIcon} style={{ width: 20, height: 20, flexShrink: 0 }} />
+        {dataHub ? (
+          <Box style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+            <Typography.Small color="muted" htmlTag="span">
+              +
+            </Typography.Small>
+            <Icon icon={databaseIcon} style={{ width: 20, height: 20, flexShrink: 0 }} />
+          </Box>
+        ) : (
+          services.map((serviceId) => (
+            <Box key={serviceId} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+              <Typography.Small color="muted" htmlTag="span">
+                +
+              </Typography.Small>
+              <ServiceIcon serviceTypeId={serviceId} size={20} alt="" />
+            </Box>
+          ))
+        )}
+      </Box>
+      <Typography.Small color="intense">{label}</Typography.Small>
+    </Box>
+  )
+}
+
+ExampleStackCard.displayName = 'ExampleStackCard'
+
+function AivenRuntimeSummary({
+  githubConnected,
+  onConnectGitHub,
+}: {
+  githubConnected: boolean
+  onConnectGitHub: () => void
+}) {
   return (
     <Section title="Aiven Runtime">
       <Box style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
@@ -264,41 +425,32 @@ function AivenRuntimeSummary() {
           managed services — all in one place.
         </Typography.Default>
 
-        <Box style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-          {AIVEN_APP_BENEFITS.map((benefit) => (
-            <Box key={benefit} style={{ display: 'flex', alignItems: 'flex-start', gap: 8 }}>
-              <Box
-                aria-hidden
-                style={{
-                  width: 6,
-                  height: 6,
-                  borderRadius: '50%',
-                  marginTop: 7,
-                  flexShrink: 0,
-                  backgroundColor: 'var(--aquarium-text-color-muted)',
-                }}
-              />
-              <Typography.Small color="muted">{benefit}</Typography.Small>
-            </Box>
-          ))}
-        </Box>
+        <RuntimeVerticalStepper activeIndex={githubConnected ? 1 : 0} />
 
-        <Box
-          style={{
-            padding: '12px 16px',
-            borderRadius: 8,
-            border: '1px solid var(--aquarium-border-color-muted)',
-            display: 'flex',
-            flexDirection: 'column',
-            gap: 4,
-            width: '100%',
-          }}
-        >
-          <Typography.DefaultStrong color="muted">Getting started</Typography.DefaultStrong>
-          <Typography.Small color="muted">
-            Connect GitHub, pick a repository, and deploy with a recommended plan. Free forever for getting started.
-          </Typography.Small>
-        </Box>
+        {githubConnected ? (
+          <Box
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 8,
+              padding: '12px 16px',
+              borderRadius: 8,
+              border: '1px solid var(--aquarium-border-color-muted)',
+              width: '100%',
+              boxSizing: 'border-box',
+            }}
+          >
+            <Icon icon={githubLogoIcon} style={{ width: 20, height: 20, flexShrink: 0 }} />
+            <Box style={{ flex: 1, minWidth: 0 }}>
+              <Typography.Default color="intense">GitHub account connected</Typography.Default>
+            </Box>
+            <StatusChip text="Connected" status="success" dense />
+          </Box>
+        ) : (
+          <Button.Primary type="button" fullWidth icon={githubLogoIcon} onClick={onConnectGitHub}>
+            Connect GitHub account
+          </Button.Primary>
+        )}
       </Box>
     </Section>
   )
@@ -306,13 +458,7 @@ function AivenRuntimeSummary() {
 
 AivenRuntimeSummary.displayName = 'AivenRuntimeSummary'
 
-function DeployFromGitHubPanel({
-  githubConnected,
-  onOpenModal,
-}: {
-  githubConnected: boolean
-  onOpenModal: () => void
-}) {
+function DeployFromGitHubPanel() {
   return (
     <Box
       style={{
@@ -325,33 +471,89 @@ function DeployFromGitHubPanel({
         gap: 16,
       }}
     >
-      <Box style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12 }}>
-        <Box style={{ display: 'flex', flexDirection: 'column', gap: 8, minWidth: 0 }}>
-          <Typography.DefaultStrong color="intense">Deploy from GitHub</Typography.DefaultStrong>
-          <Typography.Small color="muted">
-            Connect your GitHub account so Aiven can deploy selected repositories for your organization.
-          </Typography.Small>
-        </Box>
-        {githubConnected ? <StatusChip text="Connected" status="success" dense /> : null}
+      <Box style={{ display: 'flex', flexDirection: 'column', gap: 8, minWidth: 0 }}>
+        <Typography.DefaultStrong color="intense">Deploy from GitHub</Typography.DefaultStrong>
+        <Typography.Small color="muted">
+          Connect a repository and deploy with a recommended stack — start from common App + service combinations.
+        </Typography.Small>
       </Box>
 
-      {githubConnected ? (
-        <Box style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <Icon icon={githubLogoIcon} style={{ width: 20, height: 20 }} />
-          <Typography.Default color="intense">GitHub account connected</Typography.Default>
+      <Box style={{ display: 'flex', flexDirection: 'column', gap: 8, width: '100%' }}>
+        <Typography.Small color="muted">Example stacks</Typography.Small>
+        <Box
+          style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
+            gap: 8,
+            width: '100%',
+          }}
+        >
+          {EXAMPLE_STACKS.map((stack) => (
+            <ExampleStackCard
+              key={stack.label}
+              label={stack.label}
+              services={stack.services}
+              dataHub={stack.dataHub}
+            />
+          ))}
         </Box>
-      ) : (
-        <Box>
-          <Button.Secondary type="button" icon={githubLogoIcon} onClick={onOpenModal}>
-            Connect GitHub account
-          </Button.Secondary>
-        </Box>
-      )}
+      </Box>
     </Box>
   )
 }
 
 DeployFromGitHubPanel.displayName = 'DeployFromGitHubPanel'
+
+function DataHubPanel({ onBookDemo }: { onBookDemo: () => void }) {
+  return (
+    <Box
+      style={{
+        padding: 24,
+        borderRadius: 8,
+        border: '1px solid var(--aquarium-border-color-muted)',
+        backgroundColor: 'var(--aquarium-background-color-muted)',
+        display: 'flex',
+        flexDirection: 'column',
+        gap: 16,
+      }}
+    >
+      <Box style={{ display: 'flex', flexDirection: 'column', gap: 8, minWidth: 0 }}>
+        <Typography.DefaultStrong color="intense">Data Hub</Typography.DefaultStrong>
+        <Typography.Small color="muted">
+          Create a Data Hub solution to group PostgreSQL, OpenSearch, and Kafka into a unified catalog — so teams can
+          discover, govern, and use data across services in one place.
+        </Typography.Small>
+      </Box>
+      <Box>
+        <Button.Secondary type="button" onClick={onBookDemo}>
+          Book demo
+        </Button.Secondary>
+      </Box>
+    </Box>
+  )
+}
+
+DataHubPanel.displayName = 'DataHubPanel'
+
+function DataHubSummary({ onBookDemo }: { onBookDemo: () => void }) {
+  return (
+    <Section title="Data Hub">
+      <Box style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+        <Typography.Default color="intense">
+          Unified data solutions that combine streaming, search, and relational workloads under one governed catalog.
+        </Typography.Default>
+        <Typography.Small color="muted">
+          Talk with our team to see how Data Hub fits your architecture and get early access.
+        </Typography.Small>
+        <Button.Primary type="button" fullWidth onClick={onBookDemo}>
+          Book demo
+        </Button.Primary>
+      </Box>
+    </Section>
+  )
+}
+
+DataHubSummary.displayName = 'DataHubSummary'
 
 export type OnboardingAppsProps = {
   userInitials: string
@@ -387,6 +589,7 @@ export function OnboardingApps({
 
   const isTrial = selectedService.pricingModel === 'trial'
   const isApplication = buildTarget === 'application'
+  const isDataHub = buildTarget === 'datahub'
 
   useEffect(() => {
     setServiceName(selectedService.defaultServiceName)
@@ -408,6 +611,10 @@ export function OnboardingApps({
   function handleGithubConnected() {
     setGithubConnected(true)
     showPlaygroundToast(addToast, 'GitHub account connected')
+  }
+
+  function handleBookDemo() {
+    showPlaygroundToast(addToast, 'Demo booking coming soon in this prototype')
   }
 
   return (
@@ -468,7 +675,7 @@ export function OnboardingApps({
               </Box>
             </CreationFlowSection>
 
-            <CreationFlowSection icon={containerIcon} title="What you would like to build?" showConnector={false}>
+            <CreationFlowSection icon={containerIcon} title="What you would like to build?">
               <Box style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
                 <ChoiceChipGroup
                   name={buildTargetGroupName}
@@ -484,13 +691,16 @@ export function OnboardingApps({
                     <InlineIcon icon={codeBlockIcon} />
                     An application
                   </ChoiceChip>
+                  <ChoiceChip value="datahub">
+                    <InlineIcon icon={layersIcon} />
+                    Data Hub
+                  </ChoiceChip>
                 </ChoiceChipGroup>
 
                 {isApplication ? (
-                  <DeployFromGitHubPanel
-                    githubConnected={githubConnected}
-                    onOpenModal={() => setGithubModalOpen(true)}
-                  />
+                  <DeployFromGitHubPanel />
+                ) : isDataHub ? (
+                  <DataHubPanel onBookDemo={handleBookDemo} />
                 ) : (
                   <Box className="onboarding-checkable-cards">
                     <Card.Group
@@ -529,7 +739,12 @@ export function OnboardingApps({
             }}
           >
             {isApplication ? (
-              <AivenRuntimeSummary />
+              <AivenRuntimeSummary
+                githubConnected={githubConnected}
+                onConnectGitHub={() => setGithubModalOpen(true)}
+              />
+            ) : isDataHub ? (
+              <DataHubSummary onBookDemo={handleBookDemo} />
             ) : (
               <Section title={selectedService.title}>
                 <Box style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
