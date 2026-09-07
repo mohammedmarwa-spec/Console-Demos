@@ -63,7 +63,7 @@ export function OnboardingTestEnvShell({ children, userInitials, onSkip }: Onboa
         <Box style={{ flex: 1 }} />
         <Box style={{ display: 'flex', alignItems: 'center', gap: 9, flexShrink: 0 }}>
           <Button.Ghost type="button" onClick={onSkip}>
-            Skip and setup later
+            Skip service creation
           </Button.Ghost>
           <Box
             aria-hidden

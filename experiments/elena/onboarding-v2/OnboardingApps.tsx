@@ -1,28 +1,40 @@
-import { useEffect, useMemo, useState } from 'react'
+'use client'
+
+import { useEffect, useId, useMemo, useState } from 'react'
 import {
   Box,
   Button,
   Card,
+  ChoiceChip,
+  ChoiceChipGroup,
   Divider,
   Icon,
+  InlineIcon,
   Input,
   Section,
   Select,
   StatusChip,
   Typography,
+  useToast,
 } from '@aivenio/aquarium'
+import codeBlockIcon from '@aivenio/aquarium/icons/codeBlock'
+import containerIcon from '@aivenio/aquarium/icons/container'
 import cpuChipIcon from '@aivenio/aquarium/icons/cpuChip'
+import databaseIcon from '@aivenio/aquarium/icons/database'
 import dbBackupIcon from '@aivenio/aquarium/icons/dbBackup'
 import floppyDiskIcon from '@aivenio/aquarium/icons/floppyDisk'
+import githubLogoIcon from '@aivenio/aquarium/icons/githubLogo'
+import infoSignIcon from '@aivenio/aquarium/icons/infoSign'
 import memoryIcon from '@aivenio/aquarium/icons/memory'
 import settingsIcon from '@aivenio/aquarium/icons/settings'
-import { ServiceIcon } from '../../components/ServiceIcon'
-import { CloudProviderIcon } from '../CloudProviderIcon'
+import { CloudProviderIcon } from '@experiments/_shared/components/CloudProviderIcon'
+import { CreationFlowSection } from '@experiments/_shared/components/CreationFlowSection'
+import { OnboardingTestEnvShell } from '@experiments/_shared/components/OnboardingTestEnvShell'
+import { ServiceIcon } from '@experiments/_shared/components/ServiceIcon'
 import {
   ONBOARDING_CHECKABLE_CARD_CSS,
   ONBOARDING_CHECKABLE_CARD_RING_CSS,
-} from './playgroundShared'
-import { OnboardingTestEnvShell } from './OnboardingTestEnvShell'
+} from '@experiments/_shared/lib/playgroundShared'
 import {
   DEFAULT_TEST_ENV_SERVICE_ID,
   TEST_ENV_LOCATION_OPTIONS,
@@ -31,24 +43,26 @@ import {
   type TestEnvPlanDetail,
   type TestEnvServiceId,
   type TestEnvServiceOption,
-} from './testEnvServicesCatalog'
+} from '@experiments/_shared/lib/testEnvServicesCatalog'
+import type { OnboardingTestEnvCreatePayload } from '@experiments/_shared/components/OnboardingTestEnv'
+import { showPlaygroundToast } from '@/screens/playground/showPlaygroundToast'
+import { ConnectGitHubModal } from './ConnectGitHubModal'
 
-export type OnboardingTestEnvCreatePayload = {
-  serviceTypeId: TestEnvServiceId
-  serviceName: string
-  projectName: string
-  location: TestEnvLocationId
-}
+type BuildTarget = 'service' | 'application'
 
-export type OnboardingTestEnvProps = {
-  userInitials: string
-  defaultProjectName: string
-  onSkip: () => void
-  onCreate: (payload: OnboardingTestEnvCreatePayload) => void
-  onCustomizePlan: (serviceTypeId: TestEnvServiceId) => void
-}
+/** Services shown in Figma onboarding + apps (no Grafana). */
+const ONBOARDING_V2_SERVICE_IDS: TestEnvServiceId[] = [
+  'postgresql',
+  'clickhouse',
+  'kafka',
+  'valkey',
+  'opensearch',
+  'mysql',
+]
 
-const DEFAULT_USER_NAME = 'Alex'
+const ONBOARDING_V2_SERVICES = ONBOARDING_V2_SERVICE_IDS.map(
+  (id) => TEST_ENV_SERVICES.find((s) => s.id === id)!,
+)
 
 const PLAN_DETAIL_ICONS = {
   cpu: cpuChipIcon,
@@ -163,13 +177,7 @@ function RecommendedPlanCard({
 
       <Box style={{ display: 'flex', flexDirection: 'column', gap: 8, width: '100%' }}>
         <Divider />
-        <Button.Ghost
-          dense
-          type="button"
-          icon={settingsIcon}
-          iconPlacement="right"
-          onClick={onCustomizePlan}
-        >
+        <Button.Ghost dense type="button" icon={settingsIcon} iconPlacement="right" onClick={onCustomizePlan}>
           View all plans and clouds
         </Button.Ghost>
       </Box>
@@ -241,27 +249,144 @@ function TrialCostCard({ monthlyAfterTrial }: { monthlyAfterTrial: string }) {
 
 TrialCostCard.displayName = 'TrialCostCard'
 
-export function OnboardingTestEnv({
+const AIVEN_APP_BENEFITS = [
+  'Deploy containerized apps directly from a GitHub repository',
+  'Connect your app to Aiven services in a few clicks',
+  'Start testing and demoing for free — no credit card required',
+] as const
+
+function AivenRuntimeSummary() {
+  return (
+    <Section title="Aiven Runtime">
+      <Box style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+        <Typography.Default color="intense">
+          Aiven Runtime lets you build and deploy applications from GitHub onto the Aiven Platform, then connect them to
+          managed services — all in one place.
+        </Typography.Default>
+
+        <Box style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+          {AIVEN_APP_BENEFITS.map((benefit) => (
+            <Box key={benefit} style={{ display: 'flex', alignItems: 'flex-start', gap: 8 }}>
+              <Box
+                aria-hidden
+                style={{
+                  width: 6,
+                  height: 6,
+                  borderRadius: '50%',
+                  marginTop: 7,
+                  flexShrink: 0,
+                  backgroundColor: 'var(--aquarium-text-color-muted)',
+                }}
+              />
+              <Typography.Small color="muted">{benefit}</Typography.Small>
+            </Box>
+          ))}
+        </Box>
+
+        <Box
+          style={{
+            padding: '12px 16px',
+            borderRadius: 8,
+            border: '1px solid var(--aquarium-border-color-muted)',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: 4,
+            width: '100%',
+          }}
+        >
+          <Typography.DefaultStrong color="muted">Getting started</Typography.DefaultStrong>
+          <Typography.Small color="muted">
+            Connect GitHub, pick a repository, and deploy with a recommended plan. Free forever for getting started.
+          </Typography.Small>
+        </Box>
+      </Box>
+    </Section>
+  )
+}
+
+AivenRuntimeSummary.displayName = 'AivenRuntimeSummary'
+
+function DeployFromGitHubPanel({
+  githubConnected,
+  onOpenModal,
+}: {
+  githubConnected: boolean
+  onOpenModal: () => void
+}) {
+  return (
+    <Box
+      style={{
+        padding: 24,
+        borderRadius: 8,
+        border: '1px solid var(--aquarium-border-color-muted)',
+        backgroundColor: 'var(--aquarium-background-color-muted)',
+        display: 'flex',
+        flexDirection: 'column',
+        gap: 16,
+      }}
+    >
+      <Box style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12 }}>
+        <Box style={{ display: 'flex', flexDirection: 'column', gap: 8, minWidth: 0 }}>
+          <Typography.DefaultStrong color="intense">Deploy from GitHub</Typography.DefaultStrong>
+          <Typography.Small color="muted">
+            Connect your GitHub account so Aiven can deploy selected repositories for your organization.
+          </Typography.Small>
+        </Box>
+        {githubConnected ? <StatusChip text="Connected" status="success" dense /> : null}
+      </Box>
+
+      {githubConnected ? (
+        <Box style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <Icon icon={githubLogoIcon} style={{ width: 20, height: 20 }} />
+          <Typography.Default color="intense">GitHub account connected</Typography.Default>
+        </Box>
+      ) : (
+        <Box>
+          <Button.Secondary type="button" icon={githubLogoIcon} onClick={onOpenModal}>
+            Connect GitHub account
+          </Button.Secondary>
+        </Box>
+      )}
+    </Box>
+  )
+}
+
+DeployFromGitHubPanel.displayName = 'DeployFromGitHubPanel'
+
+export type OnboardingAppsProps = {
+  userInitials: string
+  defaultProjectName: string
+  onSkip: () => void
+  onCreate: (payload: OnboardingTestEnvCreatePayload) => void
+  onCustomizePlan: (serviceTypeId: TestEnvServiceId) => void
+}
+
+export function OnboardingApps({
   userInitials,
   defaultProjectName,
   onSkip,
   onCreate,
   onCustomizePlan,
-}: OnboardingTestEnvProps) {
-  const [userName, setUserName] = useState(DEFAULT_USER_NAME)
+}: OnboardingAppsProps) {
+  const addToast = useToast()
+  const buildTargetGroupName = useId()
   const [projectName, setProjectName] = useState(defaultProjectName)
   const [location, setLocation] = useState<TestEnvLocationId>('finland')
+  const [buildTarget, setBuildTarget] = useState<BuildTarget>('service')
   const [selectedServiceId, setSelectedServiceId] = useState<TestEnvServiceId>(DEFAULT_TEST_ENV_SERVICE_ID)
   const [serviceName, setServiceName] = useState(
-    () => TEST_ENV_SERVICES.find((s) => s.id === DEFAULT_TEST_ENV_SERVICE_ID)!.defaultServiceName,
+    () => ONBOARDING_V2_SERVICES.find((s) => s.id === DEFAULT_TEST_ENV_SERVICE_ID)!.defaultServiceName,
   )
+  const [githubModalOpen, setGithubModalOpen] = useState(false)
+  const [githubConnected, setGithubConnected] = useState(false)
 
   const selectedService = useMemo(
-    () => TEST_ENV_SERVICES.find((s) => s.id === selectedServiceId) ?? TEST_ENV_SERVICES[0],
+    () => ONBOARDING_V2_SERVICES.find((s) => s.id === selectedServiceId) ?? ONBOARDING_V2_SERVICES[0],
     [selectedServiceId],
   )
 
   const isTrial = selectedService.pricingModel === 'trial'
+  const isApplication = buildTarget === 'application'
 
   useEffect(() => {
     setServiceName(selectedService.defaultServiceName)
@@ -280,14 +405,19 @@ export function OnboardingTestEnv({
     })
   }
 
+  function handleGithubConnected() {
+    setGithubConnected(true)
+    showPlaygroundToast(addToast, 'GitHub account connected')
+  }
+
   return (
     <OnboardingTestEnvShell userInitials={userInitials} onSkip={onSkip}>
       <style>{`${ONBOARDING_CHECKABLE_CARD_RING_CSS}\n${ONBOARDING_CHECKABLE_CARD_CSS}`}</style>
       <Box
         style={{
-          maxWidth: 1252,
+          maxWidth: 1380,
           margin: '0 auto',
-          padding: '64px 24px',
+          padding: '32px 64px 64px',
           display: 'flex',
           flexDirection: 'column',
           gap: 32,
@@ -295,21 +425,19 @@ export function OnboardingTestEnv({
       >
         <Box style={{ display: 'flex', flexDirection: 'column', gap: 8, alignItems: 'flex-start' }}>
           <Typography.Heading color="intense">Start building on Aiven Platform</Typography.Heading>
-          <Typography.Default color="success-intense">
-            $50 trial credits active · No credit card to get started
-          </Typography.Default>
+          <StatusChip text="$50 trial credits active · No credit card to get started" status="success" />
         </Box>
 
         <Box
           style={{
             display: 'grid',
-            gridTemplateColumns: 'minmax(0, 1fr) minmax(320px, 400px)',
-            gap: 32,
+            gridTemplateColumns: 'minmax(0, 1fr) minmax(320px, 402px)',
+            gap: 54,
             alignItems: 'start',
           }}
         >
-          <Box style={{ display: 'flex', flexDirection: 'column', gap: 24, minWidth: 0 }}>
-            <Section title="Basic details">
+          <Box style={{ display: 'flex', flexDirection: 'column', minWidth: 0 }}>
+            <CreationFlowSection icon={infoSignIcon} title="Basic details">
               <Box
                 style={{
                   display: 'grid',
@@ -319,13 +447,6 @@ export function OnboardingTestEnv({
                 }}
               >
                 <Input
-                  labelText="Your name"
-                  required
-                  reserveSpaceForError={false}
-                  value={userName}
-                  onChange={(e) => setUserName(e.target.value)}
-                />
-                <Input
                   labelText="Project name"
                   required
                   reserveSpaceForError={false}
@@ -333,7 +454,7 @@ export function OnboardingTestEnv({
                   onChange={(e) => setProjectName(e.target.value)}
                 />
                 <Select
-                  labelText="Country"
+                  labelText="Location"
                   required
                   reserveSpaceForError={false}
                   options={TEST_ENV_LOCATION_OPTIONS.map((o) => ({ label: o.label, value: o.value }))}
@@ -345,31 +466,56 @@ export function OnboardingTestEnv({
                   }}
                 />
               </Box>
-            </Section>
+            </CreationFlowSection>
 
-            <Section title="Choose your service">
-              <Box className="onboarding-checkable-cards">
-                <Card.Group
-                  checked={selectedServiceId}
-                  onCheckedChange={({ value }) =>
-                    setSelectedServiceId((value as TestEnvServiceId) ?? DEFAULT_TEST_ENV_SERVICE_ID)
-                  }
+            <CreationFlowSection icon={containerIcon} title="What you would like to build?" showConnector={false}>
+              <Box style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
+                <ChoiceChipGroup
+                  name={buildTargetGroupName}
+                  selectionMode="radio"
+                  value={buildTarget}
+                  onChange={(v) => setBuildTarget((v as BuildTarget) ?? 'service')}
                 >
-                  <Box
-                    style={{
-                      display: 'grid',
-                      gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
-                      gap: 16,
-                      alignItems: 'stretch',
-                    }}
-                  >
-                    {TEST_ENV_SERVICES.map((service) => (
-                      <ServicePickerCard key={service.id} service={service} />
-                    ))}
+                  <ChoiceChip value="service">
+                    <InlineIcon icon={databaseIcon} />
+                    A service
+                  </ChoiceChip>
+                  <ChoiceChip value="application">
+                    <InlineIcon icon={codeBlockIcon} />
+                    An application
+                  </ChoiceChip>
+                </ChoiceChipGroup>
+
+                {isApplication ? (
+                  <DeployFromGitHubPanel
+                    githubConnected={githubConnected}
+                    onOpenModal={() => setGithubModalOpen(true)}
+                  />
+                ) : (
+                  <Box className="onboarding-checkable-cards">
+                    <Card.Group
+                      checked={selectedServiceId}
+                      onCheckedChange={({ value }) =>
+                        setSelectedServiceId((value as TestEnvServiceId) ?? DEFAULT_TEST_ENV_SERVICE_ID)
+                      }
+                    >
+                      <Box
+                        style={{
+                          display: 'grid',
+                          gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
+                          gap: 16,
+                          alignItems: 'stretch',
+                        }}
+                      >
+                        {ONBOARDING_V2_SERVICES.map((service) => (
+                          <ServicePickerCard key={service.id} service={service} />
+                        ))}
+                      </Box>
+                    </Card.Group>
                   </Box>
-                </Card.Group>
+                )}
               </Box>
-            </Section>
+            </CreationFlowSection>
           </Box>
 
           <Box
@@ -382,34 +528,44 @@ export function OnboardingTestEnv({
               top: 0,
             }}
           >
-            <Section title={selectedService.title}>
-              <Box style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
-                <RecommendedPlanCard service={selectedService} onCustomizePlan={handleCustomizePlan} />
+            {isApplication ? (
+              <AivenRuntimeSummary />
+            ) : (
+              <Section title={selectedService.title}>
+                <Box style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+                  <RecommendedPlanCard service={selectedService} onCustomizePlan={handleCustomizePlan} />
 
-                {isTrial && selectedService.monthlyAfterTrial ? (
-                  <TrialCostCard monthlyAfterTrial={selectedService.monthlyAfterTrial} />
-                ) : (
-                  <FreeCostCard />
-                )}
+                  {isTrial && selectedService.monthlyAfterTrial ? (
+                    <TrialCostCard monthlyAfterTrial={selectedService.monthlyAfterTrial} />
+                  ) : (
+                    <FreeCostCard />
+                  )}
 
-                <Input
-                  labelText="Service name"
-                  required
-                  reserveSpaceForError={false}
-                  value={serviceName}
-                  onChange={(e) => setServiceName(e.target.value)}
-                />
+                  <Input
+                    labelText="Service name"
+                    required
+                    reserveSpaceForError={false}
+                    value={serviceName}
+                    onChange={(e) => setServiceName(e.target.value)}
+                  />
 
-                <Button.Primary type="button" fullWidth onClick={handleCreate}>
-                  Create service
-                </Button.Primary>
-              </Box>
-            </Section>
+                  <Button.Primary type="button" fullWidth onClick={handleCreate}>
+                    Create service
+                  </Button.Primary>
+                </Box>
+              </Section>
+            )}
           </Box>
         </Box>
       </Box>
+
+      <ConnectGitHubModal
+        open={githubModalOpen}
+        onClose={() => setGithubModalOpen(false)}
+        onConnected={handleGithubConnected}
+      />
     </OnboardingTestEnvShell>
   )
 }
 
-OnboardingTestEnv.displayName = 'OnboardingTestEnv'
+OnboardingApps.displayName = 'OnboardingApps'

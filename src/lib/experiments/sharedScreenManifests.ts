@@ -207,17 +207,16 @@ export const playgroundOnboardingScreenManifest: ComponentManifest = {
 
 export const onboardingTestEnvScreenManifest: ComponentManifest = {
   aquariumComponents: [
-    { name: 'Box', usage: 'Create-test-env form layout' },
-    { name: 'Typography', usage: 'Headings, labels, and helper copy' },
+    { name: 'Box', usage: 'Onboarding form and summary sidebar layout' },
+    { name: 'Typography', usage: 'Page heading, trial credits line, and helper copy' },
     { name: 'Card', usage: 'Service picker and checkable option cards' },
-    { name: 'StatusChip', usage: 'Service / plan labels on cards' },
-    { name: 'InlineIcon', usage: 'Info icons beside helper text' },
-    { name: 'Tooltip', usage: 'Plan and cloud setting explanations' },
-    { name: 'Input', usage: 'Service name and project name fields' },
-    { name: 'Select', usage: 'Location / region selection' },
-    { name: 'Section', usage: 'Advanced plan and cloud settings' },
-    { name: 'Button', usage: 'Skip, create, and customize-plan actions' },
-    { name: 'Divider', usage: 'Separators in the test-env shell' },
+    { name: 'StatusChip', usage: 'Free / Startup-4 plan badges and Uses trial credits chip' },
+    { name: 'Icon', usage: 'CPU, memory, storage, and backup icons in plan details' },
+    { name: 'Input', usage: 'Your name, project name, and service name fields' },
+    { name: 'Select', usage: 'Country selection in Basic details' },
+    { name: 'Section', usage: 'Basic details, service picker, and summary panels' },
+    { name: 'Button', usage: 'Skip, view plans, and create service actions' },
+    { name: 'Divider', usage: 'Separators in the shell header and summary cards' },
   ],
   prototypeComponents: [
     {
@@ -234,10 +233,11 @@ export const onboardingTestEnvScreenManifest: ComponentManifest = {
     },
     {
       name: 'CloudProviderIcon',
-      reason: 'Cloud provider icons in location options',
+      reason: 'Cloud provider logo on paid/trial plan preview',
     },
   ],
   notes: [
     'Map describes shared OnboardingTestEnv (src/screens/playground/OnboardingTestEnv.tsx).',
+    'Summary sidebar switches Free vs In Trial (ClickHouse) recommended-plan states from Figma.',
   ],
 }
