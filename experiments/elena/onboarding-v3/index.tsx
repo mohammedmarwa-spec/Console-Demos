@@ -8,9 +8,9 @@ import { AivenRuntimePage } from './AivenRuntimePage'
 import { OnboardingApps } from './OnboardingApps'
 
 export const pageMeta: PageMeta = {
-  title: 'Onboarding + apps',
+  title: 'Onboarding + apps (How it works inline)',
   description:
-    'Onboarding with service vs application choice, Aiven Runtime summary, and navigation into the Runtime empty state.',
+    'Copy of onboarding-v2 with How it works under the Application path instead of the Runtime sidebar.',
 }
 
 type ExperimentView = 'onboarding' | 'runtime'

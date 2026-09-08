@@ -2,6 +2,7 @@
 
 import { useEffect, useId, useMemo, useState, type ReactNode } from 'react'
 import {
+  Alert,
   Box,
   Button,
   Card,
@@ -405,13 +406,11 @@ function DeployPathCard({
   title,
   titleAccessory,
   description,
-  action,
 }: {
   icon: typeof githubLogoIcon
   title: string
   titleAccessory?: ReactNode
   description: ReactNode
-  action: ReactNode
 }) {
   return (
     <Box
@@ -422,24 +421,19 @@ function DeployPathCard({
         backgroundColor: 'var(--aquarium-background-color-layer)',
         display: 'flex',
         flexDirection: 'column',
-        gap: 16,
+        gap: 8,
         width: '100%',
         minWidth: 0,
         boxSizing: 'border-box',
         height: '100%',
-        minHeight: '14.4rem',
       }}
     >
-      <Box style={{ display: 'flex', flexDirection: 'column', gap: 8, minWidth: 0 }}>
-        <Box style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', minWidth: 0 }}>
-          <Icon icon={icon} style={{ width: 20, height: 20, flexShrink: 0 }} />
-          <Typography.DefaultStrong color="intense">{title}</Typography.DefaultStrong>
-          {titleAccessory}
-        </Box>
-        <Typography.Caption color="muted">{description}</Typography.Caption>
+      <Box style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', minWidth: 0 }}>
+        <Icon icon={icon} style={{ width: 20, height: 20, flexShrink: 0 }} />
+        <Typography.DefaultStrong color="intense">{title}</Typography.DefaultStrong>
+        {titleAccessory}
       </Box>
-
-      <Box style={{ marginTop: 'auto', width: '100%' }}>{action}</Box>
+      <Typography.Caption color="muted">{description}</Typography.Caption>
     </Box>
   )
 }
@@ -459,9 +453,20 @@ function AivenRuntimeSummary() {
 
 AivenRuntimeSummary.displayName = 'AivenRuntimeSummary'
 
-function DeployApplicationPanel({ onConnectGitHub }: { onConnectGitHub: () => void }) {
+function HowItWorksSection() {
   return (
-    <Box style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+    <Box style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+      <Typography.DefaultStrong color="intense">How it works</Typography.DefaultStrong>
+      <RuntimeVerticalStepper activeIndex={0} />
+    </Box>
+  )
+}
+
+HowItWorksSection.displayName = 'HowItWorksSection'
+
+function DeployApplicationPanel() {
+  return (
+    <Box style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
       <Box
         style={{
           display: 'grid',
@@ -476,48 +481,21 @@ function DeployApplicationPanel({ onConnectGitHub }: { onConnectGitHub: () => vo
           title="Connect your repository"
           titleAccessory={<StatusChip text="Read-only access" status="info" dense />}
           description="Docker Compose required. Your repository needs a compose.yaml or docker-compose.yml file."
-          action={
-            <Button.Primary type="button" fullWidth onClick={onConnectGitHub}>
-              Connect GitHub
-            </Button.Primary>
-          }
         />
 
         <DeployPathCard
           icon={codeBlockIcon}
           title="Start with an example app"
           description="Ready to deploy. Docker Compose configuration is included."
-          action={
-            <Link.Button.Secondary
-              fullWidth
-              href={EXAMPLE_APP_REPO_URL}
-              target="_blank"
-              rel="noopener noreferrer"
-              icon={linkExternalIcon}
-              iconPlacement="right"
-            >
-              Clone repo with example apps
-            </Link.Button.Secondary>
-          }
         />
       </Box>
 
-      <Box
-        style={{
-          padding: 20,
-          borderRadius: 8,
-          border: '1px solid var(--aquarium-border-color-muted)',
-          backgroundColor: 'var(--aquarium-background-color-layer)',
-          display: 'flex',
-          flexDirection: 'column',
-          gap: 12,
-          width: '100%',
-          boxSizing: 'border-box',
-        }}
-      >
-        <Typography.DefaultStrong color="intense">How it works</Typography.DefaultStrong>
-        <RuntimeVerticalStepper activeIndex={0} />
-      </Box>
+      <Alert type="information">
+        Not sure if your repository is ready? We&apos;ll check it after you connect GitHub and help you with the next
+        step.
+      </Alert>
+
+      <HowItWorksSection />
     </Box>
   )
 }
@@ -615,7 +593,7 @@ export function OnboardingApps({
                 </ChoiceChipGroup>
 
                 {isApplication ? (
-                  <DeployApplicationPanel onConnectGitHub={onGoToRuntime} />
+                  <DeployApplicationPanel />
                 ) : (
                   <Box className="onboarding-checkable-cards">
                     <Card.Group
@@ -689,7 +667,24 @@ export function OnboardingApps({
             }}
           >
             {isApplication ? (
-              <AivenRuntimeSummary />
+              <>
+                <AivenRuntimeSummary />
+                <Box style={{ display: 'flex', flexDirection: 'column', gap: 8, width: '100%' }}>
+                  <Button.Primary type="button" fullWidth onClick={onGoToRuntime}>
+                    Connect GitHub
+                  </Button.Primary>
+                  <Link.Button.Secondary
+                    fullWidth
+                    href={EXAMPLE_APP_REPO_URL}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    icon={linkExternalIcon}
+                    iconPlacement="right"
+                  >
+                    Copy repo with example apps
+                  </Link.Button.Secondary>
+                </Box>
+              </>
             ) : (
               <Section title={selectedService.title}>
                 <Box style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>

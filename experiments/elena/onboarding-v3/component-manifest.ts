@@ -7,7 +7,7 @@ export const componentManifest: ComponentManifest = {
     { name: 'Typography', usage: 'Heading, section titles, and helper copy', storybookUrl: aquariumStorybookLinks.Typography },
     {
       name: 'StatusChip',
-      usage: 'Trial credits banner and plan chips',
+      usage: 'Trial credits banner, plan chips, Read-only access on Connect repository',
       storybookUrl: aquariumStorybookLinks.StatusChip,
     },
     { name: 'Input', usage: 'Project name and service name', storybookUrl: aquariumStorybookLinks.Input },
@@ -18,13 +18,18 @@ export const componentManifest: ComponentManifest = {
       storybookUrl: 'https://aquarium-library.aiven.io/?path=/docs/inputs-choicechip--docs',
     },
     { name: 'Card', usage: 'Service picker cards', storybookUrl: aquariumStorybookLinks.Card },
-    { name: 'Section', usage: 'Service summary and Aiven Runtime sidebar', storybookUrl: aquariumStorybookLinks.Section },
+    { name: 'Section', usage: 'Service summary and Aiven Runtime sidebar price', storybookUrl: aquariumStorybookLinks.Section },
+    {
+      name: 'Alert',
+      usage: 'Repository readiness tip under deploy path cards',
+      storybookUrl: aquariumStorybookLinks.Alert,
+    },
     {
       name: 'Link',
-      usage: 'Browse example apps external link',
+      usage: 'Clone repo with example apps external link',
       storybookUrl: aquariumStorybookLinks.Link,
     },
-    { name: 'Button', usage: 'Connect GitHub, Go to Aiven Runtime, Create service', storybookUrl: aquariumStorybookLinks.Button },
+    { name: 'Button', usage: 'Connect GitHub, Create service', storybookUrl: aquariumStorybookLinks.Button },
     { name: 'Divider', usage: 'Plan and cost card separators', storybookUrl: aquariumStorybookLinks.Divider },
     { name: 'Icon', usage: 'Plan detail, section, and deploy path icons', storybookUrl: aquariumStorybookLinks.Icon },
     {
@@ -43,11 +48,15 @@ export const componentManifest: ComponentManifest = {
   prototypeComponents: [
     {
       name: 'OnboardingApps',
-      reason: 'Experiment screen matching Figma onboarding + apps layout',
+      reason: 'Copy of onboarding-v2 with How it works under Application',
     },
     {
       name: 'DeployPathCard',
       reason: 'Connect repository / Start with example app path cards',
+    },
+    {
+      name: 'HowItWorksSection',
+      reason: 'How it works stepper rendered in the Application main column',
     },
     {
       name: 'AivenRuntimePage',
@@ -63,7 +72,7 @@ export const componentManifest: ComponentManifest = {
     },
     {
       name: 'RuntimeVerticalStepper',
-      reason: 'How it works steps in a box under Application path cards',
+      reason: 'How it works steps under Application path',
     },
     {
       name: 'CreationFlowSection',
@@ -75,7 +84,7 @@ export const componentManifest: ComponentManifest = {
     },
     {
       name: 'ServiceIcon',
-      reason: 'Service-type icons on picker cards',
+      reason: 'Service-type icons on picker cards and Connect data services step',
     },
     {
       name: 'CloudProviderIcon',
@@ -83,9 +92,9 @@ export const componentManifest: ComponentManifest = {
     },
   ],
   notes: [
-    'Custom UI in experiments/elena/onboarding-v2 — not the shared OnboardingTestEnv launcher.',
-    'How it works sits in a bordered box under the Connect repository / Start with example app cards.',
-    'Connect GitHub on the Application path navigates to AivenRuntimePage.',
-    'GitHub modal opens from Runtime Deploy application (connect → waiting → success).',
+    'Copy of experiments/elena/onboarding-v2 — layout variant only.',
+    'How it works lives under the Application path (main column), not in the Runtime sidebar.',
+    'Aiven Runtime sidebar shows monthly price, then Connect GitHub and Copy repo CTAs stacked below.',
+    'Connect GitHub navigates to AivenRuntimePage; GitHub modal opens from Runtime Deploy application.',
   ],
 }
