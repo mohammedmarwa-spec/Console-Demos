@@ -40,7 +40,9 @@ export function OnboardingTestEnvShell({ children, userInitials, onSkip }: Onboa
   return (
     <Box
       style={{
-        minHeight: '100vh',
+        // Fill viewport under sticky PlaygroundHeader (min-height 48px).
+        height: 'calc(100dvh - 48px)',
+        minHeight: 0,
         display: 'flex',
         flexDirection: 'column',
         backgroundColor: 'var(--aquarium-background-color-body)',
@@ -63,7 +65,7 @@ export function OnboardingTestEnvShell({ children, userInitials, onSkip }: Onboa
         <Box style={{ flex: 1 }} />
         <Box style={{ display: 'flex', alignItems: 'center', gap: 9, flexShrink: 0 }}>
           <Button.Ghost type="button" onClick={onSkip}>
-            Skip service creation
+            Go to Console
           </Button.Ghost>
           <Box
             aria-hidden
@@ -89,6 +91,9 @@ export function OnboardingTestEnvShell({ children, userInitials, onSkip }: Onboa
         component="footer"
         style={{
           flexShrink: 0,
+          position: 'sticky',
+          bottom: 0,
+          zIndex: 5,
           padding: '0 24px 16px',
           backgroundColor: 'var(--aquarium-background-color-body)',
         }}

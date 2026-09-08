@@ -193,6 +193,7 @@ export const ONBOARDING_CHECKABLE_CARD_RING_CSS = `
     box-shadow: none !important;
     min-width: 0 !important;
     width: 100%;
+    height: 100%;
   }
   .onboarding-checkable-cards label.Aquarium-Card\\.Label.ring-2 {
     --tw-ring-offset-shadow: 0 0 #0000 !important;

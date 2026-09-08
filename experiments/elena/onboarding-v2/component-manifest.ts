@@ -14,7 +14,7 @@ export const componentManifest: ComponentManifest = {
     { name: 'Select', usage: 'Location field', storybookUrl: aquariumStorybookLinks.Select },
     {
       name: 'ChoiceChip',
-      usage: 'A service / An application toggle',
+      usage: 'Create a data service / Deploy an application toggle',
       storybookUrl: 'https://aquarium-library.aiven.io/?path=/docs/inputs-choicechip--docs',
     },
     { name: 'Card', usage: 'Service picker cards', storybookUrl: aquariumStorybookLinks.Card },
@@ -44,7 +44,7 @@ export const componentManifest: ComponentManifest = {
     },
     {
       name: 'RuntimeVerticalStepper',
-      reason: 'Dense vertical stepper matching Aquarium finished/ongoing/waiting states',
+      reason: 'Vertical non-dense Aquarium Stepper states (numbered / completed tick)',
     },
     {
       name: 'CreationFlowSection',
@@ -65,7 +65,7 @@ export const componentManifest: ComponentManifest = {
   ],
   notes: [
     'Custom UI in experiments/elena/onboarding-v2 — not the shared OnboardingTestEnv launcher.',
-    'Choice chips: A service, An application (Runtime + GitHub), Data Hub (description + Book demo).',
+    'Summary CTAs (Create service / Connect GitHub) sit under the sidebar Section, not inside it.',
     'GitHub modal mirrors Console SelectSourceEmptyState (connect → waiting → success).',
   ],
 }
