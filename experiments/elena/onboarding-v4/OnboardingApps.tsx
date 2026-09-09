@@ -5,8 +5,6 @@ import {
   Box,
   Button,
   Card,
-  ChoiceChip,
-  ChoiceChipGroup,
   Divider,
   Icon,
   InlineIcon,
@@ -20,6 +18,7 @@ import {
 import codeBlockIcon from '@aivenio/aquarium/icons/codeBlock'
 import containerIcon from '@aivenio/aquarium/icons/container'
 import cpuChipIcon from '@aivenio/aquarium/icons/cpuChip'
+import databaseIcon from '@aivenio/aquarium/icons/database'
 import dbBackupIcon from '@aivenio/aquarium/icons/dbBackup'
 import floppyDiskIcon from '@aivenio/aquarium/icons/floppyDisk'
 import folderCloseIcon from '@aivenio/aquarium/icons/folderClose'
@@ -48,6 +47,67 @@ import {
 import type { OnboardingTestEnvCreatePayload } from '@experiments/_shared/components/OnboardingTestEnv'
 
 type BuildTarget = 'service' | 'application'
+
+type BuildTargetOption = {
+  id: BuildTarget
+  title: string
+  description: string
+  features: string[]
+  footer: string
+}
+
+const BUILD_TARGET_OPTIONS: BuildTargetOption[] = [
+  {
+    id: 'service',
+    title: 'Data service',
+    description: 'Spin up a managed database, streaming, or search service in minutes.',
+    features: [
+      'PostgreSQL, Kafka, ClickHouse, Valkey, and more',
+      'Recommended plan selected for you',
+      'Start with free or trial credits',
+    ],
+    footer: 'Fully managed',
+  },
+  {
+    id: 'application',
+    title: 'Application',
+    description: 'Deploy from GitHub into your Aiven project with Aiven Runtime.',
+    features: [
+      'Connect a GitHub repository',
+      'Docker Compose required',
+      'Suggested data services after scan',
+    ],
+    footer: 'From $7',
+  },
+]
+
+const BUILD_TARGET_CARD_CSS = `
+  .onboarding-build-target-cards {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: nowrap;
+    gap: 16px;
+    width: 100%;
+    min-width: 0;
+    align-items: stretch;
+  }
+  .onboarding-build-target-cards label.Aquarium-Card.Label {
+    flex: 1 1 0;
+    min-width: 0;
+    display: flex;
+    box-sizing: border-box;
+  }
+  .onboarding-build-target-cards label.Aquarium-Card.Label.ring-2 {
+    --tw-ring-offset-shadow: 0 0 #0000 !important;
+    --tw-ring-shadow: 0 0 #0000 !important;
+    --tw-ring-width: 0 !important;
+    --tw-ring-offset-width: 0 !important;
+    box-shadow: inset 0 0 0 2px var(--aquarium-border-color-primary-default) !important;
+  }
+  .onboarding-build-target-cards label.Aquarium-Card.Label > div {
+    flex: 1;
+  }
+`
 
 /** Services shown in Figma onboarding + apps (no Grafana). */
 const ONBOARDING_V2_SERVICE_IDS: TestEnvServiceId[] = [
@@ -93,6 +153,41 @@ function ServicePickerCard({ service }: { service: TestEnvServiceOption }) {
 }
 
 ServicePickerCard.displayName = 'ServicePickerCard'
+
+function BuildTargetCard({ option }: { option: BuildTargetOption }) {
+  return (
+    <Card
+      fullWidth
+      checkable
+      value={option.id}
+      title={
+        <Card.Title>
+          <Typography.DefaultStrong color="intense">{option.title}</Typography.DefaultStrong>
+        </Card.Title>
+      }
+    >
+      <Box style={{ display: 'flex', flexDirection: 'column', gap: 16, flex: 1, minHeight: 0 }}>
+        <Typography.Caption color="muted">{option.description}</Typography.Caption>
+        <Box style={{ display: 'flex', flexDirection: 'column', gap: 4, flex: 1 }}>
+          {option.features.map((text) => (
+            <Box key={text} style={{ display: 'flex', gap: 8, alignItems: 'flex-start' }}>
+              <Icon
+                aria-hidden
+                icon={tickIcon}
+                color="success-intense"
+                style={{ width: 16, height: 16, flexShrink: 0, marginTop: 1 }}
+              />
+              <Typography.Caption color="muted">{text}</Typography.Caption>
+            </Box>
+          ))}
+        </Box>
+        <Typography.SmallStrong color="intense">{option.footer}</Typography.SmallStrong>
+      </Box>
+    </Card>
+  )
+}
+
+BuildTargetCard.displayName = 'BuildTargetCard'
 
 function PlanDetailItem({ detail }: { detail: TestEnvPlanDetail }) {
   return (
@@ -426,8 +521,6 @@ function DeployPathCard({
         width: '100%',
         minWidth: 0,
         boxSizing: 'border-box',
-        height: '100%',
-        minHeight: '14.4rem',
       }}
     >
       <Box style={{ display: 'flex', flexDirection: 'column', gap: 8, minWidth: 0 }}>
@@ -439,7 +532,7 @@ function DeployPathCard({
         <Typography.Caption color="muted">{description}</Typography.Caption>
       </Box>
 
-      <Box style={{ marginTop: 'auto', width: '100%' }}>{action}</Box>
+      <Box style={{ width: '100%' }}>{action}</Box>
     </Box>
   )
 }
@@ -467,7 +560,7 @@ function DeployApplicationPanel({ onConnectGitHub }: { onConnectGitHub: () => vo
           display: 'grid',
           gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
           gap: 16,
-          alignItems: 'stretch',
+          alignItems: 'start',
           width: '100%',
         }}
       >
@@ -577,7 +670,7 @@ export function OnboardingApps({
 
   return (
     <OnboardingTestEnvShell userInitials={userInitials} onSkip={onSkip}>
-      <style>{`${ONBOARDING_CHECKABLE_CARD_RING_CSS}\n${ONBOARDING_CHECKABLE_CARD_CSS}`}</style>
+      <style>{`${ONBOARDING_CHECKABLE_CARD_RING_CSS}\n${ONBOARDING_CHECKABLE_CARD_CSS}\n${BUILD_TARGET_CARD_CSS}`}</style>
       <Box
         style={{
           maxWidth: 1380,
@@ -602,48 +695,7 @@ export function OnboardingApps({
           }}
         >
           <Box style={{ display: 'flex', flexDirection: 'column', minWidth: 0 }}>
-            <CreationFlowSection icon={containerIcon} title="What would you like to build?">
-              <Box style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
-                <ChoiceChipGroup
-                  name={buildTargetGroupName}
-                  selectionMode="radio"
-                  value={buildTarget}
-                  onChange={(v) => setBuildTarget((v as BuildTarget) ?? 'service')}
-                >
-                  <ChoiceChip value="service">Data service</ChoiceChip>
-                  <ChoiceChip value="application">Application</ChoiceChip>
-                </ChoiceChipGroup>
-
-                {isApplication ? (
-                  <DeployApplicationPanel onConnectGitHub={onGoToRuntime} />
-                ) : (
-                  <Box className="onboarding-checkable-cards">
-                    <Card.Group
-                      checked={selectedServiceId}
-                      onCheckedChange={({ value }) =>
-                        setSelectedServiceId((value as TestEnvServiceId) ?? DEFAULT_TEST_ENV_SERVICE_ID)
-                      }
-                    >
-                      <Box
-                        style={{
-                          display: 'grid',
-                          gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
-                          gridAutoRows: '1fr',
-                          gap: 16,
-                          alignItems: 'stretch',
-                        }}
-                      >
-                        {ONBOARDING_V2_SERVICES.map((service) => (
-                          <ServicePickerCard key={service.id} service={service} />
-                        ))}
-                      </Box>
-                    </Card.Group>
-                  </Box>
-                )}
-              </Box>
-            </CreationFlowSection>
-
-            <CreationFlowSection icon={folderCloseIcon} title="Basic details" showConnector={false}>
+            <CreationFlowSection icon={folderCloseIcon} title="Basic details">
               <Box
                 style={{
                   display: 'grid',
@@ -673,6 +725,56 @@ export function OnboardingApps({
                 />
               </Box>
             </CreationFlowSection>
+
+            <CreationFlowSection icon={containerIcon} title="What would you like to build?">
+              <Box style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+                <Typography.Small color="muted">
+                  Choose a data service to create now, or deploy an application from GitHub.
+                </Typography.Small>
+                <Card.Group
+                  name={buildTargetGroupName}
+                  checked={buildTarget}
+                  onCheckedChange={({ value }) => setBuildTarget((value as BuildTarget) ?? 'service')}
+                >
+                  <Box className="onboarding-build-target-cards">
+                    {BUILD_TARGET_OPTIONS.map((option) => (
+                      <BuildTargetCard key={option.id} option={option} />
+                    ))}
+                  </Box>
+                </Card.Group>
+              </Box>
+            </CreationFlowSection>
+
+            {isApplication ? (
+              <CreationFlowSection icon={githubLogoIcon} title="Connect repository" showConnector={false}>
+                <DeployApplicationPanel onConnectGitHub={onGoToRuntime} />
+              </CreationFlowSection>
+            ) : (
+              <CreationFlowSection icon={databaseIcon} title="Select service" showConnector={false}>
+                <Box className="onboarding-checkable-cards">
+                  <Card.Group
+                    checked={selectedServiceId}
+                    onCheckedChange={({ value }) =>
+                      setSelectedServiceId((value as TestEnvServiceId) ?? DEFAULT_TEST_ENV_SERVICE_ID)
+                    }
+                  >
+                    <Box
+                      style={{
+                        display: 'grid',
+                        gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
+                        gridAutoRows: '1fr',
+                        gap: 16,
+                        alignItems: 'stretch',
+                      }}
+                    >
+                      {ONBOARDING_V2_SERVICES.map((service) => (
+                        <ServicePickerCard key={service.id} service={service} />
+                      ))}
+                    </Box>
+                  </Card.Group>
+                </Box>
+              </CreationFlowSection>
+            )}
           </Box>
 
           <Box
