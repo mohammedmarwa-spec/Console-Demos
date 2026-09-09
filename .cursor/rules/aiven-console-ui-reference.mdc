@@ -1,0 +1,48 @@
+---
+description: Use the real Aiven Console UI (aiven-core) as the design/structure reference for Console-like work
+alwaysApply: true
+---
+
+# Aiven Console UI reference (source of truth for Console look & structure)
+
+A read-only checkout of the production Aiven Console UI lives at the workspace root:
+
+`../aiven-core-ui-reference/ui/console` (relative to this repo; i.e. `<workspace>/aiven-core-ui-reference/ui/console`)
+
+It is a sparse checkout of `github.com/aiven/aiven-core` → `ui/` (apps: `console`,
+`console-playwright`, `regatta`, `ts-client`). **`ui/console` is the primary reference.**
+
+## When to consult it
+
+Before building or restyling any Console-like screen, shell, or flow (home screen, service
+lists, service pages, org/project layouts, headers, sidebars, empty states, etc.), look at how
+the real Console does it and mirror its structure, layout, and interaction patterns.
+
+Key paths in `ui/console/src`:
+
+- `features/homepage/HomePageScreen.tsx` — the Console **home screen** (start here for home work).
+- `features/` — one folder per product area (`serviceList`, `service`, `billing`, `opensearch`,
+  `kafka`, `onboarding`, `homepage`, …). Find the closest real feature and follow its patterns.
+- `layouts/` — app shell + chrome: `AppShell.tsx`, `AppHeader.tsx`, `RootLayout.tsx`,
+  `OrganizationLayout.tsx`, `ProjectLayout.tsx`.
+- `ui/{components,panels,screens}` — shared, reusable UI building blocks (~100+ components).
+- `themes/` — design tokens, mixins, variables, and per-brand theming.
+
+## How to use it
+
+- **Reference only — do not copy files wholesale.** Reproduce the layout/UX using this repo's
+  own stack: `@aivenio/aquarium` components + `--aquarium-*` tokens, verified via the Storybook
+  and Figma MCPs (see the other rules). The real Console uses different infra
+  (webpack, its own routing/data layer); we only borrow structure, hierarchy, and UX.
+- Prefer the real Console's information architecture and component composition over inventing new
+  layouts.
+- Do not add `aiven-core-ui-reference/` as a dependency, import from it, or run its build. It is
+  not wired into this project.
+
+## Refreshing the reference
+
+To update it later (blobless sparse checkout of just `ui/`):
+
+```
+cd <workspace> && cd aiven-core-ui-reference && git pull
+```
