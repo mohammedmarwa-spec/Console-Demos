@@ -83,7 +83,7 @@ export function WebsiteHero() {
             <h1 className={`${styles.headline} ${funnelDisplay.className}`}>
               <span className={styles.highlight}>Open source</span> data infrastructure, made simple.
             </h1>
-            <Typography.Default className={styles.subhead} style={{ color: '#ffffff' }}>
+            <Typography.Default className={styles.subhead}>
               Get production-ready Kafka, PostgreSQL, ClickHouse, OpenSearch, and more — on any cloud, in
               minutes, with no infra ops required — all backed by Aiven&apos;s 99.99% SLA.
             </Typography.Default>

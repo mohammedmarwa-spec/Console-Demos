@@ -74,7 +74,7 @@ function GitHubAivenConnectionGraphic() {
             transform: 'translate(-50%, -50%)',
           }}
         >
-          <Icon icon={smallTickIcon} color="success" style={{ width: 12, height: 12 }} />
+          <Icon icon={smallTickIcon} color="success-intense" style={{ width: 12, height: 12 }} />
         </Box>
       </Box>
 

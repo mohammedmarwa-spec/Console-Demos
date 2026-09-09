@@ -337,13 +337,11 @@ function RuntimeVerticalStepper({ activeIndex = 0 }: { activeIndex?: number }) {
                 {state === 'completed' ? (
                   <InlineIcon icon={tickIcon} color="default" style={{ width: 14, height: 14 }} />
                 ) : (
-                  <Typography.Small
-                    color={state === 'active' ? 'intense' : 'muted'}
-                    htmlTag="span"
-                    style={{ lineHeight: 1 }}
-                  >
-                    {stepNumber}
-                  </Typography.Small>
+                  <Box style={{ lineHeight: 1 }}>
+                    <Typography.Small color={state === 'active' ? 'intense' : 'muted'} htmlTag="span">
+                      {stepNumber}
+                    </Typography.Small>
+                  </Box>
                 )}
               </Box>
               {!isLast ? (

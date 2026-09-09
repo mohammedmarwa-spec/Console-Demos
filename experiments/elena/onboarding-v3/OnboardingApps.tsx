@@ -338,13 +338,11 @@ function RuntimeVerticalStepper({ activeIndex = 0 }: { activeIndex?: number }) {
                 {state === 'completed' ? (
                   <InlineIcon icon={tickIcon} color="default" style={{ width: 14, height: 14 }} />
                 ) : (
-                  <Typography.Small
-                    color={state === 'active' ? 'intense' : 'muted'}
-                    htmlTag="span"
-                    style={{ lineHeight: 1 }}
-                  >
-                    {stepNumber}
-                  </Typography.Small>
+                  <Box style={{ lineHeight: 1 }}>
+                    <Typography.Small color={state === 'active' ? 'intense' : 'muted'} htmlTag="span">
+                      {stepNumber}
+                    </Typography.Small>
+                  </Box>
                 )}
               </Box>
               {!isLast ? (
@@ -674,12 +672,12 @@ export function OnboardingApps({
                     Connect GitHub
                   </Button.Primary>
                   <Link.Button.Secondary
-                    fullWidth
                     href={EXAMPLE_APP_REPO_URL}
                     target="_blank"
                     rel="noopener noreferrer"
                     icon={linkExternalIcon}
                     iconPlacement="right"
+                    style={{ width: '100%', justifyContent: 'center', boxSizing: 'border-box' }}
                   >
                     Copy repo with example apps
                   </Link.Button.Secondary>
