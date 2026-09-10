@@ -2,6 +2,7 @@
 
 import { useEffect, useId, useMemo, useState, type ReactNode } from 'react'
 import {
+  Badge,
   Box,
   Button,
   Card,
@@ -27,9 +28,7 @@ import folderCloseIcon from '@aivenio/aquarium/icons/folderClose'
 import githubLogoIcon from '@aivenio/aquarium/icons/githubLogo'
 import linkExternalIcon from '@aivenio/aquarium/icons/linkExternal'
 import memoryIcon from '@aivenio/aquarium/icons/memory'
-import settingsIcon from '@aivenio/aquarium/icons/settings'
 import tickIcon from '@aivenio/aquarium/icons/tick'
-import { CloudProviderIcon } from '@experiments/_shared/components/CloudProviderIcon'
 import { OnboardingTestEnvShell } from '@experiments/_shared/components/OnboardingTestEnvShell'
 import { ServiceIcon } from '@experiments/_shared/components/ServiceIcon'
 import {
@@ -105,170 +104,19 @@ ServicePickerCard.displayName = 'ServicePickerCard'
 function PlanDetailItem({ detail }: { detail: TestEnvPlanDetail }) {
   return (
     <Box style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-      <Icon icon={PLAN_DETAIL_ICONS[detail.kind]} color="muted" style={{ width: 14, height: 14, flexShrink: 0 }} />
-      <Typography.Default color="intense" htmlTag="span">
+      <Icon icon={PLAN_DETAIL_ICONS[detail.kind]} color="muted" style={{ width: 16, height: 16, flexShrink: 0 }} />
+      <Typography.Code color="intense" htmlTag="span">
         {detail.label}
-      </Typography.Default>
+      </Typography.Code>
     </Box>
   )
 }
 
 PlanDetailItem.displayName = 'PlanDetailItem'
 
-function RecommendedPlanCard({
-  service,
-  onCustomizePlan,
-}: {
-  service: TestEnvServiceOption
-  onCustomizePlan: () => void
-}) {
-  const isTrial = service.pricingModel === 'trial'
-
+function TrialCostContent({ monthlyAfterTrial }: { monthlyAfterTrial: string }) {
   return (
-    <Box
-      style={{
-        padding: '12px 16px',
-        borderRadius: 8,
-        backgroundColor: 'var(--aquarium-background-color-muted)',
-        border: '1px solid var(--aquarium-border-color-muted)',
-        display: 'flex',
-        flexDirection: 'column',
-        gap: 16,
-        width: '100%',
-        height: '100%',
-        boxSizing: 'border-box',
-      }}
-    >
-      <Box style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
-        <Typography.DefaultStrong>Recommended plan</Typography.DefaultStrong>
-        <StatusChip text={service.planChip} status="neutral" dense />
-      </Box>
-
-      <Box style={{ display: 'flex', flexDirection: 'column', gap: 4, width: '100%' }}>
-        <Typography.Small color="muted">Cloud</Typography.Small>
-        {isTrial && service.cloudProviderId && service.cloudProviderLabel ? (
-          <Box style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-            <Box style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <CloudProviderIcon id={service.cloudProviderId} size={16} />
-              <Typography.Default color="intense">{service.cloudProviderLabel}</Typography.Default>
-            </Box>
-            <Box style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <Box
-                aria-hidden
-                style={{
-                  width: 16,
-                  height: 16,
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  flexShrink: 0,
-                  fontSize: 12,
-                  lineHeight: 1,
-                }}
-              >
-                🇫🇮
-              </Box>
-              <Typography.Default color="intense">{service.regionLabel}</Typography.Default>
-            </Box>
-          </Box>
-        ) : (
-          <Typography.Default color="intense">{service.regionLabel}</Typography.Default>
-        )}
-      </Box>
-
-      <Box style={{ display: 'flex', flexDirection: 'column', gap: 4, width: '100%' }}>
-        <Typography.Small color="muted">Plan details</Typography.Small>
-        <Box style={{ display: 'flex', flexWrap: 'wrap', gap: '4px 8px', width: '100%' }}>
-          {service.planDetails.map((detail) => (
-            <PlanDetailItem key={detail.kind} detail={detail} />
-          ))}
-        </Box>
-      </Box>
-
-      <Box style={{ display: 'flex', flexDirection: 'column', gap: 8, width: '100%' }}>
-        <Divider />
-        <Button.Ghost dense type="button" icon={settingsIcon} iconPlacement="right" onClick={onCustomizePlan}>
-          View all plans and clouds
-        </Button.Ghost>
-      </Box>
-    </Box>
-  )
-}
-
-RecommendedPlanCard.displayName = 'RecommendedPlanCard'
-
-function MonthlyPriceCard({ price, description }: { price: string; description: string }) {
-  return (
-    <Box
-      style={{
-        padding: '12px 16px',
-        borderRadius: 8,
-        border: '1px solid var(--aquarium-border-color-muted)',
-        display: 'flex',
-        flexDirection: 'column',
-        gap: 4,
-        width: '100%',
-        height: '100%',
-        boxSizing: 'border-box',
-      }}
-    >
-      <Box style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
-        <Typography.DefaultStrong color="muted">Monthly price</Typography.DefaultStrong>
-        <Typography.Subheading color="intense">{price}</Typography.Subheading>
-      </Box>
-      <Typography.Small color="muted">{description}</Typography.Small>
-    </Box>
-  )
-}
-
-MonthlyPriceCard.displayName = 'MonthlyPriceCard'
-
-function PlanPriceSkeleton({
-  includePlan,
-  playHold,
-  onHoldEnd,
-}: {
-  includePlan: boolean
-  playHold: boolean
-  onHoldEnd: () => void
-}) {
-  return (
-    <div
-      className={playHold ? 'onboarding-plan-skeleton' : undefined}
-      role="status"
-      aria-live="polite"
-      aria-busy="true"
-      aria-label="Loading plan and price"
-      style={{ width: '50%', display: 'flex', flexDirection: 'column', gap: 16 }}
-      onAnimationEnd={(event) => {
-        if (event.target === event.currentTarget && event.animationName === 'onboarding-plan-skeleton-hold') {
-          onHoldEnd()
-        }
-      }}
-    >
-      {includePlan ? <Skeleton width="100%" height={148} /> : null}
-      <Skeleton width="100%" height={64} />
-    </div>
-  )
-}
-
-PlanPriceSkeleton.displayName = 'PlanPriceSkeleton'
-
-function TrialCostCard({ monthlyAfterTrial }: { monthlyAfterTrial: string }) {
-  return (
-    <Box
-      style={{
-        padding: 16,
-        borderRadius: 8,
-        border: '1px solid var(--aquarium-border-color-default)',
-        display: 'flex',
-        flexDirection: 'column',
-        gap: 4,
-        width: '100%',
-        height: '100%',
-        boxSizing: 'border-box',
-      }}
-    >
+    <Box style={{ display: 'flex', flexDirection: 'column', gap: 4, width: '100%' }}>
       <Box style={{ display: 'flex', alignItems: 'center', gap: 8, width: '100%' }}>
         <Box style={{ flex: 1, minWidth: 0 }}>
           <Typography.Default color="intense">Cost during trial</Typography.Default>
@@ -292,7 +140,204 @@ function TrialCostCard({ monthlyAfterTrial }: { monthlyAfterTrial: string }) {
   )
 }
 
-TrialCostCard.displayName = 'TrialCostCard'
+TrialCostContent.displayName = 'TrialCostContent'
+
+function SimpleCostContent({
+  label,
+  amount,
+  caption,
+}: {
+  label: string
+  amount: string
+  caption?: string
+}) {
+  return (
+    <Box style={{ display: 'flex', flexDirection: 'column', gap: 4, width: '100%' }}>
+      <Box style={{ display: 'flex', alignItems: 'center', gap: 8, width: '100%' }}>
+        <Box style={{ flex: 1, minWidth: 0 }}>
+          <Typography.Heading color="intense">{label}</Typography.Heading>
+        </Box>
+        <Typography.Heading color="intense">{amount}</Typography.Heading>
+      </Box>
+      {caption ? <Typography.Small color="muted">{caption}</Typography.Small> : null}
+    </Box>
+  )
+}
+
+SimpleCostContent.displayName = 'SimpleCostContent'
+
+const RUNTIME_PLAN_DETAILS: TestEnvPlanDetail[] = [
+  { kind: 'cpu', label: '0.1 vCPU' },
+  { kind: 'memory', label: '256 MB RAM' },
+]
+
+function PlanAndPriceCard({
+  planTitle,
+  region,
+  details,
+  price,
+  priceCaption,
+  trialMonthlyAfter,
+  onChangeConfiguration,
+}: {
+  planTitle: string
+  region: string
+  details: TestEnvPlanDetail[]
+  price: string
+  priceCaption?: string
+  trialMonthlyAfter?: string
+  onChangeConfiguration?: () => void
+}) {
+  const planBlock = (
+    <Box style={{ display: 'flex', flexDirection: 'column', gap: 16, flex: 1, minWidth: 0 }}>
+      <Box style={{ alignSelf: 'flex-start', whiteSpace: 'nowrap' }}>
+        <StatusChip text="Plan to get started" status="success" dense />
+      </Box>
+      <Box style={{ display: 'flex', flexDirection: 'column', gap: 4, minWidth: 0 }}>
+        <Typography.Heading color="intense">{planTitle}</Typography.Heading>
+        <Typography.Default color="muted">{region}</Typography.Default>
+      </Box>
+      <Box style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 8, width: '100%' }}>
+        {details.map((detail, index) => (
+          <Box key={detail.kind} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            {index > 0 ? (
+              <Typography.Default color="muted" htmlTag="span">
+                ·
+              </Typography.Default>
+            ) : null}
+            <PlanDetailItem detail={detail} />
+          </Box>
+        ))}
+      </Box>
+    </Box>
+  )
+
+  const changeConfiguration = onChangeConfiguration ? (
+    <Box>
+      <Button.Ghost type="button" onClick={onChangeConfiguration}>
+        Change configuration
+      </Button.Ghost>
+    </Box>
+  ) : null
+
+  return (
+    <Box
+      style={{
+        padding: 24,
+        borderRadius: 8,
+        border: '1px solid var(--aquarium-border-color-muted)',
+        backgroundColor: 'var(--aquarium-background-color-layer)',
+        display: 'flex',
+        alignItems: 'stretch',
+        gap: 24,
+        width: '100%',
+        boxSizing: 'border-box',
+      }}
+    >
+      {planBlock}
+
+      <Box
+        aria-hidden
+        style={{
+          display: 'flex',
+          alignSelf: 'stretch',
+        }}
+      >
+        <Divider direction="vertical" />
+      </Box>
+
+      <Box
+        style={{
+          display: 'flex',
+          flexDirection: 'column',
+          justifyContent: 'flex-start',
+          gap: 16,
+          flex: 1,
+          minWidth: 0,
+        }}
+      >
+        {trialMonthlyAfter ? (
+          <TrialCostContent monthlyAfterTrial={trialMonthlyAfter} />
+        ) : (
+          <SimpleCostContent label="Monthly price" amount={price} caption={priceCaption} />
+        )}
+        {changeConfiguration}
+      </Box>
+    </Box>
+  )
+}
+
+PlanAndPriceCard.displayName = 'PlanAndPriceCard'
+
+function ServicePlanAndPriceCard({
+  service,
+  onChangeConfiguration,
+}: {
+  service: TestEnvServiceOption
+  onChangeConfiguration: () => void
+}) {
+  const isTrial = service.pricingModel === 'trial'
+  const details = isTrial
+    ? service.planDetails
+    : service.planDetails.map((detail) =>
+        detail.kind === 'backups' ? { ...detail, label: 'Automatic backups' } : detail,
+      )
+
+  return (
+    <PlanAndPriceCard
+      planTitle={isTrial ? service.planChip : 'Free plan'}
+      region={service.regionLabel.replace(', ', ' · ')}
+      details={details}
+      price="$0"
+      priceCaption={isTrial ? undefined : 'No credit card required'}
+      trialMonthlyAfter={isTrial ? service.monthlyAfterTrial : undefined}
+      onChangeConfiguration={onChangeConfiguration}
+    />
+  )
+}
+
+ServicePlanAndPriceCard.displayName = 'ServicePlanAndPriceCard'
+
+function RuntimePlanAndPriceCard() {
+  return (
+    <PlanAndPriceCard
+      planTitle="Startup-10-256"
+      region="Finland · europe-north1"
+      details={RUNTIME_PLAN_DETAILS}
+      price="From $7"
+    />
+  )
+}
+
+RuntimePlanAndPriceCard.displayName = 'RuntimePlanAndPriceCard'
+
+function PlanPriceSkeleton({
+  playHold,
+  onHoldEnd,
+}: {
+  playHold: boolean
+  onHoldEnd: () => void
+}) {
+  return (
+    <div
+      className={playHold ? 'onboarding-plan-skeleton' : undefined}
+      role="status"
+      aria-live="polite"
+      aria-busy="true"
+      aria-label="Loading plan and price"
+      style={{ width: '100%' }}
+      onAnimationEnd={(event) => {
+        if (event.target === event.currentTarget && event.animationName === 'onboarding-plan-skeleton-hold') {
+          onHoldEnd()
+        }
+      }}
+    >
+      <Skeleton width="100%" height={152} />
+    </div>
+  )
+}
+
+PlanPriceSkeleton.displayName = 'PlanPriceSkeleton'
 
 const INTEGRATION_SERVICE_IDS = ['postgresql', 'valkey', 'clickhouse', 'kafka'] as const
 
@@ -469,8 +514,6 @@ function DeployPathCard({
         width: '100%',
         minWidth: 0,
         boxSizing: 'border-box',
-        height: '100%',
-        minHeight: '14.4rem',
       }}
     >
       <Box style={{ display: 'flex', flexDirection: 'column', gap: 8, minWidth: 0 }}>
@@ -482,36 +525,25 @@ function DeployPathCard({
         <Typography.Caption color="muted">{description}</Typography.Caption>
       </Box>
 
-      <Box style={{ marginTop: 'auto', width: '100%' }}>{action}</Box>
+      <Box style={{ width: '100%' }}>{action}</Box>
     </Box>
   )
 }
 
 DeployPathCard.displayName = 'DeployPathCard'
 
-function AivenRuntimeSummary() {
-  return (
-    <MonthlyPriceCard
-      price="From $7"
-      description="App + Free PostgreSQL bundle. Final cost depends on selected plans"
-    />
-  )
-}
-
-AivenRuntimeSummary.displayName = 'AivenRuntimeSummary'
-
 function DeployApplicationPanel({ onConnectGitHub }: { onConnectGitHub: () => void }) {
   return (
-    <Box style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-      <Box
-        style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
-          gap: 16,
-          alignItems: 'stretch',
-          width: '100%',
-        }}
-      >
+    <Box
+      style={{
+        display: 'grid',
+        gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
+        gap: 16,
+        alignItems: 'stretch',
+        width: '100%',
+      }}
+    >
+      <Box style={{ display: 'flex', flexDirection: 'column', gap: 16, minWidth: 0 }}>
         <DeployPathCard
           icon={githubLogoIcon}
           title="Connect your repository"
@@ -553,6 +585,7 @@ function DeployApplicationPanel({ onConnectGitHub }: { onConnectGitHub: () => vo
           flexDirection: 'column',
           gap: 12,
           width: '100%',
+          height: '100%',
           boxSizing: 'border-box',
         }}
       >
@@ -596,7 +629,6 @@ export function OnboardingApps({
     [selectedServiceId],
   )
 
-  const isTrial = selectedService.pricingModel === 'trial'
   const isApplication = buildTarget === 'application'
   const [planSectionBodyEntered, setPlanSectionBodyEntered] = useState(false)
   const [planCardsReady, setPlanCardsReady] = useState(false)
@@ -719,7 +751,17 @@ export function OnboardingApps({
                 onChange={(v) => setBuildTarget((v as BuildTarget) ?? 'service')}
               >
                 <ChoiceChip value="service">Data service</ChoiceChip>
-                <ChoiceChip value="application">Application</ChoiceChip>
+                <ChoiceChip value="application">
+                  <Box
+                    component="span"
+                    style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}
+                  >
+                    Runtime
+                    <span style={{ color: 'var(--aquarium-text-color-success-intense)' }}>
+                      <Badge value="New" dense kind="filled" />
+                    </span>
+                  </Box>
+                </ChoiceChip>
               </ChoiceChipGroup>
 
               {isApplication ? (
@@ -759,12 +801,9 @@ export function OnboardingApps({
               onBodyAnimationEnd={() => setPlanSectionBodyEntered(true)}
             >
               {planCardsReady ? (
-                <Box style={{ width: '50%' }}>
-                  <AivenRuntimeSummary />
-                </Box>
+                <RuntimePlanAndPriceCard />
               ) : (
                 <PlanPriceSkeleton
-                  includePlan={false}
                   playHold={planSectionBodyEntered}
                   onHoldEnd={() => setPlanCardsReady(true)}
                 />
@@ -779,18 +818,9 @@ export function OnboardingApps({
             >
               <Box style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
                 {planCardsReady ? (
-                  <Box style={{ width: '50%', display: 'flex', flexDirection: 'column', gap: 16 }}>
-                    <RecommendedPlanCard service={selectedService} onCustomizePlan={handleCustomizePlan} />
-
-                    {isTrial && selectedService.monthlyAfterTrial ? (
-                      <TrialCostCard monthlyAfterTrial={selectedService.monthlyAfterTrial} />
-                    ) : (
-                      <MonthlyPriceCard price="Free" description="Free forever. No credit card required." />
-                    )}
-                  </Box>
+                  <ServicePlanAndPriceCard service={selectedService} onChangeConfiguration={handleCustomizePlan} />
                 ) : (
                   <PlanPriceSkeleton
-                    includePlan
                     playHold={planSectionBodyEntered}
                     onHoldEnd={() => setPlanCardsReady(true)}
                   />

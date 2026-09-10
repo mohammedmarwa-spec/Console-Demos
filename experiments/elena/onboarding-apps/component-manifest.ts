@@ -76,10 +76,6 @@ export const componentManifest: ComponentManifest = {
       name: 'ServiceIcon',
       reason: 'Service-type icons on picker cards',
     },
-    {
-      name: 'CloudProviderIcon',
-      reason: 'Google Cloud logo on trial plan preview',
-    },
   ],
   notes: [
     'Entrance animation is 2× slower; plan and price show Aquarium Skeleton until the section has entered.',

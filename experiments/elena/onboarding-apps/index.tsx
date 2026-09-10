@@ -41,7 +41,7 @@ export default function Page() {
       defaultProjectName={consoleContext.projectName}
       onSkip={navigateToServices}
       onCreate={handleTestEnvCreate}
-      onCustomizePlan={openCreationModal}
+      onCustomizePlan={(serviceTypeId) => openCreationModal(serviceTypeId, { returnToServiceType: false })}
       onGoToRuntime={() => setView('runtime')}
     />
   )

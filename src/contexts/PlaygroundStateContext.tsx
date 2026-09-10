@@ -52,7 +52,7 @@ type PlaygroundStateContextValue = {
   navigateToTestEnv: () => void
   navigateToPlayground: () => void
   openServiceTypeModal: () => void
-  openCreationModal: (serviceType: ServiceTypeId) => void
+  openCreationModal: (serviceType: ServiceTypeId, options?: { returnToServiceType?: boolean }) => void
   handleTestEnvCreate: (payload: OnboardingTestEnvCreatePayload) => void
   handlePlaygroundSampleReady: () => void
   handleDeleteService: () => void
@@ -97,6 +97,7 @@ export function PlaygroundStateProvider({ children }: { children: ReactNode }) {
 
   const [serviceTypeModalOpen, setServiceTypeModalOpen] = useState(false)
   const [creationModalOpen, setCreationModalOpen] = useState(false)
+  const [returnToServiceTypeOnCancel, setReturnToServiceTypeOnCancel] = useState(true)
   const [selectedServiceType, setSelectedServiceType] = useState<ServiceTypeId | null>(null)
   const [overviewServiceType, setOverviewServiceType] = useState<ServiceTypeId | null>(() =>
     initialOverviewServiceTypeForScenario(activeScenarioId),
@@ -168,10 +169,11 @@ export function PlaygroundStateProvider({ children }: { children: ReactNode }) {
     setServiceTypeModalOpen(true)
   }
 
-  function openCreationModal(serviceType: ServiceTypeId) {
+  function openCreationModal(serviceType: ServiceTypeId, options?: { returnToServiceType?: boolean }) {
     setSelectedServiceType(serviceType)
     setServiceTypeModalOpen(false)
     setCreationModalOpen(true)
+    setReturnToServiceTypeOnCancel(options?.returnToServiceType !== false)
   }
 
   function closeCreationModal() {
@@ -180,6 +182,7 @@ export function PlaygroundStateProvider({ children }: { children: ReactNode }) {
 
   function handleCreationModalCancel() {
     setCreationModalOpen(false)
+    if (!returnToServiceTypeOnCancel) return
     if (typeof window !== 'undefined' && !window.location.pathname.includes('/onboarding/test-env')) {
       setServiceTypeModalOpen(true)
     }
