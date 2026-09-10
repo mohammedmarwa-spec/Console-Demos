@@ -1,9 +1,11 @@
 'use client'
 
-import { useEffect, useLayoutEffect, useMemo, useState, type RefObject } from 'react'
+import { useEffect, useLayoutEffect, useMemo, useRef, useState, type RefObject } from 'react'
+import { createPortal } from 'react-dom'
 import { Box, Button, StatusChip, Typography } from '@aivenio/aquarium'
 import crossIcon from '@aivenio/aquarium/icons/cross'
 import duplicateIcon from '@aivenio/aquarium/icons/duplicate'
+import { NodesCountChip } from '@/components/NodesCountChip'
 import type { ServiceRow } from '@/screens/ProjectServices'
 import {
   buildClusterForService,
@@ -30,6 +32,9 @@ const TIER_TONE: Record<string, NodeTone> = { Hot: 'warning', Warm: 'info', Cold
 /** How many rows we consider "shown at a glance" for the "+N more" footer label. */
 const GLANCE_ROWS = 9
 const PANEL_WIDTH = 680
+/** Header + filters + column headers + footer — used to keep the panel on-screen. */
+const PANEL_CHROME = 250
+const LIST_MAX_HEIGHT = 380
 
 type FilterKey = 'all' | NodeStatusKey
 
@@ -199,16 +204,43 @@ export function NodesPopover({
   const cluster = useMemo(() => buildClusterForService(service.serviceName), [service.serviceName])
   const segments = useMemo(() => rollup(cluster.nodes), [cluster.nodes])
   const [filter, setFilter] = useState<FilterKey>('all')
-  const [pos, setPos] = useState<{ top: number; left: number } | null>(null)
+  const [pos, setPos] = useState<{ top: number; left: number; maxList: number } | null>(null)
 
   // Anchor the panel to the trigger (fixed positioning avoids clipping by scroll containers).
+  // Flip above the chip when there isn't enough room below (e.g. a mid-table row).
   useLayoutEffect(() => {
     if (!open) return
     const el = triggerRef.current
     if (!el) return
-    const rect = el.getBoundingClientRect()
-    const left = Math.max(12, Math.min(rect.left, window.innerWidth - PANEL_WIDTH - 12))
-    setPos({ top: rect.bottom + 8, left })
+
+    const place = () => {
+      const rect = el.getBoundingClientRect()
+      const vw = window.innerWidth
+      const vh = window.innerHeight
+      const left = Math.max(12, Math.min(rect.left, vw - PANEL_WIDTH - 12))
+      const spaceBelow = vh - rect.bottom - 12
+      const spaceAbove = rect.top - 12
+      const desired = PANEL_CHROME + LIST_MAX_HEIGHT
+      const placeAbove = spaceBelow < Math.min(desired, 400) && spaceAbove > spaceBelow
+
+      if (placeAbove) {
+        const maxList = Math.min(LIST_MAX_HEIGHT, Math.max(160, spaceAbove - PANEL_CHROME))
+        const panelH = PANEL_CHROME + maxList
+        setPos({ top: Math.max(12, rect.top - panelH - 8), left, maxList })
+      } else {
+        const top = rect.bottom + 8
+        const maxList = Math.min(LIST_MAX_HEIGHT, Math.max(160, vh - top - PANEL_CHROME))
+        setPos({ top, left, maxList })
+      }
+    }
+
+    place()
+    window.addEventListener('resize', place)
+    window.addEventListener('scroll', place, true)
+    return () => {
+      window.removeEventListener('resize', place)
+      window.removeEventListener('scroll', place, true)
+    }
   }, [open, triggerRef])
 
   // Close on Escape.
@@ -230,7 +262,7 @@ export function NodesPopover({
 
   const hidden = Math.max(0, filtered.length - GLANCE_ROWS)
 
-  return (
+  return createPortal(
     <>
       {/* Click-away backdrop */}
       <Box
@@ -313,7 +345,7 @@ export function NodesPopover({
         </Box>
 
         {/* Rows */}
-        <Box style={{ maxHeight: 380, overflowY: 'auto' }}>
+        <Box style={{ maxHeight: pos.maxList, overflowY: 'auto' }}>
           {filtered.map((node) => (
             <NodeRow key={node.id} service={service.serviceName} node={node} />
           ))}
@@ -352,8 +384,61 @@ export function NodesPopover({
           </Box>
         </Box>
       </Box>
-    </>
+    </>,
+    document.body,
   )
 }
 
 NodesPopover.displayName = 'NodesPopover'
+
+/** Clickable Nodes count chip that anchors NodesPopover. Used on the service header and the ProjectList table. */
+export function NodesChipTrigger({
+  service,
+  onViewAll,
+}: {
+  service: ServiceRow
+  onViewAll: () => void
+}) {
+  const [open, setOpen] = useState(false)
+  const triggerRef = useRef<HTMLDivElement>(null)
+
+  return (
+    <>
+      <div
+        ref={triggerRef}
+        role="button"
+        tabIndex={0}
+        aria-label="Open nodes overview"
+        aria-haspopup="dialog"
+        aria-expanded={open}
+        style={{ cursor: 'pointer', display: 'inline-flex' }}
+        onClick={(event) => {
+          event.preventDefault()
+          event.stopPropagation()
+          setOpen((value) => !value)
+        }}
+        onKeyDown={(event) => {
+          if (event.key === 'Enter' || event.key === ' ') {
+            event.preventDefault()
+            event.stopPropagation()
+            setOpen((value) => !value)
+          }
+        }}
+      >
+        <NodesCountChip count={service.nodeCount ?? 17} serviceStatus={service.status ?? 'Running'} />
+      </div>
+      <NodesPopover
+        service={service}
+        open={open}
+        triggerRef={triggerRef}
+        onClose={() => setOpen(false)}
+        onViewAll={() => {
+          setOpen(false)
+          onViewAll()
+        }}
+      />
+    </>
+  )
+}
+
+NodesChipTrigger.displayName = 'NodesChipTrigger'

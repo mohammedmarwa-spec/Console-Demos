@@ -197,7 +197,11 @@ export const componentManifest: ComponentManifest = {
     },
     {
       name: 'NodesPopover',
-      reason: 'Anchored "Nodes" popover opened from the header "Nodes N" chip — status filter chips + compact NAME/ROLE/STATUS/SYNC PROGRESS list + "View all nodes" link (recreates the Claude Design reference popover with Aquarium tokens)',
+      reason: 'Anchored "Nodes" popover opened from the "Nodes N" chip on the OpenSearch service header and the ProjectList Nodes column — status filter chips + compact NAME/ROLE/STATUS/SYNC PROGRESS list + "View all nodes" link',
+    },
+    {
+      name: 'NodesChipTrigger',
+      reason: 'Clickable NodesCountChip wrapper that opens NodesPopover; shared by the service header and the OpenSearch row in the services table',
     },
     {
       name: 'RoleCode / TierPill / FilterChip / NodeRow (NodesPopover)',
@@ -212,7 +216,7 @@ export const componentManifest: ComponentManifest = {
     'Design change: adds an Upgrade eligibility banner and an always-visible per-row Upgrade action to improve discoverability of the quick-upgrade flow.',
     'Service shell: clicking the os-maxim-muzafarov-1c149c43 OpenSearch service opens OpenSearchServiceShell — a service-level page (sidebar + Overview) modeled on the real Aiven Console (aiven-core ui/console). The service nav mirrors the opensearch layout from aiven-core ServiceNavigation.',
     'Nav structure: "Overview" is an expandable group containing "Overview" (the default landing Service Overview page) and "Cluster overview" (the node topology view / NodeView).',
-    'Nodes popover: clicking the header "Nodes N" chip opens NodesPopover — an anchored dropdown that recreates the Claude Design "Nodes" reference (status filter chips + compact node list with role code, Hot/Warm tier pill, status dot, and sync progress). Its "View all nodes" link navigates to the full Cluster overview (NodeView).',
+    'Nodes popover: clicking the "Nodes N" chip on the OpenSearch service header OR the OpenSearch row in the ProjectList table opens NodesPopover — an anchored dropdown that recreates the Claude Design "Nodes" reference (status filter chips + compact node list with role code, Hot/Warm tier pill, status dot, and sync progress). Its "View all nodes" link navigates to the full Cluster overview (NodeView).',
     'Cluster overview view (NodeView): an in-experiment topology screen — service header, interactive Node status rollup, a nodes DataTable (Node / Roles / Node type / Status / Disk-Sync), and a per-node detail Drawer.',
     'Node data is generated locally in clusterNodes.ts (TS port of the OS-NodeView Discovery reference): a deterministic 17-node cluster (3 cluster managers + 7 hot-tier + 7 warm-tier data nodes) with a compact role-string decoder. No new npm deps.',
     'Rebuilt with Aquarium only — the reference HTML/CSS/tokens were not copied; all colors/spacing use --aquarium-* tokens.',

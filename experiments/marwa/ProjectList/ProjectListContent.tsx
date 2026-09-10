@@ -18,6 +18,8 @@ import { NodesCountChip } from '@/components/NodesCountChip'
 import type { ServiceRow } from '@/screens/ProjectServices'
 import { DEMO_SERVICES } from './demoServices'
 import { OpenSearchServiceShell } from './OpenSearchServiceShell'
+import type { OpenSearchNavId } from './OpenSearchServiceSidebar'
+import { NodesChipTrigger } from './NodesPopover'
 import { UpgradeServiceModalV2 } from '@/screens/UpgradeServiceModalV2'
 import { UPGRADE_PLAN_SERVICE_DATA, type UpgradeTier } from '@/screens/UpgradeServiceModal'
 
@@ -57,6 +59,7 @@ export function ProjectListContent() {
   const [upgradeServiceId, setUpgradeServiceId] = useState<string | null>(null)
   const [lastUpgradedName, setLastUpgradedName] = useState<string | null>(null)
   const [nodeViewServiceId, setNodeViewServiceId] = useState<string | null>(null)
+  const [nodeViewInitialNav, setNodeViewInitialNav] = useState<OpenSearchNavId>('overview')
 
   const upgradeService = upgradeServiceId
     ? services.find((service) => service.id === upgradeServiceId) ?? null
@@ -76,8 +79,9 @@ export function ProjectListContent() {
     setUpgradeServiceId(serviceId)
   }
 
-  /** Drill into a service's cluster-nodes topology view (OpenSearch demo). */
-  function openNodeView(serviceId: string) {
+  /** Drill into a service's OpenSearch shell. `nav` lands on Overview or Cluster overview. */
+  function openNodeView(serviceId: string, nav: OpenSearchNavId = 'overview') {
+    setNodeViewInitialNav(nav)
     setNodeViewServiceId(serviceId)
   }
 
@@ -107,7 +111,13 @@ export function ProjectListContent() {
   }
 
   if (nodeViewService) {
-    return <OpenSearchServiceShell service={nodeViewService} onBack={() => setNodeViewServiceId(null)} />
+    return (
+      <OpenSearchServiceShell
+        service={nodeViewService}
+        onBack={() => setNodeViewServiceId(null)}
+        initialNav={nodeViewInitialNav}
+      />
+    )
   }
 
   return (
@@ -269,7 +279,7 @@ function ServicesTable({
 }: {
   services: ServiceRow[]
   onPlanAction: (serviceId: string) => void
-  onOpenService: (serviceId: string) => void
+  onOpenService: (serviceId: string, nav?: OpenSearchNavId) => void
 }) {
   return (
     <DataTable
@@ -311,10 +321,18 @@ function ServicesTable({
         {
           type: 'custom',
           headerName: 'Nodes',
-          UNSAFE_render: (row) =>
-            row.nodeCount ? (
-              <NodesCountChip count={row.nodeCount} serviceStatus={row.status ?? 'Running'} />
-            ) : null,
+          UNSAFE_render: (row) => {
+            if (!row.nodeCount) return null
+            if (row.serviceTypeId === 'opensearch') {
+              return (
+                <NodesChipTrigger
+                  service={row}
+                  onViewAll={() => onOpenService(row.id, 'cluster-overview')}
+                />
+              )
+            }
+            return <NodesCountChip count={row.nodeCount} serviceStatus={row.status ?? 'Running'} />
+          },
         },
         {
           type: 'custom',

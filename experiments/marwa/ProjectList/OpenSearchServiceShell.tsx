@@ -1,6 +1,6 @@
 'use client'
 
-import { useRef, useState } from 'react'
+import { useState } from 'react'
 import {
   Box,
   Breadcrumbs,
@@ -12,12 +12,11 @@ import {
 } from '@aivenio/aquarium'
 import moreIcon from '@aivenio/aquarium/icons/more'
 import { ServiceIcon } from '@/components/ServiceIcon'
-import { NodesCountChip } from '@/components/NodesCountChip'
 import type { ServiceRow } from '@/screens/ProjectServices'
 import { OpenSearchServiceSidebar, type OpenSearchNavId } from './OpenSearchServiceSidebar'
 import { OpenSearchOverview } from './OpenSearchOverview'
 import { NodeView } from './NodeView'
-import { NodesPopover } from './NodesPopover'
+import { NodesChipTrigger } from './NodesPopover'
 
 const PROJECT_NAME = 'quick-upgrade-demo'
 const SERVICE_VERSION = 'OpenSearch 3.3.2'
@@ -59,10 +58,16 @@ function NavPlaceholder({ label }: { label: string }) {
   )
 }
 
-export function OpenSearchServiceShell({ service, onBack }: { service: ServiceRow; onBack: () => void }) {
-  const [active, setActive] = useState<OpenSearchNavId>('overview')
-  const [nodesOpen, setNodesOpen] = useState(false)
-  const nodesChipRef = useRef<HTMLDivElement>(null)
+export function OpenSearchServiceShell({
+  service,
+  onBack,
+  initialNav = 'overview',
+}: {
+  service: ServiceRow
+  onBack: () => void
+  initialNav?: OpenSearchNavId
+}) {
+  const [active, setActive] = useState<OpenSearchNavId>(initialNav)
 
   const sidebar = (
     <OpenSearchServiceSidebar
@@ -127,24 +132,7 @@ export function OpenSearchServiceShell({ service, onBack }: { service: ServiceRo
             <Box style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 6, flexWrap: 'wrap' }}>
               <Chip dense text={SERVICE_VERSION} />
               <StatusChip dense status="success" text={service.status ?? 'Running'} />
-              <div
-                ref={nodesChipRef}
-                role="button"
-                tabIndex={0}
-                aria-label="Open nodes overview"
-                aria-haspopup="dialog"
-                aria-expanded={nodesOpen}
-                style={{ cursor: 'pointer', display: 'inline-flex' }}
-                onClick={() => setNodesOpen((v) => !v)}
-                onKeyDown={(event) => {
-                  if (event.key === 'Enter' || event.key === ' ') {
-                    event.preventDefault()
-                    setNodesOpen((v) => !v)
-                  }
-                }}
-              >
-                <NodesCountChip count={service.nodeCount ?? 17} serviceStatus={service.status ?? 'Running'} />
-              </div>
+              <NodesChipTrigger service={service} onViewAll={() => setActive('cluster-overview')} />
             </Box>
           </Box>
           <Box style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
@@ -170,15 +158,6 @@ export function OpenSearchServiceShell({ service, onBack }: { service: ServiceRo
           <NavPlaceholder label={NAV_LABEL[active]} />
         )}
       </Box>
-
-      {/* Nodes popover — opened from the "Nodes N" chip */}
-      <NodesPopover
-        service={service}
-        open={nodesOpen}
-        triggerRef={nodesChipRef}
-        onClose={() => setNodesOpen(false)}
-        onViewAll={() => setActive('cluster-overview')}
-      />
     </Box>
   )
 }
