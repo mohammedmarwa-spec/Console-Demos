@@ -108,6 +108,44 @@ describe('PrototypeHub', () => {
     expect(screen.getByRole('tab', { name: /Templates/ })).toHaveTextContent('1')
   })
 
+  it('keeps Experiments badge stable when switching chips with a designer selected', async () => {
+    const user = userEvent.setup()
+    renderHub()
+
+    const experimentsTab = () => screen.getByRole('tab', { name: /Experiments/ })
+
+    await user.click(screen.getByRole('radio', { name: 'Elena' }))
+    expect(experimentsTab()).toHaveTextContent('3')
+
+    await user.click(screen.getByRole('radio', { name: 'Free Tier' }))
+    expect(screen.getByText('Free & Dev: Quick Upgrade V4')).toBeInTheDocument()
+    expect(screen.queryByText('First-time user')).not.toBeInTheDocument()
+    expect(experimentsTab()).toHaveTextContent('3')
+
+    await user.click(screen.getByRole('radio', { name: 'Onboarding' }))
+    expect(screen.getByText('First-time user')).toBeInTheDocument()
+    expect(screen.queryByText('Free & Dev: Quick Upgrade V4')).not.toBeInTheDocument()
+    expect(experimentsTab()).toHaveTextContent('3')
+
+    await user.click(screen.getByRole('radio', { name: 'All' }))
+    expect(screen.getByText('Free & Dev: Quick Upgrade V4')).toBeInTheDocument()
+    expect(screen.getByText('First-time user')).toBeInTheDocument()
+    expect(experimentsTab()).toHaveTextContent('3')
+    expect(screen.getByRole('tab', { name: /Templates/ })).toHaveTextContent('1')
+  })
+
+  it('keeps tab badges stable when searching', async () => {
+    const user = userEvent.setup()
+    renderHub()
+
+    await user.type(screen.getByLabelText('Search'), 'upgrade')
+
+    expect(screen.getByText('Free & Dev: Quick Upgrade V4')).toBeInTheDocument()
+    expect(screen.queryByText('First-time user')).not.toBeInTheDocument()
+    expect(screen.getByRole('tab', { name: /Experiments/ })).toHaveTextContent('3')
+    expect(screen.getByRole('tab', { name: /Templates/ })).toHaveTextContent('1')
+  })
+
   it('switches between experiments and templates tabs', async () => {
     const user = userEvent.setup()
     renderHub()

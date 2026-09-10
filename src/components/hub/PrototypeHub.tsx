@@ -73,12 +73,9 @@ export function PrototypeHub({ experiments, templates }: PrototypeHubProps) {
 
   const visibleExperimentCount = filteredExperimentGroups.reduce((sum, group) => sum + group.entries.length, 0)
 
-  // Tab badges stay at the overall (search-scoped) catalog size.
-  // Designer and area chips only filter the list, not the tab counts.
-  const tabExperimentCount = useMemo(
-    () => experiments.filter((entry) => !query || matchesSearch(entry, query)).length,
-    [experiments, query],
-  )
+  // Tab badges are catalog totals — never affected by search, Designer, or area chips.
+  const experimentCatalogCount = experiments.length
+  const templateCatalogCount = templates.length
 
   return (
     <Box style={{ minHeight: '100vh' }}>
@@ -100,7 +97,7 @@ export function PrototypeHub({ experiments, templates }: PrototypeHubProps) {
       >
         {/* Content lives in Tabs.Tab so Aquarium's TabContainer py-6 (24px) is the tabs→content gap. */}
         <Tabs value={tab} onChange={(value) => setTab(value as TabId)}>
-          <Tabs.Tab title="Experiments" value="experiments" badge={tabExperimentCount}>
+          <Tabs.Tab title="Experiments" value="experiments" badge={experimentCatalogCount}>
             <Box style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
               <Box className={styles.filterRow}>
                 <Input
@@ -171,7 +168,7 @@ export function PrototypeHub({ experiments, templates }: PrototypeHubProps) {
             </Box>
           </Tabs.Tab>
 
-          <Tabs.Tab title="Templates" value="templates" badge={filteredTemplates.length}>
+          <Tabs.Tab title="Templates" value="templates" badge={templateCatalogCount}>
             <Box style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
               <Input
                 labelText="Search"
