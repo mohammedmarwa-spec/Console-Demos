@@ -65,6 +65,15 @@ npm run preview:shot -- elena/first-time-user
 git add public/experiment-previews/elena/first-time-user.png
 ```
 
+Regenerate every experiment and template thumbnail (dark mode):
+
+```bash
+npm run preview:shot -- --all
+git add public/experiment-previews
+```
+
+Previews are captured in **dark mode** by default (Playwright theme preference + `colorScheme`).
+
 ### Skip preview generation
 
 ```bash

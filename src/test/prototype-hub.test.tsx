@@ -83,11 +83,29 @@ describe('PrototypeHub', () => {
     expect(screen.getByRole('radio', { name: 'Elena' })).toHaveAttribute('aria-checked', 'true')
     expect(screen.getByRole('heading', { level: 2, name: 'Elena' })).toBeInTheDocument()
     expect(screen.queryByRole('heading', { level: 2, name: 'Brian' })).not.toBeInTheDocument()
-    expect(screen.getByRole('tab', { name: /Experiments/ })).toHaveTextContent('2')
+    expect(screen.getByRole('tab', { name: /Experiments/ })).toHaveTextContent('3')
 
     await user.click(screen.getByRole('radio', { name: 'Everyone' }))
 
     expect(screen.getByRole('heading', { level: 2, name: 'Brian' })).toBeInTheDocument()
+  })
+
+  it('keeps tab badges stable when area chips are applied', async () => {
+    const user = userEvent.setup()
+    renderHub()
+
+    expect(screen.getByRole('tab', { name: /Experiments/ })).toHaveTextContent('3')
+    expect(screen.getByText('Free & Dev: Quick Upgrade V4')).toBeInTheDocument()
+    expect(screen.getByText('First-time user')).toBeInTheDocument()
+    expect(screen.getByText('Brian sample')).toBeInTheDocument()
+
+    await user.click(screen.getByRole('radio', { name: 'Onboarding' }))
+
+    expect(screen.getByText('First-time user')).toBeInTheDocument()
+    expect(screen.queryByText('Free & Dev: Quick Upgrade V4')).not.toBeInTheDocument()
+    expect(screen.queryByText('Brian sample')).not.toBeInTheDocument()
+    expect(screen.getByRole('tab', { name: /Experiments/ })).toHaveTextContent('3')
+    expect(screen.getByRole('tab', { name: /Templates/ })).toHaveTextContent('1')
   })
 
   it('switches between experiments and templates tabs', async () => {

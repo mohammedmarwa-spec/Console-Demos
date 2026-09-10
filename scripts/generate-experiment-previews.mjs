@@ -1,16 +1,18 @@
 #!/usr/bin/env node
 /**
  * Capture experiment preview thumbnails with Playwright.
- * Previews are captured in light mode by default.
+ * Previews are captured in dark mode by default.
  *
  * Usage:
  *   node scripts/generate-experiment-previews.mjs --staged
+ *   node scripts/generate-experiment-previews.mjs --all
  *   node scripts/generate-experiment-previews.mjs elena/first-time-user
  *   npm run preview:shot -- elena/first-time-user
+ *   npm run preview:shot -- --all
  */
 
 import { execSync, spawn } from 'node:child_process'
-import { existsSync, mkdirSync, statSync } from 'node:fs'
+import { existsSync, mkdirSync, readdirSync, statSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
@@ -110,6 +112,30 @@ function listExplicitExperiments(args) {
   }
 
   return experiments
+}
+
+/** Walk experiments/<owner>/<slug>/index.tsx including _templates; skip reserved _ owners. */
+function listAllExperiments() {
+  if (!existsSync(EXPERIMENTS_ROOT)) return []
+
+  const experiments = []
+
+  for (const owner of readdirSync(EXPERIMENTS_ROOT, { withFileTypes: true })) {
+    if (!owner.isDirectory()) continue
+    if (!isPreviewableOwner(owner.name)) continue
+
+    const ownerDir = join(EXPERIMENTS_ROOT, owner.name)
+    for (const slug of readdirSync(ownerDir, { withFileTypes: true })) {
+      if (!slug.isDirectory()) continue
+      if (!existsSync(join(ownerDir, slug.name, 'index.tsx'))) continue
+      experiments.push({ owner: owner.name, slug: slug.name })
+    }
+  }
+
+  return experiments.sort((a, b) => {
+    const byOwner = a.owner.localeCompare(b.owner)
+    return byOwner !== 0 ? byOwner : a.slug.localeCompare(b.slug)
+  })
 }
 
 async function isServerUp() {
@@ -289,9 +315,9 @@ async function waitForExperimentReady(page) {
   await waitForShellLoaded(page)
   await waitForNextDevIdle(page)
   await waitForVisibleContent(page)
-  // ThemeProvider hydrates as dark, then restores light from localStorage — wait for that.
+  // ThemeProvider hydrates dark by default; wait until dark class is present after preference restore.
   await page.waitForFunction(
-    () => !document.documentElement.classList.contains('aquarium-theme-dark'),
+    () => document.documentElement.classList.contains('aquarium-theme-dark'),
     undefined,
     { timeout: READY_TIMEOUT_MS, polling: 100 },
   )
@@ -356,12 +382,12 @@ async function generatePreviews(experiments) {
     const context = await browser.newContext({
       viewport: VIEWPORT,
       deviceScaleFactor: DEVICE_SCALE_FACTOR,
-      // Match ThemeProvider storage + OS media queries so previews are light by default.
-      colorScheme: 'light',
+      // Match ThemeProvider storage + OS media queries so previews are dark by default.
+      colorScheme: 'dark',
     })
     await context.addInitScript(() => {
       try {
-        localStorage.setItem('design-police-playground:aquarium-appearance', 'light')
+        localStorage.setItem('design-police-playground:aquarium-appearance', 'dark')
       } catch {
         // private mode / blocked storage — ThemeProvider still defaults dark without this
       }
@@ -398,11 +424,22 @@ async function generatePreviews(experiments) {
 async function main() {
   const args = process.argv.slice(2)
   const useStaged = args.includes('--staged')
-  const explicitArgs = args.filter((arg) => arg !== '--staged')
+  const useAll = args.includes('--all')
+  const explicitArgs = args.filter((arg) => arg !== '--staged' && arg !== '--all')
+
+  if (useStaged && useAll) {
+    warn('use either --staged or --all, not both; preferring --staged')
+  }
 
   const experiments = useStaged
     ? listStagedExperiments()
-    : listExplicitExperiments(explicitArgs)
+    : useAll
+      ? listAllExperiments()
+      : listExplicitExperiments(explicitArgs)
+
+  if (useAll && !useStaged) {
+    log(`capturing ${experiments.length} experiment(s)/template(s)`)
+  }
 
   await generatePreviews(experiments)
 }
