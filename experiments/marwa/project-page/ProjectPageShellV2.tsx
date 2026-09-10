@@ -28,7 +28,6 @@ import {
 } from '@experiments/_shared/project-page'
 import {
   CREATE_MENU_AGENT,
-  CREATE_MENU_SECTIONS,
   CREATE_MENU_SOLUTION,
 } from '@experiments/_shared/project-page/createMenu'
 import { OverviewV2 } from './OverviewV2'
@@ -103,15 +102,15 @@ function OverviewHeader({
             </Button.Dropdown>
           </DropdownMenu.Trigger>
           <DropdownMenu.Items>
-            {CREATE_MENU_SECTIONS.map((section) => (
-              <DropdownMenu.Section key={section.title} title={section.title}>
-                {section.items.map((item) => (
-                  <DropdownMenu.Item key={item.id} id={item.id}>
-                    {item.label}
-                  </DropdownMenu.Item>
-                ))}
-              </DropdownMenu.Section>
-            ))}
+            <DropdownMenu.Section title="Data service">
+              <DropdownMenu.Item id="postgresql">PostgreSQL</DropdownMenu.Item>
+              <DropdownMenu.Item id="kafka">Kafka</DropdownMenu.Item>
+              <DropdownMenu.Item id="clickhouse">ClickHouse</DropdownMenu.Item>
+              <DropdownMenu.Item id="opensearch">OpenSearch</DropdownMenu.Item>
+            </DropdownMenu.Section>
+            <DropdownMenu.Section title="Application">
+              <DropdownMenu.Item id="deploy-runtime">Deploy with Aiven Runtime</DropdownMenu.Item>
+            </DropdownMenu.Section>
             <DropdownMenu.Item id={CREATE_MENU_AGENT.id}>{CREATE_MENU_AGENT.label}</DropdownMenu.Item>
             <DropdownMenu.Section title={CREATE_MENU_SOLUTION.title}>
               <DropdownMenu.Item id={CREATE_MENU_SOLUTION.items[0].id}>

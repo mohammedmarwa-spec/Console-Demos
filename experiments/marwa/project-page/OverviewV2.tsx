@@ -7,6 +7,7 @@ import {
   Box,
   Card,
   EmptyState,
+  EmptyStateLayout,
   InlineIcon,
   ProgressBar,
   SegmentedControl,
@@ -321,7 +322,7 @@ function RecentActivity({ dataset }: { dataset: OverviewDataset }) {
       actions={{ text: 'View event log', onClick: () => undefined }}
     >
       {dataset.activity.length === 0 ? (
-        <EmptyState title="No recent activity" layout="horizontal" borderStyle="solid">
+        <EmptyState title="No recent activity" layout={EmptyStateLayout.Horizontal} borderStyle="solid">
           Changes across services, applications and agents will appear here.
         </EmptyState>
       ) : (

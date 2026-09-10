@@ -4,13 +4,25 @@ import { fileURLToPath } from 'node:url'
 
 const rootDir = path.dirname(fileURLToPath(import.meta.url))
 
+/** GitHub Pages serves this repo at /Console-Demos — keep local/Vercel on `/`. */
+const githubPages = process.env.GITHUB_PAGES === 'true'
+const repoBasePath = '/Console-Demos'
+
 const nextConfig: NextConfig = {
   output: 'export',
   outputFileTracingRoot: rootDir,
+  ...(githubPages
+    ? {
+        basePath: repoBasePath,
+        assetPrefix: repoBasePath,
+        trailingSlash: true,
+      }
+    : {
+        trailingSlash: false,
+      }),
   images: {
     unoptimized: true,
   },
-  trailingSlash: false,
   webpack(config, { dev }) {
     if (dev && config.output) {
       config.output.chunkLoadTimeout = 300_000
