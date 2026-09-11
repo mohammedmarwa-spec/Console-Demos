@@ -54,11 +54,11 @@ export const componentManifest: ComponentManifest = {
     },
     {
       name: 'DataList',
-      usage: 'Posture drill-down services table',
+      usage: 'Services with alerts table: Service, Status, Maintenance schedule, Alerts/Notifications',
     },
     {
       name: 'StatusChip',
-      usage: 'Coverage chips on posture Cards and node-status chips in the drill-down table',
+      usage: 'Coverage chips on posture Cards and service status chips (Running) in the alerts table',
     },
     {
       name: 'Tooltip',
@@ -97,7 +97,7 @@ export const componentManifest: ComponentManifest = {
     },
     {
       name: 'RecentProjects',
-      reason: 'Recent project cards with service icon stacks, service counts, and environment tags',
+      reason: 'Five recent project cards in one row, with service icon stacks, service counts, and environment tags',
     },
     {
       name: 'ProjectHealth',
@@ -119,7 +119,7 @@ export const componentManifest: ComponentManifest = {
     },
     {
       name: 'PostureServiceList',
-      reason: 'DataList of alert rows: service, node status, maintenance, alert, and fix action',
+      reason: 'DataList of alert rows: Service, Status, Maintenance schedule, and Alerts/Notifications',
     },
     {
       name: 'HomeRightColumn',

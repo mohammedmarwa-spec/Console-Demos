@@ -25,6 +25,8 @@ import arrowRight from '@aivenio/aquarium/icons/arrowRight'
 import errorSign from '@aivenio/aquarium/icons/error'
 import filterIcon from '@aivenio/aquarium/icons/filter'
 import helpIcon from '@aivenio/aquarium/icons/help'
+import loadingIcon from '@aivenio/aquarium/icons/loading'
+import tickCircleIcon from '@aivenio/aquarium/icons/tickCircle'
 import warningSign from '@aivenio/aquarium/icons/warningSign'
 import { getServiceIconUrl, ServiceIcon } from '@experiments/_shared/components/ServiceIcon'
 import { imageSrc } from '@experiments/_shared/lib/image'
@@ -99,14 +101,12 @@ function filterServicesByTableFilters(
 }
 
 function toAlertRows(services: HomeServiceRow[]): HomeAlertRow[] {
-  return services.flatMap((service) =>
-    service.alerts.map((alert, index) => ({
-      id: `${service.id}:${index}`,
-      service,
-      alert,
-      maintenance: service.maintenance,
-    })),
-  )
+  return services.map((service) => ({
+    id: service.id,
+    service,
+    alert: service.alerts[0] ?? '',
+    maintenance: service.maintenance,
+  }))
 }
 
 function noopClick(event: { preventDefault: () => void }) {
@@ -474,10 +474,16 @@ export function PostureCard({
 
 PostureCard.displayName = 'PostureCard'
 
-function nodeStatusToChip(nodeStatus: HomeServiceRow['nodeStatus']): { text: string; status: 'success' | 'warning' | 'danger' } {
-  if (nodeStatus === 'down') return { text: 'Down', status: 'danger' }
-  if (nodeStatus === 'degraded') return { text: 'Degraded', status: 'warning' }
-  return { text: 'Healthy', status: 'success' }
+function serviceStatusToChip(status: HomeServiceRow['status']): {
+  text: string
+  status: 'success' | 'info' | 'neutral'
+  icon: typeof tickCircleIcon | typeof loadingIcon | undefined
+} {
+  if (status === 'Running') return { text: status, status: 'success', icon: tickCircleIcon }
+  if (status === 'Rebuilding' || status === 'Rebalancing') {
+    return { text: status, status: 'info', icon: loadingIcon }
+  }
+  return { text: status, status: 'neutral', icon: undefined }
 }
 
 function PostureServicesPanel({
@@ -539,7 +545,7 @@ function PostureServicesPanel({
           No alerts match the selected filter.
         </EmptyState>
       ) : (
-        <PostureServiceList rows={filteredServices} fixLabel={activeSignal?.fixLabel ?? 'Review service'} />
+        <PostureServiceList rows={filteredServices} />
       )}
     </Box>
   )
@@ -557,7 +563,7 @@ function ServiceTableFilters({
   onChange: (next: ServiceTableFilterId) => void
 }) {
   const alertServices = getAlertServices(services)
-  const alertCount = alertServices.reduce((sum, service) => sum + service.alerts.length, 0)
+  const alertCount = alertServices.length
 
   return (
     <ChoiceChipGroup
@@ -582,33 +588,28 @@ function ServiceTableFilters({
 
 ServiceTableFilters.displayName = 'ServiceTableFilters'
 
-function PostureServiceList({ rows, fixLabel }: { rows: HomeAlertRow[]; fixLabel: string }) {
+function PostureServiceList({ rows }: { rows: HomeAlertRow[] }) {
   const columns: DataListColumn<HomeAlertRow>[] = [
     {
       headerName: 'Service',
       type: 'custom',
       width: 'auto',
       UNSAFE_render: (row) => (
-        <Box style={{ display: 'flex', alignItems: 'center', gap: 12, width: '100%' }}>
-          <ServiceIcon serviceTypeId={row.service.serviceTypeId} size={32} />
-          <Box>
-            <Typography.Default>
-              <Link href="#" onClick={noopClick}>
-                {row.service.serviceName}
-              </Link>
-            </Typography.Default>
-            <Typography.Small color="muted">{row.service.environment}</Typography.Small>
+        <Link href="#" onClick={noopClick} style={{ width: '100%' }}>
+          <Box style={{ display: 'flex', alignItems: 'center', gap: 16, width: '100%' }}>
+            <ServiceIcon serviceTypeId={row.service.serviceTypeId} size={32} />
+            <span>{row.service.serviceName}</span>
           </Box>
-        </Box>
+        </Link>
       ),
     },
     {
-      headerName: 'Node status',
+      headerName: 'Status',
       type: 'custom',
       width: 120,
       UNSAFE_render: (row) => {
-        const node = nodeStatusToChip(row.service.nodeStatus)
-        return <StatusChip dense text={node.text} status={node.status} />
+        const chip = serviceStatusToChip(row.service.status)
+        return <StatusChip dense text={chip.text} status={chip.status} icon={chip.icon} />
       },
     },
     {
@@ -621,17 +622,6 @@ function PostureServiceList({ rows, fixLabel }: { rows: HomeAlertRow[]; fixLabel
       type: 'custom',
       UNSAFE_render: (row) => <ServiceAlertsCell row={row} />,
     },
-    {
-      headerName: 'Fix',
-      type: 'custom',
-      UNSAFE_render: () => (
-        <Typography.Default>
-          <Link href="#" onClick={noopClick}>
-            {fixLabel}
-          </Link>
-        </Typography.Default>
-      ),
-    },
   ]
 
   return <DataList columns={columns} rows={rows} sticky={false} />
@@ -640,13 +630,40 @@ function PostureServiceList({ rows, fixLabel }: { rows: HomeAlertRow[]; fixLabel
 PostureServiceList.displayName = 'PostureServiceList'
 
 function ServiceAlertsCell({ row }: { row: HomeAlertRow }) {
+  const alerts = row.service.alerts
+  if (alerts.length === 0) return null
+
   const icon = row.service.severity === 'danger' ? errorSign : warningSign
   const iconColor = row.service.severity === 'danger' ? 'danger-default' : 'warning-default'
 
   return (
     <Box style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
       <InlineIcon icon={icon} color={iconColor} style={{ width: 16, height: 16 }} />
-      <span>{row.alert}</span>
+      <span>
+        {alerts[0]}
+        {alerts.length > 1 ? (
+          <Tooltip
+            content={
+              <Box>
+                Multiple alerts:
+                <ul>
+                  {alerts.map((alert) => (
+                    <li key={alert} style={{ marginLeft: 16, listStyleType: 'disc' }}>
+                      {alert}
+                    </li>
+                  ))}
+                </ul>
+              </Box>
+            }
+          >
+            <Box component="span" style={{ cursor: 'pointer', marginLeft: 8 }}>
+              <Typography.Small htmlTag="span" color="muted">
+                {`+${alerts.length - 1} more`}
+              </Typography.Small>
+            </Box>
+          </Tooltip>
+        ) : null}
+      </span>
     </Box>
   )
 }

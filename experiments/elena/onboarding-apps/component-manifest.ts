@@ -61,8 +61,8 @@ export const componentManifest: ComponentManifest = {
       reason: 'Mock of Console ScanApplicationSourceModal empty VCS flow',
     },
     {
-      name: 'RuntimeVerticalStepper',
-      reason: 'How it works steps in a box under Application path cards',
+      name: 'HowItWorksCard',
+      reason: 'How it works steps: Connect GitHub → Deploy → optional data services',
     },
     {
       name: 'AnimatedCreationFlowSection',
@@ -82,7 +82,7 @@ export const componentManifest: ComponentManifest = {
     'Dev tools footer is hidden. Create service sits at the bottom. Service name is 50% width.',
     'Basic details is the first CreationFlowSection, then build target, then service summary.',
     'Application path uses the last section for Aiven Runtime price.',
-    'How it works sits in a bordered box under the Connect repository / Start with example app cards.',
+    'How it works is a full-width card under the path cards: icons above Connect GitHub → Deploy → optional data services.',
     'Connect GitHub on the Application path navigates to AivenRuntimePage.',
     'GitHub modal opens from Runtime Deploy application (connect → waiting → success).',
   ],

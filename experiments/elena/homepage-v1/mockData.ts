@@ -71,33 +71,33 @@ export const PROJECT_HOME_ID = STORE_PROD
 
 const ALERT_DETAILS: Record<string, Pick<HomeServiceRow, 'maintenance' | 'alerts' | 'severity'>> = {
   'pg-prod-01': {
-    maintenance: 'Sunday 02:00–06:00 UTC',
-    alerts: ['Connection pool saturated', 'Replication lag above threshold'],
+    maintenance: '23 Sept 2026 3:33:00 UTC',
+    alerts: ['Scheduled maintenance updates', 'Replication lag above threshold'],
     severity: 'warning',
   },
   'kafka-events': {
-    maintenance: 'Sunday 02:00–06:00 UTC',
-    alerts: ['Disk usage above 80%', 'Under-replicated partitions'],
+    maintenance: '1 Oct 2026 3:19:19 UTC',
+    alerts: ['Scheduled maintenance updates', 'Under-replicated partitions'],
     severity: 'warning',
   },
   'mysql-app': {
-    maintenance: 'Sunday 02:00–06:00 UTC',
-    alerts: ['MySQL version approaching end of life'],
+    maintenance: '1 Oct 2026 22:02:24 UTC',
+    alerts: ['Scheduled maintenance updates'],
     severity: 'warning',
   },
   'opensearch-logs': {
-    maintenance: 'Monday 01:00–05:00 UTC',
-    alerts: ['Node restart required', 'Certificate expires in 14 days'],
-    severity: 'danger',
+    maintenance: '20 Sept 2026 22:07:50 UTC',
+    alerts: ['Scheduled maintenance updates', 'Certificate expires in 14 days'],
+    severity: 'warning',
   },
   'clickhouse-analytics': {
-    maintenance: 'Sunday 02:00–06:00 UTC',
-    alerts: ['Disk usage above 80%', 'Query memory usage high'],
+    maintenance: '14 Sept 2026 2:00:00 UTC',
+    alerts: ['Scheduled maintenance updates', 'Query memory usage high'],
     severity: 'warning',
   },
   'pg-prod-01-replica': {
-    maintenance: 'Sunday 02:00–06:00 UTC',
-    alerts: ['No alert destination configured'],
+    maintenance: '14 Sept 2026 2:00:00 UTC',
+    alerts: ['Scheduled maintenance updates'],
     severity: 'warning',
   },
 }
@@ -223,7 +223,7 @@ export const PROJECTS: HomeProject[] = [
 function buildStoreProdRows(): HomeServiceRow[] {
   return projectPageData.services.map((service) => {
     const details = ALERT_DETAILS[service.id] ?? {
-      maintenance: 'Sunday 02:00–06:00 UTC',
+      maintenance: '23 Sept 2026 3:33:00 UTC',
       alerts: [],
       severity: 'warning' as const,
     }
@@ -258,7 +258,7 @@ export const SERVICES_BY_PROJECT: Record<string, HomeServiceRow[]> = {
       isBackedUp: true,
       maintenanceWindowState: 'configured',
       versionEolState: 'supported',
-      maintenance: 'Sunday 04:00–08:00 UTC',
+      maintenance: '2 Oct 2026 12:00:00 UTC',
       alerts: ['Under-replicated partitions'],
       severity: 'warning',
     },
@@ -275,7 +275,7 @@ export const SERVICES_BY_PROJECT: Record<string, HomeServiceRow[]> = {
       isBackedUp: true,
       maintenanceWindowState: 'needs_review',
       versionEolState: 'approaching_eol',
-      maintenance: 'Review required',
+      maintenance: '11 Sept 2026 12:00:00 UTC',
       alerts: ['Connector lag above threshold'],
       severity: 'warning',
     },
@@ -292,7 +292,7 @@ export const SERVICES_BY_PROJECT: Record<string, HomeServiceRow[]> = {
       isBackedUp: true,
       maintenanceWindowState: 'configured',
       versionEolState: 'supported',
-      maintenance: 'Saturday 03:00–04:00 UTC',
+      maintenance: '28 Sept 2026 21:54:42 UTC',
       alerts: [],
       severity: 'warning',
     },
@@ -311,7 +311,7 @@ export const SERVICES_BY_PROJECT: Record<string, HomeServiceRow[]> = {
       isBackedUp: true,
       maintenanceWindowState: 'configured',
       versionEolState: 'supported',
-      maintenance: 'Sunday 02:00–03:00 UTC',
+      maintenance: '26 Sept 2026 21:36:44 UTC',
       alerts: [],
       severity: 'warning',
     },

@@ -10,7 +10,6 @@ import {
   ChoiceChipGroup,
   Divider,
   Icon,
-  InlineIcon,
   Input,
   Link,
   Select,
@@ -18,6 +17,7 @@ import {
   StatusChip,
   Typography,
 } from '@aivenio/aquarium'
+import arrowRightIcon from '@aivenio/aquarium/icons/arrowRight'
 import codeBlockIcon from '@aivenio/aquarium/icons/codeBlock'
 import containerIcon from '@aivenio/aquarium/icons/container'
 import cpuChipIcon from '@aivenio/aquarium/icons/cpuChip'
@@ -28,7 +28,6 @@ import folderCloseIcon from '@aivenio/aquarium/icons/folderClose'
 import githubLogoIcon from '@aivenio/aquarium/icons/githubLogo'
 import linkExternalIcon from '@aivenio/aquarium/icons/linkExternal'
 import memoryIcon from '@aivenio/aquarium/icons/memory'
-import tickIcon from '@aivenio/aquarium/icons/tick'
 import { OnboardingTestEnvShell } from '@experiments/_shared/components/OnboardingTestEnvShell'
 import { ServiceIcon } from '@experiments/_shared/components/ServiceIcon'
 import {
@@ -341,150 +340,146 @@ PlanPriceSkeleton.displayName = 'PlanPriceSkeleton'
 
 const INTEGRATION_SERVICE_IDS = ['postgresql', 'valkey', 'clickhouse', 'kafka'] as const
 
-const RUNTIME_STEPS: Array<{
-  title: string
-  description: string | null
-  serviceIds?: readonly (typeof INTEGRATION_SERVICE_IDS)[number][]
-}> = [
-  {
-    title: 'Connect GitHub',
-    description: 'Authorize access and select your repository and branch',
-  },
-  {
-    title: 'Scan and configure',
-    description: 'Aiven detects the apps and suggests services',
-  },
-  {
-    title: 'Deploy',
-    description: 'Launch your app inside your Aiven project.',
-  },
-  {
-    title: 'Connect data services',
-    description: 'PostgreSQL, Valkey, ClickHouse, and Kafka',
-    serviceIds: INTEGRATION_SERVICE_IDS,
-  },
-]
-
-function RuntimeVerticalStepper({ activeIndex = 0 }: { activeIndex?: number }) {
-  const indicatorSize = 28
-
+function HowItWorksIconTile({ icon }: { icon: typeof githubLogoIcon }) {
   return (
     <Box
-      aria-label="How it works"
-      style={{ display: 'flex', flexDirection: 'column', width: '100%' }}
+      aria-hidden
+      style={{
+        width: 48,
+        height: 48,
+        borderRadius: 8,
+        border: '1px solid var(--aquarium-border-color-muted)',
+        backgroundColor: 'var(--aquarium-background-color-layer)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        flexShrink: 0,
+        boxSizing: 'border-box',
+      }}
     >
-      {RUNTIME_STEPS.map((step, index) => {
-        const state = index < activeIndex ? 'completed' : index === activeIndex ? 'active' : 'inactive'
-        const isLast = index === RUNTIME_STEPS.length - 1
-        const stepNumber = index + 1
-
-        return (
-          <Box
-            key={step.title}
-            style={{
-              display: 'flex',
-              alignItems: 'stretch',
-              gap: 12,
-              width: '100%',
-            }}
-          >
-            <Box
-              aria-hidden
-              style={{
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'center',
-                width: indicatorSize,
-                flexShrink: 0,
-              }}
-            >
-              <Box
-                style={{
-                  width: indicatorSize,
-                  height: indicatorSize,
-                  borderRadius: '50%',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  flexShrink: 0,
-                  boxSizing: 'border-box',
-                  ...(state === 'completed'
-                    ? {
-                        backgroundColor: 'var(--aquarium-background-color-success-graphic)',
-                        border: '2px solid var(--aquarium-background-color-success-graphic)',
-                      }
-                    : state === 'active'
-                      ? {
-                          backgroundColor: 'transparent',
-                          border: '2px solid var(--aquarium-border-color-primary-intense)',
-                        }
-                      : {
-                          backgroundColor: 'transparent',
-                          border: '2px solid var(--aquarium-border-color-default)',
-                        }),
-                }}
-              >
-                {state === 'completed' ? (
-                  <InlineIcon icon={tickIcon} color="default" style={{ width: 14, height: 14 }} />
-                ) : (
-                  <Box style={{ lineHeight: 1 }}>
-                    <Typography.Small color={state === 'active' ? 'intense' : 'muted'} htmlTag="span">
-                      {stepNumber}
-                    </Typography.Small>
-                  </Box>
-                )}
-              </Box>
-              {!isLast ? (
-                <Box
-                  style={{
-                    width: 1,
-                    flex: 1,
-                    minHeight: 12,
-                    marginTop: 4,
-                    marginBottom: 4,
-                    backgroundColor: 'var(--aquarium-border-color-muted)',
-                  }}
-                />
-              ) : null}
-            </Box>
-            <Box
-              style={{
-                display: 'flex',
-                flexDirection: 'column',
-                gap: 8,
-                paddingTop: 4,
-                paddingBottom: isLast ? 0 : 16,
-                minWidth: 0,
-              }}
-            >
-              <Box style={{ display: 'flex', flexDirection: 'column', gap: 2, minWidth: 0 }}>
-                <Typography.DefaultStrong color={state === 'inactive' ? 'muted' : 'intense'}>
-                  {step.title}
-                </Typography.DefaultStrong>
-                {step.description ? (
-                  step.serviceIds ? (
-                    <Typography.Caption color="muted">{step.description}</Typography.Caption>
-                  ) : (
-                    <Typography.Small color="muted">{step.description}</Typography.Small>
-                  )
-                ) : null}
-              </Box>
-              {step.serviceIds ? (
-                <Box style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-                  {step.serviceIds.map((serviceId) => (
-                    <ServiceIcon key={serviceId} serviceTypeId={serviceId} size={24} alt="" />
-                  ))}
-                </Box>
-              ) : null}
-            </Box>
-          </Box>
-        )
-      })}
+      <Icon icon={icon} style={{ width: 24, height: 24 }} />
     </Box>
   )
 }
 
-RuntimeVerticalStepper.displayName = 'RuntimeVerticalStepper'
+HowItWorksIconTile.displayName = 'HowItWorksIconTile'
+
+function HowItWorksArrow() {
+  return (
+    <Box
+      aria-hidden
+      style={{
+        display: 'flex',
+        alignItems: 'center',
+        height: 48,
+        flexShrink: 0,
+      }}
+    >
+      <Icon icon={arrowRightIcon} color="primary" style={{ width: 24, height: 24 }} />
+    </Box>
+  )
+}
+
+HowItWorksArrow.displayName = 'HowItWorksArrow'
+
+function HowItWorksStep({
+  icon,
+  title,
+  titleAccessory,
+  description,
+  extra,
+}: {
+  icon: typeof githubLogoIcon
+  title: string
+  titleAccessory?: ReactNode
+  description: string
+  extra?: ReactNode
+}) {
+  return (
+    <Box
+      style={{
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'flex-start',
+        gap: 12,
+        flex: 1,
+        minWidth: 0,
+      }}
+    >
+      <HowItWorksIconTile icon={icon} />
+      <Box style={{ display: 'flex', flexDirection: 'column', gap: 8, minWidth: 0, width: '100%' }}>
+        <Box style={{ display: 'flex', flexDirection: 'column', gap: 4, minWidth: 0 }}>
+          <Box style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+            <Typography.DefaultStrong color="intense">{title}</Typography.DefaultStrong>
+            {titleAccessory}
+          </Box>
+          <Typography.Small color="muted">{description}</Typography.Small>
+        </Box>
+        {extra}
+      </Box>
+    </Box>
+  )
+}
+
+HowItWorksStep.displayName = 'HowItWorksStep'
+
+function HowItWorksCard() {
+  return (
+    <Box
+      aria-label="How it works"
+      style={{
+        padding: 24,
+        borderRadius: 8,
+        border: '1px solid var(--aquarium-border-color-muted)',
+        backgroundColor: 'var(--aquarium-background-color-layer)',
+        display: 'flex',
+        flexDirection: 'column',
+        gap: 24,
+        width: '100%',
+        boxSizing: 'border-box',
+      }}
+    >
+      <Typography.Caption color="muted">HOW IT WORKS</Typography.Caption>
+
+      <Box
+        style={{
+          display: 'flex',
+          alignItems: 'flex-start',
+          gap: 16,
+          width: '100%',
+        }}
+      >
+        <HowItWorksStep
+          icon={githubLogoIcon}
+          title="Connect GitHub"
+          description="Select your repository and branch."
+        />
+        <HowItWorksArrow />
+        <HowItWorksStep
+          icon={codeBlockIcon}
+          title="Deploy your app"
+          description="Launch your app in your Aiven project"
+        />
+        <HowItWorksArrow />
+        <HowItWorksStep
+          icon={databaseIcon}
+          title="Connect your data"
+          titleAccessory={<StatusChip text="Optional" status="neutral" dense />}
+          description="Use existing PostgreSQL, Valkey, ClickHouse or Kafka services."
+          extra={
+            <Box style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+              {INTEGRATION_SERVICE_IDS.map((serviceId) => (
+                <ServiceIcon key={serviceId} serviceTypeId={serviceId} size={32} alt="" />
+              ))}
+            </Box>
+          }
+        />
+      </Box>
+    </Box>
+  )
+}
+
+HowItWorksCard.displayName = 'HowItWorksCard'
 
 const EXAMPLE_APP_REPO_URL = 'https://github.com/Aiven-Labs/app-multimodal-search-CLIP-PostgreSQL'
 
@@ -512,6 +507,7 @@ function DeployPathCard({
         flexDirection: 'column',
         gap: 16,
         width: '100%',
+        height: '100%',
         minWidth: 0,
         boxSizing: 'border-box',
       }}
@@ -525,7 +521,7 @@ function DeployPathCard({
         <Typography.Caption color="muted">{description}</Typography.Caption>
       </Box>
 
-      <Box style={{ width: '100%' }}>{action}</Box>
+      <Box style={{ width: '100%', marginTop: 'auto' }}>{action}</Box>
     </Box>
   )
 }
@@ -536,14 +532,21 @@ function DeployApplicationPanel({ onConnectGitHub }: { onConnectGitHub: () => vo
   return (
     <Box
       style={{
-        display: 'grid',
-        gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
+        display: 'flex',
+        flexDirection: 'column',
         gap: 16,
-        alignItems: 'stretch',
         width: '100%',
       }}
     >
-      <Box style={{ display: 'flex', flexDirection: 'column', gap: 16, minWidth: 0 }}>
+      <Box
+        style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
+          gap: 16,
+          alignItems: 'stretch',
+          width: '100%',
+        }}
+      >
         <DeployPathCard
           icon={githubLogoIcon}
           title="Connect your repository"
@@ -575,23 +578,7 @@ function DeployApplicationPanel({ onConnectGitHub }: { onConnectGitHub: () => vo
         />
       </Box>
 
-      <Box
-        style={{
-          padding: 20,
-          borderRadius: 8,
-          border: '1px solid var(--aquarium-border-color-muted)',
-          backgroundColor: 'var(--aquarium-background-color-layer)',
-          display: 'flex',
-          flexDirection: 'column',
-          gap: 12,
-          width: '100%',
-          height: '100%',
-          boxSizing: 'border-box',
-        }}
-      >
-        <Typography.DefaultStrong color="intense">How it works</Typography.DefaultStrong>
-        <RuntimeVerticalStepper activeIndex={0} />
-      </Box>
+      <HowItWorksCard />
     </Box>
   )
 }
