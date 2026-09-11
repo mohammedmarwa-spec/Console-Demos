@@ -93,6 +93,7 @@ function OverviewHeader({
         />
       </Box>
       <Box style={{ display: 'flex', alignItems: 'center', gap: 12, flexShrink: 0, paddingTop: 4, flexWrap: 'wrap' }}>
+        <Typography.Small color="muted">Concept 2</Typography.Small>
         {/* Demo controls (prototype only) */}
         <Switch checked={mode === 'v2'} onChange={() => onModeChange(mode === 'v2' ? 'legacy' : 'v2')}>
           New Overview

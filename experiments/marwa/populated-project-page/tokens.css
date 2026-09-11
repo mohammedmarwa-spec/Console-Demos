@@ -1,0 +1,26 @@
+/**
+ * Pitch prototype tokens. Names mirror Aquarium CSS variables.
+ * Live values come from @aivenio/aquarium; aliases encode the brief's colour intent.
+ *
+ * teal  = live / primary     → --aquarium-*-primary-*
+ * amber = coming             → --aquarium-*-warning-*
+ * coral = critical           → --aquarium-*-danger-*
+ * gray  = informational/idle → --aquarium-*-muted / info
+ */
+
+:root {
+  --aquarium-color-live: var(--aquarium-background-color-primary-graphic);
+  --aquarium-color-coming: var(--aquarium-background-color-warning-graphic);
+  --aquarium-color-critical: var(--aquarium-background-color-danger-graphic);
+  --aquarium-color-informational: var(--aquarium-text-color-muted);
+
+  --aquarium-surface-body: var(--aquarium-background-color-body);
+  --aquarium-surface-layer: var(--aquarium-background-color-layer);
+  --aquarium-surface-muted: var(--aquarium-background-color-muted);
+  --aquarium-surface-primary-muted: var(--aquarium-background-color-primary-muted);
+  --aquarium-surface-warning-muted: var(--aquarium-background-color-warning-muted);
+
+  --aquarium-radius: var(--aquarium-border-radius-default, 8px);
+  --aquarium-space-page: 24px;
+  --aquarium-space-module: 16px;
+}

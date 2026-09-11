@@ -34,7 +34,7 @@ export const componentManifest: ComponentManifest = {
     },
     {
       name: 'Button',
-      usage: 'Review upgrades CTA (primary) and per-row Upgrade/Change + Dismiss (ghost)',
+      usage: 'Review upgrades CTA (primary) and per-row Upgrade/Change + Dismiss (ghost); OpenSearch details "Give feedback" (Button.Secondary dense + chat icon, beside breadcrumbs)',
     },
     {
       name: 'StatusChip',

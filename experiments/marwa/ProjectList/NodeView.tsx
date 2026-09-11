@@ -19,6 +19,7 @@ import {
   Typography,
 } from '@aivenio/aquarium'
 import duplicateIcon from '@aivenio/aquarium/icons/duplicate'
+import chatIcon from '@aivenio/aquarium/icons/chat'
 import { ServiceIcon } from '@/components/ServiceIcon'
 import type { ServiceRow } from '@/screens/ProjectServices'
 import {
@@ -267,7 +268,7 @@ export function NodeView({ service, onBack }: { service: ServiceRow; onBack: () 
         backgroundColor: 'var(--aquarium-background-color-body)',
       }}
     >
-      <Box style={{ marginBottom: 16 }}>
+      <Box style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16, flexWrap: 'wrap' }}>
         <PageHeader
           title=""
           breadcrumbs={[
@@ -290,6 +291,9 @@ export function NodeView({ service, onBack }: { service: ServiceRow; onBack: () 
             <Breadcrumbs.Crumb key="page">Cluster nodes</Breadcrumbs.Crumb>,
           ]}
         />
+        <Button.Secondary dense type="button" icon={chatIcon} onClick={() => undefined}>
+          Give feedback
+        </Button.Secondary>
       </Box>
 
       <Box style={{ marginBottom: 16 }}>

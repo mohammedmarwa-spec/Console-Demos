@@ -298,7 +298,17 @@ export function ConsoleHeader({
         ) : null}
       </Box>
 
-      <Box style={{ display: 'flex', alignItems: 'center', gap: 4, flexShrink: 0 }}>
+      <Box
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: 4,
+          flexShrink: 0,
+          backgroundColor: 'var(--aquarium-background-color-body)',
+          zIndex: 1,
+          paddingLeft: 8,
+        }}
+      >
         {beforeOrganizationSelector ? (
           <Box style={{ display: 'flex', alignItems: 'center', marginRight: 8 }}>
             {beforeOrganizationSelector}

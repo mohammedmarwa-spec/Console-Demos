@@ -7,6 +7,8 @@ import {
   Banner,
   Box,
   Button,
+  Card,
+  Chip,
   ChoiceChip,
   ChoiceChipGroup,
   DataTable,
@@ -31,6 +33,7 @@ import outdated from '@aivenio/aquarium/icons/outdated'
 import tickCircle from '@aivenio/aquarium/icons/tickCircle'
 import warningSign from '@aivenio/aquarium/icons/warningSign'
 import { ServiceIcon } from '@/components/ServiceIcon'
+import { CreateServiceTypeModal } from './CreateServiceTypeModal'
 import {
   bySeverity,
   fmtUsd,
@@ -181,16 +184,23 @@ function MetricsRow({
   status,
   onRetry,
   isPageEmpty,
+  onCreateService,
 }: {
   summary: OverviewSummary
   status: AsyncStatus
   onRetry?: () => void
   isPageEmpty: boolean
+  onCreateService: () => void
 }) {
   return (
     <ModuleStatus module="metrics" status={status} onRetry={onRetry} loading={<MetricsSkeleton />}>
       {isPageEmpty ? (
-        <EmptyState title="No usage yet" primaryAction={CREATE_SERVICE} borderStyle="solid" fullHeight={false}>
+        <EmptyState
+          title="No usage yet"
+          primaryAction={{ text: 'Create service', onClick: onCreateService }}
+          borderStyle="solid"
+          fullHeight={false}
+        >
           Spend and storage will appear after you create a service
         </EmptyState>
       ) : (
@@ -526,6 +536,158 @@ function ServicePreview({ svc, onBack }: { svc: OverviewService; onBack: () => v
 
 ServicePreview.displayName = 'ServicePreview'
 
+// ─── Explore the platform (empty Overview) ─────────────────────────────────────
+
+type PlatformTone = 'primary' | 'warning'
+type PlatformBadge = 'NEW' | 'COMING'
+
+type PlatformProduct = {
+  id: string
+  mark: string
+  title: string
+  description: string
+  tone: PlatformTone
+  badge?: PlatformBadge
+}
+
+const PLATFORM_PRODUCTS: PlatformProduct[] = [
+  {
+    id: 'runtime',
+    mark: '{ }',
+    title: 'Runtime',
+    description: 'Run apps and agents next to your data.',
+    tone: 'primary',
+  },
+  {
+    id: 'ai-gateway',
+    mark: 'AI',
+    title: 'AI gateway',
+    description: 'One endpoint for all your AI traffic.',
+    tone: 'primary',
+  },
+  {
+    id: 'agents',
+    mark: 'AG',
+    title: 'Agents',
+    description: 'Deploy managed agents over your services.',
+    tone: 'primary',
+    badge: 'NEW',
+  },
+  {
+    id: 'datahub',
+    mark: 'DH',
+    title: 'DataHub',
+    description: 'Context, catalog, lineage and governance.',
+    tone: 'primary',
+  },
+  {
+    id: 'integration-endpoints',
+    mark: '</>',
+    title: 'Integration endpoints',
+    description: 'Connect Aiven to external systems over MCP.',
+    tone: 'primary',
+  },
+  {
+    id: 'inference',
+    mark: 'ML',
+    title: 'Inference',
+    description: 'Run models directly on the platform.',
+    tone: 'warning',
+    badge: 'COMING',
+  },
+]
+
+const MARK_TONE: Record<PlatformTone, { bg: string; fg: string }> = {
+  primary: {
+    bg: 'var(--aquarium-background-color-primary-muted)',
+    fg: 'var(--aquarium-text-color-primary-graphic)',
+  },
+  warning: {
+    bg: 'var(--aquarium-background-color-warning-muted)',
+    fg: 'var(--aquarium-text-color-warning-intense)',
+  },
+}
+
+function ProductMark({ label, tone }: { label: string; tone: PlatformTone }) {
+  const colors = MARK_TONE[tone]
+  return (
+    <Box
+      aria-hidden
+      style={{
+        width: 36,
+        height: 36,
+        borderRadius: 8,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        flexShrink: 0,
+        backgroundColor: colors.bg,
+        color: colors.fg,
+        fontSize: 12,
+        fontWeight: 600,
+        letterSpacing: 0.2,
+      }}
+    >
+      {label}
+    </Box>
+  )
+}
+
+function ExplorePlatform() {
+  return (
+    <Section title="Explore the platform">
+      <Box
+        style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))',
+          gap: 16,
+        }}
+      >
+        {PLATFORM_PRODUCTS.map((product) => {
+          const coming = product.badge === 'COMING'
+          return (
+              <Card
+                key={product.id}
+                fullWidth
+                disabled={coming || undefined}
+                onClick={() => undefined}
+                title={
+                  <Card.Title>
+                    <Box
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        gap: 8,
+                        width: '100%',
+                      }}
+                    >
+                      <Box style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 0 }}>
+                        <ProductMark label={product.mark} tone={product.tone} />
+                        <span>{product.title}</span>
+                      </Box>
+                      {product.badge ? (
+                        <Chip.Inverse
+                          dense
+                          text={product.badge}
+                          status={product.badge === 'NEW' ? 'primary' : 'warning'}
+                        />
+                      ) : null}
+                    </Box>
+                  </Card.Title>
+                }
+              >
+                {product.description}
+              </Card>
+          )
+        })}
+      </Box>
+    </Section>
+  )
+}
+
+ExplorePlatform.displayName = 'ExplorePlatform'
+
 // ─── Recent activity (Timeline at the top of Overview) ──────────────────────────
 
 function RecentActivity({
@@ -583,10 +745,12 @@ export function OverviewV2({
   onRetry?: () => void
 }) {
   const [openService, setOpenService] = useState<OverviewService | null>(null)
+  const [createServiceOpen, setCreateServiceOpen] = useState(false)
   const summary = useMemo(() => summarize(dataset), [dataset])
   const scale = pageScale(summary.total)
   const isPageEmpty = scale === 'empty'
   const attentionCount = dataset.services.filter((s) => s.needsAttention).length
+  const openCreateService = () => setCreateServiceOpen(true)
 
   if (openService) {
     return <ServicePreview svc={openService} onBack={() => setOpenService(null)} />
@@ -612,37 +776,46 @@ export function OverviewV2({
           >
             Create a service to start seeing spend, storage and issues on this project
           </EmptyState>
+          <ExplorePlatform />
         </>
       ) : null}
 
-      <RecentActivity items={dataset.activity} status={status} onRetry={onRetry} />
+      {!isPageEmpty ? <RecentActivity items={dataset.activity} status={status} onRetry={onRetry} /> : null}
 
-      <MetricsRow summary={summary} status={status} onRetry={onRetry} isPageEmpty={isPageEmpty} />
+      <MetricsRow
+        summary={summary}
+        status={status}
+        onRetry={onRetry}
+        isPageEmpty={isPageEmpty}
+        onCreateService={openCreateService}
+      />
 
-      <Tabs defaultValue="service-type" aria-label="Overview sections">
-        <Tabs.Tab title="Service type" value="service-type">
-          {isPageEmpty && status === 'loaded' ? (
-            <EmptyState title="No service types yet" primaryAction={CREATE_SERVICE} borderStyle="solid" fullHeight={false}>
-              Service types will appear after you create a service
-            </EmptyState>
-          ) : (
+      {!isPageEmpty ? (
+        <Tabs defaultValue="service-type" aria-label="Overview sections">
+          <Tabs.Tab title="Service type" value="service-type">
             <GroupRollup services={dataset.services} status={status} onRetry={onRetry} />
-          )}
-        </Tabs.Tab>
-        <Tabs.Tab
-          title="Needs attention"
-          value="needs-attention"
-          badge={attentionCount > 0 ? attentionCount : undefined}
-        >
-          <NeedsAttention
-            services={dataset.services}
-            status={status}
-            onRetry={onRetry}
-            isPageEmpty={isPageEmpty}
-            onOpenService={setOpenService}
-          />
-        </Tabs.Tab>
-      </Tabs>
+          </Tabs.Tab>
+          <Tabs.Tab
+            title="Needs attention"
+            value="needs-attention"
+            badge={attentionCount > 0 ? attentionCount : undefined}
+          >
+            <NeedsAttention
+              services={dataset.services}
+              status={status}
+              onRetry={onRetry}
+              isPageEmpty={isPageEmpty}
+              onOpenService={setOpenService}
+            />
+          </Tabs.Tab>
+        </Tabs>
+      ) : null}
+      <CreateServiceTypeModal
+        open={createServiceOpen}
+        onClose={() => setCreateServiceOpen(false)}
+        projectName={dataset.projectName}
+        orgName="Aiven"
+      />
     </Box>
   )
 }

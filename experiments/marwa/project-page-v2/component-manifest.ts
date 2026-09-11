@@ -2,9 +2,9 @@ import type { ComponentManifest } from '@/lib/experiments/types'
 
 /**
  * Manual component map for this experiment.
- * Base shell UI is reused from experiments/_shared/project-page (not edited). The redesigned
- * aggregation-first Overview (OverviewV2) and a local shell fork (ProjectPageShellV2) live in
- * this folder; the shared OverviewContent is kept reachable behind the "New Overview" toggle.
+ * Base shell UI is reused from experiments/_shared/project-page (not edited). This folder is
+ * concept 2 of the project Overview — an independent fork of experiments/marwa/project-page.
+ * The redesigned Overview (OverviewV2) and a local shell fork (ProjectPageShellV2) live here.
  */
 export const componentManifest: ComponentManifest = {
   aquariumComponents: [
@@ -14,8 +14,9 @@ export const componentManifest: ComponentManifest = {
     { name: 'Link', usage: 'Needs attention — issue title opens the affected service' },
     { name: 'Badge', usage: 'Overview grouped rollup — service count per group (outlined, dense)' },
     { name: 'ProgressBar', usage: 'Overview grouped rollup — dense storage-usage bar per group (warning >85%)' },
-    { name: 'Timeline', usage: 'Overview "Recent project activity" — dated events with status variants' },
-    { name: 'EmptyState', usage: 'Empty-page activation plus per-module empty states for metrics, Needs attention, Service type, and Recent activity' },
+    { name: 'Card / Card.Title / Chip.Inverse', usage: 'Empty Overview "Explore the platform" product tiles (Runtime, AI gateway, Agents, DataHub, Integration endpoints, Inference) with NEW / COMING labels' },
+    { name: 'Timeline', usage: 'Overview "Recent project activity" — dated events with status variants (hidden on the empty Overview)' },
+    { name: 'Modal', usage: 'Create service type picker opened from the empty "No usage yet" Create service CTA — Console ServiceTypeSelectionModal layout' },
     { name: 'Banner', usage: 'Platform banner on the empty (0 services) Overview — horizontal layout, Explore solutions' },
     { name: 'Skeleton', usage: 'Per-module loading placeholders (metrics cards and list rows) — no spinners' },
     { name: 'Alert', usage: 'Per-module error: "Couldn\'t load {module}" with Retry action, no exception strings' },
@@ -92,10 +93,10 @@ export const componentManifest: ComponentManifest = {
   ],
 
   notes: [
-    'Redesign brief: aggregation-first, exception-first Project Overview that stays legible at 50+ services / 8+ apps / 4+ agents. Built only inside experiments/marwa/project-page/ — the shared shell is not edited.',
+    'Concept 2 of the project Overview. Independent fork of experiments/marwa/project-page — iterate here without changing concept 1. Shared shell is not edited.',
     'Feature flag: the Overview header "New Overview" Switch toggles OverviewV2 vs the shared OverviewContent. Volume (Empty / Small / Large) and async (Loaded / Loading / Error) SegmentedControls preview page and module states. Retry on a module error returns to Loaded.',
-    'Recent project activity sits at the top of Overview as an Aquarium Timeline (title = change, caption = resource · actor · when, status variants).',
-    'Needs attention is a DataTable of project-level issues ordered by impact (Issue, Affected resources, Impact, Started), with All / High / Other filters. Service type and Needs attention are peer tabs below the metrics.',
+    'Recent project activity sits at the top of Overview as an Aquarium Timeline when the project has services. It is hidden on the empty Overview in favour of Explore the platform.',
+    'Needs attention is a DataTable of project-level issues ordered by impact (Issue, Affected resources, Impact, Started), with All / High / Other filters. Service type and Needs attention are peer tabs below the metrics, hidden on the empty Overview.',
     'Group by (System / Service type / None, default System) drives both the grouped rollup module (Systems / Service types) and the Needs-attention Accordion grouping.',
     'Summary metric row (responsive grid, minmax(150px,1fr)): Needs attention (danger accent when >0), Month-to-date spend (+ forecast, warning when over budget), Storage used (X/Y TB + count over 85%), Off latest version (+ EOL < 30 days).',
     'Local mock data in overviewV2Data.ts is deterministic and decoupled from the shared ProjectPageMockData; no backend or fabricated live metrics. Non-Overview tabs still use the shared projectPageData.',

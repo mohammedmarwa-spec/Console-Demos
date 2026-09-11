@@ -11,6 +11,7 @@ import {
   Typography,
 } from '@aivenio/aquarium'
 import moreIcon from '@aivenio/aquarium/icons/more'
+import chatIcon from '@aivenio/aquarium/icons/chat'
 import { ServiceIcon } from '@/components/ServiceIcon'
 import type { ServiceRow } from '@/screens/ProjectServices'
 import { OpenSearchServiceSidebar, type OpenSearchNavId } from './OpenSearchServiceSidebar'
@@ -102,8 +103,8 @@ export function OpenSearchServiceShell({
           backgroundColor: 'var(--aquarium-background-color-body)',
         }}
       >
-        {/* Breadcrumb */}
-        <Box style={{ marginBottom: 12 }}>
+        {/* Breadcrumb + Give feedback (matches Console service details) */}
+        <Box style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 12, flexWrap: 'wrap' }}>
           <Breadcrumbs>
             <Breadcrumbs.Crumb href="#" onClick={(event) => event.preventDefault()}>
               My Organization
@@ -122,6 +123,9 @@ export function OpenSearchServiceShell({
             </Breadcrumbs.Crumb>
             <Breadcrumbs.Crumb>{NAV_LABEL[active]}</Breadcrumbs.Crumb>
           </Breadcrumbs>
+          <Button.Secondary dense type="button" icon={chatIcon} onClick={() => undefined}>
+            Give feedback
+          </Button.Secondary>
         </Box>
 
         {/* Service header */}

@@ -5,9 +5,9 @@ import { ProjectPageShellV2 } from './ProjectPageShellV2'
 import { projectPageData } from './mockData'
 
 export const pageMeta: PageMeta = {
-  title: 'Project Overview — concept 1 (Marwa)',
+  title: 'Project Overview — concept 2 (Marwa)',
   description:
-    'First concept of the project Overview. Aggregation-first, gated on service volume: empty (activation + per-module empty states), small (detailed), large (aggregation). Concept 2 lives at /experiments/marwa/project-page-v2.',
+    'Second, independent concept of the project Overview. Forked from concept 1 so the two can diverge. Iterate here without changing /experiments/marwa/project-page.',
 }
 
 export default function Page() {
