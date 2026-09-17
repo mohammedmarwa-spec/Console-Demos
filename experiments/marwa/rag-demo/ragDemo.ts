@@ -129,7 +129,6 @@ export function runMockQuery(source: DemoDataSource, mode: SearchMode, query: st
   const label = source.kind === 'template' ? source.title : source.fileName
   const q = query.trim() || defaultQueryFor(source)
   const sources = orderForMode(DEVOPS_SOURCES, mode)
-  const modeLabel = SEARCH_MODES.find((item) => item.id === mode)?.label ?? 'Semantic'
 
   const answers: Record<SearchMode, string> = {
     keyword: `Keyword search over ${label} looked for the words in “${q}”. Top hits mention those terms directly (response times, Git clone, scans) rather than the broader idea of a bottleneck.`,
