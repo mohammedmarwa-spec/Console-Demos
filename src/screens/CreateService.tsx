@@ -678,6 +678,8 @@ export type CreateServiceProps = {
   onClose?: () => void
   onCreateSuccess?: (data?: CreatedServicePayload) => void
   submitRef?: React.MutableRefObject<(() => void) | undefined>
+  /** Optional experiment slot rendered after Service tier, before Cloud. */
+  afterServiceTier?: React.ReactNode
 }
 
 // ─── Main component ───────────────────────────────────────────────────────────
@@ -691,6 +693,7 @@ function CreateService({
   onClose,
   onCreateSuccess,
   submitRef,
+  afterServiceTier,
 }: CreateServiceProps) {
   const config = useMemo(() => getServiceConfig(serviceTypeId), [serviceTypeId])
 
@@ -1005,6 +1008,21 @@ function CreateService({
               </Box>
             </Card.Group>
           </CreationFlowSection>
+
+          {afterServiceTier ? (
+            <Box
+              style={{
+                display: 'grid',
+                gridTemplateColumns: '32px minmax(0, 1fr)',
+                columnGap: 16,
+                marginBottom: 48,
+                minWidth: 0,
+              }}
+            >
+              <Box aria-hidden="true" />
+              <Box style={{ minWidth: 0 }}>{afterServiceTier}</Box>
+            </Box>
+          ) : null}
 
           {/* Cloud */}
           <CreationFlowSection icon={cloudIcon} title="Cloud">
