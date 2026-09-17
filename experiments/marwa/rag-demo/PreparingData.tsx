@@ -2,14 +2,13 @@
 
 import { useEffect, useState } from 'react'
 import { Alert, Box, Button, EmptyState, ProgressBar, Stepper } from '@aivenio/aquarium'
-import type { DemoDataSource } from './ragDemo'
-
-function sourceLabel(source: DemoDataSource): string {
-  return source.kind === 'template' ? source.title : source.fileName
-}
+import { sourceLabel, type DemoDataSource } from './ragDemo'
 
 function shouldFail(source: DemoDataSource): boolean {
-  return source.kind === 'upload' && source.fileName.toLowerCase().includes('fail')
+  return (
+    source.kind === 'upload' &&
+    source.fileNames.some((name) => name.toLowerCase().includes('fail'))
+  )
 }
 
 /**

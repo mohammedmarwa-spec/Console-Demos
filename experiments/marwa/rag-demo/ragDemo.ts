@@ -126,7 +126,7 @@ export function defaultQueryFor(source: DemoDataSource): string {
 }
 
 export function runMockQuery(source: DemoDataSource, mode: SearchMode, query: string): QueryBundle {
-  const label = source.kind === 'template' ? source.title : source.fileName
+  const label = sourceLabel(source)
   const q = query.trim() || defaultQueryFor(source)
   const sources = orderForMode(DEVOPS_SOURCES, mode)
 
@@ -161,9 +161,69 @@ export function relevanceStatus(relevance: Relevance): 'success' | 'warning' | '
   return 'neutral'
 }
 
+export type ChunkSizeId = 'small' | 'medium' | 'large'
+
+export type UploadDemoSource = {
+  kind: 'upload'
+  fileNames: string[]
+  totalBytes: number
+  chunkSizeId: ChunkSizeId
+}
+
 export type DemoDataSource =
   | { kind: 'template'; id: string; title: string }
-  | { kind: 'upload'; fileName: string }
+  | UploadDemoSource
+
+/**
+ * Human-friendly label for a data source — used in status copy and mock answers.
+ * Uploads collapse to a file count when multiple files are selected.
+ */
+export function sourceLabel(source: DemoDataSource): string {
+  if (source.kind === 'template') return source.title
+  if (source.fileNames.length === 1) return source.fileNames[0]
+  return `${source.fileNames.length} uploaded files`
+}
+
+/** Predefined chunking method — read-only in the prototype (no Bedrock UI). */
+export const CHUNKING_METHOD = {
+  name: 'Fixed-size chunking with overlap',
+  description:
+    'Text is split into fixed-length passages with a small overlap so sentences that span chunk boundaries still retrieve well. Overlap is 10% of the chunk size.',
+} as const
+
+export const CHUNK_SIZES: {
+  id: ChunkSizeId
+  title: string
+  tokens: string
+  description: string
+  chip?: { text: string; status: 'info' | 'neutral' | 'success' }
+}[] = [
+  {
+    id: 'small',
+    title: 'Small',
+    tokens: '256 tokens · 26 token overlap',
+    description:
+      'Tighter passages. Best for FAQ-style questions where the answer sits in one sentence.',
+  },
+  {
+    id: 'medium',
+    title: 'Medium',
+    tokens: '512 tokens · 51 token overlap',
+    description:
+      'Balanced default. Good for runbooks and documentation with short paragraphs.',
+    chip: { text: 'Recommended', status: 'info' },
+  },
+  {
+    id: 'large',
+    title: 'Large',
+    tokens: '1024 tokens · 102 token overlap',
+    description:
+      'Wider context per chunk. Best for long-form docs where the answer needs multiple sentences.',
+  },
+]
+
+export const DEFAULT_CHUNK_SIZE: ChunkSizeId = 'medium'
+export const UPLOAD_MAX_FILES = 50
 
 export const DATA_TEMPLATES: {
   id: string

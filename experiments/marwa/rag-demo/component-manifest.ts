@@ -136,7 +136,8 @@ export const componentManifest: ComponentManifest = {
     },
     {
       name: 'FileInput',
-      usage: 'Screen 3 upload path — TXT only, with type, size, and empty-file errors',
+      usage:
+        'Screen 3 upload path — TXT only, multi-file (up to 50), with per-file type/size/empty validation, duplicate detection, and a limit guard',
       storybookUrl: aquariumStorybookLinks.Input,
     },
     {
@@ -303,7 +304,7 @@ export const componentManifest: ComponentManifest = {
     'Design change: Create service opens the Console create-service modal shell (select type → create form), matching PlaygroundStateContext.',
     'Screen 1: OpenSearch create shows an Includes vector search demo Alert and Search demo cards after Service tier. After Free/Dev OpenSearch with Vector selected, a Dialog offers Start demo or Skip.',
     'Screen 2: Vector search demo landing in the existing OpenSearch service shell (locked model chips + EmptyState CTA). Skip keeps a list banner and a sidebar/Overview entry.',
-    'Screen 3: Choose a data source — e-commerce, DevOps runbook, Support FAQ, technical docs templates, or upload TXT (10 MB). Bad type, too large, and empty files show FileInput errors.',
+    'Screen 3: Choose a data source — e-commerce, DevOps runbook, Support FAQ, technical docs templates, or upload up to 50 .txt files (10 MB each). Selected files render in a compact list with per-file remove and Remove all; skipped files roll up into a warning Alert. Chunking method is predefined ("Fixed-size chunking with overlap") and read-only; chunk size is a Card.Group (Small / Medium / Large, Medium recommended).',
     'Screen 4: Preparing your data ProgressBar, then auto-advance to query. Upload filenames containing "fail" simulate the Retry path.',
     'Screen 5: Keyword/Semantic/Hybrid query with LLM answer card, ranked sources Accordion, and qualitative High/Medium/Low. Mode change re-runs the mock query. After results, Back to service details returns to the created OpenSearch Overview.',
     'Screen 6: Separate Results explained view (not Figma’s inline Switch) covering why the mode matched, matched text, and relevance. End of demo CTA: Back to service details.',
