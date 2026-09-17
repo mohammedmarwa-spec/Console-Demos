@@ -9,7 +9,6 @@ import ServiceTypeSelectModal, {
 } from '@/screens/ServiceTypeSelectModal'
 import type { ServiceRow } from '@/screens/ProjectServices'
 import { OpenSearchDemoCallout } from './OpenSearchDemoCallout'
-import type { SearchDemoOption } from './ragDemo'
 
 /**
  * Console Create service shell: Select service type (full Modal) → Create {type}
@@ -74,14 +73,12 @@ export function CreateServiceShell({
 }) {
   const [step, setStep] = useState<'type' | 'create'>('type')
   const [selectedType, setSelectedType] = useState<ServiceTypeId | null>(null)
-  const [searchDemo, setSearchDemo] = useState<SearchDemoOption>('vector')
   const submitRef = useRef<(() => void) | undefined>(undefined)
 
   useEffect(() => {
     if (!open) return
     setStep('type')
     setSelectedType(null)
-    setSearchDemo('vector')
   }, [open])
 
   const subtitle = (
@@ -106,10 +103,12 @@ export function CreateServiceShell({
 
   function handleCreateSuccess(data?: CreatedServicePayload) {
     if (data) {
+      // Vector search demo is auto-included for Free/Developer OpenSearch —
+      // no user choice at create time. Users are offered Start / Skip in a
+      // post-create Dialog, and can always launch it from the Overview card.
       const includeVectorDemo =
         data.serviceTypeId === 'opensearch' &&
-        (data.tier === 'free' || data.tier === 'developer') &&
-        searchDemo === 'vector'
+        (data.tier === 'free' || data.tier === 'developer')
       onCreated(payloadToRow(data), { includeVectorDemo })
     }
     onClose()
@@ -149,11 +148,7 @@ export function CreateServiceShell({
             onClose={handleCancelCreate}
             onCreateSuccess={handleCreateSuccess}
             submitRef={submitRef}
-            afterServiceTier={
-              showDemoCallout ? (
-                <OpenSearchDemoCallout value={searchDemo} onChange={setSearchDemo} />
-              ) : null
-            }
+            afterServiceTier={showDemoCallout ? <OpenSearchDemoCallout /> : null}
           />
         ) : null}
       </Modal>

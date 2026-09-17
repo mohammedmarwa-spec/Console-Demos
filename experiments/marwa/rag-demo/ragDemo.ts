@@ -258,24 +258,9 @@ export const UPLOAD_MAX_BYTES = 10 * 1024 * 1024
 export const UPLOAD_ACCEPT = '.txt,text/plain'
 export const UPLOAD_EXTENSIONS = ['txt'] as const
 
-export type SearchDemoOption = 'none' | 'vector'
-
-export const SEARCH_DEMO_OPTIONS: {
-  id: SearchDemoOption
-  title: string
-  description: string
-  chips?: { text: string; status: 'success' | 'info' | 'neutral' }[]
-}[] = [
-  {
-    id: 'none',
-    title: 'None',
-    description: 'Create the service without a pre-configured search environment.',
-  },
-  {
-    id: 'vector',
-    title: 'Vector & Semantic Search',
-    description:
-      'Includes a pre-configured embedding model and LLM so you can try vector search in a few minutes.',
-    chips: [{ text: 'Demo', status: 'info' }],
-  },
-]
+/**
+ * Vector search demo is auto-included for Free/Developer OpenSearch services.
+ * Users no longer pick None vs Vector at create time — the demo is announced
+ * by an information Alert on the create form and launched later from the
+ * "Try the vector search demo" Card on the service Overview.
+ */

@@ -182,7 +182,7 @@ export const componentManifest: ComponentManifest = {
     },
     {
       name: 'OpenSearchDemoCallout',
-      reason: 'Screen 1 — information Alert plus Card.Group Search demo options after Service tier',
+      reason: 'Screen 1 — information Alert announcing that vector search demo is auto-included on Free/Dev OpenSearch (no user choice)',
     },
     {
       name: 'VectorSearchDemoLanding',
@@ -302,8 +302,8 @@ export const componentManifest: ComponentManifest = {
   notes: [
     'Custom-UI experiment under experiments/marwa/rag-demo/ — copied from marwa/ProjectList ("Free & Dev: Quick Upgrade V4"), self-contained (no ExperimentPageShell redirect).',
     'Design change: Create service opens the Console create-service modal shell (select type → create form), matching PlaygroundStateContext.',
-    'Screen 1: OpenSearch create shows an Includes vector search demo Alert and Search demo cards after Service tier. After Free/Dev OpenSearch with Vector selected, a Dialog offers Start demo or Skip.',
-    'Screen 2: Vector search demo landing in the existing OpenSearch service shell (locked model chips + EmptyState CTA). Skip keeps a list banner and a sidebar/Overview entry.',
+    'Screen 1: OpenSearch create shows an Includes vector search demo information Alert after Service tier — no user choice; the demo is auto-included on Free/Dev. After create, a Dialog offers Start demo or Skip for now.',
+    'Screen 2: Vector search demo landing in the existing OpenSearch service shell (locked model chips + EmptyState CTA). Skip keeps a services-list banner; Overview surfaces a "Try the vector search demo" Card link that opens the demo.',
     'Screen 3: Choose a data source — e-commerce, DevOps runbook, Support FAQ, technical docs templates, or upload up to 50 .txt files (10 MB each). Selected files render in a compact list with per-file remove and Remove all; skipped files roll up into a warning Alert. Chunking method is predefined ("Fixed-size chunking with overlap") and read-only; chunk size is a Card.Group (Small / Medium / Large, Medium recommended).',
     'Screen 4: Preparing your data ProgressBar, then auto-advance to query. Upload filenames containing "fail" simulate the Retry path.',
     'Screen 5: Keyword/Semantic/Hybrid query with LLM answer card, ranked sources Accordion, and qualitative High/Medium/Low. Mode change re-runs the mock query. After results, Back to service details returns to the created OpenSearch Overview.',

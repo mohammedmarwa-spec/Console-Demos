@@ -11,8 +11,8 @@ Create service on the project services list should open the same Console modal s
 - **Create service** (PageHeader primary action) opens the Console two-step flow:
   1. `ServiceTypeSelectModal` (`size="full"`, title "Select service type")
   2. Full `Modal` wrapping shared `CreateService` (`embedded`) with the Console title, subtitle, Create + Cancel footer
-- **Screen 1:** OpenSearch create shows an "Includes vector search demo" alert and a Search demo card group (None / Vector & Semantic Search) under Service tier. After creating OpenSearch on Free/Dev with Vector selected, a dialog offers Start demo or Skip.
-- **Screen 2:** Start demo (or the skip-path sidebar/banner) opens the existing OpenSearch service shell on **Vector search demo** — title, locked embedding/LLM pills, explanation, Choose a data source CTA.
+- **Screen 1:** OpenSearch create shows a single "Includes vector search demo" information Alert under Service tier — no user choice. The demo is auto-included on Free/Dev OpenSearch. After the service is created, a dialog offers Start demo or Skip for now.
+- **Screen 2:** Start demo (or later, the "Try the vector search demo" Card link on Overview) opens the existing OpenSearch service shell on **Vector search demo** — title, locked embedding/LLM pills, explanation, Choose a data source CTA.
 - **Screen 3:** Choose a data source — sample templates (e-commerce, DevOps runbook, Support FAQ, technical docs) or upload up to 50 .txt files (10 MB each). Selected files list with per-file remove and Remove all; rejected files roll up into a warning Alert. Chunking method is predefined ("Fixed-size chunking with overlap") and shown read-only; Chunk size is a Card.Group of Small / Medium (Recommended) / Large. Start demo continues to processing.
 - **Screen 4:** Preparing your data… ProgressBar, then auto-advance to query. Fail (upload name contains `fail`) → Retry.
 - **Screen 5:** Query + results — Keyword / Semantic / Hybrid (mode change re-runs), example chips, LLM answer card, ranked sources Accordion, High / Medium / Low. See explanation opens a separate view.

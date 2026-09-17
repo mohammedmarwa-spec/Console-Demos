@@ -2,17 +2,19 @@
 
 import { useState } from 'react'
 import {
-  Alert,
   Box,
   Breadcrumbs,
   Button,
+  Card,
   Chip,
+  ChipContainer,
   DropdownMenu,
   StatusChip,
   Typography,
 } from '@aivenio/aquarium'
 import moreIcon from '@aivenio/aquarium/icons/more'
 import chatIcon from '@aivenio/aquarium/icons/chat'
+import { RAG_EMBEDDING_MODEL, RAG_LLM_MODEL } from './ragDemo'
 import { ServiceIcon } from '@/components/ServiceIcon'
 import type { ServiceRow } from '@/screens/ProjectServices'
 import { OpenSearchServiceSidebar, type OpenSearchNavId } from './OpenSearchServiceSidebar'
@@ -174,15 +176,29 @@ export function OpenSearchServiceShell({
         {active === 'overview' ? (
           <>
             {hasVectorDemo ? (
-              <Box style={{ marginBottom: 16 }}>
-                <Alert
-                  type="information"
-                  title="Vector search demo"
-                  action={{ text: 'Open demo', onClick: () => setActive('vector-search-demo') }}
+              <Box style={{ marginBottom: 24 }}>
+                <Card
+                  fullWidth
+                  title="Try the vector search demo"
+                  chips={[{ text: 'Demo', status: 'info' }]}
                 >
-                  This service includes a pre-configured vector search demo. Models are already
-                  chosen — pick a data source when you are ready.
-                </Alert>
+                  <Box style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                    <Typography.Small color="muted">
+                      This service ships with a pre-configured RAG demo — embedding and LLM models
+                      are already chosen. Pick a sample dataset or upload up to 50 .txt files, then
+                      run keyword, semantic, or hybrid queries against it.
+                    </Typography.Small>
+                    <ChipContainer>
+                      <Chip dense locked text={RAG_EMBEDDING_MODEL} />
+                      <Chip dense locked text={RAG_LLM_MODEL} />
+                    </ChipContainer>
+                    <Box>
+                      <Button type="button" onClick={() => setActive('vector-search-demo')}>
+                        Open demo
+                      </Button>
+                    </Box>
+                  </Box>
+                </Card>
               </Box>
             ) : null}
             <OpenSearchOverview service={service} onChangePlan={() => undefined} onQuickConnect={() => undefined} />
