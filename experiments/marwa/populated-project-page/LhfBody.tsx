@@ -1,45 +1,40 @@
 'use client'
 
-import { useMemo, useState } from 'react'
+import { useMemo } from 'react'
 import {
-  Accordion,
-  Badge,
   Box,
   Card,
   ChipContainer,
-  DataTable,
   EmptyState,
   Grid,
-  SearchInput,
+  ProgressBar,
   Section,
-  SelectBase,
   StatusChip,
   Timeline,
   Typography,
 } from '@aivenio/aquarium'
-import { ServiceIcon } from '@/components/ServiceIcon'
-import type { ServiceTypeId as PrototypeServiceTypeId } from '@/screens/ServiceTypeSelectModal'
 import {
   attentionSeverityCounts,
-  filterServices,
-  groupServicesByType,
   criticalActivity,
   needsAttentionCount,
-  SERVICE_TYPE_FILTER_OPTIONS,
-  statusChip,
 } from './deriveLhf'
+import { fmtTb } from './deriveFull'
 import { NeedsAttentionSection } from './NeedsAttentionSection'
 import type {
   ArchitectureSnapshot,
   OnlineStoreProdFixture,
-  Service,
-  ServiceTypeId,
   Solution,
 } from './fixtures/onlineStoreProd'
 
 function SummaryRow({ fixture }: { fixture: OnlineStoreProdFixture }) {
   const attention = needsAttentionCount(fixture)
   const breakdown = useMemo(() => attentionSeverityCounts(fixture), [fixture])
+  const storageUsedPct = Math.round((fixture.storage.usedTb / fixture.storage.totalTb) * 100)
+  const storageOver85 = fixture.services.filter((service) => service.storagePct > 85).length
+  const over85Label =
+    storageOver85 === 1 ? '1 service over 85%' : `${storageOver85} services over 85%`
+  const eolSoon = fixture.issues.filter((issue) => issue.kind === 'eol').length
+  const eolLabel = eolSoon === 1 ? '1 reaches EOL < 30 days' : `${eolSoon} reach EOL < 30 days`
 
   return (
     <Grid gap="4" alignItems="stretch">
@@ -66,9 +61,13 @@ function SummaryRow({ fixture }: { fixture: OnlineStoreProdFixture }) {
             {attention > 0 ? (
               <Box marginTop="3">
                 <ChipContainer dense>
-                  <StatusChip dense status="danger" text={`${breakdown.danger} critical`} />
-                  <StatusChip dense status="warning" text={`${breakdown.warning} warning`} />
-                  <StatusChip dense status="info" text={`${breakdown.info} info`} />
+                  {[
+                    <StatusChip key="danger" dense status="danger" text={`${breakdown.danger} critical`} />,
+                    <StatusChip key="warning" dense status="warning" text={`${breakdown.warning} warning`} />,
+                    ...(breakdown.info > 0
+                      ? [<StatusChip key="info" dense status="info" text={`${breakdown.info} info`} />]
+                      : []),
+                  ]}
                 </ChipContainer>
               </Box>
             ) : null}
@@ -77,15 +76,33 @@ function SummaryRow({ fixture }: { fixture: OnlineStoreProdFixture }) {
       </Grid.Item>
       <Grid.Item xs={12} md={4}>
         <Box height="full">
-          <Card fullWidth title="Apps">
-            <Typography.Heading>{fixture.project.appsCount}</Typography.Heading>
+          <Card fullWidth title="Storage used">
+            <Typography.Heading>
+              {fmtTb(fixture.storage.usedTb)} / {fmtTb(fixture.storage.totalTb)} TB
+            </Typography.Heading>
+            <Box marginTop="3">
+              <ProgressBar
+                dense
+                value={fixture.storage.usedTb}
+                min={0}
+                max={fixture.storage.totalTb}
+                progresStatus={storageUsedPct >= 85 ? 'warning' : 'info'}
+                aria-label="Storage used"
+              />
+            </Box>
+            <Box marginTop="2">
+              <Typography.Small color="muted">{over85Label}</Typography.Small>
+            </Box>
           </Card>
         </Box>
       </Grid.Item>
       <Grid.Item xs={12} md={4}>
         <Box height="full">
-          <Card fullWidth title="Agents">
-            <Typography.Heading>{fixture.project.agentsCount}</Typography.Heading>
+          <Card fullWidth title="Off latest version">
+            <Typography.Heading>{fixture.offLatestVersionCount}</Typography.Heading>
+            <Box marginTop="2">
+              <Typography.Small color={eolSoon > 0 ? 'warning-default' : 'muted'}>{eolLabel}</Typography.Small>
+            </Box>
           </Card>
         </Box>
       </Grid.Item>
@@ -97,111 +114,11 @@ function NeedsAttentionModule({ fixture }: { fixture: OnlineStoreProdFixture }) 
   return <NeedsAttentionSection fixture={fixture} filterName="lhf-attention-severity" />
 }
 
-function ServiceRowTable({ services }: { services: Service[] }) {
-  return (
-    <DataTable
-      ariaLabel="Services in this type"
-      sticky={false}
-      rows={services.map((service) => ({ ...service, id: service.name }))}
-      columns={[
-        {
-          type: 'custom',
-          headerName: 'Service',
-          UNSAFE_render: (row) => (
-            <Box.Flex alignItems="center" gap="3">
-              <ServiceIcon serviceTypeId={row.type as PrototypeServiceTypeId} size={32} alt="" />
-              <Typography.SmallStrong>{row.name}</Typography.SmallStrong>
-            </Box.Flex>
-          ),
-        },
-        { type: 'text', field: 'typeLabel', headerName: 'Type' },
-        { type: 'text', field: 'plan', headerName: 'Plan' },
-        {
-          type: 'status',
-          headerName: 'Status',
-          status: (row) => statusChip(row.status),
-        },
-      ]}
-    />
-  )
-}
-
-function ServicesModule({ fixture }: { fixture: OnlineStoreProdFixture }) {
-  const [query, setQuery] = useState('')
-  const [type, setType] = useState<ServiceTypeId | 'all'>('all')
-  const filtered = useMemo(() => filterServices(fixture.services, query, type), [fixture.services, query, type])
-  const groups = useMemo(() => groupServicesByType(filtered), [filtered])
-  const hasFilters = query.trim() !== '' || type !== 'all'
-
-  return (
-    <Section title="Services" badge={filtered.length}>
-      <Box.Flex gap="4" marginBottom="4" alignItems="flex-end">
-        <Box grow={1} minWidth="0">
-          <SearchInput
-            aria-label="Search services"
-            placeholder="Search services"
-            value={query}
-            onChange={(event) => setQuery(event.target.value)}
-          />
-        </Box>
-        <Box width="1/4" minWidth="l7">
-          <SelectBase
-            aria-label="Service type"
-            placeholder="Select type"
-            value={type}
-            options={[...SERVICE_TYPE_FILTER_OPTIONS]}
-            onChange={(option) => setType((option?.value as ServiceTypeId | 'all') ?? 'all')}
-          />
-        </Box>
-      </Box.Flex>
-      {groups.length === 0 ? (
-        <EmptyState
-          title={hasFilters ? 'No matching services' : 'No services yet'}
-          primaryAction={
-            hasFilters
-              ? {
-                  text: 'Clear filters',
-                  onClick: () => {
-                    setQuery('')
-                    setType('all')
-                  },
-                }
-              : { text: 'Create service', onClick: () => undefined }
-          }
-          borderStyle="solid"
-          fullHeight={false}
-        >
-          {hasFilters
-            ? 'Try a different search or service type'
-            : 'Create a service to populate this list'}
-        </EmptyState>
-      ) : (
-        <Box.Flex flexDirection="column">
-          {groups.map((group) => (
-            <Accordion key={group.type}>
-              <Accordion.Container panelId={group.type}>
-                <Accordion.Summary
-                  title={group.label}
-                  description={<Badge dense kind="outlined" value={group.services.length} />}
-                  toggle={<Accordion.Toggle />}
-                />
-                <Accordion.UnanimatedPanel>
-                  <ServiceRowTable services={group.services} />
-                </Accordion.UnanimatedPanel>
-              </Accordion.Container>
-            </Accordion>
-          ))}
-        </Box.Flex>
-      )}
-    </Section>
-  )
-}
-
 function RecentActivityModule({ fixture }: { fixture: OnlineStoreProdFixture }) {
   const events = useMemo(() => criticalActivity(fixture), [fixture])
 
   return (
-    <Section title="Recent activity" subtitle="Critical and warning changes only">
+    <Section title="Recent activity" subtitle="Critical and warning changes in this project">
       {events.length === 0 ? (
         <EmptyState
           title="No recent activity"
@@ -262,7 +179,6 @@ export function LhfBody({ fixture }: { fixture: OnlineStoreProdFixture }) {
     <Box.Flex flexDirection="column" gap="6">
       <SummaryRow fixture={fixture} />
       <NeedsAttentionModule fixture={fixture} />
-      <ServicesModule fixture={fixture} />
       <RecentActivityModule fixture={fixture} />
       {fixture.solutions.length > 0 ? <SolutionsModule solutions={fixture.solutions} /> : null}
       {fixture.architecture ? <ArchitectureModule snapshot={fixture.architecture} /> : null}
@@ -273,7 +189,6 @@ export function LhfBody({ fixture }: { fixture: OnlineStoreProdFixture }) {
 LhfBody.displayName = 'LhfBody'
 SummaryRow.displayName = 'SummaryRow'
 NeedsAttentionModule.displayName = 'NeedsAttentionModule'
-ServicesModule.displayName = 'ServicesModule'
 RecentActivityModule.displayName = 'RecentActivityModule'
 SolutionsModule.displayName = 'SolutionsModule'
 ArchitectureModule.displayName = 'ArchitectureModule'

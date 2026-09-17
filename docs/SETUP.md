@@ -148,7 +148,7 @@ Enable these **required MCPs** for AI-assisted UI. Cursor Settings → **MCP** �
 
 | Server | What it is |
 |--------|------------|
-| **aiven-storybook** | Aquarium component props |
+| **storybook** / **aiven-storybook** | Aquarium component props (`https://aquarium-library.aiven.io/mcp`) |
 | **figma** | Official Figma MCP (`https://mcp.figma.com/mcp`) — Aquarium visual specs, tokens, library |
 
 This repo ships both in `.cursor/mcp.json`. If Cursor asks you to authenticate Figma, complete that flow. If the agent says Storybook or Figma MCP is missing, do not continue UI work until both are green.
@@ -321,7 +321,7 @@ npm run dev
 
 ### Agent says Storybook or Figma MCP is missing
 
-Both are required for AI UI work. In Cursor: **Settings → MCP** → enable **aiven-storybook** and **figma** and wait until they are connected. Figma uses `https://mcp.figma.com/mcp` (complete auth if Cursor prompts). Start a **new agent chat** after enabling. Servers are defined in `.cursor/mcp.json`.
+Both are required for AI UI work. In Cursor: **Settings → MCP** → enable **storybook** (or **aiven-storybook**) and **figma** and wait until they are connected. Storybook uses `https://aquarium-library.aiven.io/mcp`. Figma uses `https://mcp.figma.com/mcp` (complete auth if Cursor prompts). Start a **new agent chat** after enabling. The Storybook server is user-global in `~/.cursor/mcp.json` and also defined in this repo’s `.cursor/mcp.json`.
 
 ### Git pull or push fails
 

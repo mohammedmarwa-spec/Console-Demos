@@ -1,6 +1,6 @@
 /**
- * Sole data source for the populated project-page pitch.
- * 52 services, 5 systems, planted issues — no API calls.
+ * Org-level mock: 52 services across 3 projects (Production / Staging / Development).
+ * The pitch page is scoped to one project at a time — Console never mixes environments on one dashboard.
  */
 
 export type ServiceTypeId =
@@ -15,6 +15,8 @@ export type ServiceTypeId =
 export type ServiceStatus = 'running' | 'rebuilding' | 'poweroff'
 
 export type SystemId = 'checkout' | 'ingestion' | 'search' | 'analytics' | 'unassigned'
+
+export type EnvironmentId = 'production' | 'staging' | 'development'
 
 export type PlantedIssueKind =
   | 'critical'
@@ -32,6 +34,7 @@ export type Service = {
   storagePct: number
   cpuPct: number
   system: SystemId
+  environment: EnvironmentId
   ageDays: number
   offLatestVersion: boolean
 }
@@ -42,11 +45,18 @@ export type System = {
   serviceCount: number
 }
 
+export type Environment = {
+  id: EnvironmentId
+  name: string
+  serviceCount: number
+}
+
 export type PlantedIssue = {
   id: string
   kind: PlantedIssueKind
   serviceName: string
   system: SystemId
+  environment: EnvironmentId
   summary: string
   started: string
 }
@@ -55,6 +65,7 @@ export type ActivityEvent = {
   id: string
   change: string
   resource: string
+  environment: EnvironmentId
   actor: string
   when: string
   variant: 'default' | 'success' | 'warning' | 'error' | 'info'
@@ -73,13 +84,15 @@ export type ArchitectureSnapshot = {
 
 export type OnlineStoreProdFixture = {
   project: {
-    name: 'online-store-prod'
+    /** Named per environment — `scopeToEnvironment` swaps in the sibling project's name. */
+    name: string
     description: string
     orgName: string
     appsCount: 8
     agentsCount: 4
   }
   systems: System[]
+  environments: Environment[]
   services: Service[]
   issues: PlantedIssue[]
   activity: ActivityEvent[]
@@ -118,6 +131,24 @@ const SYSTEM_QUOTAS: System[] = [
   { id: 'unassigned', name: 'Unassigned', serviceCount: 10 },
 ]
 
+export const ENVIRONMENT_QUOTAS: Environment[] = [
+  { id: 'production', name: 'Production', serviceCount: 32 },
+  { id: 'staging', name: 'Staging', serviceCount: 12 },
+  { id: 'development', name: 'Development', serviceCount: 8 },
+]
+
+export const ENVIRONMENT_LABEL: Record<EnvironmentId, string> = {
+  production: 'Production',
+  staging: 'Staging',
+  development: 'Development',
+}
+
+export const ENVIRONMENT_ORDER: EnvironmentId[] = ['production', 'staging', 'development']
+
+export function environmentProjectLabel(id: EnvironmentId): string {
+  return `Project: ${ENVIRONMENT_LABEL[id]}`
+}
+
 const PLANS = ['Hobbyist', 'Startup-4', 'Business-4', 'Business-16', 'Premium-32'] as const
 
 function pad(n: number): string {
@@ -127,6 +158,9 @@ function pad(n: number): string {
 function buildServices(): Service[] {
   const systemSlots: SystemId[] = SYSTEM_QUOTAS.flatMap((system) =>
     Array.from({ length: system.serviceCount }, () => system.id),
+  )
+  const environmentSlots: EnvironmentId[] = ENVIRONMENT_QUOTAS.flatMap((environment) =>
+    Array.from({ length: environment.serviceCount }, () => environment.id),
   )
   let slot = 0
   const services: Service[] = []
@@ -143,6 +177,7 @@ function buildServices(): Service[] {
         storagePct: 28 + ((n * 7) % 62),
         cpuPct: 12 + ((n * 11) % 68),
         system: systemSlots[slot] ?? 'unassigned',
+        environment: environmentSlots[slot] ?? 'production',
         ageDays: 14 + ((n * 13) % 420),
         offLatestVersion: false,
       })
@@ -186,66 +221,49 @@ function plantCapacity(services: Service[]): void {
 
 function plantIssues(services: Service[]): PlantedIssue[] {
   const issues: PlantedIssue[] = []
-  const take = (start: number, count: number) => services.slice(start, start + count)
+  const byEnv = (id: EnvironmentId) => services.filter((service) => service.environment === id)
+  const production = byEnv('production')
+  const staging = byEnv('staging')
+  const development = byEnv('development')
   const nextStarted = () => ISSUE_STARTED[issues.length] ?? '1 week ago'
 
-  take(0, 2).forEach((service, i) => {
+  const push = (kind: PlantedIssueKind, service: Service, summary: string, id: string) => {
     issues.push({
-      id: `critical-${i + 1}`,
-      kind: 'critical',
+      id,
+      kind,
       serviceName: service.name,
       system: service.system,
-      summary: 'Service unavailable — replica lag exceeded threshold',
+      environment: service.environment,
+      summary,
       started: nextStarted(),
     })
+  }
+
+  production.slice(0, 2).forEach((service, i) => {
+    push('critical', service, 'Service unavailable — replica lag exceeded threshold', `critical-${i + 1}`)
   })
 
-  take(2, 6).forEach((service, i) => {
+  production.slice(2, 3).forEach((service, i) => {
     service.offLatestVersion = true
-    issues.push({
-      id: `eol-${i + 1}`,
-      kind: 'eol',
-      serviceName: service.name,
-      system: service.system,
-      summary: 'Version reaches end of life in under 30 days',
-      started: nextStarted(),
-    })
+    push('eol', service, 'Version reaches end of life in under 30 days', `eol-${i + 1}`)
   })
 
-  take(8, 3).forEach((service, i) => {
-    issues.push({
-      id: `maint-${i + 1}`,
-      kind: 'maintenance',
-      serviceName: service.name,
-      system: service.system,
-      summary: 'Maintenance window scheduled this week',
-      started: nextStarted(),
-    })
+  production.slice(8, 9).forEach((service, i) => {
+    push('maintenance', service, 'Maintenance window scheduled this week', `maint-prod-${i + 1}`)
+  })
+  staging.slice(0, 2).forEach((service, i) => {
+    push('maintenance', service, 'Maintenance window scheduled this week', `maint-stg-${i + 1}`)
   })
 
-  take(11, 3).forEach((service, i) => {
-    issues.push({
-      id: `backup-${i + 1}`,
-      kind: 'failed-backup',
-      serviceName: service.name,
-      system: service.system,
-      summary: 'Latest backup failed',
-      started: nextStarted(),
-    })
+  staging.slice(2, 5).forEach((service, i) => {
+    push('failed-backup', service, 'Latest backup failed', `backup-${i + 1}`)
   })
 
-  take(14, 2).forEach((service, i) => {
-    issues.push({
-      id: `delete-${i + 1}`,
-      kind: 'scheduled-deletion',
-      serviceName: service.name,
-      system: service.system,
-      summary: 'Scheduled for deletion',
-      started: nextStarted(),
-    })
+  development.slice(0, 2).forEach((service, i) => {
+    push('scheduled-deletion', service, 'Scheduled for deletion', `delete-${i + 1}`)
   })
 
-  take(20, 5).forEach((service) => {
+  staging.slice(5, 6).forEach((service) => {
     service.offLatestVersion = true
   })
 
@@ -253,28 +271,69 @@ function plantIssues(services: Service[]): PlantedIssue[] {
 }
 
 function buildActivity(services: Service[]): ActivityEvent[] {
-  const pg = services.find((s) => s.type === 'postgresql')?.name ?? 'pg-01'
-  const kafka = services.find((s) => s.type === 'kafka')?.name ?? 'kafka-01'
-  const os = services.find((s) => s.type === 'opensearch')?.name ?? 'os-01'
-  const ch = services.find((s) => s.type === 'clickhouse')?.name ?? 'ch-01'
+  const pg = services.find((s) => s.environment === 'production' && s.type === 'postgresql')?.name ?? 'pg-01'
+  const kafka = services.find((s) => s.environment === 'production' && s.type === 'kafka')?.name ?? 'kafka-01'
+  const os = services.find((s) => s.environment === 'production' && s.type === 'opensearch')?.name ?? 'os-01'
+  const stagingOs = services.find((s) => s.environment === 'staging' && s.type === 'opensearch')?.name ?? 'os-03'
+  const stagingValkey = services.find((s) => s.environment === 'staging' && s.type === 'valkey')?.name ?? 'valkey-01'
+  const devCh = services.find((s) => s.environment === 'development' && s.type === 'clickhouse')?.name ?? 'ch-01'
+  const storefront = 'Storefront API'
 
   return [
-    { id: 'a1', change: 'Deployment completed', resource: 'Storefront API', actor: 'CI deployment', when: '8 mins ago', variant: 'success' },
-    { id: 'a2', change: 'High query latency detected', resource: pg, actor: 'Monitoring', when: '12 mins ago', variant: 'error' },
-    { id: 'a3', change: 'Schema migrated', resource: pg, actor: 'Elena Ivanova', when: '42 mins ago', variant: 'default' },
-    { id: 'a4', change: 'Topic partition reassigned', resource: kafka, actor: 'Jake Sullivan', when: '1 hour ago', variant: 'info' },
-    { id: 'a5', change: 'Index rebuilt', resource: os, actor: 'CI deployment', when: '2 hours ago', variant: 'success' },
-    { id: 'a6', change: 'Disk usage above 85%', resource: os, actor: 'Monitoring', when: '3 hours ago', variant: 'warning' },
-    { id: 'a7', change: 'Integration connected', resource: `${kafka} → ${ch}`, actor: 'Maria Pereira', when: 'Yesterday', variant: 'default' },
-    { id: 'a8', change: 'Agent updated', resource: 'Support triage agent', actor: 'Jake Sullivan', when: 'Yesterday', variant: 'info' },
+    { id: 'a1', change: 'High query latency detected', resource: pg, environment: 'production', actor: 'Monitoring', when: '8 mins ago', variant: 'error' },
+    { id: 'a2', change: 'Disk usage above 85%', resource: os, environment: 'production', actor: 'Monitoring', when: '12 mins ago', variant: 'warning' },
+    { id: 'a3', change: 'Deployment completed', resource: storefront, environment: 'production', actor: 'CI deployment', when: '42 mins ago', variant: 'success' },
+    { id: 'a4', change: 'Topic partition reassigned', resource: kafka, environment: 'production', actor: 'Jake Sullivan', when: '1 hour ago', variant: 'info' },
+    { id: 'a5', change: 'Agent updated', resource: 'Support triage agent', environment: 'production', actor: 'Jake Sullivan', when: '2 hours ago', variant: 'info' },
+    { id: 'a6', change: 'Latest backup failed', resource: stagingOs, environment: 'staging', actor: 'Monitoring', when: '3 hours ago', variant: 'warning' },
+    { id: 'a7', change: 'Index rebuilt', resource: stagingOs, environment: 'staging', actor: 'Elena Ivanova', when: 'Yesterday', variant: 'default' },
+    { id: 'a8', change: 'Plan changed', resource: devCh, environment: 'development', actor: 'CI deployment', when: 'Yesterday', variant: 'success' },
+    { id: 'a9', change: 'Integration connected', resource: `${stagingOs} → ${stagingValkey}`, environment: 'staging', actor: 'Maria Pereira', when: '2 days ago', variant: 'default' },
   ]
+}
+
+const PROJECT_BY_ENV: Record<EnvironmentId, Pick<OnlineStoreProdFixture['project'], 'name'>> = {
+  production: { name: 'online-store-prod' },
+  staging: { name: 'online-store-staging' },
+  development: { name: 'online-store-dev' },
+}
+
+/** One Console project = one environment. The project page never mixes sibling env projects. */
+export function scopeToEnvironment(
+  fixture: OnlineStoreProdFixture,
+  env: EnvironmentId,
+): OnlineStoreProdFixture {
+  const services = fixture.services.filter((service) => service.environment === env)
+  const issues = fixture.issues.filter((issue) => issue.environment === env)
+  const activity = fixture.activity.filter((event) => event.environment === env)
+  const systems = fixture.systems
+    .map((system) => ({
+      ...system,
+      serviceCount: services.filter((service) => service.system === system.id).length,
+    }))
+    .filter((system) => system.serviceCount > 0)
+
+  return {
+    ...fixture,
+    project: {
+      ...fixture.project,
+      name: PROJECT_BY_ENV[env].name,
+    },
+    services,
+    issues,
+    activity,
+    systems,
+    environments: fixture.environments.filter((environment) => environment.id === env),
+    offLatestVersionCount: services.filter((service) => service.offLatestVersion).length,
+  }
 }
 
 function buildFixture(): OnlineStoreProdFixture {
   const typeTotal = TYPE_QUOTAS.reduce((sum, row) => sum + row.count, 0)
   const systemTotal = SYSTEM_QUOTAS.reduce((sum, row) => sum + row.serviceCount, 0)
-  if (typeTotal !== 52 || systemTotal !== 52) {
-    throw new Error(`Fixture quotas must sum to 52 (types=${typeTotal}, systems=${systemTotal})`)
+  const envTotal = ENVIRONMENT_QUOTAS.reduce((sum, row) => sum + row.serviceCount, 0)
+  if (typeTotal !== 52 || systemTotal !== 52 || envTotal !== 52) {
+    throw new Error(`Fixture quotas must sum to 52 (types=${typeTotal}, systems=${systemTotal}, envs=${envTotal})`)
   }
 
   const services = buildServices()
@@ -285,7 +344,7 @@ function buildFixture(): OnlineStoreProdFixture {
   const kindCount = (kind: PlantedIssueKind) => issues.filter((issue) => issue.kind === kind).length
   if (
     kindCount('critical') !== 2 ||
-    kindCount('eol') !== 6 ||
+    kindCount('eol') !== 1 ||
     kindCount('maintenance') !== 3 ||
     kindCount('failed-backup') !== 3 ||
     kindCount('scheduled-deletion') !== 2
@@ -302,6 +361,7 @@ function buildFixture(): OnlineStoreProdFixture {
       agentsCount: 4,
     },
     systems: SYSTEM_QUOTAS,
+    environments: ENVIRONMENT_QUOTAS,
     services,
     issues,
     activity,
@@ -320,4 +380,7 @@ function buildFixture(): OnlineStoreProdFixture {
   }
 }
 
-export const onlineStoreProd: OnlineStoreProdFixture = buildFixture()
+const onlineStoreOrg: OnlineStoreProdFixture = buildFixture()
+
+/** Pitch dashboard: Production project only. Staging / Development are separate projects. */
+export const onlineStoreProd: OnlineStoreProdFixture = scopeToEnvironment(onlineStoreOrg, 'production')

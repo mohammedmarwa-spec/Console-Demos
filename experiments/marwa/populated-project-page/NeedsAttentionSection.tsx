@@ -8,16 +8,20 @@ import {
   ChoiceChipGroup,
   DataTable,
   EmptyState,
+  InlineIcon,
+  Link,
   Section,
   Typography,
 } from '@aivenio/aquarium'
+import chevronRight from '@aivenio/aquarium/icons/chevronRight'
 import {
   attentionSeverityCounts,
-  needsAttentionCount,
   topAttentionIssues,
+  type AttentionRow,
   type AttentionSeverity,
 } from './deriveLhf'
 import type { OnlineStoreProdFixture } from './fixtures/onlineStoreProd'
+import { IssueDetailDrawer } from './IssueDetailDrawer'
 
 const DOT_COLOR: Record<AttentionSeverity, 'danger-default' | 'warning-default' | 'muted'> = {
   danger: 'danger-default',
@@ -35,8 +39,9 @@ export function NeedsAttentionSection({
   filterName: string
 }) {
   const [severity, setSeverity] = useState<AttentionSeverity | 'all'>('all')
+  const [openIssue, setOpenIssue] = useState<AttentionRow | null>(null)
   const counts = useMemo(() => attentionSeverityCounts(fixture), [fixture])
-  const rows = useMemo(() => topAttentionIssues(fixture, 5, severity), [fixture, severity])
+  const rows = useMemo(() => topAttentionIssues(fixture, severity), [fixture, severity])
   const visibleCount = severity === 'all' ? counts.all : counts[severity]
   const hasAny = counts.all > 0
 
@@ -56,7 +61,7 @@ export function NeedsAttentionSection({
               <ChoiceChip value="all">all {counts.all}</ChoiceChip>
               <ChoiceChip value="danger">critical {counts.danger}</ChoiceChip>
               <ChoiceChip value="warning">warning {counts.warning}</ChoiceChip>
-              <ChoiceChip value="info">info {counts.info}</ChoiceChip>
+              {counts.info > 0 ? <ChoiceChip value="info">info {counts.info}</ChoiceChip> : null}
             </ChoiceChipGroup>
           </Box>
         </Box>
@@ -92,11 +97,11 @@ export function NeedsAttentionSection({
                   </Typography>
                   {showSystem ? (
                     <Box>
-                      <Typography.SmallStrong>{row.title}</Typography.SmallStrong>
+                      <IssueLink row={row} onOpen={setOpenIssue} />
                       <Typography.Small color="muted">system: {row.systemNames}</Typography.Small>
                     </Box>
                   ) : (
-                    <Typography.SmallStrong>{row.title}</Typography.SmallStrong>
+                    <IssueLink row={row} onOpen={setOpenIssue} />
                   )}
                 </Box.Flex>
               ),
@@ -107,12 +112,37 @@ export function NeedsAttentionSection({
               headerName: 'Severity',
               status: (row) => ({ text: row.severityLabel, status: row.severity }),
             },
-            { type: 'text', field: 'started', headerName: 'Started' },
+            {
+              type: 'custom',
+              headerName: 'Started',
+              UNSAFE_render: (row) => (
+                <Box.Flex alignItems="center" justifyContent="space-between" gap="3">
+                  <Typography.Small color="muted">{row.started}</Typography.Small>
+                  <InlineIcon icon={chevronRight} width="16px" height="16px" color="muted" />
+                </Box.Flex>
+              ),
+            },
           ]}
         />
       )}
+      <IssueDetailDrawer issue={openIssue} onClose={() => setOpenIssue(null)} />
     </Section>
   )
 }
 
+function IssueLink({ row, onOpen }: { row: AttentionRow; onOpen: (row: AttentionRow) => void }) {
+  return (
+    <Link
+      href={`#/issues/${row.id}`}
+      onClick={(event) => {
+        event.preventDefault()
+        onOpen(row)
+      }}
+    >
+      {row.title}
+    </Link>
+  )
+}
+
 NeedsAttentionSection.displayName = 'NeedsAttentionSection'
+IssueLink.displayName = 'IssueLink'

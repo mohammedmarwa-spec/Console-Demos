@@ -11,37 +11,43 @@ export const componentManifest: ComponentManifest = {
     {
       name: 'SegmentedControl / SegmentedControlGroup',
       usage:
-        'Prototype-only Scope toggle lives in the page footer, not in the Overview header. Full design Group by (System | Service type | None, default System) lives in ScopeContext.',
+        'Prototype-only Scope toggle lives in the page footer, not in the Overview header.',
     },
     {
       name: 'Card',
       storybookUrl: 'https://aquarium-library.aiven.io/?path=/docs/surfaces-card--docs',
-      usage: 'LHF summary (Services / Apps / Agents) and Full design 4-metric row (Needs attention · spend · storage · off latest).',
+      usage:
+        'LHF summary (Services · Storage used · Off latest version) and Full design 4-metric row (Needs attention · spend · storage · off latest).',
+    },
+    {
+      name: 'ProgressBar',
+      storybookUrl: 'https://aquarium-library.aiven.io/?path=/docs/data-display-progressbar--docs',
+      usage:
+        'LHF Storage used card: dense bar of usedTb / totalTb. progresStatus is warning at ≥85% project fill, otherwise info. Labels omitted because dense — heading already shows TB used / total.',
     },
     {
       name: 'Section',
       storybookUrl: 'https://aquarium-library.aiven.io/?path=/docs/layout-section--docs',
       usage:
-        'Raised modules: Needs attention, Services, Recent activity (LHF); Systems (Explore action), By service type, Capacity hotspots, aggregated activity (Full design).',
+        'Raised modules: Needs attention, Recent activity (LHF); Capacity hotspots, aggregated activity (Full design).',
     },
     {
       name: 'DataTable',
       storybookUrl: 'https://aquarium-library.aiven.io/?path=/docs/data-display-datatable--docs',
-      usage: 'Needs-attention top 5, per-type service rows (LHF), and By service type composition roll-up (Full design).',
+      usage:
+        'Needs attention issues in this project (LHF/Full). Issue title is a Link and the Started cell carries a chevronRight, so the row reads as navigable to the issue detail.',
+    },
+    {
+      name: 'Drawer',
+      storybookUrl: 'https://aquarium-library.aiven.io/?path=/docs/surfaces-drawer--docs',
+      usage:
+        'Issue detail (md): severity + started, affected service with its status/plan/system/environment, impact, and what to do next. Open service + View logs as footer actions.',
     },
     {
       name: 'DataList',
       storybookUrl: 'https://aquarium-library.aiven.io/?path=/docs/data-display-datalist--docs',
       usage:
-        'Full design Systems clusters (headerless: health dot · name · count) and Recent activity grouped by resource/service.',
-    },
-    {
-      name: 'Accordion',
-      usage: 'Services list grouped by type; independently collapsible sections with a count badge.',
-    },
-    {
-      name: 'SearchInput / SelectBase',
-      usage: 'Client-side text search and service-type filter above the services list.',
+        'Recent activity grouped by resource/service (latest 3).',
     },
     {
       name: 'ChoiceChip / ChoiceChipGroup',
@@ -50,11 +56,11 @@ export const componentManifest: ComponentManifest = {
     {
       name: 'StatusChip / ChipContainer',
       usage:
-        'Needs-attention severity (scheduled-for-deletion = info, not warning), service status badges, and the Services card breakdown (critical / warning / info counts).',
+        'Needs-attention severity (scheduled-for-deletion = info, not warning) and the Services card breakdown (critical / warning / info counts).',
     },
     {
       name: 'Timeline',
-      usage: 'LHF Recent activity — error then warning only (not a recency slice). Full design keeps the grouped stream.',
+      usage: 'LHF Recent activity in this project — error then warning only (not a recency slice). Full design keeps the grouped stream.',
     },
     {
       name: 'EmptyState',
@@ -67,7 +73,7 @@ export const componentManifest: ComponentManifest = {
     {
       name: 'Grid',
       usage:
-        'LHF 3-card summary; Full design 4-metric row (xs=12, sm=6, md=3); Capacity hotspot counts (xs=12, sm=4). Systems + By service type use Box grid auto-fit minmax(280px, 1fr) so the pair wraps on the content width, not the viewport (sidebar would otherwise squeeze columns under 280px).',
+        'LHF 3-card summary (Services · Storage used · Off latest version, xs=12 md=4); Full design 4-metric row (xs=12, sm=6, md=3); Capacity hotspot counts (xs=12, sm=4).',
     },
     {
       name: 'Box / Box.Flex',
@@ -79,7 +85,8 @@ export const componentManifest: ComponentManifest = {
     },
     {
       name: 'Link',
-      usage: 'Full design aggregated activity footer: +41 more changes today (href required, preventDefault in prototype).',
+      usage:
+        'Issue titles in Needs attention (href required; preventDefault in prototype). Full design aggregated activity footer: +41 more changes today.',
     },
     {
       name: 'Button (via PageHeader actions)',
@@ -95,7 +102,17 @@ export const componentManifest: ComponentManifest = {
     {
       name: 'onlineStoreProd fixture',
       reason:
-        'Deterministic 52-service mock (type + system quotas, planted issues, spend/storage). No API.',
+        'Org-level 52-service mock, then scoped to the Production project for this dashboard. Staging and Development stay as sibling projects, not Overview groups. No API.',
+    },
+    {
+      name: 'ServiceIcon (prototype)',
+      reason:
+        'Service-type logo in the issue detail drawer header.',
+    },
+    {
+      name: 'IssueDetailDrawer',
+      reason:
+        'Reads one derived AttentionRow — severity, affected service, impact, next step — so a critical issue in Needs attention opens somewhere instead of dead-ending.',
     },
     {
       name: 'ConsoleHeader + ProjectHomeSidebar',
@@ -105,8 +122,8 @@ export const componentManifest: ComponentManifest = {
   notes: [
     'Prompt 2: LHF body is client-derived from the fixture. Solutions and Architecture stay hidden while those arrays are empty/null.',
     'Scheduled for deletion maps to info (gray), not warning.',
-    'Prompt 3: Full design foundations — Group by (default System), 4-metric row, Needs attention with system: X sublabel.',
-    'Prompt 4: Systems (52→5 including Unassigned) + By service type two-column row, Capacity hotspots, activity grouped by service with +41 more. Group-by swaps the two-column order when set to Service type.',
-    'Empty-state companion remains at /experiments/marwa/project-page-v2.',
+    'Prompt 3: Full design foundations — 4-metric row, Needs attention with system: X sublabel. This dashboard is Production only.',
+    'Prompt 4: Capacity hotspots, activity grouped by service — latest 3 by default, with +41 more.',
+    'Systems in this project is out for now: the Resources view already lists services, so grouping them again on Overview duplicated it.',
   ],
 }

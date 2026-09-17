@@ -5,6 +5,7 @@ import {
   Box,
   Breadcrumbs,
   Button,
+  Chip,
   DropdownMenu,
   PageHeader,
   SegmentedControl,
@@ -32,6 +33,7 @@ import {
   CREATE_MENU_SOLUTION,
 } from '@experiments/_shared/project-page/createMenu'
 import { OverviewV2 } from './OverviewV2'
+import { SIBLING_PROJECTS, type ProjectContext } from './solutionBlueprints'
 import {
   overviewDataset,
   overviewDatasetEmpty,
@@ -56,7 +58,9 @@ const VOLUME_DATASETS = {
 
 /** Overview page header — mirrors the shared ProjectHomeContent header + demo controls. */
 function OverviewHeader({
-  projectName,
+  project,
+  projects,
+  onProjectChange,
   projectSubtitle,
   mode,
   onModeChange,
@@ -65,7 +69,9 @@ function OverviewHeader({
   asyncStatus,
   onAsyncStatusChange,
 }: {
-  projectName: string
+  project: ProjectContext
+  projects: ProjectContext[]
+  onProjectChange: (projectId: string) => void
   projectSubtitle: string
   mode: OverviewMode
   onModeChange: (mode: OverviewMode) => void
@@ -88,8 +94,13 @@ function OverviewHeader({
     >
       <Box style={{ flex: 1, minWidth: 0 }}>
         <PageHeader
-          title={projectName}
-          subtitle={<Typography.Default color="muted">{projectSubtitle}</Typography.Default>}
+          title={project.name}
+          subtitle={
+            <Box.Flex alignItems="center" gap="3" flexWrap="wrap">
+              <Chip dense text={project.environmentLabel} />
+              <Typography.Default color="muted">{projectSubtitle}</Typography.Default>
+            </Box.Flex>
+          }
         />
       </Box>
       <Box style={{ display: 'flex', alignItems: 'center', gap: 12, flexShrink: 0, paddingTop: 4, flexWrap: 'wrap' }}>
@@ -108,6 +119,22 @@ function OverviewHeader({
               <SegmentedControl value="small">Small</SegmentedControl>
               <SegmentedControl value="large">Large</SegmentedControl>
             </SegmentedControlGroup>
+            {/* Explore-solutions flows read plan tier and naming from the project env. */}
+            {volume === 'empty' ? (
+              <SegmentedControlGroup
+                value={project.id}
+                onChange={(value) => onProjectChange(String(value))}
+                ariaLabel="Preview project environment"
+              >
+                {projects
+                  .filter((option) => option.environment !== 'staging')
+                  .map((option) => (
+                    <SegmentedControl key={option.id} value={option.id}>
+                      {option.name}
+                    </SegmentedControl>
+                  ))}
+              </SegmentedControlGroup>
+            ) : null}
             <SegmentedControlGroup
               value={asyncStatus}
               onChange={(value) => onAsyncStatusChange(value as AsyncStatus)}
@@ -165,6 +192,30 @@ export function ProjectPageShellV2({ data }: ProjectPageShellV2Props) {
   const [mode, setMode] = useState<OverviewMode>('v2')
   const [volume, setVolume] = useState<PageScale>('large')
   const [asyncStatus, setAsyncStatus] = useState<AsyncStatus>('loaded')
+  // Projects are stateful so UC3 can switch environment — and create a missing one — in place.
+  const [projects, setProjects] = useState<ProjectContext[]>(SIBLING_PROJECTS)
+  const [projectId, setProjectId] = useState(SIBLING_PROJECTS[0].id)
+
+  const project = projects.find((p) => p.id === projectId) ?? projects[0]
+
+  const createDevelopmentProject = () => {
+    const existing = projects.find((p) => p.environment === 'development')
+    if (existing) {
+      setProjectId(existing.id)
+      return
+    }
+    const created: ProjectContext = {
+      id: 'acme-dev',
+      name: 'acme-dev',
+      environment: 'development',
+      environmentLabel: 'Development',
+      nameToken: 'dev',
+      regionDefault: project.regionDefault,
+      unitId: project.unitId,
+    }
+    setProjects((prev) => [created, ...prev])
+    setProjectId(created.id)
+  }
 
   const activeView = SIDEBAR_VIEW[activeItem]
   const showProjectHome = activeView !== undefined
@@ -175,7 +226,7 @@ export function ProjectPageShellV2({ data }: ProjectPageShellV2Props) {
   const isOverview = activeView === 'overview'
 
   return (
-    <ProjectPageDataProvider data={data}>
+    <ProjectPageDataProvider data={{ ...data, projectName: project.name }}>
       <Box
         style={{
           display: 'flex',
@@ -190,7 +241,7 @@ export function ProjectPageShellV2({ data }: ProjectPageShellV2Props) {
           orgName={data.orgName}
           orgSublabel="Organization"
           userInitials="MB"
-          activeProjectId={data.projectName}
+          activeProjectId={project.name}
           beforeOrganizationSelector={
             <Button.Secondary type="button" dense icon={proPlansIcon}>
               AI editor
@@ -215,7 +266,9 @@ export function ProjectPageShellV2({ data }: ProjectPageShellV2Props) {
               }}
             >
               <OverviewHeader
-                projectName={data.projectName}
+                project={project}
+                projects={projects}
+                onProjectChange={setProjectId}
                 projectSubtitle={data.projectSubtitle}
                 mode={mode}
                 onModeChange={setMode}
@@ -229,6 +282,10 @@ export function ProjectPageShellV2({ data }: ProjectPageShellV2Props) {
                   dataset={VOLUME_DATASETS[volume]}
                   status={asyncStatus}
                   onRetry={() => setAsyncStatus('loaded')}
+                  project={project}
+                  projects={projects}
+                  onProjectChange={setProjectId}
+                  onCreateDevelopmentProject={createDevelopmentProject}
                 />
               ) : (
                 <OverviewContent />
@@ -243,7 +300,7 @@ export function ProjectPageShellV2({ data }: ProjectPageShellV2Props) {
                   {data.orgName}
                 </Breadcrumbs.Crumb>,
                 <Breadcrumbs.Crumb key="project" href="#" onClick={(e) => e.preventDefault()}>
-                  {data.projectName}
+                  {project.name}
                 </Breadcrumbs.Crumb>,
                 <Breadcrumbs.Crumb key="event-log">Event log</Breadcrumbs.Crumb>,
               ]}

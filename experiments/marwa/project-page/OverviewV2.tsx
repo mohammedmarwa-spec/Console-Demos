@@ -7,10 +7,12 @@ import {
   Banner,
   Box,
   Button,
+  Card,
   ChoiceChip,
   ChoiceChipGroup,
   DataTable,
   EmptyState,
+  Grid,
   InlineIcon,
   Link,
   PageHeader,
@@ -24,15 +26,29 @@ import {
 } from '@aivenio/aquarium'
 import type { IconifyIcon } from '@iconify/types'
 import arrowLeft from '@aivenio/aquarium/icons/arrowLeft'
+import chat from '@aivenio/aquarium/icons/chat'
 import chevronRight from '@aivenio/aquarium/icons/chevronRight'
+import consoleIcon from '@aivenio/aquarium/icons/console'
+import cpuChip from '@aivenio/aquarium/icons/cpuChip'
 import currencyDollar from '@aivenio/aquarium/icons/currencyDollar'
 import database from '@aivenio/aquarium/icons/database'
+import dataflow01 from '@aivenio/aquarium/icons/dataflow01'
+import dataLineage from '@aivenio/aquarium/icons/dataLineage'
+import integrations from '@aivenio/aquarium/icons/integrations'
 import outdated from '@aivenio/aquarium/icons/outdated'
 import tickCircle from '@aivenio/aquarium/icons/tickCircle'
 import warningSign from '@aivenio/aquarium/icons/warningSign'
 import { ServiceIcon } from '@/components/ServiceIcon'
+import { CreateServiceTopologyModal } from './CreateServiceTopologyModal'
+import { ExploreSolutions, type OutcomeId } from './ExploreSolutions'
+import { BlueprintDeploymentView, type DeploymentState } from './BlueprintDeployment'
+import { SolutionBlueprint } from './SolutionBlueprint'
+import { BLUEPRINTS, type ProjectContext } from './solutionBlueprints'
 import {
   bySeverity,
+  criticalActivity,
+  deriveCapacityHotspots,
+  type AttentionCategory,
   fmtUsd,
   groupServices,
   pageScale,
@@ -46,7 +62,6 @@ import {
 } from './overviewV2Data'
 
 const CREATE_SERVICE = { text: 'Create service', onClick: () => undefined }
-const CREATE_FIRST_SERVICE = { text: 'Create your first service', onClick: () => undefined }
 
 // ─── Tone tokens ─────────────────────────────────────────────────────────────────
 
@@ -246,6 +261,94 @@ function MetricsRow({
 
 MetricsRow.displayName = 'MetricsRow'
 
+function CapacityHotspotsSkeleton() {
+  return (
+    <Grid gap="4">
+      {[0, 1, 2].map((i) => (
+        <Grid.Item key={i} xs={12} sm={4}>
+          <Skeleton height={32} width={48} />
+          <Box marginTop="2">
+            <Skeleton height={14} width={140} />
+            <Skeleton height={14} width={64} />
+          </Box>
+        </Grid.Item>
+      ))}
+    </Grid>
+  )
+}
+
+function CapacityHotspots({
+  services,
+  status,
+  onRetry,
+  isPageEmpty,
+}: {
+  services: OverviewService[]
+  status: AsyncStatus
+  onRetry?: () => void
+  isPageEmpty: boolean
+}) {
+  const hotspots = useMemo(() => deriveCapacityHotspots(services), [services])
+  const cells = [
+    {
+      id: 'storage',
+      value: hotspots.storageNearLimit,
+      label: 'Near storage limit',
+      hint: '>85%',
+      tone: 'warning-default' as const,
+    },
+    {
+      id: 'cpu',
+      value: hotspots.cpuSaturated,
+      label: 'CPU saturated',
+      hint: '>90%',
+      tone: 'danger-default' as const,
+    },
+    {
+      id: 'idle',
+      value: hotspots.overProvisioned,
+      label: 'Over-provisioned',
+      hint: '<15%',
+      tone: 'success-default' as const,
+    },
+  ]
+
+  return (
+    <Section title="Capacity hotspots" subtitle="Storage, CPU, and idle headroom">
+      <ModuleStatus module="capacity hotspots" status={status} onRetry={onRetry} loading={<CapacityHotspotsSkeleton />}>
+        {isPageEmpty ? (
+          <EmptyState title="No capacity data yet" primaryAction={CREATE_SERVICE} borderStyle="solid" fullHeight={false}>
+            Storage, CPU and idle headroom will appear after you create a service
+          </EmptyState>
+        ) : (
+          <>
+            <Grid gap="4">
+              {cells.map((cell) => (
+                <Grid.Item key={cell.id} xs={12} sm={4}>
+                  <Typography.Heading color={cell.value > 0 ? cell.tone : 'muted'}>{cell.value}</Typography.Heading>
+                  <Box marginTop="2">
+                    <Typography.Small>{cell.label}</Typography.Small>
+                    <Typography.Small color="muted">{cell.hint}</Typography.Small>
+                  </Box>
+                </Grid.Item>
+              ))}
+            </Grid>
+            {hotspots.overProvisioned > 0 ? (
+              <Box marginTop="4">
+                <Typography.Small color="muted">
+                  Est. {fmtUsd(hotspots.savingsUsd)} / mo if the over-provisioned services are rightsized
+                </Typography.Small>
+              </Box>
+            ) : null}
+          </>
+        )}
+      </ModuleStatus>
+    </Section>
+  )
+}
+
+CapacityHotspots.displayName = 'CapacityHotspots'
+
 // ─── Small building blocks ───────────────────────────────────────────────────────
 
 const ISSUE_DOT: Record<Exclude<OverviewSeverity, 'none'>, string> = {
@@ -353,7 +456,14 @@ GroupRollup.displayName = 'GroupRollup'
 
 // ─── Needs attention ─────────────────────────────────────────────────────────────
 
-type AttentionFilter = 'all' | 'high' | 'other'
+type AttentionFilter = 'all' | 'high' | 'other' | AttentionCategory
+
+/** Severity filters first, then the alert kinds from the Console alerts table. */
+const ATTENTION_CATEGORY_FILTERS: { id: AttentionCategory; label: string }[] = [
+  { id: 'eol', label: 'Close EOL' },
+  { id: 'maintenance', label: 'Maintenance' },
+  { id: 'degraded', label: 'Degraded service' },
+]
 
 function NeedsAttention({
   services,
@@ -373,11 +483,20 @@ function NeedsAttention({
   const visible = useMemo(() => {
     if (filter === 'high') return attention.filter((s) => s.severity === 'critical')
     if (filter === 'other') return attention.filter((s) => s.severity !== 'critical')
+    if (filter !== 'all') return attention.filter((s) => s.attentionCategory === filter)
     return attention
   }, [attention, filter])
 
   const highCount = attention.filter((s) => s.severity === 'critical').length
   const otherCount = attention.length - highCount
+  const categoryCounts = useMemo(
+    () =>
+      ATTENTION_CATEGORY_FILTERS.map((category) => ({
+        ...category,
+        count: attention.filter((s) => s.attentionCategory === category.id).length,
+      })),
+    [attention],
+  )
 
   const rows = useMemo(() => visible.map(toIssueRow), [visible])
 
@@ -408,9 +527,22 @@ function NeedsAttention({
           value={filter}
           onChange={(value) => setFilter(value as AttentionFilter)}
         >
-          <ChoiceChip value="all">All {attention.length}</ChoiceChip>
-          <ChoiceChip value="high">High {highCount}</ChoiceChip>
-          <ChoiceChip value="other">Other {otherCount}</ChoiceChip>
+          {[
+            <ChoiceChip key="all" value="all">
+              All {attention.length}
+            </ChoiceChip>,
+            <ChoiceChip key="high" value="high">
+              High {highCount}
+            </ChoiceChip>,
+            <ChoiceChip key="other" value="other">
+              Other {otherCount}
+            </ChoiceChip>,
+            ...categoryCounts.map((category) => (
+              <ChoiceChip key={category.id} value={category.id} disabled={category.count === 0}>
+                {category.label} {category.count}
+              </ChoiceChip>
+            )),
+          ]}
         </ChoiceChipGroup>
         {visible.length === 0 ? (
           <EmptyState title="No issues in this filter" borderStyle="solid" fullHeight={false}>
@@ -528,19 +660,24 @@ ServicePreview.displayName = 'ServicePreview'
 
 // ─── Recent activity (Timeline at the top of Overview) ──────────────────────────
 
+/** Large projects show only the worst few changes; everything else is in the event log. */
+const ACTIVITY_LIMIT_LARGE = 3
+
 function RecentActivity({
   items,
   status,
   onRetry,
+  subtitle = 'Changes across services, applications and agents',
 }: {
   items: OverviewActivity[]
   status: AsyncStatus
   onRetry?: () => void
+  subtitle?: string
 }) {
   return (
     <Section
       title="Recent project activity"
-      subtitle="Changes across services, applications and agents"
+      subtitle={subtitle}
       actions={{ text: 'View event log', onClick: () => undefined }}
     >
       <ModuleStatus
@@ -571,63 +708,233 @@ function RecentActivity({
 
 RecentActivity.displayName = 'RecentActivity'
 
+// ─── Empty Overview — explore the platform ───────────────────────────────────────
+
+type PlatformTile = {
+  id: string
+  icon: IconifyIcon
+  title: string
+  description: string
+  /** Card `chips` entries — status objects render as status chips. */
+  chips: ComponentProps<typeof Card>['chips']
+}
+
+/** Every tile carries a chip so the chip row, title and body line up across the grid. */
+const AVAILABLE_CHIP: ComponentProps<typeof Card>['chips'] = [{ text: 'Available', status: 'neutral' }]
+
+const PLATFORM_TILES: PlatformTile[] = [
+  {
+    id: 'runtime',
+    icon: consoleIcon,
+    title: 'Runtime',
+    description: 'Run apps and agents next to your data.',
+    chips: AVAILABLE_CHIP,
+  },
+  {
+    id: 'ai-gateway',
+    icon: dataflow01,
+    title: 'AI gateway',
+    description: 'One endpoint for all your AI traffic.',
+    chips: AVAILABLE_CHIP,
+  },
+  {
+    id: 'agents',
+    icon: chat,
+    title: 'Agents',
+    description: 'Deploy managed agents over your services.',
+    chips: [{ text: 'New', status: 'info' }],
+  },
+  {
+    id: 'datahub',
+    icon: dataLineage,
+    title: 'DataHub',
+    description: 'Context, catalog, lineage and governance.',
+    chips: AVAILABLE_CHIP,
+  },
+  {
+    id: 'integration-endpoints',
+    icon: integrations,
+    title: 'Integration endpoints',
+    description: 'Connect Aiven to external systems over MCP.',
+    chips: AVAILABLE_CHIP,
+  },
+  {
+    id: 'inference',
+    icon: cpuChip,
+    title: 'Inference',
+    description: 'Run models directly on the platform.',
+    chips: [{ text: 'Coming soon', status: 'warning' }],
+  },
+]
+
+function ExplorePlatform() {
+  return (
+    <Section title="Explore the platform">
+      <Grid gap="4" alignItems="stretch">
+        {PLATFORM_TILES.map((tile) => (
+          <Grid.Item key={tile.id} xs={12} sm={6} md={4}>
+            {/* Flex wrapper so every card fills its grid row and the rows line up. */}
+            <Box height="full" style={{ display: 'flex' }}>
+              <Card
+                fullWidth
+                onClick={() => undefined}
+                chips={tile.chips}
+                title={
+                  <Card.Title>
+                    <InlineIcon icon={tile.icon} width="20px" height="20px" color="primary-graphic" />
+                    <span>{tile.title}</span>
+                  </Card.Title>
+                }
+              >
+                <Typography.Small color="muted">{tile.description}</Typography.Small>
+              </Card>
+            </Box>
+          </Grid.Item>
+        ))}
+      </Grid>
+    </Section>
+  )
+}
+
+ExplorePlatform.displayName = 'ExplorePlatform'
+
 // ─── Overview V2 ─────────────────────────────────────────────────────────────────
 
 export function OverviewV2({
   dataset,
   status = 'loaded',
   onRetry,
+  project,
+  projects,
+  onProjectChange,
+  onCreateDevelopmentProject,
 }: {
   dataset: OverviewDataset
   status?: AsyncStatus
   onRetry?: () => void
+  project: ProjectContext
+  projects: ProjectContext[]
+  onProjectChange: (projectId: string) => void
+  onCreateDevelopmentProject: () => void
 }) {
   const [openService, setOpenService] = useState<OverviewService | null>(null)
+  const [topologyOpen, setTopologyOpen] = useState(false)
+  const [exploreOpen, setExploreOpen] = useState(false)
+  const [outcome, setOutcome] = useState<OutcomeId | null>(null)
+  const [deployment, setDeployment] = useState<DeploymentState | null>(null)
   const summary = useMemo(() => summarize(dataset), [dataset])
   const scale = pageScale(summary.total)
   const isPageEmpty = scale === 'empty'
   const attentionCount = dataset.services.filter((s) => s.needsAttention).length
+  // At 50+ services the full change feed stops being readable — lead with the worst.
+  const activityItems =
+    scale === 'large' ? criticalActivity(dataset.activity, ACTIVITY_LIMIT_LARGE) : dataset.activity
+  const showEmptyActivation = status === 'loaded' && isPageEmpty
+  const openTopology = () => setTopologyOpen(true)
 
   if (openService) {
     return <ServicePreview svc={openService} onBack={() => setOpenService(null)} />
   }
 
+  // Once anything is confirmed the project is no longer empty, blueprint or not.
+  if (status === 'loaded' && isPageEmpty && deployment) {
+    return (
+      <BlueprintDeploymentView
+        state={deployment}
+        project={project}
+        onAdd={(nodeId) =>
+          setDeployment((prev) =>
+            prev ? { ...prev, createdNodeIds: [...prev.createdNodeIds, nodeId] } : prev,
+          )
+        }
+        onDismissResume={() =>
+          setDeployment((prev) => (prev ? { ...prev, resumeDismissed: true } : prev))
+        }
+      />
+    )
+  }
+
+  if (showEmptyActivation && exploreOpen && outcome) {
+    return (
+      <SolutionBlueprint
+        outcomeId={outcome}
+        project={project}
+        projects={projects}
+        onProjectChange={onProjectChange}
+        onCreateDevelopmentProject={onCreateDevelopmentProject}
+        onChangeOutcome={() => setOutcome(null)}
+        onCreate={({ plannedNodeIds, confirmedNodeIds, region }) =>
+          setDeployment({
+            blueprint: BLUEPRINTS[outcome],
+            plannedNodeIds,
+            createdNodeIds: confirmedNodeIds,
+            region,
+            resumeDismissed: false,
+          })
+        }
+      />
+    )
+  }
+
+  if (showEmptyActivation && exploreOpen) {
+    return <ExploreSolutions onBack={() => setExploreOpen(false)} onSelect={setOutcome} />
+  }
+
+  if (showEmptyActivation) {
+    return (
+      <Box style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
+        <Banner
+          layout="horizontal"
+          title="Build more with Aiven Platform"
+          action={{ text: 'Explore solutions', onClick: () => setExploreOpen(true) }}
+        >
+          Connect your data, apps and agents to unlock powerful workflows
+        </Banner>
+        <EmptyState
+          title="No services yet"
+          primaryAction={{ text: 'Create your first service', onClick: openTopology }}
+          secondaryAction={{ text: 'Explore solutions', onClick: () => setExploreOpen(true) }}
+          borderStyle="solid"
+          fullHeight={false}
+        >
+          Create a service to start seeing spend, storage and issues on this project
+        </EmptyState>
+        <ExplorePlatform />
+        <EmptyState
+          title="No usage yet"
+          primaryAction={{ text: 'Create service', onClick: openTopology }}
+          borderStyle="solid"
+          fullHeight={false}
+        >
+          Spend and storage will appear after you create a service
+        </EmptyState>
+        <CreateServiceTopologyModal
+          open={topologyOpen}
+          onClose={() => setTopologyOpen(false)}
+          projectName={project.name}
+        />
+      </Box>
+    )
+  }
+
   return (
     <Box style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
-      {status === 'loaded' && isPageEmpty ? (
-        <>
-          <Banner
-            layout="horizontal"
-            title="Build more with Aiven Platform"
-            action={{ text: 'Explore solutions', href: '#' }}
-          >
-            Connect your data, apps and agents to unlock powerful workflows
-          </Banner>
-          <EmptyState
-            title="No services yet"
-            primaryAction={CREATE_FIRST_SERVICE}
-            secondaryAction={{ text: 'Explore solutions', href: '#' }}
-            borderStyle="solid"
-            fullHeight={false}
-          >
-            Create a service to start seeing spend, storage and issues on this project
-          </EmptyState>
-        </>
-      ) : null}
-
-      <RecentActivity items={dataset.activity} status={status} onRetry={onRetry} />
+      <RecentActivity
+        items={activityItems}
+        status={status}
+        onRetry={onRetry}
+        subtitle={
+          scale === 'large'
+            ? `Top ${ACTIVITY_LIMIT_LARGE} by severity — the event log has everything else`
+            : undefined
+        }
+      />
 
       <MetricsRow summary={summary} status={status} onRetry={onRetry} isPageEmpty={isPageEmpty} />
 
       <Tabs defaultValue="service-type" aria-label="Overview sections">
         <Tabs.Tab title="Service type" value="service-type">
-          {isPageEmpty && status === 'loaded' ? (
-            <EmptyState title="No service types yet" primaryAction={CREATE_SERVICE} borderStyle="solid" fullHeight={false}>
-              Service types will appear after you create a service
-            </EmptyState>
-          ) : (
-            <GroupRollup services={dataset.services} status={status} onRetry={onRetry} />
-          )}
+          <GroupRollup services={dataset.services} status={status} onRetry={onRetry} />
         </Tabs.Tab>
         <Tabs.Tab
           title="Needs attention"
@@ -643,6 +950,13 @@ export function OverviewV2({
           />
         </Tabs.Tab>
       </Tabs>
+
+      <CapacityHotspots
+        services={dataset.services}
+        status={status}
+        onRetry={onRetry}
+        isPageEmpty={isPageEmpty}
+      />
     </Box>
   )
 }

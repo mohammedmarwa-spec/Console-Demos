@@ -12,6 +12,8 @@ import type { ServiceTypeId } from '@/screens/ServiceTypeSelectModal'
 
 export type OverviewSeverity = 'critical' | 'warning' | 'none'
 export type GroupDim = 'system' | 'type' | 'none'
+/** Alert kinds shared with the Console alerts table: close to EOL, maintenance, degraded. */
+export type AttentionCategory = 'eol' | 'maintenance' | 'degraded'
 
 export type OverviewService = {
   id: string
@@ -25,6 +27,8 @@ export type OverviewService = {
   needsAttention: boolean
   severity: OverviewSeverity
   attentionReason?: string
+  /** What kind of alert this is — drives the Needs attention quick filters. */
+  attentionCategory?: AttentionCategory
   /** Business impact of the issue, for the Needs attention table. */
   impact?: string
   /** Relative start time of the issue, for the Needs attention table. */
@@ -35,6 +39,8 @@ export type OverviewService = {
   spendForecast: number
   storageUsedGb: number
   storageTotalGb: number
+  /** CPU utilisation 0–100. */
+  cpuPct: number
   version: string
   latestVersion: string
   offLatest: boolean
@@ -124,6 +130,12 @@ function buildServices(): OverviewService[] {
     const storagePct = overFull ? 0.86 + r() * 0.11 : 0.18 + r() * 0.55
     const storageUsedGb = Math.round(storageTotalGb * storagePct)
 
+    // Plant a few saturated and idle services so Capacity hotspots has signal.
+    let cpuPct: number
+    if (i % 14 === 0) cpuPct = 91 + Math.floor(r() * 8)
+    else if (i === 7 || i % 11 === 0) cpuPct = 3 + Math.floor(r() * 10)
+    else cpuPct = 20 + Math.floor(r() * 55)
+
     // Spend scales roughly with capacity, with per-service jitter.
     const sizeFactor = storageTotalGb / 240
     const spendMtd = Math.round((60 + r() * 260) * sizeFactor)
@@ -143,10 +155,12 @@ function buildServices(): OverviewService[] {
     // Attention: a couple of explicit criticals, warnings from real signals.
     let severity: OverviewSeverity = 'none'
     let attentionReason: string | undefined
+    let attentionCategory: AttentionCategory | undefined
     let impact: string | undefined
     let started: string | undefined
     if (i === 4 || i === 22) {
       severity = 'critical'
+      attentionCategory = 'degraded'
       if (i === 4) {
         attentionReason = 'High query latency'
         impact = 'Customer checkout'
@@ -158,16 +172,19 @@ function buildServices(): OverviewService[] {
       }
     } else if (overFull) {
       severity = 'warning'
+      attentionCategory = 'degraded'
       attentionReason = 'Disk usage above 85%'
       impact = 'Storage headroom'
       started = `${(i % 4) + 1} hour${i % 4 === 0 ? '' : 's'} ago`
     } else if (status !== 'Running') {
       severity = 'warning'
+      attentionCategory = 'maintenance'
       attentionReason = `${status} in progress`
       impact = 'Availability'
       started = '20 mins ago'
     } else if (eolSoon) {
       severity = 'warning'
+      attentionCategory = 'eol'
       attentionReason = `Reaches end-of-life in ${eolDays} days`
       impact = 'Upgrade window'
       started = '2 days ago'
@@ -183,12 +200,14 @@ function buildServices(): OverviewService[] {
       needsAttention: severity !== 'none',
       severity,
       attentionReason,
+      attentionCategory,
       impact,
       started,
       spendMtd,
       spendForecast,
       storageUsedGb,
       storageTotalGb,
+      cpuPct,
       version,
       latestVersion: type.latest,
       offLatest,
@@ -213,7 +232,7 @@ const ALL_ACTIVITY: OverviewActivity[] = [
 const ALL_SERVICES = buildServices()
 
 export const overviewDataset: OverviewDataset = {
-  projectName: 'online-store-prod',
+  projectName: 'acme-dev',
   budgetUsd: 14000,
   appsCount: 9,
   agentsCount: 5,
@@ -223,7 +242,7 @@ export const overviewDataset: OverviewDataset = {
 
 /** Under the aggregation threshold — detailed layout, roll-ups optional. */
 export const overviewDatasetSmall: OverviewDataset = {
-  projectName: 'online-store-prod',
+  projectName: 'acme-dev',
   budgetUsd: 14000,
   appsCount: 2,
   agentsCount: 1,
@@ -233,7 +252,7 @@ export const overviewDatasetSmall: OverviewDataset = {
 
 /** Fresh / zero-state variant for testing the empty design. */
 export const overviewDatasetEmpty: OverviewDataset = {
-  projectName: 'online-store-prod',
+  projectName: 'acme-dev',
   budgetUsd: 14000,
   appsCount: 0,
   agentsCount: 0,
@@ -255,6 +274,25 @@ export type OverviewSummary = {
   storageOver85: number
   offLatest: number
   eolSoon: number
+}
+
+export type CapacityHotspots = {
+  storageNearLimit: number
+  cpuSaturated: number
+  overProvisioned: number
+  savingsUsd: number
+}
+
+export function deriveCapacityHotspots(services: OverviewService[]): CapacityHotspots {
+  const storageNearLimit = services.filter((s) => s.storageUsedGb / s.storageTotalGb > 0.85).length
+  const cpuSaturated = services.filter((s) => s.cpuPct > 90).length
+  const overProvisioned = services.filter((s) => s.cpuPct < 15).length
+  return {
+    storageNearLimit,
+    cpuSaturated,
+    overProvisioned,
+    savingsUsd: overProvisioned * 210,
+  }
 }
 
 export function summarize(ds: OverviewDataset): OverviewSummary {
@@ -286,6 +324,24 @@ export type OverviewGroup = {
   spendMtd: number
   storageUsedGb: number
   storageTotalGb: number
+}
+
+const ACTIVITY_RANK: Record<OverviewActivity['variant'], number> = {
+  error: 0,
+  warning: 1,
+  info: 2,
+  default: 2,
+  success: 2,
+}
+
+/**
+ * Worst-first activity, recency keeping the order inside a rank. At large scale the
+ * timeline only shows the top few — the event log has the rest.
+ */
+export function criticalActivity(items: OverviewActivity[], limit: number): OverviewActivity[] {
+  return [...items]
+    .sort((a, b) => ACTIVITY_RANK[a.variant] - ACTIVITY_RANK[b.variant])
+    .slice(0, limit)
 }
 
 const SEVERITY_RANK: Record<OverviewSeverity, number> = { critical: 0, warning: 1, none: 2 }

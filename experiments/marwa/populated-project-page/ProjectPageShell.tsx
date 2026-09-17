@@ -14,7 +14,7 @@ import {
   type ProjectTab,
 } from '@experiments/_shared/project-page'
 import { EventLogsContent } from '@experiments/elena/organization-event-logs/EventLogsContent'
-import { projectPageData } from '../project-page-v2/mockData'
+import { projectPageData } from './mockData'
 import { PopulatedOverview, ScopeToggle } from './PopulatedOverview'
 import { ScopeProvider, useScope } from './ScopeContext'
 import { onlineStoreProd } from './fixtures/onlineStoreProd'

@@ -3,8 +3,8 @@ import type { ProjectPageMockData } from '@experiments/_shared/project-page'
 /** Existing-user state — populated services, issues, activity, and architecture. */
 export const projectPageData: ProjectPageMockData = {
   orgName: 'Aiven org.',
-  projectName: 'online-store-prod',
-  projectSubtitle: 'Build and operate your application, data and agents in one project.',
+  projectName: 'acme-dev',
+  projectSubtitle: 'Isolate staging and development in their own projects.',
   services: [
     {
       id: 'pg-prod-01',

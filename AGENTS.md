@@ -38,7 +38,7 @@ This repo supports two workflows:
 
 **Required for Aquarium UI** (experiments, templates, app screens, Figma audits):
 
-- `user-aiven-storybook` / `aiven-storybook` — Aquarium component props from Storybook. Query this **before** using any `@aivenio/aquarium` component.
+- `user-storybook` / `storybook` / `user-aiven-storybook` / `aiven-storybook` — Aquarium component props from `https://aquarium-library.aiven.io/mcp`. Query this **before** using any `@aivenio/aquarium` component.
 - `plugin-figma-figma` / `figma` — official Figma MCP at `https://mcp.figma.com/mcp` (read designs, library, tokens, Code Connect). Required before implementing or auditing UI.
 
 If either required server is missing from the tool catalog, **stop** and tell the user to enable it in Cursor Settings → MCP (see `.cursor/mcp.json` and `docs/SETUP.md`).

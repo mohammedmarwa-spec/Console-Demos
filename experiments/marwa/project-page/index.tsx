@@ -7,7 +7,7 @@ import { projectPageData } from './mockData'
 export const pageMeta: PageMeta = {
   title: 'Project Overview — concept 1 (Marwa)',
   description:
-    'First concept of the project Overview. Aggregation-first, gated on service volume: empty (activation + per-module empty states), small (detailed), large (aggregation). Concept 2 lives at /experiments/marwa/project-page-v2.',
+    'First concept of the project Overview. Aggregation-first, gated on service volume: empty (activation + per-module empty states), small (detailed), large (aggregation).',
 }
 
 export default function Page() {

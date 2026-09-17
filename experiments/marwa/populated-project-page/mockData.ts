@@ -1,6 +1,6 @@
 import type { ProjectPageMockData } from '@experiments/_shared/project-page'
 
-/** Existing-user state — populated services, issues, activity, and architecture. */
+/** Chrome mock for Resources / Architecture / Data Hub / Apps — local copy so this pitch does not depend on other experiments. */
 export const projectPageData: ProjectPageMockData = {
   orgName: 'Aiven org.',
   projectName: 'online-store-prod',
