@@ -375,7 +375,7 @@ function HowItWorksArrow() {
         flexShrink: 0,
       }}
     >
-      <Icon icon={arrowRightIcon} color="primary" style={{ width: 24, height: 24 }} />
+      <Icon icon={arrowRightIcon} color="primary-default" style={{ width: 24, height: 24 }} />
     </Box>
   )
 }
