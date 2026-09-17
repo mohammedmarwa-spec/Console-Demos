@@ -31,11 +31,13 @@ export function ResultsExplained({
   query,
   mode,
   onBack,
+  onGoToService,
 }: {
   source: DemoDataSource
   query: string
   mode: SearchMode
   onBack: () => void
+  onGoToService: () => void
 }) {
   const bundle = runMockQuery(source, mode, query)
   const modeLabel = mode === 'keyword' ? 'Keyword' : mode === 'hybrid' ? 'Hybrid' : 'Semantic'
@@ -124,10 +126,30 @@ export function ResultsExplained({
         ))}
       </Box>
 
-      <Box style={{ display: 'flex', justifyContent: 'flex-end' }}>
-        <Button.Ghost type="button" onClick={onBack}>
-          Back to results
-        </Button.Ghost>
+      <Box
+        style={{
+          display: 'flex',
+          flexDirection: 'column',
+          gap: 12,
+          padding: 16,
+          borderRadius: 'var(--aquarium-border-radius-default)',
+          backgroundColor: 'var(--aquarium-background-color-layer)',
+          border: '1px solid var(--aquarium-border-color-muted)',
+        }}
+      >
+        <Typography.DefaultStrong color="intense">End of the demo</Typography.DefaultStrong>
+        <Typography.Small color="muted">
+          Go back to the OpenSearch service you created at the start to see Overview, connection
+          information, and plan details.
+        </Typography.Small>
+        <Box style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, flexWrap: 'wrap' }}>
+          <Button.Ghost type="button" onClick={onBack}>
+            Back to results
+          </Button.Ghost>
+          <Button type="button" onClick={onGoToService}>
+            Back to service details
+          </Button>
+        </Box>
       </Box>
     </Box>
   )

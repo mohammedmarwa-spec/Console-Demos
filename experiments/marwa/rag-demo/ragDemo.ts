@@ -196,8 +196,8 @@ export const DATA_TEMPLATES: {
 ]
 
 export const UPLOAD_MAX_BYTES = 10 * 1024 * 1024
-export const UPLOAD_ACCEPT = '.pdf,.txt,.csv,.json,application/pdf,text/plain,text/csv,application/json'
-export const UPLOAD_EXTENSIONS = ['pdf', 'txt', 'csv', 'json'] as const
+export const UPLOAD_ACCEPT = '.txt,text/plain'
+export const UPLOAD_EXTENSIONS = ['txt'] as const
 
 export type SearchDemoOption = 'none' | 'vector'
 

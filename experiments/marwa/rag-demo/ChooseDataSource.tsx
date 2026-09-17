@@ -24,10 +24,7 @@ type UploadError = 'type' | 'size' | 'empty' | null
 function extensionOf(file: File): string {
   const fromName = file.name.split('.').pop()?.toLowerCase() ?? ''
   if (fromName) return fromName
-  if (file.type === 'application/pdf') return 'pdf'
   if (file.type === 'text/plain') return 'txt'
-  if (file.type === 'text/csv') return 'csv'
-  if (file.type === 'application/json') return 'json'
   return ''
 }
 
@@ -41,7 +38,7 @@ function validateFile(file: File | null): { error: UploadError; file: File | nul
 }
 
 const ERROR_COPY: Record<Exclude<UploadError, null>, string> = {
-  type: 'Use a PDF, TXT, CSV, or JSON file.',
+  type: 'Use a .txt file.',
   size: 'That file is larger than 10 MB. Choose a smaller file.',
   empty: 'That file is empty. Choose a file with content.',
 }
@@ -110,7 +107,7 @@ export function ChooseDataSource({
             <Typography.LargeStrong color="intense">Which data do you want to search?</Typography.LargeStrong>
             <Box style={{ marginTop: 8 }}>
               <Typography.Small color="muted">
-                Templates use mock documents. Upload accepts PDF, TXT, CSV, or JSON up to 10 MB.
+                Templates use mock documents. Upload accepts a .txt file up to 10 MB.
               </Typography.Small>
             </Box>
           </Box>
@@ -151,7 +148,7 @@ export function ChooseDataSource({
                     value="upload"
                     checked={selection === 'upload'}
                     title="Upload your own data"
-                    chips={[{ text: 'PDF · TXT · CSV · JSON', status: 'neutral' }]}
+                    chips={[{ text: 'TXT', status: 'neutral' }]}
                   >
                     <Typography.Small color="muted">
                       Import a file to try vector search on your own content. Nothing is sent to a
@@ -167,7 +164,7 @@ export function ChooseDataSource({
             <FileInput
               labelText="File"
               accept={UPLOAD_ACCEPT}
-              description="PDF, TXT, CSV, or JSON. Maximum 10 MB."
+              description="TXT only. Maximum 10 MB."
               helperText={uploadError ? ERROR_COPY[uploadError] : undefined}
               valid={uploadError === null}
               onChange={handleFileChange}

@@ -38,12 +38,14 @@ export function QueryResults({
   initialMode,
   onExplain,
   onBack,
+  onGoToService,
 }: {
   source: DemoDataSource
   initialQuery?: string
   initialMode?: SearchMode
   onExplain: (query: string, mode: SearchMode) => void
   onBack: () => void
+  onGoToService: () => void
 }) {
   const examples = examplesFor(source)
   const [mode, setMode] = useState<SearchMode>(initialMode ?? 'semantic')
@@ -195,6 +197,29 @@ export function QueryResults({
                 </Accordion.Container>
               </Accordion>
             ))}
+          </Box>
+
+          <Box
+            style={{
+              display: 'flex',
+              flexDirection: 'column',
+              gap: 12,
+              padding: 16,
+              borderRadius: 'var(--aquarium-border-radius-default)',
+              backgroundColor: 'var(--aquarium-background-color-layer)',
+              border: '1px solid var(--aquarium-border-color-muted)',
+            }}
+          >
+            <Typography.DefaultStrong color="intense">Done with the demo?</Typography.DefaultStrong>
+            <Typography.Small color="muted">
+              Return to the OpenSearch service you created — Overview, connection info, and plan
+              stay as they were.
+            </Typography.Small>
+            <Box>
+              <Button type="button" onClick={onGoToService}>
+                Back to service details
+              </Button>
+            </Box>
           </Box>
         </>
       )}

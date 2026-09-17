@@ -136,7 +136,7 @@ export const componentManifest: ComponentManifest = {
     },
     {
       name: 'FileInput',
-      usage: 'Screen 3 upload path — PDF/TXT/CSV/JSON with type, size, and empty-file errors',
+      usage: 'Screen 3 upload path — TXT only, with type, size, and empty-file errors',
       storybookUrl: aquariumStorybookLinks.Input,
     },
     {
@@ -303,10 +303,10 @@ export const componentManifest: ComponentManifest = {
     'Design change: Create service opens the Console create-service modal shell (select type → create form), matching PlaygroundStateContext.',
     'Screen 1: OpenSearch create shows an Includes vector search demo Alert and Search demo cards after Service tier. After Free/Dev OpenSearch with Vector selected, a Dialog offers Start demo or Skip.',
     'Screen 2: Vector search demo landing in the existing OpenSearch service shell (locked model chips + EmptyState CTA). Skip keeps a list banner and a sidebar/Overview entry.',
-    'Screen 3: Choose a data source — e-commerce, DevOps runbook, Support FAQ, technical docs templates, or upload PDF/TXT/CSV/JSON (10 MB). Bad type, too large, and empty files show FileInput errors.',
+    'Screen 3: Choose a data source — e-commerce, DevOps runbook, Support FAQ, technical docs templates, or upload TXT (10 MB). Bad type, too large, and empty files show FileInput errors.',
     'Screen 4: Preparing your data ProgressBar, then auto-advance to query. Upload filenames containing "fail" simulate the Retry path.',
-    'Screen 5: Keyword/Semantic/Hybrid query with LLM answer card, ranked sources Accordion, and qualitative High/Medium/Low. Mode change re-runs the mock query.',
-    'Screen 6: Separate Results explained view (not Figma’s inline Switch) covering why the mode matched, matched text, and relevance.',
+    'Screen 5: Keyword/Semantic/Hybrid query with LLM answer card, ranked sources Accordion, and qualitative High/Medium/Low. Mode change re-runs the mock query. After results, Back to service details returns to the created OpenSearch Overview.',
+    'Screen 6: Separate Results explained view (not Figma’s inline Switch) covering why the mode matched, matched text, and relevance. End of demo CTA: Back to service details.',
     'Demo starting state: local DEMO_SERVICES dataset (experiments/marwa/rag-demo/demoServices.ts), typed with the shared ServiceRow from src/screens/ProjectServices. os-maxim-muzafarov-1c149c43 starts at 17 nodes.',
     'Keeps the existing price/plan calculation logic: upgrades apply UPGRADE_PLAN_SERVICE_DATA (plan name, details, nodes, CPU, RAM, storage) to the selected row.',
     'Design change: adds an Upgrade eligibility banner and an always-visible per-row Upgrade action to improve discoverability of the quick-upgrade flow.',

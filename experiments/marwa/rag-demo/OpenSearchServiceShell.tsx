@@ -210,6 +210,7 @@ export function OpenSearchServiceShell({
               initialQuery={explainedQuery}
               initialMode={explainedMode}
               onBack={() => setDemoStep('choose-data')}
+              onGoToService={() => setActive('overview')}
               onExplain={(query, mode) => {
                 setExplainedQuery(query)
                 setExplainedMode(mode)
@@ -222,6 +223,7 @@ export function OpenSearchServiceShell({
               query={explainedQuery}
               mode={explainedMode}
               onBack={() => setDemoStep('query')}
+              onGoToService={() => setActive('overview')}
             />
           ) : (
             <VectorSearchDemoLanding onGetStarted={() => setDemoStep('choose-data')} />
