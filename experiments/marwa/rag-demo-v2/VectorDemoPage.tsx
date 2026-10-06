@@ -6,6 +6,7 @@ import { QueryResults } from './QueryResults'
 import { ResultsExplained } from './ResultsExplained'
 import { DEMO_RESOURCES, defaultQueryFor, formatCount, sourceLabel, type SearchMode } from './ragDemo'
 import type { VectorDemo } from './useVectorDemo'
+import styles from './VectorDemoPage.module.css'
 
 /**
  * The running demo, opened with View demo at the end of setup (or from the sidebar
@@ -31,7 +32,8 @@ export function VectorDemoPage({ demo, onStop }: { demo: VectorDemo; onStop: () 
       subtitle={`${sourceLabel(source)} · ${DEMO_RESOURCES.indexName} · ${formatCount(plan.documents)} ${source.kind === 'upload' ? 'files' : 'documents'} · ${formatCount(plan.chunks)} chunks`}
       actions={{ text: 'Stop demo', onClick: onStop }}
     >
-      <Tabs value={demo.view} onChange={(value) => setView(value === 'explained' ? 'explained' : 'query')}>
+      <Box className={styles.demoTabs}>
+        <Tabs value={demo.view} onChange={(value) => setView(value === 'explained' ? 'explained' : 'query')}>
         <Tabs.Tab title="Search your data" value="query">
           <Box paddingTop="6">
             <QueryResults
@@ -51,7 +53,8 @@ export function VectorDemoPage({ demo, onStop }: { demo: VectorDemo; onStop: () 
             <ResultsExplained source={source} query={query} mode={demo.mode} />
           </Box>
         </Tabs.Tab>
-      </Tabs>
+        </Tabs>
+      </Box>
     </Section>
   )
 }

@@ -109,7 +109,6 @@ export function OpenSearchServiceShell({
     demo,
     onOpen: openDemo,
     onSearch: () => showDemoPage('query'),
-    onExplain: () => showDemoPage('explained'),
     onStop: requestStop,
   }
 
@@ -136,15 +135,16 @@ export function OpenSearchServiceShell({
   }
 
   return (
-    <Box style={{ display: 'flex', flex: 1, minHeight: 0, overflow: 'hidden' }}>
-      {sidebar}
+    <Box style={{ display: 'flex', flex: 1, minHeight: 0, alignItems: 'flex-start' }}>
+      <Box style={{ position: 'sticky', top: 0, alignSelf: 'flex-start', height: 'calc(100vh - 48px)' }}>
+        {sidebar}
+      </Box>
 
       <Box
         style={{
           flex: 1,
           minWidth: 0,
           padding: 24,
-          overflow: 'auto',
           backgroundColor: 'var(--aquarium-background-color-body)',
         }}
       >

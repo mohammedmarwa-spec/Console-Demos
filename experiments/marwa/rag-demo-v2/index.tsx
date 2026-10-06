@@ -17,8 +17,7 @@ export default function Page() {
       style={{
         display: 'flex',
         flexDirection: 'column',
-        height: 'calc(100vh - 48px)',
-        minHeight: 0,
+        minHeight: 'calc(100vh - 48px)',
         backgroundColor: 'var(--aquarium-background-color-body)',
       }}
     >

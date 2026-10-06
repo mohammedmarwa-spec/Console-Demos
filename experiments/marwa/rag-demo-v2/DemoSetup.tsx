@@ -18,7 +18,7 @@ import crossIcon from '@aivenio/aquarium/icons/cross'
 import linkExternalIcon from '@aivenio/aquarium/icons/linkExternal'
 import { StepWrapper } from './StepWrapper'
 import { PipelineIllustration } from './PipelineIllustration'
-import { ModelRequest } from './ModelRequest'
+// import { ModelRequest } from './ModelRequest' // hidden for now
 import {
   CHUNK_SIZES,
   CHUNKING_METHOD,
@@ -134,7 +134,7 @@ export function ChooseDataStep({
             </Grid.Item>
           </Grid>
         </Card.Group>
-        <ModelRequest />
+        {/* <ModelRequest /> hidden for now */}
       </Box.Flex>
     </StepWrapper>
   )
@@ -189,7 +189,7 @@ export function ConfigureStep({
       description={
         isUpload
           ? 'Add your files and choose how they are split into chunks before embedding.'
-          : 'Choose how the sample documents are split into chunks before embedding.'
+          : 'Sample documents use a predefined chunking configuration — no setup needed. Continue to review.'
       }
     >
       <Box style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
@@ -277,49 +277,53 @@ export function ConfigureStep({
           </Box>
         ) : null}
 
-        <Box.Flex alignItems="center" gap="3" flexWrap="wrap">
-          <Typography.SmallStrong color="intense">Chunking method</Typography.SmallStrong>
-          <Typography.Small>{CHUNKING_METHOD.name}</Typography.Small>
-          <StatusChip dense text="Predefined" status="neutral" />
-        </Box.Flex>
+        {isUpload ? (
+          <>
+            <Box.Flex alignItems="center" gap="3" flexWrap="wrap">
+              <Typography.SmallStrong color="intense">Chunking method</Typography.SmallStrong>
+              <Typography.Small>{CHUNKING_METHOD.name}</Typography.Small>
+              <StatusChip dense text="Predefined" status="neutral" />
+            </Box.Flex>
 
-        <Box style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-          <Box>
-            <Typography.SmallStrong color="intense">Chunk size</Typography.SmallStrong>
-            <Box style={{ marginTop: 4 }}>
-              <Typography.Small color="muted">
-                Smaller chunks give tighter matches; larger chunks give more context per hit.
-              </Typography.Small>
-            </Box>
-          </Box>
-          <Card.Group
-            name="rag-chunk-size"
-            checked={draft.chunkSizeId}
-            onCheckedChange={({ value }) => update({ chunkSizeId: value as ChunkSizeId })}
-          >
-            <Grid gap="4">
-              {CHUNK_SIZES.map((option) => (
-                <Grid.Item key={option.id} xs={12} md={4}>
-                  <Box style={{ display: 'flex', height: '100%' }}>
-                    <Card
-                      fullWidth
-                      checkable
-                      value={option.id}
-                      checked={draft.chunkSizeId === option.id}
-                      title={option.title}
-                      chips={option.chip ? [option.chip] : undefined}
-                    >
-                      <Box style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-                        <Typography.SmallStrong color="intense">{option.tokens}</Typography.SmallStrong>
-                        <Typography.Small color="muted">{option.description}</Typography.Small>
+            <Box style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+              <Box>
+                <Typography.SmallStrong color="intense">Chunk size</Typography.SmallStrong>
+                <Box style={{ marginTop: 4 }}>
+                  <Typography.Small color="muted">
+                    Smaller chunks give tighter matches; larger chunks give more context per hit.
+                  </Typography.Small>
+                </Box>
+              </Box>
+              <Card.Group
+                name="rag-chunk-size"
+                checked={draft.chunkSizeId}
+                onCheckedChange={({ value }) => update({ chunkSizeId: value as ChunkSizeId })}
+              >
+                <Grid gap="4">
+                  {CHUNK_SIZES.map((option) => (
+                    <Grid.Item key={option.id} xs={12} md={4}>
+                      <Box style={{ display: 'flex', height: '100%' }}>
+                        <Card
+                          fullWidth
+                          checkable
+                          value={option.id}
+                          checked={draft.chunkSizeId === option.id}
+                          title={option.title}
+                          chips={option.chip ? [option.chip] : undefined}
+                        >
+                          <Box style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                            <Typography.SmallStrong color="intense">{option.tokens}</Typography.SmallStrong>
+                            <Typography.Small color="muted">{option.description}</Typography.Small>
+                          </Box>
+                        </Card>
                       </Box>
-                    </Card>
-                  </Box>
-                </Grid.Item>
-              ))}
-            </Grid>
-          </Card.Group>
-        </Box>
+                    </Grid.Item>
+                  ))}
+                </Grid>
+              </Card.Group>
+            </Box>
+          </>
+        ) : null}
       </Box>
     </StepWrapper>
   )

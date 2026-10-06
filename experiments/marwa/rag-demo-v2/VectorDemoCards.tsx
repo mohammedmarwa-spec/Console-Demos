@@ -100,14 +100,12 @@ export function VectorDemoStatusCard({
   detailed = false,
   onOpen,
   onSearch,
-  onExplain,
   onStop,
 }: {
   demo: VectorDemo
   detailed?: boolean
   onOpen: () => void
   onSearch: () => void
-  onExplain: () => void
   onStop: () => void
 }) {
   const { source, plan, status, progress, stageIndex, failedStage } = demo
@@ -147,9 +145,6 @@ export function VectorDemoStatusCard({
             <Button dense type="button" onClick={onSearch}>
               Search your data
             </Button>
-            <Button.Secondary dense type="button" onClick={onExplain}>
-              Results explained
-            </Button.Secondary>
             <Button.Ghost dense type="button" onClick={onStop}>
               Stop demo
             </Button.Ghost>

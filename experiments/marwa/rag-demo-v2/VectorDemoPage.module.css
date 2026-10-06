@@ -1,0 +1,11 @@
+/*
+ * The Aquarium Tabs component defaults to filling its container height and
+ * scrolling its panel internally (h-full + overflow-auto), which produces a
+ * redundant inner scrollbar on the demo page. Here the page itself scrolls, so
+ * let the tabs flow with their content instead of scrolling on their own.
+ */
+.demoTabs :global(.Aquarium-Tabs) {
+  height: auto;
+  flex: none;
+  overflow: visible;
+}
