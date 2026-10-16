@@ -5,7 +5,6 @@ import { Navigation } from '@aivenio/aquarium'
 import arrowLeftIcon from '@aivenio/aquarium/icons/arrowLeft'
 import dashboardIcon from '@aivenio/aquarium/icons/dashboard'
 import databaseIcon from '@aivenio/aquarium/icons/database'
-import searchIcon from '@aivenio/aquarium/icons/search'
 import chartIcon from '@aivenio/aquarium/icons/chart'
 import userIcon from '@aivenio/aquarium/icons/user'
 import dbBackupIcon from '@aivenio/aquarium/icons/dbBackup'
@@ -41,18 +40,12 @@ export function OpenSearchServiceSidebar({
   activeItem = 'overview',
   onNavigate,
   onBackToProject,
-  showVectorDemo = false,
-  vectorDemoNotification = false,
 }: {
   projectName: string
   serviceName: string
   activeItem?: OpenSearchNavId
   onNavigate?: (id: OpenSearchNavId) => void
   onBackToProject?: () => void
-  /** Shown while a demo is set up or running; hidden again after Stop demo. */
-  showVectorDemo?: boolean
-  /** Badge while setup is in progress or needs a retry. */
-  vectorDemoNotification?: boolean
 }) {
   const go = (id: OpenSearchNavId) => (event: MouseEvent) => {
     event.preventDefault()
@@ -103,20 +96,6 @@ export function OpenSearchServiceSidebar({
               Cluster overview
             </Navigation.Submenu.Item>
           )}
-
-          {showVectorDemo ? (
-            <Navigation.Item
-              icon={searchIcon}
-              href="#"
-              active={activeItem === 'vector-search-demo'}
-              title="Vector search demo"
-              aria-label="Vector search demo"
-              showNotification={vectorDemoNotification}
-              onClick={go('vector-search-demo')}
-            >
-              {collapsed ? null : 'Vector search demo'}
-            </Navigation.Item>
-          ) : null}
 
           <Navigation.Submenu title="Data" icon={databaseIcon} defaultOpen>
             <Navigation.Submenu.Item href="#" active={activeItem === 'indexes'} onClick={go('indexes')}>

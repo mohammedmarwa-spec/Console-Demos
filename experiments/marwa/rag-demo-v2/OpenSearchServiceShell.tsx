@@ -1,17 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import {
-  Alert,
-  Box,
-  Breadcrumbs,
-  Button,
-  Card,
-  Chip,
-  DropdownMenu,
-  Grid,
-  Typography,
-} from '@aivenio/aquarium'
+import { Alert, Box, Breadcrumbs, Button, Chip, DropdownMenu, Typography } from '@aivenio/aquarium'
 import moreIcon from '@aivenio/aquarium/icons/more'
 import chatIcon from '@aivenio/aquarium/icons/chat'
 import { ServiceIcon } from '@/components/ServiceIcon'
@@ -34,7 +24,7 @@ const SERVICE_VERSION = 'OpenSearch 3.3.2'
 const NAV_LABEL: Record<OpenSearchNavId, string> = {
   'cluster-overview': 'Cluster overview',
   overview: 'Overview',
-  'vector-search-demo': 'Vector search demo',
+  'vector-search-demo': 'RAG demo',
   indexes: 'Indexes',
   'data-integrations': 'Integrations',
   metrics: 'Metrics',
@@ -119,8 +109,6 @@ export function OpenSearchServiceShell({
       activeItem={active}
       onNavigate={setActive}
       onBackToProject={onBack}
-      showVectorDemo={demoActive}
-      vectorDemoNotification={demo.status === 'preparing' || demo.status === 'failed'}
     />
   )
 
@@ -136,9 +124,7 @@ export function OpenSearchServiceShell({
 
   return (
     <Box style={{ display: 'flex', flex: 1, minHeight: 0, alignItems: 'flex-start' }}>
-      <Box style={{ position: 'sticky', top: 0, alignSelf: 'flex-start', height: 'calc(100vh - 48px)' }}>
-        {sidebar}
-      </Box>
+      <Box style={{ position: 'sticky', top: 0, alignSelf: 'flex-start', height: 'calc(100vh - 48px)' }}>{sidebar}</Box>
 
       <Box
         style={{
@@ -185,18 +171,26 @@ export function OpenSearchServiceShell({
             </Box>
           </Box>
           <Box style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
-            <DropdownMenu>
-              <DropdownMenu.Trigger>
-                <Button.Icon type="button" aria-label="Service actions" tooltip="More actions" icon={moreIcon} />
-              </DropdownMenu.Trigger>
-              <DropdownMenu.Items>
-                <DropdownMenu.Item id="power-off">Power off service</DropdownMenu.Item>
-                <DropdownMenu.Item id="delete">Delete service</DropdownMenu.Item>
-              </DropdownMenu.Items>
-            </DropdownMenu>
-            <Button.Secondary type="button" onClick={() => undefined}>
-              Open support ticket
-            </Button.Secondary>
+            {active === 'vector-search-demo' && demo.status === 'ready' ? (
+              <Button.Secondary type="button" onClick={requestStop}>
+                Delete demo
+              </Button.Secondary>
+            ) : (
+              <>
+                <DropdownMenu>
+                  <DropdownMenu.Trigger>
+                    <Button.Icon type="button" aria-label="Service actions" tooltip="More actions" icon={moreIcon} />
+                  </DropdownMenu.Trigger>
+                  <DropdownMenu.Items>
+                    <DropdownMenu.Item id="power-off">Power off service</DropdownMenu.Item>
+                    <DropdownMenu.Item id="delete">Delete service</DropdownMenu.Item>
+                  </DropdownMenu.Items>
+                </DropdownMenu>
+                <Button.Secondary type="button" onClick={() => undefined}>
+                  Open support ticket
+                </Button.Secondary>
+              </>
+            )}
           </Box>
         </Box>
 
@@ -204,46 +198,31 @@ export function OpenSearchServiceShell({
         {stopNotice ? (
           <Box style={{ marginBottom: 16 }}>
             <Alert type="success" onDismiss={() => setStopNotice(false)}>
-              Vector search demo stopped. Its index and pipeline are still on the service. Thanks for the feedback.
+              RAG demo deleted. Its index and pipeline are still on the service. Thanks for the feedback.
             </Alert>
           </Box>
         ) : null}
 
         {active === 'overview' ? (
           <>
-            {demoAvailable ? (
-              <Box style={{ marginBottom: 24 }}>
-                <Grid gap="6">
-                  {demoActive ? (
-                    <Grid.Item xs={12} md={6}>
-                      <VectorDemoStatusCard {...demoCardProps} />
-                    </Grid.Item>
-                  ) : (
-                    <Grid.Item xs={12} sm={6} md={4}>
-                      <VectorDemoSetupCard stopped={demo.status === 'stopped'} onGenerate={() => openDemo()} />
-                    </Grid.Item>
-                  )}
-                </Grid>
-              </Box>
-            ) : hasVectorDemo ? (
-              <Box style={{ marginBottom: 24 }}>
-                <Card
-                  fullWidth
-                  title="Vector search demo"
-                  chips={[{ text: 'Available once running', status: 'neutral' }]}
-                >
-                  <Typography.Small color="muted">
-                    This service includes a guided vector search demo. You can start it here as soon
-                    as the service is running.
-                  </Typography.Small>
-                </Card>
-              </Box>
-            ) : null}
-            <OpenSearchOverview service={service} onChangePlan={() => undefined} onQuickConnect={() => undefined} />
+            <OpenSearchOverview
+              service={service}
+              leading={
+                !hasVectorDemo ? undefined : !demoAvailable ? (
+                  <VectorDemoSetupCard pending onGenerate={() => undefined} />
+                ) : demoActive ? (
+                  <VectorDemoStatusCard {...demoCardProps} />
+                ) : (
+                  <VectorDemoSetupCard stopped={demo.status === 'stopped'} onGenerate={() => openDemo()} />
+                )
+              }
+              onChangePlan={() => undefined}
+              onQuickConnect={() => undefined}
+            />
           </>
         ) : active === 'vector-search-demo' && demoActive ? (
           demo.status === 'ready' ? (
-            <VectorDemoPage demo={demo} onStop={requestStop} />
+            <VectorDemoPage demo={demo} />
           ) : (
             <VectorDemoStatusCard detailed {...demoCardProps} />
           )

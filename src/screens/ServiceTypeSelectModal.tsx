@@ -16,13 +16,13 @@ export type ServiceTypeId =
   | 'flink'
   | 'm3db'
 
-type ServiceTypeOption = {
+export type ServiceTypeOption = {
   id: ServiceTypeId
   name: string
   description: string
 }
 
-const SERVICE_TYPES: ServiceTypeOption[] = [
+export const SERVICE_TYPES: ServiceTypeOption[] = [
   { id: 'postgresql', name: 'PostgreSQL®',      description: 'PostgreSQL - High-performance relational database with advanced extensions' },
   { id: 'kafka',      name: 'Apache Kafka®',    description: 'Kafka - Distributed event streaming platform for high-throughput data pipelines' },
   { id: 'valkey',     name: 'Valkey',           description: 'Valkey - High-performance key/value datastore' },

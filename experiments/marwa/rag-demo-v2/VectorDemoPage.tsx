@@ -1,18 +1,16 @@
 'use client'
 
 import { useCallback } from 'react'
-import { Box, Section, Tabs } from '@aivenio/aquarium'
+import { Section } from '@aivenio/aquarium'
 import { QueryResults } from './QueryResults'
-import { ResultsExplained } from './ResultsExplained'
-import { DEMO_RESOURCES, defaultQueryFor, formatCount, sourceLabel, type SearchMode } from './ragDemo'
+import { DEMO_RESOURCES, formatCount, sourceLabel, type SearchMode } from './ragDemo'
 import type { VectorDemo } from './useVectorDemo'
-import styles from './VectorDemoPage.module.css'
 
 /**
  * The running demo, opened with View demo at the end of setup (or from the sidebar
- * and Overview shortcuts). Search and Results explained are peer tabs.
+ * and Overview shortcuts). Results explained is a switch beside the results.
  */
-export function VectorDemoPage({ demo, onStop }: { demo: VectorDemo; onStop: () => void }) {
+export function VectorDemoPage({ demo }: { demo: VectorDemo }) {
   const { source, plan, setQuery, setMode, setView } = demo
 
   const handleQueryChange = useCallback(
@@ -24,37 +22,21 @@ export function VectorDemoPage({ demo, onStop }: { demo: VectorDemo; onStop: () 
   )
 
   if (!source || !plan) return null
-  const query = demo.query || defaultQueryFor(source)
+  const query = demo.query.trim()
 
   return (
     <Section
-      title="Vector search demo"
+      title="RAG demo"
       subtitle={`${sourceLabel(source)} · ${DEMO_RESOURCES.indexName} · ${formatCount(plan.documents)} ${source.kind === 'upload' ? 'files' : 'documents'} · ${formatCount(plan.chunks)} chunks`}
-      actions={{ text: 'Stop demo', onClick: onStop }}
     >
-      <Box className={styles.demoTabs}>
-        <Tabs value={demo.view} onChange={(value) => setView(value === 'explained' ? 'explained' : 'query')}>
-        <Tabs.Tab title="Search your data" value="query">
-          <Box paddingTop="6">
-            <QueryResults
-              source={source}
-              initialQuery={query}
-              initialMode={demo.mode}
-              onQueryChange={handleQueryChange}
-              onExplain={(nextQuery, nextMode) => {
-                handleQueryChange(nextQuery, nextMode)
-                setView('explained')
-              }}
-            />
-          </Box>
-        </Tabs.Tab>
-        <Tabs.Tab title="Results explained" value="explained">
-          <Box paddingTop="6">
-            <ResultsExplained source={source} query={query} mode={demo.mode} />
-          </Box>
-        </Tabs.Tab>
-        </Tabs>
-      </Box>
+      <QueryResults
+        source={source}
+        initialQuery={query || undefined}
+        initialMode={demo.mode}
+        onQueryChange={handleQueryChange}
+        explained={demo.view === 'explained'}
+        onExplainedChange={(on) => setView(on ? 'explained' : 'query')}
+      />
     </Section>
   )
 }

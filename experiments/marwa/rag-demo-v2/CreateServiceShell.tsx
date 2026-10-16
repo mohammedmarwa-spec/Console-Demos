@@ -2,13 +2,18 @@
 
 import { useEffect, useRef, useState } from 'react'
 import { Modal, Typography } from '@aivenio/aquarium'
-import CreateService, { type CreatedServicePayload } from '@/screens/CreateService'
+import CreateService, { type CreatedServicePayload, type TierFeature } from '@/screens/CreateService'
 import ServiceTypeSelectModal, {
   getServiceTypeDisplayName,
   type ServiceTypeId,
 } from '@/screens/ServiceTypeSelectModal'
 import type { ServiceRow } from '@/screens/ProjectServices'
-import { OpenSearchDemoCallout } from './OpenSearchDemoCallout'
+
+const VECTOR_DEMO_TIER_FEATURES: TierFeature[] = [
+  { text: 'Includes RAG demo', icon: 'tick' },
+  { text: 'Embedding and LLM models already chosen', icon: 'tick' },
+  { text: 'Demo appears on the service Overview once running', icon: 'tick' },
+]
 
 /**
  * Console Create service shell: Select service type (full Modal) → Create {type}
@@ -114,7 +119,10 @@ export function CreateServiceShell({
     onClose()
   }
 
-  const showDemoCallout = selectedType === 'opensearch'
+  const demoTierFeatures =
+    selectedType === 'opensearch'
+      ? { free: VECTOR_DEMO_TIER_FEATURES, developer: VECTOR_DEMO_TIER_FEATURES }
+      : undefined
 
   return (
     <>
@@ -148,7 +156,7 @@ export function CreateServiceShell({
             onClose={handleCancelCreate}
             onCreateSuccess={handleCreateSuccess}
             submitRef={submitRef}
-            afterServiceTier={showDemoCallout ? <OpenSearchDemoCallout /> : null}
+            extraTierFeatures={demoTierFeatures}
           />
         ) : null}
       </Modal>

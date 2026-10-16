@@ -10,39 +10,87 @@ import { formatBytes } from './DemoSetup'
 import { DEMO_RESOURCES, PREP_STAGES, formatCount, sourceLabel, stageLabel, stageTotal } from './ragDemo'
 import type { VectorDemo } from './useVectorDemo'
 
-/**
- * Port of Console's `KafkaStartStreamCardWrapper` / `KafkaDataGeneratorSetupCard`:
- * illustration on `primary-active`, DefaultStrong title, Small description, ghost CTA.
- */
-export function VectorDemoSetupCard({ onGenerate, stopped = false }: { onGenerate: () => void; stopped?: boolean }) {
+export function VectorDemoSetupCard({
+  onGenerate,
+  stopped = false,
+  pending = false,
+}: {
+  onGenerate: () => void
+  stopped?: boolean
+  /** Service isn't running yet: same card, Generate demo disabled. */
+  pending?: boolean
+}) {
   return (
-    <Box.Flex flexDirection="column" borderRadius={6} borderWidth={1} borderColor="muted" height="full" style={{ overflowY: 'hidden' }}>
-      <Box backgroundColor="primary-active">
-        <img src={imageSrc(vectorDemoCardImg)} alt="Vector search demo" style={{ width: '100%', height: 'auto', display: 'block' }} />
-      </Box>
-      <Box.Flex
-        flexDirection="column"
-        paddingX="l2"
-        paddingTop="l2"
-        paddingBottom="5"
-        alignItems="flex-start"
-        justifyContent="space-between"
-        height="full"
-        gap="3"
-        component="section"
-      >
-        <Box>
-          <Typography.DefaultStrong color="intense">Try the vector search demo</Typography.DefaultStrong>
-          <Typography.Small>
-            {stopped
-              ? `Demo stopped. Its index ${DEMO_RESOURCES.indexName} is still on the service — generate a new demo any time.`
-              : 'Search sample data or your own .txt files with keyword, semantic, and hybrid queries.'}
+    <IllustratedCardFrame>
+      <CardIllustration
+        chip={pending ? <StatusChip dense status="info" text="Pending till service created" /> : null}
+      />
+      <Box.Flex flexDirection="column" alignItems="flex-start" gap="5" padding="5" component="section">
+        <Box.Flex flexDirection="column" gap="2">
+          <Typography.DefaultStrong color="intense">Try the RAG demo</Typography.DefaultStrong>
+          <Typography.Small color="muted">
+            {pending
+              ? 'Start it here once the service is running.'
+              : stopped
+                ? `Demo deleted. The ${DEMO_RESOURCES.indexName} index stays on the service.`
+                : 'Ask questions about sample data or your own files.'}
           </Typography.Small>
-        </Box>
-        <Button.Ghost dense type="button" icon={arrowRight} iconPlacement="right" onClick={onGenerate}>
+        </Box.Flex>
+        <Button.Ghost
+          dense
+          type="button"
+          icon={arrowRight}
+          iconPlacement="right"
+          disabled={pending}
+          onClick={onGenerate}
+        >
           Generate demo
         </Button.Ghost>
       </Box.Flex>
+    </IllustratedCardFrame>
+  )
+}
+
+function IllustratedCardFrame({ children }: { children: ReactNode }) {
+  return (
+    <Box.Flex
+      flexDirection="column"
+      borderRadius={6}
+      borderWidth={1}
+      borderColor="muted"
+      height="full"
+      style={{ overflow: 'hidden' }}
+    >
+      {children}
+    </Box.Flex>
+  )
+}
+
+/** Card image area. `dimmed` greys the image out while the demo is not usable yet. */
+function CardIllustration({ chip, dimmed = false }: { chip?: ReactNode; dimmed?: boolean }) {
+  return (
+    <Box.Flex
+      backgroundColor="primary-active"
+      justifyContent="center"
+      alignItems="center"
+      paddingY="3"
+      grow={1}
+      style={{ minHeight: 136, position: 'relative' }}
+    >
+      {chip ? <Box style={{ position: 'absolute', top: 12, left: 12, zIndex: 1 }}>{chip}</Box> : null}
+      <img
+        src={imageSrc(vectorDemoCardImg)}
+        alt=""
+        style={{
+          height: 168,
+          maxHeight: '100%',
+          maxWidth: '100%',
+          width: 'auto',
+          display: 'block',
+          opacity: dimmed ? 0.4 : 1,
+          filter: dimmed ? 'grayscale(1)' : undefined,
+        }}
+      />
     </Box.Flex>
   )
 }
@@ -58,27 +106,48 @@ function StatusCardWrapper({
 }: {
   chipStatus: 'info' | 'success' | 'danger'
   statusText: string
-  statusInfoText: string
+  statusInfoText?: string
   body: ReactNode
   actions: ReactNode
   fill: boolean
 }) {
   return (
-    <Box backgroundColor="body" borderColor="muted" borderWidth={1} borderRadius={2} height={fill ? 'full' : undefined}>
-      <Box.Flex paddingX="5" paddingTop="4" paddingBottom="3" justifyContent="space-between" alignItems="center" gap="3">
+    <Box.Flex
+      flexDirection="column"
+      backgroundColor="body"
+      borderColor="muted"
+      borderWidth={1}
+      borderRadius={2}
+      height={fill ? 'full' : undefined}
+    >
+      <Box.Flex
+        paddingX="5"
+        paddingTop="4"
+        paddingBottom="3"
+        justifyContent="space-between"
+        alignItems="center"
+        gap="3"
+      >
         <Box.Flex alignItems="center" gap="3">
-          <Typography.DefaultStrong>Vector search demo</Typography.DefaultStrong>
+          <Typography.DefaultStrong>RAG demo</Typography.DefaultStrong>
           <StatusChip status={chipStatus} text={statusText} dense />
         </Box.Flex>
-        <Typography.Small color="muted">{statusInfoText}</Typography.Small>
+        {statusInfoText ? <Typography.Small color="muted">{statusInfoText}</Typography.Small> : null}
       </Box.Flex>
       <Box paddingX="5" paddingBottom="4">
         {body}
       </Box>
-      <Box.Flex paddingX="5" paddingBottom="4" gap="4" alignItems="center" flexWrap="wrap">
+      <Box.Flex
+        paddingX="5"
+        paddingBottom="4"
+        gap="4"
+        alignItems="center"
+        flexWrap="wrap"
+        style={{ marginTop: 'auto' }}
+      >
         {actions}
       </Box.Flex>
-    </Box>
+    </Box.Flex>
   )
 }
 
@@ -125,14 +194,13 @@ export function VectorDemoStatusCard({
       <StatusCardWrapper
         fill={!detailed}
         chipStatus="success"
-        statusText="Running"
-        statusInfoText={sourceLabel(source)}
+        statusText="Ready"
         body={
           <Box.Flex flexDirection="column" gap="4">
             <Typography.Small color="muted">
-              Your data is indexed. Ask questions and compare keyword, semantic, and hybrid results.
+              {sourceLabel(source)} is indexed. Ask questions and compare keyword, semantic, and hybrid results.
             </Typography.Small>
-            <Box style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))', gap: 16 }}>
+            <Box style={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: 16 }}>
               <Stat label="Index" value={DEMO_RESOURCES.indexName} />
               <Stat label={source.kind === 'upload' ? 'Files' : 'Documents'} value={formatCount(plan.documents)} />
               <Stat label="Chunks" value={formatCount(plan.chunks)} />
@@ -141,16 +209,37 @@ export function VectorDemoStatusCard({
           </Box.Flex>
         }
         actions={
-          <>
-            <Button dense type="button" onClick={onSearch}>
-              Search your data
-            </Button>
-            <Button.Ghost dense type="button" onClick={onStop}>
-              Stop demo
-            </Button.Ghost>
-          </>
+          <Button dense type="button" onClick={onSearch}>
+            Search data
+          </Button>
         }
       />
+    )
+  }
+
+  if (status === 'preparing' && !detailed) {
+    return (
+      <IllustratedCardFrame>
+        <CardIllustration dimmed chip={<StatusChip dense status="info" text="Setting up" />} />
+        <Box.Flex flexDirection="column" alignItems="flex-start" gap="5" padding="5" component="section">
+          <Box.Flex flexDirection="column" gap="2" width="full">
+            <Typography.DefaultStrong color="intense">Setting up the RAG demo</Typography.DefaultStrong>
+            <Typography.Small color="muted">{currentStageSummary(source, plan, progress, stageIndex)}</Typography.Small>
+            <ProgressBar
+              dense
+              value={overall}
+              min={0}
+              max={100}
+              progresStatus="info"
+              completedStatus="success"
+              aria-label="Demo setup progress"
+            />
+          </Box.Flex>
+          <Button.Ghost dense type="button" icon={arrowRight} iconPlacement="right" onClick={onOpen}>
+            View progress
+          </Button.Ghost>
+        </Box.Flex>
+      </IllustratedCardFrame>
     )
   }
 
@@ -172,10 +261,25 @@ export function VectorDemoStatusCard({
               Amazon Bedrock didn’t return embeddings for some chunks. Earlier stages are complete.
             </Alert>
           ) : (
-            <ProgressBar dense value={overall} min={0} max={100} progresStatus="info" completedStatus="success" aria-label="Demo setup progress" />
+            <ProgressBar
+              dense
+              value={overall}
+              min={0}
+              max={100}
+              progresStatus="info"
+              completedStatus="success"
+              aria-label="Demo setup progress"
+            />
           )}
           {detailed ? (
-            <PrepStageList source={source} plan={plan} progress={progress} stageIndex={stageIndex} failed={failed} showBar={false} />
+            <PrepStageList
+              source={source}
+              plan={plan}
+              progress={progress}
+              stageIndex={stageIndex}
+              failed={failed}
+              showBar={false}
+            />
           ) : null}
         </Box.Flex>
       }
@@ -184,9 +288,11 @@ export function VectorDemoStatusCard({
           <Button.Secondary dense type="button" onClick={onOpen}>
             View progress
           </Button.Secondary>
-          <Button.Ghost dense type="button" onClick={onStop}>
-            Stop demo
-          </Button.Ghost>
+          {failed ? (
+            <Button.Ghost dense type="button" onClick={onStop}>
+              Delete demo
+            </Button.Ghost>
+          ) : null}
         </>
       }
     />

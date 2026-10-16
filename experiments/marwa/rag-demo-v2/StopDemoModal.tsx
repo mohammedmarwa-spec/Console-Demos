@@ -43,13 +43,13 @@ export function StopDemoModal({
     <Modal
       open={open}
       size="sm"
-      title="Stop vector search demo?"
+      title="Delete RAG demo?"
       onClose={() => {
         reset()
         onCancel()
       }}
       primaryAction={{
-        text: 'Stop demo',
+        text: 'Delete demo',
         onClick: () => {
           onConfirm({ rating, comment: comment.trim() })
           reset()
@@ -67,7 +67,7 @@ export function StopDemoModal({
     >
       <Box.Flex flexDirection="column" gap="5">
         <Typography.Default>
-          The demo stops and its shortcuts leave the Overview. Your OpenSearch service keeps running.
+          The demo is deleted and its shortcuts leave the Overview. Your OpenSearch service keeps running.
         </Typography.Default>
 
         <Box>

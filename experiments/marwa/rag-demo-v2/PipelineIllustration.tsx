@@ -27,25 +27,29 @@ type Node = {
   detail?: ReactNode
 }
 
+const CIRCLE = 32
+
 function PipelineNode({ icon, color, label, detail }: Node) {
   return (
-    <Box.Flex flexDirection="column" alignItems="center" gap="2" style={{ flex: '1 1 0', minWidth: 0, textAlign: 'center' }}>
+    <Box.Flex alignItems="center" gap="3" style={{ minWidth: 0 }}>
       <Box.Flex
         alignItems="center"
         justifyContent="center"
         style={{
-          width: 40,
-          height: 40,
+          width: CIRCLE,
+          height: CIRCLE,
           flexShrink: 0,
           borderRadius: '50%',
           backgroundColor: color,
           color: 'var(--aquarium-colors-white)',
         }}
       >
-        <Icon icon={icon} width={20} height={20} />
+        <Icon icon={icon} width={16} height={16} />
       </Box.Flex>
-      <Typography.SmallStrong color="intense">{label}</Typography.SmallStrong>
-      {detail}
+      <Box.Flex alignItems="center" flexWrap="wrap" gap="3" style={{ minWidth: 0 }}>
+        <Typography.SmallStrong color="white">{label}</Typography.SmallStrong>
+        {detail}
+      </Box.Flex>
     </Box.Flex>
   )
 }
@@ -54,7 +58,7 @@ function Connector() {
   return (
     <Box
       aria-hidden
-      style={{ flex: '0 1 40px', minWidth: 12, marginTop: 20, borderTop: `1.5px dashed ${COLOR.teal}` }}
+      style={{ height: 10, marginLeft: CIRCLE / 2 - 0.75, borderLeft: `1.5px dashed ${COLOR.teal}` }}
     />
   )
 }
@@ -65,37 +69,33 @@ const NODES: Node[] = [
     icon: databaseIcon,
     color: COLOR.lilac,
     label: 'Embedded',
-    detail: <Chip dense locked text={RAG_EMBEDDING_MODEL_SHORT} />,
+    detail: <Chip dense text={RAG_EMBEDDING_MODEL_SHORT} />,
   },
   { icon: searchIcon, color: COLOR.teal, label: 'Indexed in OpenSearch' },
   {
     icon: lightbulbIcon,
     color: COLOR.magenta,
     label: 'Answer with sources',
-    detail: <Chip dense locked text={RAG_LLM_MODEL_SHORT} />,
+    detail: <Chip dense text={RAG_LLM_MODEL_SHORT} />,
   },
 ]
 
-/** How the demo works in four stages. Locked model chips sit at the stage that uses each model. */
+/** How the demo works in four stages, top to bottom. Locked model chips sit at the stage that uses each model. */
 export function PipelineIllustration() {
   return (
-    <Box
+    <Box.Flex
+      flexDirection="column"
+      gap="1"
       role="img"
       aria-label={`Your documents are split into chunks, embedded with ${RAG_EMBEDDING_MODEL} and indexed in OpenSearch. Your question retrieves the closest chunks and ${RAG_LLM_MODEL} writes the answer with sources.`}
-      backgroundColor="primary-active"
-      borderRadius={4}
-      paddingX="5"
-      paddingY="5"
     >
-      <Box.Flex alignItems="flex-start" gap="1">
-        {NODES.map((node, index) => (
-          <Fragment key={node.label}>
-            {index > 0 ? <Connector /> : null}
-            <PipelineNode {...node} />
-          </Fragment>
-        ))}
-      </Box.Flex>
-    </Box>
+      {NODES.map((node, index) => (
+        <Fragment key={node.label}>
+          {index > 0 ? <Connector /> : null}
+          <PipelineNode {...node} />
+        </Fragment>
+      ))}
+    </Box.Flex>
   )
 }
 

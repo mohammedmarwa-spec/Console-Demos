@@ -23,6 +23,7 @@ export type QuerySource = {
   score: number
 }
 
+/** Answer text with `{sourceId}` markers where a claim cites a source. */
 export type QueryBundle = {
   answer: string
   modeSummary: string
@@ -39,7 +40,6 @@ export const QUERY_EXAMPLES: Record<string, string[]> = {
   ecommerce: ['out of stock', 'shipping delay', 'return policy'],
   devops: ['system bottlenecks', 'speed', 'responsiveness'],
   faq: ['password reset', 'billing charge', 'cancel subscription'],
-  docs: ['authentication', 'rate limits', 'webhooks'],
   upload: ['system bottlenecks', 'speed', 'responsiveness'],
 }
 
@@ -124,14 +124,16 @@ export function defaultQueryFor(source: DemoDataSource): string {
 }
 
 export function runMockQuery(source: DemoDataSource, mode: SearchMode, query: string): QueryBundle {
-  const label = sourceLabel(source)
   const q = query.trim() || defaultQueryFor(source)
   const sources = orderForMode(DEVOPS_SOURCES, mode)
 
   const answers: Record<SearchMode, string> = {
-    keyword: `Keyword search over ${label} looked for the words in “${q}”. Top hits mention those terms directly (response times, Git clone, scans) rather than the broader idea of a bottleneck.`,
-    semantic: `The main bottlenecks in ${label} are connection pool exhaustion under concurrency, a blocked event loop from synchronous JSON parsing, and I/O threads stuck waiting on heavy writes. Those match the meaning of “${q}”, not just the words.`,
-    hybrid: `Hybrid search mixed exact terms from “${q}” with meaning. Pool exhaustion and clone-storm latency both rank highly: one matches the concept, the other matches the words “response times”.`,
+    keyword:
+      'API response times climb when nightly CI Git clones saturate the shared disk {912}. Requests also start failing with 503s once about 80 clients share one connection pool {552}, and an unindexed report scan backs up workers during peak hours {24594}.',
+    semantic:
+      'Three issues cause most of the slowdowns. Connection pools run out under high concurrency, so requests time out {552}. Large JSON bodies parsed on the main thread block the event loop and raise p99 latency {108}. Heavy write batches leave I/O threads waiting on fsync {442}.',
+    hybrid:
+      'Most slowdowns come from connection pool exhaustion under high concurrency {552} and CI clone storms competing with the API for disk {912}. Synchronous JSON parsing on the main thread adds p99 latency on top {108}.',
   }
 
   const summaries: Record<SearchMode, string> = {
@@ -179,10 +181,13 @@ export type DemoDraft = {
   chunkSizeId: ChunkSizeId
 }
 
+/** Chunk size is predefined for every dataset, including uploads. */
+export const DEMO_CHUNK_SIZE_ID: ChunkSizeId = 'medium'
+
 export const INITIAL_DEMO_DRAFT: DemoDraft = {
-  selection: null,
+  selection: 'ecommerce',
   files: [],
-  chunkSizeId: 'medium',
+  chunkSizeId: DEMO_CHUNK_SIZE_ID,
 }
 
 export function draftToSource(draft: DemoDraft): DemoDataSource | null {
@@ -265,7 +270,6 @@ export const DATA_TEMPLATES: {
     description: 'Product names, descriptions, and FAQs from a sample store catalog.',
     documents: 180,
     bytes: 2.4 * 1024 * 1024,
-    chips: [{ text: 'Sample', status: 'info' }],
   },
   {
     id: 'devops',
@@ -280,13 +284,6 @@ export const DATA_TEMPLATES: {
     description: 'Customer questions and answers from a support knowledge base.',
     documents: 300,
     bytes: 0.9 * 1024 * 1024,
-  },
-  {
-    id: 'docs',
-    title: 'Technical docs',
-    description: 'API reference snippets and how-to pages from a product manual.',
-    documents: 150,
-    bytes: 3.1 * 1024 * 1024,
   },
 ]
 

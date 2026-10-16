@@ -157,10 +157,15 @@ function CpuMiniChart() {
 
 export function OpenSearchOverview({
   service,
+  leading,
+  leadingWidth = 280,
   onChangePlan,
   onQuickConnect,
 }: {
   service: ServiceRow
+  /** Shown left of Connection information, stretched to the same height (Console Kafka overview layout). */
+  leading?: React.ReactNode
+  leadingWidth?: number | string
   onChangePlan?: () => void
   onQuickConnect?: () => void
 }) {
@@ -174,9 +179,7 @@ export function OpenSearchOverview({
     ? `https://avnadmin:a1v3n-dem0-p4ssw0rd@${host}:${port}`
     : `https://CLICK_TO:REVEAL_PASSWORD@${host}:${port}`
 
-  return (
-    <Box style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-      {/* Connection information */}
+  const connectionInfo = (
       <Section
         title="Connection information"
         actions={{ text: 'Quick connect', onClick: () => onQuickConnect?.() }}
@@ -211,6 +214,20 @@ export function OpenSearchOverview({
           />
         </Box>
       </Section>
+  )
+
+  return (
+    <Box style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+      {leading ? (
+        <Box style={{ display: 'flex', gap: 16, flexWrap: 'wrap', alignItems: 'stretch' }}>
+          <Box style={{ flex: `0 1 ${typeof leadingWidth === 'number' ? `${leadingWidth}px` : leadingWidth}`, minWidth: 260 }}>
+            {leading}
+          </Box>
+          <Box style={{ flex: '1 1 320px', minWidth: 0 }}>{connectionInfo}</Box>
+        </Box>
+      ) : (
+        connectionInfo
+      )}
 
       {/* Service plan usage */}
       <Section

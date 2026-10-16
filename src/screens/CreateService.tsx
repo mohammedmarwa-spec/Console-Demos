@@ -67,7 +67,7 @@ const HA_NODE_COUNT: Record<HaOption, number> = {
 
 // ─── Service config types ─────────────────────────────────────────────────────
 
-type TierFeature = { text: string; icon: 'tick' | 'info' }
+export type TierFeature = { text: string; icon: 'tick' | 'info' }
 
 type TierOption = {
   id: ServiceTier
@@ -680,6 +680,8 @@ export type CreateServiceProps = {
   submitRef?: React.MutableRefObject<(() => void) | undefined>
   /** Optional experiment slot rendered after Service tier, before Cloud. */
   afterServiceTier?: React.ReactNode
+  /** Optional experiment points appended to the matching Service tier cards. */
+  extraTierFeatures?: Partial<Record<ServiceTier, TierFeature[]>>
 }
 
 // ─── Main component ───────────────────────────────────────────────────────────
@@ -694,6 +696,7 @@ function CreateService({
   onCreateSuccess,
   submitRef,
   afterServiceTier,
+  extraTierFeatures,
 }: CreateServiceProps) {
   const config = useMemo(() => getServiceConfig(serviceTypeId), [serviceTypeId])
 
@@ -1003,7 +1006,14 @@ function CreateService({
             >
               <Box className="create-service-tier-cards">
                 {config.tiers.map((opt) => (
-                  <TierCard key={opt.id} option={opt} />
+                  <TierCard
+                    key={opt.id}
+                    option={
+                      extraTierFeatures?.[opt.id]
+                        ? { ...opt, features: [...opt.features, ...extraTierFeatures[opt.id]!] }
+                        : opt
+                    }
+                  />
                 ))}
               </Box>
             </Card.Group>

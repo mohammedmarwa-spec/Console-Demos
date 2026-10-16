@@ -1,6 +1,6 @@
 'use client'
 
-import { Alert, Box } from '@aivenio/aquarium'
+import { Alert, Box, Typography } from '@aivenio/aquarium'
 import { StepWrapper } from './StepWrapper'
 import { PrepStageList } from './PrepStageList'
 import {
@@ -36,14 +36,18 @@ export function PreparingData({
   onRetry: () => void
 }) {
   return (
-    <StepWrapper
-      description={
-        ready
-          ? `${sourceLabel(source)} is chunked, embedded, and indexed.`
-          : `Chunking, embedding, and indexing ${sourceLabel(source)}. You can close this window — setup keeps running and progress shows on the service Overview.`
-      }
-    >
+    <StepWrapper>
       <Box.Flex flexDirection="column" gap="5">
+        {ready ? (
+          <Typography.Default color="muted">{sourceLabel(source)} is chunked, embedded, and indexed.</Typography.Default>
+        ) : (
+          <>
+            <Typography.Subheading>
+              You can close this window — setup keeps running and progress shows on the service Overview.
+            </Typography.Subheading>
+            <Typography.Default color="muted">Chunking, embedding, and indexing {sourceLabel(source)}.</Typography.Default>
+          </>
+        )}
         {ready ? (
           <Alert type="success" title="Your demo is ready">
             {formatCount(plan.chunks)} chunks are indexed in {DEMO_RESOURCES.indexName}. Select View demo to
