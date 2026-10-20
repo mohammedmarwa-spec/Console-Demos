@@ -189,6 +189,31 @@ export function VectorDemoStatusCard({
       100,
   )
 
+  if (status === 'ready' && !detailed) {
+    return (
+      <IllustratedCardFrame>
+        <CardIllustration chip={<StatusChip dense status="success" text="Ready" />} />
+        <Box.Flex flexDirection="column" alignItems="flex-start" gap="4" padding="5" component="section">
+          <Box.Flex flexDirection="column" gap="2">
+            <Typography.DefaultStrong color="intense">RAG demo</Typography.DefaultStrong>
+            <Typography.Small color="default">
+              {sourceLabel(source)} is indexed. Ask questions and compare keyword, semantic, and hybrid results.
+            </Typography.Small>
+          </Box.Flex>
+          <Box style={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: 12, width: '100%' }}>
+            <Stat label="Index" value={DEMO_RESOURCES.indexName} />
+            <Stat label={source.kind === 'upload' ? 'Files' : 'Documents'} value={formatCount(plan.documents)} />
+            <Stat label="Chunks" value={formatCount(plan.chunks)} />
+            <Stat label="Storage" value={`~${formatBytes(plan.storageBytes)}`} />
+          </Box>
+          <Button dense type="button" onClick={onSearch}>
+            Search data
+          </Button>
+        </Box.Flex>
+      </IllustratedCardFrame>
+    )
+  }
+
   if (status === 'ready') {
     return (
       <StatusCardWrapper

@@ -2,6 +2,7 @@
 FROM node:22-alpine AS build
 WORKDIR /app
 RUN apk add --no-cache git
+ENV HUSKY=0 NEXT_TELEMETRY_DISABLED=1
 COPY package.json package-lock.json ./
 RUN npm ci
 COPY . .
