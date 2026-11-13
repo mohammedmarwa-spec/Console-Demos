@@ -1,14 +1,17 @@
 'use client'
 
-import { useState } from 'react'
-import { Box, Button, Combobox, InlineIcon, Input, Modal, RadioButton, RadioButtonGroup, StatusChip, Typography } from '@aivenio/aquarium'
+import { useState, type ReactNode } from 'react'
+import { Box, Button, Combobox, Divider, InlineIcon, Modal, RadioButton, RadioButtonGroup, StatusChip, Typography } from '@aivenio/aquarium'
 import power from '@aivenio/aquarium/icons/power'
 import tickCircle from '@aivenio/aquarium/icons/tickCircle'
 import { ServiceIcon } from '@/components/ServiceIcon'
-import { formatUsd, routeFor, transferRate } from './backupCost'
+import { RateLine } from './AddSecondaryBackupModal'
+import { routeFor, TRANSFER_RATE_DIFFERENT, TRANSFER_RATE_SAME, transferRate } from './backupCost'
 import { PRIMARY_LOCATION, PROJECT_NAME, SERVICE_NAME } from './backupsData'
 
 type FollowerType = 'existing' | 'new'
+
+const BYOC_CCR_FEE = 40
 
 type NamedOption = { value: string; label: string }
 
@@ -31,7 +34,82 @@ const SERVICE_OPTIONS: ServiceOption[] = [
   { value: 'archive-os', label: 'archive-os', version: '3.6', region: 'google-europe-west4', poweredOn: false },
 ]
 
-const DEFAULT_REPLICATION_GB = '50'
+function CostCard({ children }: { children: ReactNode }) {
+  return (
+    <Box
+      backgroundColor="body"
+      borderColor="muted"
+      borderWidth={1}
+      padding="5"
+      borderRadius={8}
+      style={{ display: 'flex', flexDirection: 'column', gap: 16 }}
+    >
+      {children}
+    </Box>
+  )
+}
+
+/** Network rates only. The follower region is chosen on the next screen, so both continents are shown. */
+function NewFollowerNetworkCost() {
+  return (
+    <Box.Flex flexDirection="column" marginTop="2">
+      <CostCard>
+        <Box.Flex flexDirection="column" gap="2">
+          <Typography.DefaultStrong>Estimated additional cost per month</Typography.DefaultStrong>
+          <Typography.Small color="muted">
+            You are billed for actual usage at these rates. The rate depends on the follower region you choose next.
+          </Typography.Small>
+        </Box.Flex>
+        <Divider />
+        <Typography.Small color="muted">
+          The follower cluster runs on its own service plan and is billed separately.
+        </Typography.Small>
+        <RateLine
+          label="Same continent"
+          detail="Follower region on the same continent as the leader."
+          rate={`$${TRANSFER_RATE_SAME.toFixed(2)}`}
+          unit="per GB replicated"
+        />
+        <RateLine
+          label="Different continent"
+          detail="Follower region on a different continent from the leader."
+          rate={`$${TRANSFER_RATE_DIFFERENT.toFixed(2)}`}
+          unit="per GB replicated"
+        />
+      </CostCard>
+    </Box.Flex>
+  )
+}
+
+function ByocFollowerCost() {
+  return (
+    <Box.Flex flexDirection="column">
+      <CostCard>
+        <Box.Flex justifyContent="space-between" alignItems="flex-start" gap="4">
+          <Box.Flex flexDirection="column" gap="2">
+            <Typography.DefaultStrong>Estimated additional cost</Typography.DefaultStrong>
+            <Typography.Small color="muted">
+              A fixed monthly price. No replication transfer charges from Aiven.
+            </Typography.Small>
+          </Box.Flex>
+          <StatusChip status="primary" text="BYOC" />
+        </Box.Flex>
+        <Divider />
+        <RateLine
+          label="CCR orchestration fee"
+          detail="Charged for each follower service."
+          rate={`$${BYOC_CCR_FEE}`}
+          unit="per service / month"
+        />
+        <Divider />
+        <Box.Flex justifyContent="space-between" alignItems="baseline" gap="4">
+          <Typography.DefaultStrong>Fixed monthly total</Typography.DefaultStrong>
+          <Typography.LargeStrong>{`$${BYOC_CCR_FEE.toFixed(2)}`}</Typography.LargeStrong>
+        </Box.Flex>
+      </CostCard>
+    </Box.Flex>
+  )
+}
 
 function serviceLabel(option: ServiceOption | null): string {
   if (!option) return ''
@@ -40,48 +118,68 @@ function serviceLabel(option: ServiceOption | null): string {
   return `${option.label} · ${option.region} · ${route}${power}`
 }
 
-export function CreateFollowerModal({ open, onClose }: { open: boolean; onClose: () => void }) {
+export function CreateFollowerModal({
+  open,
+  onClose,
+  byoc = false,
+}: {
+  open: boolean
+  onClose: () => void
+  byoc?: boolean
+}) {
   const [followerType, setFollowerType] = useState<FollowerType>('existing')
   const [project, setProject] = useState<NamedOption | null>(PROJECT_OPTIONS[0])
   const [service, setService] = useState<ServiceOption | null>(null)
-  const [replicationGb, setReplicationGb] = useState(DEFAULT_REPLICATION_GB)
 
   function close() {
     setFollowerType('existing')
     setProject(PROJECT_OPTIONS[0])
     setService(null)
-    setReplicationGb(DEFAULT_REPLICATION_GB)
     onClose()
   }
 
   const isExisting = followerType === 'existing'
   const route = service ? routeFor(service.region, PRIMARY_LOCATION, false) : null
-  const gigabytes = Number(replicationGb)
-  const volume = Number.isFinite(gigabytes) && gigabytes > 0 ? gigabytes : 0
-  const transferCents = route ? Math.round(volume * transferRate(route.different) * 100) : 0
 
   return (
     <Modal
       open={open}
       onClose={close}
       size="sm"
-      title={`Create follower for ${SERVICE_NAME}`}
+      title={byoc ? 'Enable CCR' : `Create follower for ${SERVICE_NAME}`}
+      subtitle={
+        byoc ? (
+          <Box.Flex alignItems="center" gap="2">
+            <span>{`Cross-Cluster Replication · ${SERVICE_NAME} ·`}</span>
+            <StatusChip dense status="primary" text="BYOC" />
+          </Box.Flex>
+        ) : undefined
+      }
       primaryAction={{
-        text: isExisting ? 'Connect' : 'Create service',
+        text: isExisting ? 'Create follower' : 'Create service',
         onClick: () => undefined,
         disabled: isExisting && !service,
       }}
       secondaryActions={{ text: 'Cancel', onClick: close }}
     >
       <Box.Flex flexDirection="column" gap="4">
-        <Typography.Small color="muted">
-          {`Which OpenSearch service would you like to make a follower of ${SERVICE_NAME}?`}
-        </Typography.Small>
-        <Typography.Default>
-          <Typography.DefaultStrong htmlTag="span">Leader location</Typography.DefaultStrong>
-          {': '}
-          {PRIMARY_LOCATION}
-        </Typography.Default>
+        {byoc ? (
+          <Box.Flex flexDirection="column" gap="2">
+            <Typography.DefaultStrong>{`Which OpenSearch service should follow ${SERVICE_NAME}?`}</Typography.DefaultStrong>
+            <Typography.Small color="muted">{`Leader region: ${PRIMARY_LOCATION} (your account).`}</Typography.Small>
+          </Box.Flex>
+        ) : (
+          <>
+            <Typography.Small color="muted">
+              {`Which OpenSearch service would you like to make a follower of ${SERVICE_NAME}?`}
+            </Typography.Small>
+            <Typography.Default>
+              <Typography.DefaultStrong htmlTag="span">Leader region</Typography.DefaultStrong>
+              {': '}
+              {PRIMARY_LOCATION}
+            </Typography.Default>
+          </>
+        )}
 
         <RadioButtonGroup
           name="follower-type"
@@ -89,10 +187,24 @@ export function CreateFollowerModal({ open, onClose }: { open: boolean; onClose:
           value={followerType}
           onChange={(value) => setFollowerType(value === 'new' ? 'new' : 'existing')}
         >
-          <RadioButton value="existing" caption="Connect to an existing OpenSearch service as a follower.">
+          <RadioButton
+            value="existing"
+            caption={
+              byoc
+                ? 'Connect an existing BYOC OpenSearch service as a follower.'
+                : 'Connect to an existing OpenSearch service as a follower.'
+            }
+          >
             Existing service
           </RadioButton>
-          <RadioButton value="new" caption="Create a new OpenSearch service that will replicate data from this cluster.">
+          <RadioButton
+            value="new"
+            caption={
+              byoc
+                ? 'Create a new BYOC OpenSearch service that replicates this cluster.'
+                : 'Create a new OpenSearch service that will replicate data from this cluster.'
+            }
+          >
             New service
           </RadioButton>
         </RadioButtonGroup>
@@ -143,83 +255,55 @@ export function CreateFollowerModal({ open, onClose }: { open: boolean; onClose:
                 </Box.Flex>
               )}
             />
-            {service && route ? (
+            {service && byoc ? (
+              <Box marginTop="4">
+                <ByocFollowerCost />
+              </Box>
+            ) : service && route ? (
               <Box.Flex flexDirection="column" gap="4" marginTop="4">
                 <Box
-                  backgroundColor="muted"
+                  backgroundColor="body"
                   borderColor="muted"
                   borderWidth={1}
                   padding="5"
                   borderRadius={8}
                   style={{ display: 'flex', flexDirection: 'column', gap: 16 }}
                 >
-                  <Box.Flex justifyContent="space-between" alignItems="center" gap="3">
-                    <Typography.DefaultStrong>Estimated additional cost</Typography.DefaultStrong>
-                    <StatusChip dense status={route.different ? 'warning' : 'success'} text={route.route} />
-                  </Box.Flex>
-
-                  <Box.Flex flexDirection="column" gap="2">
-                    <Typography.Caption color="muted">Fixed monthly</Typography.Caption>
-                    <Box.Flex justifyContent="space-between" alignItems="flex-start" gap="4">
-                      <Box>
-                        <Typography.Small>No new compute charge</Typography.Small>
-                        <Typography.Caption color="muted">This service is already billed on its own plan.</Typography.Caption>
-                      </Box>
-                      <Typography.Small>{formatUsd(0)}</Typography.Small>
+                  <Box.Flex justifyContent="space-between" alignItems="flex-start" gap="4">
+                    <Box.Flex flexDirection="column" gap="2">
+                      <Typography.DefaultStrong>Estimated additional cost per month</Typography.DefaultStrong>
+                      <Typography.Small color="muted">You are billed for actual usage at these rates.</Typography.Small>
                     </Box.Flex>
+                    <StatusChip status={route.different ? 'warning' : 'info'} text={route.route} />
                   </Box.Flex>
-
-                  <Box.Flex flexDirection="column" gap="3">
-                    <Typography.Caption color="muted">Usage-based estimate</Typography.Caption>
-                    <Box style={{ width: 200, maxWidth: '100%' }}>
-                      <Input
-                        labelText="Replication"
-                        type="number"
-                        min={0}
-                        value={replicationGb}
-                        endAdornment={<Typography.Small color="muted">GB</Typography.Small>}
-                        onChange={(event) => setReplicationGb(event.target.value)}
-                      />
-                    </Box>
-                    <Box.Flex justifyContent="space-between" alignItems="center" gap="4">
-                      <Typography.Small color="muted">
-                        {`Replication · ${volume} GB × $${transferRate(route.different).toFixed(2)}`}
-                      </Typography.Small>
-                      <Typography.Small>{formatUsd(transferCents)}</Typography.Small>
-                    </Box.Flex>
-                  </Box.Flex>
-
-                  <Box.Flex justifyContent="space-between" alignItems="center" gap="4">
-                    <Typography.DefaultStrong>Fixed monthly</Typography.DefaultStrong>
-                    <Typography.DefaultStrong>{formatUsd(0)}</Typography.DefaultStrong>
-                  </Box.Flex>
-                  <Box backgroundColor="primary-active" paddingX="5" paddingY="4" borderRadius={8}>
-                    <Box.Flex justifyContent="space-between" alignItems="baseline" gap="4">
-                      <Typography.DefaultStrong>Usage-based estimate</Typography.DefaultStrong>
-                      <Box.Flex alignItems="baseline" gap="2">
-                        <Typography.LargeHeading>{formatUsd(transferCents)}</Typography.LargeHeading>
-                        <Typography.Small color="muted">per month</Typography.Small>
-                      </Box.Flex>
-                    </Box.Flex>
-                  </Box>
-
-                  <Typography.Caption color="muted">
-                    Compute stays on the follower’s existing plan, so the fixed charge does not increase. Replication
-                    transfer is the amount that changes, billed to the leader’s project at the route rate. The bill uses
-                    actual GB. Estimates only.
-                  </Typography.Caption>
+                  <Divider />
+                  <Typography.Small color="muted">
+                    The follower cluster runs on its own service plan and is billed separately.
+                  </Typography.Small>
+                  <RateLine
+                    label="Monthly estimate"
+                    detail="For data replicated to this follower."
+                    rate={`$${transferRate(route.different).toFixed(2)}`}
+                    unit="per GB replicated"
+                  />
                 </Box>
               </Box.Flex>
             ) : null}
           </Box.Flex>
-        ) : null}
+        ) : byoc ? (
+          <Box marginTop="2">
+            <ByocFollowerCost />
+          </Box>
+        ) : (
+          <NewFollowerNetworkCost />
+        )}
       </Box.Flex>
     </Modal>
   )
 }
 
 /** Second screen: the create-follower popup only. Closing it leaves a way to open it again. */
-export function CreateFollowerScreen() {
+export function CreateFollowerScreen({ byoc = false }: { byoc?: boolean }) {
   const [open, setOpen] = useState(true)
 
   return (
@@ -238,7 +322,7 @@ export function CreateFollowerScreen() {
           Create follower
         </Button.Primary>
       )}
-      <CreateFollowerModal open={open} onClose={() => setOpen(false)} />
+      <CreateFollowerModal open={open} onClose={() => setOpen(false)} byoc={byoc} />
     </Box>
   )
 }

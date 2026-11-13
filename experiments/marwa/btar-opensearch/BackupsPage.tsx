@@ -8,7 +8,6 @@ import {
   Chip,
   DataTable,
   DropdownMenu,
-  Link,
   Section,
   StatusChip,
   Typography,
@@ -29,7 +28,7 @@ import {
   SERVICE_VERSION,
 } from './backupsData'
 
-function Stat({ label, children }: { label: string; children: ReactNode }) {
+export function Stat({ label, children }: { label: string; children: ReactNode }) {
   return (
     <Box style={{ display: 'flex', flexDirection: 'column', gap: 4, minWidth: 140 }}>
       <Typography.Caption color="muted">{label}</Typography.Caption>
@@ -38,7 +37,7 @@ function Stat({ label, children }: { label: string; children: ReactNode }) {
   )
 }
 
-export function BackupsPage() {
+export function BackupsPage({ simplified = false, byoc = false }: { simplified?: boolean; byoc?: boolean }) {
   const [modalOpen, setModalOpen] = useState(false)
 
   return (
@@ -107,34 +106,24 @@ export function BackupsPage() {
           menu={
             <DropdownMenu.Items>
               <DropdownMenu.Item id="backup-settings">Change backup settings</DropdownMenu.Item>
+              <DropdownMenu.Item id="add-secondary-backup">Add secondary backup</DropdownMenu.Item>
             </DropdownMenu.Items>
           }
-          onAction={() => undefined}
+          onAction={(action) => {
+            if (action === 'add-secondary-backup') setModalOpen(true)
+          }}
         >
           <Box style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
             <Box style={{ display: 'flex', flexWrap: 'wrap', gap: 32 }}>
               <Box style={{ display: 'flex', flexDirection: 'column', gap: 4, minWidth: 140 }}>
-                <Typography.Caption color="muted">Backup location</Typography.Caption>
+                <Typography.Caption color="muted">Backup region</Typography.Caption>
                 <Typography.LargeStrong>{PRIMARY_LOCATION}</Typography.LargeStrong>
               </Box>
-              <Stat label="Secondary backup location">
-                <Box.Flex flexDirection="column" alignItems="flex-start" gap="2">
-                  <span>Not set</span>
-                  <Link
-                    href="#"
-                    onClick={(event) => {
-                      event.preventDefault()
-                      setModalOpen(true)
-                    }}
-                  >
-                    Add backup
-                  </Link>
-                </Box.Flex>
-              </Stat>
+              <Stat label="Secondary backup region">Not set</Stat>
               <Stat label="Latest backup">40 minutes ago</Stat>
-              <Stat label="Oldest backup">25 Sept 2026</Stat>
+              <Stat label="Oldest backup">25 September 2026</Stat>
+              <Stat label="Total backups stored">6 MiB</Stat>
             </Box>
-            <Stat label="Total backups stored">6 MiB</Stat>
 
             <DataTable
               ariaLabel="Service backups"
@@ -146,18 +135,18 @@ export function BackupsPage() {
                 { type: 'text', field: 'backupTime', headerName: 'Backup time', width: '28%' },
                 {
                   type: 'custom',
-                  headerName: 'Primary backup location',
+                  headerName: 'Primary backup region',
                   width: '28%',
                   UNSAFE_render: (row) => <StatusChip status="success" text={row.primaryLocation} />,
                 },
                 {
                   type: 'text',
                   field: 'secondaryLocation',
-                  headerName: 'Secondary backup location',
+                  headerName: 'Secondary backup region',
                   width: '28%',
                   icon: helpIcon,
                   headerTooltip: {
-                    content: 'Add a backup location with the button in this section.',
+                    content: 'Add a backup region from the Backup configuration menu.',
                   },
                 },
               ]}
@@ -166,7 +155,7 @@ export function BackupsPage() {
         </Section>
       </Box>
 
-      <AddSecondaryBackupModal open={modalOpen} onClose={() => setModalOpen(false)} />
+      <AddSecondaryBackupModal open={modalOpen} onClose={() => setModalOpen(false)} simplified={simplified} byoc={byoc} />
     </Box>
   )
 }

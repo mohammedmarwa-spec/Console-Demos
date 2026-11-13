@@ -1,12 +1,12 @@
 'use client'
 
 import { useState } from 'react'
-import { Box, Tabs } from '@aivenio/aquarium'
+import { Box, EmptyState, Tabs } from '@aivenio/aquarium'
 import type { PageMeta } from '@/lib/experiments/types'
 import { ConsoleHeader } from '@/components/ConsoleHeader'
-import { PostgresBtarScreen } from './AddSecondaryBackupModal'
 import { BackupsPage } from './BackupsPage'
 import { CreateFollowerScreen } from './CreateFollowerModal'
+import { PostgresBackupsPage } from './PostgresBackupsPage'
 import { ORG_NAME } from './backupsData'
 
 export const pageMeta: PageMeta = {
@@ -17,6 +17,7 @@ export const pageMeta: PageMeta = {
 
 export default function Page() {
   const [screen, setScreen] = useState('backups')
+  const [byocScreen, setByocScreen] = useState('byoc-btar')
 
   return (
     <Box
@@ -35,11 +36,37 @@ export default function Page() {
               <BackupsPage />
             </Box>
           </Tabs.Tab>
+          <Tabs.Tab title="Backup management (simplified)" value="backups-simplified">
+            <Box style={{ margin: '0 -24px' }}>
+              <BackupsPage simplified />
+            </Box>
+          </Tabs.Tab>
           <Tabs.Tab title="CCR - OpenSearch" value="follower">
             <CreateFollowerScreen />
           </Tabs.Tab>
           <Tabs.Tab title="BTAR(PostgreSQL · Managed)" value="postgres">
-            <PostgresBtarScreen />
+            <Box style={{ margin: '0 -24px' }}>
+              <PostgresBackupsPage />
+            </Box>
+          </Tabs.Tab>
+          <Tabs.Tab title="BYOC" value="byoc">
+            <Tabs aria-label="BYOC screens" value={byocScreen} onChange={(key) => setByocScreen(String(key))}>
+              <Tabs.Tab title="BTAR" value="byoc-btar">
+                <Box style={{ margin: '0 -24px' }}>
+                  <BackupsPage simplified byoc />
+                </Box>
+              </Tabs.Tab>
+              <Tabs.Tab title="CCR" value="byoc-ccr">
+                <Box style={{ paddingTop: 24 }}>
+                  <EmptyState title="CCR for BYOC" fullHeight={false}>
+                    Screens for cross cluster replication on BYOC go here.
+                  </EmptyState>
+                </Box>
+              </Tabs.Tab>
+            </Tabs>
+          </Tabs.Tab>
+          <Tabs.Tab title="BYOC - CCR" value="byoc-ccr-modal">
+            <CreateFollowerScreen byoc />
           </Tabs.Tab>
         </Tabs>
       </Box>

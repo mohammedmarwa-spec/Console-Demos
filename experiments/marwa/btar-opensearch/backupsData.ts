@@ -6,8 +6,10 @@ export const ORG_NAME = 'Aiven'
 export const SERVICE_VERSION = 'OpenSearch 3.6.0'
 export const PRIMARY_LOCATION = 'google-europe-west1'
 
-/** PostgreSQL service this BTAR window is for. OpenSearch stays on SERVICE_NAME. */
-export const POSTGRES_SERVICE_NAME = 'orders-pg'
+/** PostgreSQL service for the BTAR(PostgreSQL · Managed) tab. OpenSearch stays on SERVICE_NAME. */
+export const POSTGRES_SERVICE_NAME = 'pg-3da40008'
+export const POSTGRES_SERVICE_VERSION = 'PostgreSQL 18.6'
+export const POSTGRES_EOL = 'EOL : 7 November 2030 : OK'
 
 /**
  * Placeholder monthly plan price in dollars. The PostgreSQL cost card adds it to the BTAR estimate.
@@ -28,7 +30,7 @@ export const BACKUP_REGION_OPTIONS = [
 ] as const
 
 export const BACKUP_PAGE_DESCRIPTION =
-  'Your data is backed up every 60 minutes, and the backups are retained for 24 hours. Additional backups are taken every 24 hours and retained according to your service plan.'
+  'Your data is backed up every hour and kept for 24 hours. Daily backups are kept for as long as your service plan allows.'
 
 export const ADD_SECONDARY_COPY =
   'Set a secondary backup location for comprehensive disaster recovery. This enables forking from the secondary location in case of downtime in the primary region. Restoration from a secondary backup location is limited to the region where the secondary backup is located.'
@@ -50,34 +52,51 @@ export const BACKUP_ROWS: BackupRow[] = [
     dataSize: '171.3 KiB',
     backupTime: '27 Oct 2026 8:21:01 UTC',
     primaryLocation: PRIMARY_LOCATION,
-    secondaryLocation: 'No secondary backup location',
+    secondaryLocation: 'Not set',
   },
   {
     id: 'backup-2',
     dataSize: '171.3 KiB',
     backupTime: '27 Oct 2026 6:21:48 UTC',
     primaryLocation: PRIMARY_LOCATION,
-    secondaryLocation: 'No secondary backup location',
+    secondaryLocation: 'Not set',
   },
   {
     id: 'backup-3',
     dataSize: '180.2 KiB',
     backupTime: '27 Oct 2026 7:21:47 UTC',
     primaryLocation: PRIMARY_LOCATION,
-    secondaryLocation: 'No secondary backup location',
+    secondaryLocation: 'Not set',
   },
   {
     id: 'backup-4',
     dataSize: '180.2 KiB',
     backupTime: '27 Oct 2026 6:21:48 UTC',
     primaryLocation: PRIMARY_LOCATION,
-    secondaryLocation: 'No secondary backup location',
+    secondaryLocation: 'Not set',
   },
   {
     id: 'backup-5',
     dataSize: '180.2 KiB',
     backupTime: '27 Oct 2026 5:21:43 UTC',
     primaryLocation: PRIMARY_LOCATION,
-    secondaryLocation: 'No secondary backup location',
+    secondaryLocation: 'Not set',
+  },
+]
+
+export const POSTGRES_BACKUP_ROWS: BackupRow[] = [
+  {
+    id: 'pg-backup-1',
+    dataSize: '39.7 MiB',
+    backupTime: '30 Oct 2026 3:02:05 UTC',
+    primaryLocation: PRIMARY_LOCATION,
+    secondaryLocation: 'Not set',
+  },
+  {
+    id: 'pg-backup-2',
+    dataSize: '33.1 MiB',
+    backupTime: '29 Oct 2026 12:28:16 UTC',
+    primaryLocation: PRIMARY_LOCATION,
+    secondaryLocation: 'Not set',
   },
 ]
